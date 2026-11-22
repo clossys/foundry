@@ -151,14 +151,14 @@ describe("Foundry section package descriptors", () => {
     expect(readFileSync(resolve(here, "../blocks/library-board/model.ts"), "utf8")).toMatch(/interface LibraryBoardRecords \{[\s\S]*readonly controls:/);
   });
 
-  it("gives consent, error-state, stats, data-grid, cards, call-to-action, notices and gallery a Foundry export with every required slot mapped", () => {
+  it("gives consent, error-state, stats, data-grid, call-to-action, notices and gallery a Foundry export with every required slot mapped", () => {
     const rows = new Map(imported().coverage.map(row => [row.slot, row]));
     const exportOf = (leaf: string) => Object.values(imported().fills.find(doc => doc.$extensions["com.clossys.fill"].slot === `sections.${leaf}`)!.sections)[0]!.impl.export;
-    expect(Object.fromEntries(["consent", "error-state", "stats", "data-grid", "cards", "call-to-action", "notices", "gallery"].map(leaf => [leaf, exportOf(leaf)]))).toEqual({
-      consent: "ConsentBanner", "error-state": "ErrorState", stats: "StatGroup", "data-grid": "DataTable", cards: "RecordCards", "call-to-action": "CallToAction", notices: "NoticeList", gallery: "Gallery",
+    expect(Object.fromEntries(["consent", "error-state", "stats", "data-grid", "call-to-action", "notices", "gallery"].map(leaf => [leaf, exportOf(leaf)]))).toEqual({
+      consent: "ConsentBanner", "error-state": "ErrorState", stats: "StatGroup", "data-grid": "DataTable", "call-to-action": "CallToAction", notices: "NoticeList", gallery: "Gallery",
     });
-    for (const leaf of ["consent", "error-state", "stats", "data-grid", "cards", "call-to-action", "notices", "gallery"]) expect(rows.get(`sections.${leaf}`)!.missingRequiredSlots, leaf).toEqual([]);
-    for (const leaf of ["consent", "error-state", "stats", "cards", "call-to-action", "gallery"]) expect(rows.get(`sections.${leaf}`)!.status, leaf).toBe("candidate");
+    for (const leaf of ["consent", "error-state", "stats", "data-grid", "call-to-action", "notices", "gallery"]) expect(rows.get(`sections.${leaf}`)!.missingRequiredSlots, leaf).toEqual([]);
+    for (const leaf of ["consent", "error-state", "stats", "call-to-action", "gallery"]) expect(rows.get(`sections.${leaf}`)!.status, leaf).toBe("candidate");
     expect(rows.get("sections.notices")).toMatchObject({ status: "subset", missingMembers: ["legal.draft"] });
     expect(rows.get("sections.data-grid")!.missingSlots).toEqual([]);
     expect(FOUNDRY_SECTION_MAP["data-grid"]!.slotMap.pinning).toBe("./blocks#DataTable.model.pinnedColumns");
@@ -210,15 +210,13 @@ describe("Foundry section package descriptors", () => {
 
   it("maps every required region to the block part that implements it, and records which are built in", () => {
     const rows = new Map(imported().coverage.map(row => [row.slot, row]));
-    for (const leaf of ["chat", "explorer", "hero", "newsletter"]) expect(rows.get(`sections.${leaf}`)!.missingRequiredSlots, leaf).toEqual([]);
+    for (const leaf of ["chat", "explorer", "hero"]) expect(rows.get(`sections.${leaf}`)!.missingRequiredSlots, leaf).toEqual([]);
     expect(FOUNDRY_SECTION_MAP.chat!.slotMap.composer).toBe("./blocks#Chat.onSend");
     expect(FOUNDRY_SECTION_MAP.explorer!.slotMap.list).toBe("./blocks#Explorer.list");
     expect(FOUNDRY_SECTION_MAP.hero!.slotMap.header).toBe("./blocks#Hero.heading");
-    expect(FOUNDRY_SECTION_MAP.newsletter!.slotMap.email).toBe("./blocks#NewsletterBand.emailLabel");
     const source = (path: string) => readFileSync(resolve(here, "../blocks", path), "utf8");
     // Built-in regions: the block renders the contract's composed component itself.
     expect(source("chat/Chat.tsx")).toMatch(/<Textarea label=\{composerLabel\}/);
-    expect(source("NewsletterBand.tsx")).toMatch(/<TextField\s+type="email"/);
     expect(source("Hero.tsx")).toContain('import { HeroIntro } from "./hero/HeroIntro.js"');
     expect(source("Hero.tsx")).toMatch(/<HeroIntro[\s\S]*heading=[\s\S]*description=\{description\}[\s\S]*actions=\{actions\}/);
     const heroIntro = source("hero/HeroIntro.tsx");
@@ -231,7 +229,7 @@ describe("Foundry section package descriptors", () => {
     expect(heroIntro).toMatch(/data-section-intro-actions=""[\s\S]*\{actions\}/);
     // The list pane is a host region the Explorer lays out beside its tree.
     expect(source("Explorer.tsx")).toMatch(/list\?: ReactNode/);
-    for (const leaf of ["chat", "hero", "newsletter"]) expect(FOUNDRY_SECTION_MAP[leaf]!.notes!.join(" "), leaf).toMatch(/built.in/i);
+    for (const leaf of ["chat", "hero"]) expect(FOUNDRY_SECTION_MAP[leaf]!.notes!.join(" "), leaf).toMatch(/built.in/i);
   });
 
   it("grounds fixed layouts and data-count members in source branches", () => {

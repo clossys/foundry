@@ -53,7 +53,8 @@ describe("section and frame fixtures from adopted references", () => {
   it("a frame mounts its reference with one DRAFT placeholder per region, naming the section it accepts", () => {
     const header = fixtureOf("frames.site-header")!;
     expect(`${header.fixtures.file}#${header.fixtures.export}`).toBe("mist/blocks/hero-section/one/header.tsx#HeroHeader");
-    expect(header.fixtures.props).toEqual({ children: ["DRAFT brand (components.logo)", "DRAFT nav (components.link)", "DRAFT actions (components.button)"] });
+    // BR-RETIRE3: components.link is retired; the nav region now drafts components.button.
+    expect(header.fixtures.props).toEqual({ children: ["DRAFT brand (components.logo)", "DRAFT nav (components.button)", "DRAFT actions (components.button)"] });
     expect((fixtureOf("frames.site-shell")!.fixtures.props.children as string[])).toContain("DRAFT consent (sections.consent)");
     expect(row("frames.site-header").contract.props).toEqual(["children"]);
   });

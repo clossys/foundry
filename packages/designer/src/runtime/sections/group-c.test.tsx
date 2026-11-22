@@ -38,7 +38,7 @@ const contracts = new Map((JSON.parse(read("../../catalog/slots/sections.json"))
 const fillOf = (leaf: GroupCLeaf): FillDocument => JSON.parse(read(`../../catalog/fills/foundry/sections.${leaf}.json`)) as FillDocument;
 
 const BLOCK_MODULE: Record<GroupCLeaf, string> = {
-  cards: "../../blocks/RecordCards.js", chat: "../../blocks/chat/Chat.js", consent: "../../blocks/ConsentBanner.js",
+  chat: "../../blocks/chat/Chat.js", consent: "../../blocks/ConsentBanner.js",
   "empty-state": "../../blocks/EmptyState.js", "error-state": "../../blocks/ErrorState.js", form: "../../blocks/Form.js",
   "link-index": "../../blocks/NavGrid.js", notices: "../../blocks/NoticeList.js", "page-header": "../../blocks/PageHeader.js",
   pagination: "../../blocks/Pagination.js", "section-header": "../../blocks/SectionHeader.js", settings: "../../blocks/SettingsSection.js",
@@ -159,14 +159,6 @@ function wiringOf(leaf: GroupCLeaf, source = read(`./${leaf}.tsx`)) {
 const S = specimenDataset.sections;
 /** Real component roles each leaf must render from dataset content: each leaf's `specimenDataset.sections` record. */
 const ROLES: Record<GroupCLeaf, (root: HTMLElement) => void> = {
-  cards: root => {
-    // The stamped section list; each card's editorial metadata carries its own nested tag list (78237484a).
-    const list = root.querySelector<HTMLElement>('[data-provenance-leaf="sections.cards"]')!;
-    expect(list).toHaveAttribute("role", "list");
-    const items = [...list.children] as HTMLElement[];
-    expect(items.map(item => item.tagName)).toEqual(S.recordCards.records.map(() => "LI"));
-    expect(items.map(item => within(within(item).getByRole("heading")).getByRole("link").textContent)).toEqual(S.recordCards.records.map(record => record.title));
-  },
   chat: root => {
     expect(within(root).getByRole("log")).toBeTruthy();
     expect(within(root).getByPlaceholderText(S.chat.placeholder)).toBeTruthy();
@@ -241,9 +233,10 @@ const ROLES: Record<GroupCLeaf, (root: HTMLElement) => void> = {
 };
 
 describe("group-c Section runtime renderers", () => {
-  it("registers exactly the fifteen group-c leaves", () => {
+  // BR-RETIRE3: retired sections.cards left with its fill and renderer, 15 -> 14.
+  it("registers exactly the fourteen group-c leaves", () => {
     expect(Object.keys(sectionRenderersC).sort()).toEqual(GROUP_C_LEAVES.map(leaf => `sections.${leaf}`).sort());
-    expect(GROUP_C_LEAVES).toHaveLength(15);
+    expect(GROUP_C_LEAVES).toHaveLength(14);
   });
 
   for (const leaf of GROUP_C_LEAVES) describe(`sections.${leaf}`, () => {
@@ -300,11 +293,6 @@ describe("group-c WL10 harness reads componentLeaf facades", () => {
 });
 
 describe("group-c members, refusals and optional slots", () => {
-  it("cards: layout.list reaches RecordCards", () => {
-    const { container } = render(<div>{renderLeaf("cards", datasetInput("cards", ["layout.list"]))}</div>);
-    expect(container.querySelector('[data-provenance-leaf="sections.cards"] ul, ul[data-provenance-leaf="sections.cards"]')?.className).toContain("flex-col");
-  });
-
   it("error-state: kind members reach ErrorState", () => {
     const { container } = render(<div>{renderLeaf("error-state", datasetInput("error-state", ["kind.offline"]))}</div>);
     expect(container.querySelector('[data-error-kind]')?.getAttribute("data-error-kind")).toBe("offline");
@@ -325,11 +313,12 @@ describe("group-c members, refusals and optional slots", () => {
   });
 
   it("refuses a missing required slot, an unmapped slot or member, and two members on one axis", () => {
-    const { records: _records, ...withoutRecords } = sectionDatasetC.cards(specimenDataset);
-    expect(() => renderLeaf("cards", inputFor("cards", withoutRecords))).toThrow(/required content slot "records"/);
+    // BR-RETIRE3: retargeted from retired sections.cards to link-index (required links) and error-state (kind axis).
+    const { links: _links, ...withoutLinks } = sectionDatasetC["link-index"](specimenDataset);
+    expect(() => renderLeaf("link-index", inputFor("link-index", withoutLinks))).toThrow(/required content slot "links"/);
     expect(() => renderLeaf("page-header", inputFor("page-header", { ...sectionDatasetC["page-header"](specimenDataset), meta: { items: [] } }))).toThrow(/"meta" has no API/);
     expect(() => renderLeaf("link-index", datasetInput("link-index", ["layout.list"]))).toThrow(/"layout.list" has no API/);
-    expect(() => renderLeaf("cards", datasetInput("cards", ["layout.grid", "layout.list"]))).toThrow(/one axis twice/);
+    expect(() => renderLeaf("error-state", datasetInput("error-state", ["kind.offline", "kind.failure"]))).toThrow(/one axis twice/);
   });
 
   it("refuses required anatomy copy that no contract slot carries, naming the NEED", () => {

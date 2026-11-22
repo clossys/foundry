@@ -14,7 +14,7 @@ import { specimenDataset as data } from "../../specimen/specimen-dataset.js";
 import { heroCopyFromDataset, HERO_SPECIMEN_BACKDROP, HERO_PREVIEW_MEMBERS } from "../../specimen/hero-specimen.js";
 import { plainJson } from "./dataset-json.js";
 
-export const GROUP_A_LEAVES = ["article", "band", "call-to-action", "comparison", "content", "faq", "features", "gallery", "hero", "logo-cloud", "media", "newsletter", "people", "pricing", "testimonials"] as const;
+export const GROUP_A_LEAVES = ["article", "band", "call-to-action", "comparison", "content", "faq", "features", "gallery", "hero", "logo-cloud", "media", "people", "pricing", "testimonials"] as const;
 export type GroupALeaf = (typeof GROUP_A_LEAVES)[number];
 
 const S = data.sections;
@@ -69,11 +69,6 @@ export const GROUP_A_CONTENT: Readonly<Record<GroupALeaf, Readonly<Record<string
   },
   "logo-cloud": { logos: S.logoCloud.names.map(name => ({ id: name, name, src: data.assets.mark.src })) },
   media: { figure: { media: barMedia, caption: S.mediaFigure.caption } },
-  newsletter: {
-    email: { label: S.newsletter.emailLabel },
-    consent: S.newsletter.privacyNote,
-    submit: { label: S.newsletter.submitLabel, "pending-label": S.newsletter.pendingLabel, "sent-message": S.newsletter.sentMessage, "failed-message": S.newsletter.failedMessage, action: S.newsletter.action },
-  },
   people: { people: plainJson(S.peopleGrid.people) },
   pricing: {
     plans: S.pricing.tiers.map(tier => plainJson({ id: tier.id, name: tier.name, price: tier.price, features: tier.features, cta: { label: tier.cta, href: `#${tier.id}` }, badge: tier.badge })),
@@ -86,7 +81,7 @@ export const GROUP_A_CONTENT: Readonly<Record<GroupALeaf, Readonly<Record<string
 export const GROUP_A_MEMBERS: Readonly<Record<GroupALeaf, readonly string[]>> = {
   article: [], band: ["ground.sunken", "measure.content"], "call-to-action": [], comparison: [], content: ["layout.split-end"],
   faq: ["layout.list"], features: ["layout.bento"], gallery: ["lightbox.enabled"], hero: HERO_PREVIEW_MEMBERS,
-  "logo-cloud": ["count.3", "monochrome.false"], media: [], newsletter: [], people: [], pricing: [], testimonials: ["layout.grid"],
+  "logo-cloud": ["count.3", "monochrome.false"], media: [], people: [], pricing: [], testimonials: ["layout.grid"],
 };
 
 const contracts = sectionSlots as unknown as readonly SectionSlot[];

@@ -11942,24 +11942,6 @@
         "declared",
         "scanned"
       ],
-      "from": "sections.boundary-message",
-      "kind": "composes",
-      "to": "components.semantic-content"
-    },
-    {
-      "evidence": [
-        "declared",
-        "scanned"
-      ],
-      "from": "sections.boundary-message",
-      "kind": "composes",
-      "to": "sections.section-header"
-    },
-    {
-      "evidence": [
-        "declared",
-        "scanned"
-      ],
       "from": "sections.call-to-action",
       "kind": "composes",
       "to": "components.card"
@@ -11970,51 +11952,6 @@
         "scanned"
       ],
       "from": "sections.call-to-action",
-      "kind": "composes",
-      "to": "components.semantic-content"
-    },
-    {
-      "evidence": [
-        "declared",
-        "scanned"
-      ],
-      "from": "sections.cards",
-      "kind": "reads",
-      "to": "assets.image"
-    },
-    {
-      "evidence": [
-        "declared",
-        "scanned"
-      ],
-      "from": "sections.cards",
-      "kind": "composes",
-      "to": "components.badge"
-    },
-    {
-      "evidence": [
-        "declared",
-        "scanned"
-      ],
-      "from": "sections.cards",
-      "kind": "composes",
-      "to": "components.button"
-    },
-    {
-      "evidence": [
-        "declared",
-        "scanned"
-      ],
-      "from": "sections.cards",
-      "kind": "composes",
-      "to": "components.card"
-    },
-    {
-      "evidence": [
-        "declared",
-        "scanned"
-      ],
-      "from": "sections.cards",
       "kind": "composes",
       "to": "components.semantic-content"
     },
@@ -12815,33 +12752,6 @@
         "declared",
         "scanned"
       ],
-      "from": "sections.legal-prose",
-      "kind": "composes",
-      "to": "components.semantic-content"
-    },
-    {
-      "evidence": [
-        "declared",
-        "scanned"
-      ],
-      "from": "sections.legal-prose",
-      "kind": "composes",
-      "to": "sections.article"
-    },
-    {
-      "evidence": [
-        "declared",
-        "scanned"
-      ],
-      "from": "sections.legal-prose",
-      "kind": "composes",
-      "to": "sections.section-header"
-    },
-    {
-      "evidence": [
-        "declared",
-        "scanned"
-      ],
       "from": "sections.link-index",
       "kind": "composes",
       "to": "components.badge"
@@ -12932,33 +12842,6 @@
         "declared",
         "scanned"
       ],
-      "from": "sections.logo-hero",
-      "kind": "composes",
-      "to": "components.logo"
-    },
-    {
-      "evidence": [
-        "declared",
-        "scanned"
-      ],
-      "from": "sections.logo-hero",
-      "kind": "composes",
-      "to": "components.semantic-content"
-    },
-    {
-      "evidence": [
-        "declared",
-        "scanned"
-      ],
-      "from": "sections.logo-mark",
-      "kind": "composes",
-      "to": "components.semantic-content"
-    },
-    {
-      "evidence": [
-        "declared",
-        "scanned"
-      ],
       "from": "sections.media",
       "kind": "composes",
       "to": "components.semantic-content"
@@ -12971,33 +12854,6 @@
       "from": "sections.media",
       "kind": "reads",
       "to": "themes.accent"
-    },
-    {
-      "evidence": [
-        "declared",
-        "scanned"
-      ],
-      "from": "sections.newsletter",
-      "kind": "composes",
-      "to": "components.button"
-    },
-    {
-      "evidence": [
-        "declared",
-        "scanned"
-      ],
-      "from": "sections.newsletter",
-      "kind": "composes",
-      "to": "components.icon"
-    },
-    {
-      "evidence": [
-        "declared",
-        "scanned"
-      ],
-      "from": "sections.newsletter",
-      "kind": "composes",
-      "to": "components.text-field"
     },
     {
       "evidence": [
@@ -13196,24 +13052,6 @@
       "from": "sections.pricing",
       "kind": "reads",
       "to": "themes.primary"
-    },
-    {
-      "evidence": [
-        "declared",
-        "scanned"
-      ],
-      "from": "sections.record-detail",
-      "kind": "composes",
-      "to": "components.semantic-content"
-    },
-    {
-      "evidence": [
-        "declared",
-        "scanned"
-      ],
-      "from": "sections.record-detail",
-      "kind": "composes",
-      "to": "sections.section-header"
     },
     {
       "evidence": [
@@ -14429,6 +14267,12 @@
       "code": "used-nowhere",
       "message": "selected but used nowhere",
       "severity": "notice",
+      "subject": "sections.article"
+    },
+    {
+      "code": "used-nowhere",
+      "message": "selected but used nowhere",
+      "severity": "notice",
       "subject": "sections.audit-log"
     },
     {
@@ -14441,19 +14285,7 @@
       "code": "used-nowhere",
       "message": "selected but used nowhere",
       "severity": "notice",
-      "subject": "sections.boundary-message"
-    },
-    {
-      "code": "used-nowhere",
-      "message": "selected but used nowhere",
-      "severity": "notice",
       "subject": "sections.call-to-action"
-    },
-    {
-      "code": "used-nowhere",
-      "message": "selected but used nowhere",
-      "severity": "notice",
-      "subject": "sections.cards"
     },
     {
       "code": "used-nowhere",
@@ -14543,12 +14375,6 @@
       "code": "used-nowhere",
       "message": "selected but used nowhere",
       "severity": "notice",
-      "subject": "sections.legal-prose"
-    },
-    {
-      "code": "used-nowhere",
-      "message": "selected but used nowhere",
-      "severity": "notice",
       "subject": "sections.link-index"
     },
     {
@@ -14556,24 +14382,6 @@
       "message": "selected but used nowhere",
       "severity": "notice",
       "subject": "sections.logo-cloud"
-    },
-    {
-      "code": "used-nowhere",
-      "message": "selected but used nowhere",
-      "severity": "notice",
-      "subject": "sections.logo-hero"
-    },
-    {
-      "code": "used-nowhere",
-      "message": "selected but used nowhere",
-      "severity": "notice",
-      "subject": "sections.logo-mark"
-    },
-    {
-      "code": "used-nowhere",
-      "message": "selected but used nowhere",
-      "severity": "notice",
-      "subject": "sections.newsletter"
     },
     {
       "code": "used-nowhere",
@@ -14598,12 +14406,6 @@
       "message": "selected but used nowhere",
       "severity": "notice",
       "subject": "sections.people"
-    },
-    {
-      "code": "used-nowhere",
-      "message": "selected but used nowhere",
-      "severity": "notice",
-      "subject": "sections.record-detail"
     },
     {
       "code": "used-nowhere",
@@ -14715,10 +14517,10 @@
     "members": "sha256:63356086be91b799638a29dd8d1aa5a9ee4041800ef4483dde670ca3251303ff",
     "pages": "absent",
     "runtime": "absent",
-    "selection": "sha256:ca32945dc0a136609fb8a74cc9cb81c53300c3aa7282c00d829532a2834c43aa",
-    "surfaces": "sha256:906338d95a47e703b038aefd02d7b28572f9f5e28ea80dada5e9d9e1885b3f6c"
+    "selection": "sha256:35cb9a06353650cece906224c2507fa9c4834269bf6bc977c5d85210ed14ccf5",
+    "surfaces": "sha256:dee7431f9f9f3158a275616d7c4163c8b89169e79ff8e02ed3db2e3fcc64668d"
   },
-  "inputsHash": "sha256:51ef4063f72b31449dc27b9da43185c41d46d8ac523a51e3d45f660ef9d6f4a6",
+  "inputsHash": "sha256:d3f3f4ae96493ed832dadb74821f0bd6460e4bab1891a0690f50a3b95d294454",
   "nodes": [
     {
       "fill": {
@@ -16191,15 +15993,10 @@
       "scan": "lower-bound"
     },
     {
-      "fill": {
-        "id": "foundry/sections.boundary-message",
-        "source": "foundry"
-      },
       "id": "sections.boundary-message",
       "layer": "sections",
       "leaf": "sections.boundary-message",
-      "origin": "inventory",
-      "scan": "lower-bound"
+      "origin": "inventory"
     },
     {
       "fill": {
@@ -16219,15 +16016,10 @@
       "origin": "inventory"
     },
     {
-      "fill": {
-        "id": "foundry/sections.cards",
-        "source": "foundry"
-      },
       "id": "sections.cards",
       "layer": "sections",
       "leaf": "sections.cards",
-      "origin": "inventory",
-      "scan": "lower-bound"
+      "origin": "inventory"
     },
     {
       "fill": {
@@ -16406,15 +16198,10 @@
       "scan": "lower-bound"
     },
     {
-      "fill": {
-        "id": "foundry/sections.legal-prose",
-        "source": "foundry"
-      },
       "id": "sections.legal-prose",
       "layer": "sections",
       "leaf": "sections.legal-prose",
-      "origin": "inventory",
-      "scan": "lower-bound"
+      "origin": "inventory"
     },
     {
       "fill": {
@@ -16439,26 +16226,16 @@
       "scan": "lower-bound"
     },
     {
-      "fill": {
-        "id": "foundry/sections.logo-hero",
-        "source": "foundry"
-      },
       "id": "sections.logo-hero",
       "layer": "sections",
       "leaf": "sections.logo-hero",
-      "origin": "inventory",
-      "scan": "lower-bound"
+      "origin": "inventory"
     },
     {
-      "fill": {
-        "id": "foundry/sections.logo-mark",
-        "source": "foundry"
-      },
       "id": "sections.logo-mark",
       "layer": "sections",
       "leaf": "sections.logo-mark",
-      "origin": "inventory",
-      "scan": "lower-bound"
+      "origin": "inventory"
     },
     {
       "fill": {
@@ -16472,15 +16249,10 @@
       "scan": "lower-bound"
     },
     {
-      "fill": {
-        "id": "foundry/sections.newsletter",
-        "source": "foundry"
-      },
       "id": "sections.newsletter",
       "layer": "sections",
       "leaf": "sections.newsletter",
-      "origin": "inventory",
-      "scan": "lower-bound"
+      "origin": "inventory"
     },
     {
       "fill": {
@@ -16550,15 +16322,10 @@
       "origin": "inventory"
     },
     {
-      "fill": {
-        "id": "foundry/sections.record-detail",
-        "source": "foundry"
-      },
       "id": "sections.record-detail",
       "layer": "sections",
       "leaf": "sections.record-detail",
-      "origin": "inventory",
-      "scan": "lower-bound"
+      "origin": "inventory"
     },
     {
       "fill": {
@@ -17235,15 +17002,15 @@
   "scope": "Catalog default plan over package values; Foundry surfaces; no product routes or runtime capture. Freshness only, not a conformance clearance.",
   "summary": {
     "edges": {
-      "composes": 325,
+      "composes": 308,
       "hosts": 0,
-      "reads": 1300,
+      "reads": 1299,
       "renders": 0
     },
     "evidence": {
-      "declared": 1207,
+      "declared": 1189,
       "runtime": 0,
-      "scanned": 1180
+      "scanned": 1162
     },
     "nodes": {
       "assets": 49,
@@ -18923,69 +18690,6 @@
         ]
       },
       {
-        "id": "foundry/sections.boundary-message",
-        "pin": {
-          "export": "./blocks#EmptyState",
-          "package": "@clossys/designer",
-          "version": "0.12.0"
-        },
-        "scanStatus": "lower-bound",
-        "scannedComposes": [
-          "components.semantic-content",
-          "sections.section-header"
-        ],
-        "scannedReads": {
-          "assets": [],
-          "components": [
-            "components.semantic-content"
-          ],
-          "themes": []
-        },
-        "slot": "sections.boundary-message",
-        "sourceFiles": [
-          {
-            "path": "packages/designer/src/blocks/EmptyState.tsx",
-            "sha256": "061a364db62ee42ea514ec459062d3d60546556187adb58f2304c97b3d81492f"
-          },
-          {
-            "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
-            "sha256": "d7e9c7483ea34e420632b86cca6d50a5eded29e05b41f77a74cc1140e2f68b4f"
-          },
-          {
-            "path": "packages/designer/src/components/internal/cx.ts",
-            "sha256": "db61016cece2d645fa7cbac16b5afceeacc64a84ac0b1b6fd7f7b8eeda41e9d0"
-          },
-          {
-            "path": "packages/designer/src/runtime/component-leaf.client.tsx",
-            "sha256": "81a9248ffae8d585644cd93a6a37eea3ed67076bd95cb305a14bc41f66438033"
-          },
-          {
-            "path": "packages/designer/src/runtime/component-leaf.tsx",
-            "sha256": "30253772b01aac86950d52035d3ecf21a16b3d7ab581e2ca565ca810a658d9da"
-          }
-        ],
-        "unresolved": [
-          {
-            "code": "DF2",
-            "evidence": "unresolved injected runtime inventory ../../tokens/tokens.js#TOKENS",
-            "file": "packages/designer/src/components/internal/cx.ts",
-            "line": 2
-          },
-          {
-            "code": "DF2",
-            "evidence": "unresolved dynamic import; runtime source is not inferred",
-            "file": "packages/designer/src/components/internal/cx.ts",
-            "line": 80
-          },
-          {
-            "code": "DF2",
-            "evidence": "unresolved dynamic import; runtime source is not inferred",
-            "file": "packages/designer/src/runtime/component-leaf.tsx",
-            "line": 4
-          }
-        ]
-      },
-      {
         "id": "foundry/sections.call-to-action",
         "pin": {
           "export": "./blocks#CallToAction",
@@ -19022,88 +18726,6 @@
           {
             "path": "packages/designer/src/components/internal/cx.ts",
             "sha256": "db61016cece2d645fa7cbac16b5afceeacc64a84ac0b1b6fd7f7b8eeda41e9d0"
-          },
-          {
-            "path": "packages/designer/src/runtime/component-leaf.client.tsx",
-            "sha256": "81a9248ffae8d585644cd93a6a37eea3ed67076bd95cb305a14bc41f66438033"
-          },
-          {
-            "path": "packages/designer/src/runtime/component-leaf.tsx",
-            "sha256": "30253772b01aac86950d52035d3ecf21a16b3d7ab581e2ca565ca810a658d9da"
-          }
-        ],
-        "unresolved": [
-          {
-            "code": "DF2",
-            "evidence": "unresolved injected runtime inventory ../../tokens/tokens.js#TOKENS",
-            "file": "packages/designer/src/components/internal/cx.ts",
-            "line": 2
-          },
-          {
-            "code": "DF2",
-            "evidence": "unresolved dynamic import; runtime source is not inferred",
-            "file": "packages/designer/src/components/internal/cx.ts",
-            "line": 80
-          },
-          {
-            "code": "DF2",
-            "evidence": "unresolved dynamic import; runtime source is not inferred",
-            "file": "packages/designer/src/runtime/component-leaf.tsx",
-            "line": 4
-          }
-        ]
-      },
-      {
-        "id": "foundry/sections.cards",
-        "pin": {
-          "export": "./blocks#RecordCards",
-          "package": "@clossys/designer",
-          "version": "0.12.0"
-        },
-        "scanStatus": "lower-bound",
-        "scannedComposes": [
-          "components.badge",
-          "components.button",
-          "components.card",
-          "components.semantic-content"
-        ],
-        "scannedReads": {
-          "assets": [
-            "assets.image"
-          ],
-          "components": [
-            "components.badge",
-            "components.button",
-            "components.card",
-            "components.semantic-content"
-          ],
-          "themes": []
-        },
-        "slot": "sections.cards",
-        "sourceFiles": [
-          {
-            "path": "packages/designer/src/blocks/PageHeaderMetadata.tsx",
-            "sha256": "28bb83d0fa255fc0283effbfe215958cec91d3f467042068b58eaac24efab09a"
-          },
-          {
-            "path": "packages/designer/src/blocks/RecordCards.tsx",
-            "sha256": "06275bb1aa3079da9f2542f5900eae786767d5ec418e3386987be2c97bb98883"
-          },
-          {
-            "path": "packages/designer/src/catalog-assets/media.ts",
-            "sha256": "518af66b317c4dcca79c99e33098a942430522f024c2c6416cb9ca817aa49313"
-          },
-          {
-            "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
-            "sha256": "d7e9c7483ea34e420632b86cca6d50a5eded29e05b41f77a74cc1140e2f68b4f"
-          },
-          {
-            "path": "packages/designer/src/components/internal/cx.ts",
-            "sha256": "db61016cece2d645fa7cbac16b5afceeacc64a84ac0b1b6fd7f7b8eeda41e9d0"
-          },
-          {
-            "path": "packages/designer/src/components/surface-tones.ts",
-            "sha256": "b31daa5419d8ba6745c6aa16d81f634765db97e1fada9c5f311bd0a8a84aa090"
           },
           {
             "path": "packages/designer/src/runtime/component-leaf.client.tsx",
@@ -20774,70 +20396,6 @@
         ]
       },
       {
-        "id": "foundry/sections.legal-prose",
-        "pin": {
-          "export": "./blocks#LegalProse",
-          "package": "@clossys/designer",
-          "version": "0.12.0"
-        },
-        "scanStatus": "lower-bound",
-        "scannedComposes": [
-          "components.semantic-content",
-          "sections.article",
-          "sections.section-header"
-        ],
-        "scannedReads": {
-          "assets": [],
-          "components": [
-            "components.semantic-content"
-          ],
-          "themes": []
-        },
-        "slot": "sections.legal-prose",
-        "sourceFiles": [
-          {
-            "path": "packages/designer/src/blocks/LegalProse.tsx",
-            "sha256": "0659eb2b766a806f319ee76acbda3d72a584194eccc69bdb22b07d6bcbbcd358"
-          },
-          {
-            "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
-            "sha256": "d7e9c7483ea34e420632b86cca6d50a5eded29e05b41f77a74cc1140e2f68b4f"
-          },
-          {
-            "path": "packages/designer/src/components/internal/cx.ts",
-            "sha256": "db61016cece2d645fa7cbac16b5afceeacc64a84ac0b1b6fd7f7b8eeda41e9d0"
-          },
-          {
-            "path": "packages/designer/src/runtime/component-leaf.client.tsx",
-            "sha256": "81a9248ffae8d585644cd93a6a37eea3ed67076bd95cb305a14bc41f66438033"
-          },
-          {
-            "path": "packages/designer/src/runtime/component-leaf.tsx",
-            "sha256": "30253772b01aac86950d52035d3ecf21a16b3d7ab581e2ca565ca810a658d9da"
-          }
-        ],
-        "unresolved": [
-          {
-            "code": "DF2",
-            "evidence": "unresolved injected runtime inventory ../../tokens/tokens.js#TOKENS",
-            "file": "packages/designer/src/components/internal/cx.ts",
-            "line": 2
-          },
-          {
-            "code": "DF2",
-            "evidence": "unresolved dynamic import; runtime source is not inferred",
-            "file": "packages/designer/src/components/internal/cx.ts",
-            "line": 80
-          },
-          {
-            "code": "DF2",
-            "evidence": "unresolved dynamic import; runtime source is not inferred",
-            "file": "packages/designer/src/runtime/component-leaf.tsx",
-            "line": 4
-          }
-        ]
-      },
-      {
         "id": "foundry/sections.link-index",
         "pin": {
           "export": "./blocks#NavGrid",
@@ -21032,130 +20590,6 @@
         ]
       },
       {
-        "id": "foundry/sections.logo-hero",
-        "pin": {
-          "export": "./blocks#LogoHero",
-          "package": "@clossys/designer",
-          "version": "0.12.0"
-        },
-        "scanStatus": "lower-bound",
-        "scannedComposes": [
-          "components.logo",
-          "components.semantic-content"
-        ],
-        "scannedReads": {
-          "assets": [],
-          "components": [
-            "components.logo",
-            "components.semantic-content"
-          ],
-          "themes": []
-        },
-        "slot": "sections.logo-hero",
-        "sourceFiles": [
-          {
-            "path": "packages/designer/src/blocks/LogoHero.tsx",
-            "sha256": "18747d6185ec0ec9d773ea1a30aea39143025e283c2f93365772f730c038050d"
-          },
-          {
-            "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
-            "sha256": "d7e9c7483ea34e420632b86cca6d50a5eded29e05b41f77a74cc1140e2f68b4f"
-          },
-          {
-            "path": "packages/designer/src/runtime/component-leaf.client.tsx",
-            "sha256": "81a9248ffae8d585644cd93a6a37eea3ed67076bd95cb305a14bc41f66438033"
-          },
-          {
-            "path": "packages/designer/src/runtime/component-leaf.tsx",
-            "sha256": "30253772b01aac86950d52035d3ecf21a16b3d7ab581e2ca565ca810a658d9da"
-          }
-        ],
-        "unresolved": [
-          {
-            "code": "DF5",
-            "evidence": "ambiguous slot ownership ./SectionFrame.js#SectionFrame: sections.band, sections.logo-mark",
-            "file": "packages/designer/src/blocks/LogoHero.tsx",
-            "line": 2
-          },
-          {
-            "code": "DF2",
-            "evidence": "unresolved dynamic import; runtime source is not inferred",
-            "file": "packages/designer/src/runtime/component-leaf.tsx",
-            "line": 4
-          }
-        ]
-      },
-      {
-        "id": "foundry/sections.logo-mark",
-        "pin": {
-          "export": "./blocks#SectionFrame",
-          "package": "@clossys/designer",
-          "version": "0.12.0"
-        },
-        "scanStatus": "lower-bound",
-        "scannedComposes": [
-          "components.semantic-content"
-        ],
-        "scannedReads": {
-          "assets": [],
-          "components": [
-            "components.semantic-content"
-          ],
-          "themes": []
-        },
-        "slot": "sections.logo-mark",
-        "sourceFiles": [
-          {
-            "path": "packages/designer/src/blocks/internal/block-vars.ts",
-            "sha256": "33e9c7bd8700ff201b8ba138ca4f10dd7de910a23d260019e676470b918cceb5"
-          },
-          {
-            "path": "packages/designer/src/blocks/section-ground.ts",
-            "sha256": "ebdb8cb4e374aacc923896a97fbc1d94f8fc73470b711c80be8fcf307c04be14"
-          },
-          {
-            "path": "packages/designer/src/blocks/SectionFrame.tsx",
-            "sha256": "a4e1c5df3f8887cc3283b41955c1a3342ab3f21ad3fc62aed11f2f9feedfcf29"
-          },
-          {
-            "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
-            "sha256": "d7e9c7483ea34e420632b86cca6d50a5eded29e05b41f77a74cc1140e2f68b4f"
-          },
-          {
-            "path": "packages/designer/src/components/internal/cx.ts",
-            "sha256": "db61016cece2d645fa7cbac16b5afceeacc64a84ac0b1b6fd7f7b8eeda41e9d0"
-          },
-          {
-            "path": "packages/designer/src/runtime/component-leaf.client.tsx",
-            "sha256": "81a9248ffae8d585644cd93a6a37eea3ed67076bd95cb305a14bc41f66438033"
-          },
-          {
-            "path": "packages/designer/src/runtime/component-leaf.tsx",
-            "sha256": "30253772b01aac86950d52035d3ecf21a16b3d7ab581e2ca565ca810a658d9da"
-          }
-        ],
-        "unresolved": [
-          {
-            "code": "DF2",
-            "evidence": "unresolved injected runtime inventory ../../tokens/tokens.js#TOKENS",
-            "file": "packages/designer/src/components/internal/cx.ts",
-            "line": 2
-          },
-          {
-            "code": "DF2",
-            "evidence": "unresolved dynamic import; runtime source is not inferred",
-            "file": "packages/designer/src/components/internal/cx.ts",
-            "line": 80
-          },
-          {
-            "code": "DF2",
-            "evidence": "unresolved dynamic import; runtime source is not inferred",
-            "file": "packages/designer/src/runtime/component-leaf.tsx",
-            "line": 4
-          }
-        ]
-      },
-      {
         "id": "foundry/sections.media",
         "pin": {
           "export": "./blocks#MediaFigure",
@@ -21227,76 +20661,6 @@
           }
         ],
         "unresolved": [
-          {
-            "code": "DF2",
-            "evidence": "unresolved injected runtime inventory ../../tokens/tokens.js#TOKENS",
-            "file": "packages/designer/src/components/internal/cx.ts",
-            "line": 2
-          },
-          {
-            "code": "DF2",
-            "evidence": "unresolved dynamic import; runtime source is not inferred",
-            "file": "packages/designer/src/components/internal/cx.ts",
-            "line": 80
-          }
-        ]
-      },
-      {
-        "id": "foundry/sections.newsletter",
-        "pin": {
-          "export": "./blocks#NewsletterBand",
-          "package": "@clossys/designer",
-          "version": "0.12.0"
-        },
-        "scanStatus": "lower-bound",
-        "scannedComposes": [
-          "components.button",
-          "components.icon",
-          "components.text-field"
-        ],
-        "scannedReads": {
-          "assets": [],
-          "components": [
-            "components.button",
-            "components.icon",
-            "components.text-field"
-          ],
-          "themes": []
-        },
-        "slot": "sections.newsletter",
-        "sourceFiles": [
-          {
-            "path": "packages/designer/src/blocks/NewsletterBand.tsx",
-            "sha256": "ded1eda3d8dfd6f413f144f68242042e957166f033f45712551994a939f6fab2"
-          },
-          {
-            "path": "packages/designer/src/blocks/section-ground.ts",
-            "sha256": "ebdb8cb4e374aacc923896a97fbc1d94f8fc73470b711c80be8fcf307c04be14"
-          },
-          {
-            "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
-            "sha256": "d7e9c7483ea34e420632b86cca6d50a5eded29e05b41f77a74cc1140e2f68b4f"
-          },
-          {
-            "path": "packages/designer/src/components/internal/cx.ts",
-            "sha256": "db61016cece2d645fa7cbac16b5afceeacc64a84ac0b1b6fd7f7b8eeda41e9d0"
-          },
-          {
-            "path": "packages/designer/src/components/internal/ui-vars.ts",
-            "sha256": "e3543e7d37cad0f0c700b5bf05a7c0605e48ecaab566bb85ff9d54ef3de825e4"
-          },
-          {
-            "path": "packages/designer/src/icons/XCircle.ts",
-            "sha256": "3bd98a7d6021773683520cc577f0ee156d7d0bfd81527597cd77f7b1eb7ac263"
-          }
-        ],
-        "unresolved": [
-          {
-            "code": "DF5",
-            "evidence": "unregistered asset import ../icons/XCircle.js#XCircle",
-            "file": "packages/designer/src/blocks/NewsletterBand.tsx",
-            "line": 10
-          },
           {
             "code": "DF2",
             "evidence": "unresolved injected runtime inventory ../../tokens/tokens.js#TOKENS",
@@ -21692,75 +21056,6 @@
           }
         ],
         "unresolved": [
-          {
-            "code": "DF2",
-            "evidence": "unresolved injected runtime inventory ../../tokens/tokens.js#TOKENS",
-            "file": "packages/designer/src/components/internal/cx.ts",
-            "line": 2
-          },
-          {
-            "code": "DF2",
-            "evidence": "unresolved dynamic import; runtime source is not inferred",
-            "file": "packages/designer/src/components/internal/cx.ts",
-            "line": 80
-          },
-          {
-            "code": "DF2",
-            "evidence": "unresolved dynamic import; runtime source is not inferred",
-            "file": "packages/designer/src/runtime/component-leaf.tsx",
-            "line": 4
-          }
-        ]
-      },
-      {
-        "id": "foundry/sections.record-detail",
-        "pin": {
-          "export": "./blocks#DetailView",
-          "package": "@clossys/designer",
-          "version": "0.12.0"
-        },
-        "scanStatus": "lower-bound",
-        "scannedComposes": [
-          "components.semantic-content",
-          "sections.section-header"
-        ],
-        "scannedReads": {
-          "assets": [],
-          "components": [
-            "components.semantic-content"
-          ],
-          "themes": []
-        },
-        "slot": "sections.record-detail",
-        "sourceFiles": [
-          {
-            "path": "packages/designer/src/blocks/DetailView.tsx",
-            "sha256": "d064b3374ab33365e05114f43207600b8e831477d017641bd6bcdeee1e449575"
-          },
-          {
-            "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
-            "sha256": "d7e9c7483ea34e420632b86cca6d50a5eded29e05b41f77a74cc1140e2f68b4f"
-          },
-          {
-            "path": "packages/designer/src/components/internal/cx.ts",
-            "sha256": "db61016cece2d645fa7cbac16b5afceeacc64a84ac0b1b6fd7f7b8eeda41e9d0"
-          },
-          {
-            "path": "packages/designer/src/runtime/component-leaf.client.tsx",
-            "sha256": "81a9248ffae8d585644cd93a6a37eea3ed67076bd95cb305a14bc41f66438033"
-          },
-          {
-            "path": "packages/designer/src/runtime/component-leaf.tsx",
-            "sha256": "30253772b01aac86950d52035d3ecf21a16b3d7ab581e2ca565ca810a658d9da"
-          }
-        ],
-        "unresolved": [
-          {
-            "code": "DF2",
-            "evidence": "unresolved injected runtime inventory ../tokens/tokens.js#TOKENS",
-            "file": "packages/designer/src/blocks/DetailView.tsx",
-            "line": 5
-          },
           {
             "code": "DF2",
             "evidence": "unresolved injected runtime inventory ../../tokens/tokens.js#TOKENS",

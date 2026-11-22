@@ -17,7 +17,6 @@ import { galleryInputs, renderGallerySection } from "./gallery.js";
 import { heroInputs, renderHeroSection } from "./hero.js";
 import { logoCloudInputs, renderLogoCloudSection } from "./logo-cloud.js";
 import { mediaInputs, renderMediaSection } from "./media.js";
-import { newsletterInputs, renderNewsletterSection } from "./newsletter.js";
 import { peopleInputs, renderPeopleSection } from "./people.js";
 import { pricingInputs, renderPricingSection } from "./pricing.js";
 import { renderTestimonialsSection, testimonialsInputs } from "./testimonials.js";
@@ -34,7 +33,6 @@ export const GROUP_A_SECTION_RENDERERS: Readonly<Record<string, SectionRenderer>
   "sections.hero": renderHeroSection,
   "sections.logo-cloud": renderLogoCloudSection,
   "sections.media": renderMediaSection,
-  "sections.newsletter": renderNewsletterSection,
   "sections.people": renderPeopleSection,
   "sections.pricing": renderPricingSection,
   "sections.testimonials": renderTestimonialsSection,
@@ -52,7 +50,6 @@ export const GROUP_A_SECTION_INPUTS: Readonly<Record<string, SectionRendererInpu
   "sections.hero": heroInputs,
   "sections.logo-cloud": logoCloudInputs,
   "sections.media": mediaInputs,
-  "sections.newsletter": newsletterInputs,
   "sections.people": peopleInputs,
   "sections.pricing": pricingInputs,
   "sections.testimonials": testimonialsInputs,

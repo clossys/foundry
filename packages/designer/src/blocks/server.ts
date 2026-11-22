@@ -203,4 +203,3 @@ export type { LockupProps } from "./Lockup.js";
 
 export { LogoHero, type LogoHeroProps } from "./LogoHero.js";
 
-export { LegalProse, type LegalProseProps, type LegalProseRevision } from "./LegalProse.js";

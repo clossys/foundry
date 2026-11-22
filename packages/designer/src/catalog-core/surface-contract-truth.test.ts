@@ -70,7 +70,8 @@ it("reads historical package descriptors without injecting fields or changing th
 
 it("carries measured reads and composes on every real generated package descriptor", () => {
   const docs = [...importFoundrySections().fills, ...importFoundryFrames().fills];
-  expect(docs).toHaveLength(62);
+  // BR-RETIRE3: seven retired section fills deleted, 62 -> 55.
+  expect(docs).toHaveLength(55);
   for (const doc of docs) {
     const fill = Object.values((doc as any).sections ?? (doc as any).frames)[0] as any;
     expect(fill.consumption?.scanStatus, fill.slot).toBe("lower-bound");

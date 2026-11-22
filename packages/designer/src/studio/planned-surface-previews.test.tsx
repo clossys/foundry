@@ -52,7 +52,7 @@ describe("planSurfacePreviews", () => {
     // Every planned designer export has sample content; only the document frame waits for its isolated renderer.
     expect(previewed.filter(slot => slot.startsWith("sections.")).sort()).toEqual(filledSlots(fills, "sections"));
     for (const slot of ["sections.activity-feed", "sections.audit-log", "sections.timeline", "sections.usage"]) expect(previewed, slot).toContain(slot);
-    for (const leaf of ["consent", "error-state", "stats", "data-grid", "cards", "call-to-action", "notices", "gallery", "data-table"]) expect(previewed, leaf).toContain(`sections.${leaf}`);
+    for (const leaf of ["consent", "error-state", "stats", "data-grid", "call-to-action", "notices", "gallery", "data-table"]) expect(previewed, leaf).toContain(`sections.${leaf}`);
     expect(previewed.filter(slot => slot.startsWith("frames.")).sort()).toEqual(filledSlots(fills, "frames").filter(slot => slot !== DOCUMENT_FRAME_GAP.slot));
     expect(result.unrenderable).toEqual([DOCUMENT_FRAME_GAP]);
   });
@@ -125,7 +125,6 @@ describe("planSurfacePreviews", () => {
       "sections.chat": ["@clossys/designer/blocks#Chat", specimenDataset.sections.chat.messages[0]!.content],
       "sections.explorer": ["@clossys/designer/blocks#Explorer", specimenDataset.list.items[0]!.label],
       "sections.hero": ["@clossys/designer/blocks#Hero", specimenDataset.sections.hero.heading],
-      "sections.newsletter": ["@clossys/designer/blocks#NewsletterBand", specimenDataset.sections.newsletter.emailLabel],
       "frames.app-shell": ["@clossys/designer/frames#AppFrame", specimenDataset.frames.app.skipLabel],
       "frames.command": ["@clossys/designer/blocks#CommandMenu", specimenDataset.frames.command.trigger],
     };
@@ -133,7 +132,6 @@ describe("planSurfacePreviews", () => {
       expect(result.previews[slot]?.pointer, slot).toBe(pointer);
       expect(html[slot], slot).toContain(text);
     }
-    expect(html["sections.newsletter"]).toContain('type="email"');
     expect(html["frames.app-shell"]).toContain("<main");
     // The command menu is an overlay: it previews closed, as its opener, never as an open dialog over the board.
     expect(html["frames.command"]).not.toContain('role="dialog"');

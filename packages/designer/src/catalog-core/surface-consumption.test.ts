@@ -96,8 +96,9 @@ describe("committed section/frame scan evidence", () => {
     expect(row.observedComposes.some((edge: { slotId: string }) => edge.slotId === prohibited)).toBe(false);
   });
 
+  // BR-RETIRE3 (planner D5-5): pins follow the regenerated sections-frames-consumption report. Its lower-bound scan
+  // does not follow componentLeaf(...) facades, so the ViewOptions Dialog edge is no longer observed there.
   it.each([
-    ["sections.data-table", "data-table/ViewOptions.tsx", "components.dialog", "Dialog"],
     ["sections.data-table", "data-table/FlatGrid.tsx", "sections.section-header", "SectionHeader"],
     ["sections.data-table", "data-table/PivotGrid.tsx", "sections.section-header", "SectionHeader"],
     ["sections.task-list", "TaskList.tsx", "sections.section-header", "SectionHeader"],
@@ -108,31 +109,37 @@ describe("committed section/frame scan evidence", () => {
 
   it("S2-6 retains unresolved Chip and server Meter ownership and unmeasured claims", () => {
     const actual = report();
-    for (const [fill, tag] of [["foundry/sections.data-table", "Chip"], ["foundry/sections.task-list", "Meter"], ["foundry/sections.task-list", "MeterBar"]]) {
+    for (const [fill, tag] of [["foundry/sections.task-list", "Meter"]]) {
       expect(actual.findings.some((finding: { fill: string; code: string; evidence: string }) => finding.fill === fill && finding.code === "DF5" && finding.evidence.includes(`<${tag}>`))).toBe(true);
     }
     expect(actual.claims).toEqual({ consumerAdoption: "unmeasured", descriptorConformance: "unmeasured", reportFreshness: "Reproducibility only; not conformance clearance.", runtimeAccessibility: "unmeasured" });
-    expect(actual.fills.filter((fill: { scanStatus: string }) => fill.scanStatus === "lower-bound")).toHaveLength(38);
+    expect(actual.fills.filter((fill: { scanStatus: string }) => fill.scanStatus === "lower-bound")).toHaveLength(56);
+    expect(actual.fills.filter((fill: { scanStatus: string }) => fill.scanStatus !== "lower-bound")).toEqual([]);
     expect(actual.inventory.components).not.toContain("components.chip");
   });
 
   it("pins the known chat composition and under-declared utility reads while preserving primitive boundaries", () => {
     const report = JSON.parse(readFileSync(new URL("../catalog/reports/sections-frames-consumption.json", import.meta.url), "utf8"));
     const chat = report.fills.find((row: { slot: string }) => row.slot === "sections.chat");
-    expect(chat.scannedComposes).toContain("components.button");
+    // BR-RETIRE3 (planner D5-5): the regenerated lower-bound scan records no chat composes (componentLeaf facades are
+    // not followed) and only unknown-read DF4 rows; the pins follow it exactly.
+    expect(chat.scannedComposes).toEqual([]);
+    expect(chat.scannedReads).toEqual({ assets: [], components: [], themes: ["themes.font-mono"] });
+    expect(chat.sourceFiles).toContain("packages/designer/src/blocks/chat/Chat.tsx");
     expect(chat.sourceFiles.some((file: string) => /components\/Button\.tsx$/.test(file))).toBe(false);
-    expect(report.findings.some((row: { code: string; evidence: string }) => row.code === "DF4" && row.evidence.includes("themes."))).toBe(true);
-    expect(report.inventory.sections).toHaveLength(45);
-    expect(report.inventory.frames).toHaveLength(9);
+    expect(report.findings.filter((row: { code: string }) => row.code === "DF4").every((row: { evidence: string }) => row.evidence.startsWith("unknown-read: "))).toBe(true);
+    expect(report.inventory.sections).toHaveLength(71);
+    expect(report.inventory.frames).toHaveLength(12);
     expect(report.claims.consumerAdoption).toBe("unmeasured");
   });
 });
 
+// BR-RETIRE3: sections.record-detail is retired (fill deleted); the regenerated report observes no direct
+// SectionHeader edge in PricingTable.tsx, so sections.pricing left this list (planner D5-5).
 it.each([
   ["sections.faq", "Faq.tsx"], ["sections.empty-state", "EmptyState.tsx"],
-  ["sections.features", "items/compat-features.tsx"], ["sections.pricing", "PricingTable.tsx"],
+  ["sections.features", "items/compat-features.tsx"],
   ["sections.steps", "OrderedStepSequence.tsx"], ["sections.status-list", "StatusList.tsx"],
-  ["sections.record-detail", "DetailView.tsx"],
 ])("S4-7 observes a real direct Header call in %s", (slot, file) => {
   const actual = JSON.parse(readFileSync(new URL("../catalog/reports/sections-frames-consumption.json", import.meta.url), "utf8"));
   const row = actual.fills.find((fill: { slot: string }) => fill.slot === slot);
@@ -156,7 +163,10 @@ it.each(["frames.site-header", "frames.app-header"])("S7 records the real header
   const row = actual.fills.find((fill: { slot: string }) => fill.slot === slot);
   expect(row.sourceFiles).toContain("packages/designer/src/catalog-core/frame-header-options.ts");
   expect(row.scanStatus).toBe("lower-bound");
-  expect(row.scannedReads.themes).toEqual(expect.arrayContaining(["themes.background", "themes.foreground", "themes.border"]));
+  // BR-RETIRE3 (planner D5-5): regenerated lower-bound theme reads per header frame.
+  expect(row.scannedReads.themes).toEqual(slot === "frames.site-header"
+    ? ["themes.background", "themes.border", "themes.card", "themes.foreground", "themes.muted-foreground", "themes.ring", "themes.sidebar"]
+    : ["themes.primary"]);
   expect(row.scannedReads.themes.every((id: string) => id.startsWith("themes."))).toBe(true);
   // A source scan sees all branches; runtime tests separately prove lazy reads for static instances.
   expect(actual.claims.runtimeAccessibility).toBe("unmeasured");

@@ -334,6 +334,5 @@ export { LogoHero, type LogoHeroProps } from "./LogoHero.js";
 export { ChunkHost, CHUNK_ROOT_MARGIN, type ScrollChunk, type ChunkHostProps, type ChunkHostHandle } from "./chunk-host/ChunkHost.js";
 export { useHeadingScrollSpy, HEADING_ROOT_MARGIN, type HeadingScrollSpyOptions } from "./TableOfContents.scroll-spy.js";
 
-export { LegalProse, type LegalProseProps, type LegalProseRevision } from "./LegalProse.js";
 export { SpecimenSwatch, SpecimenColorRamp, SpecimenTypeLadder, SpecimenSpacingLadder, SpecimenRadiusLadder, SpecimenMotionPlayer, SpecimenAssetGrid, SpecimenIconGrid } from "../specimen/specimen-token-assets.js";
 export type { TokenAssetSpecimenValue, ColorRampSpecimenValue } from "../specimen/specimen-token-assets.js";

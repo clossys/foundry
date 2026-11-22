@@ -21,7 +21,8 @@ describe("Designer page surface defaults", () => {
     const missing = previews.unrenderable.map(row => row.slot);
     const leaves = contracts.slots.filter(row => row.layer === "sections" || row.layer === "frames").map(row => row.id);
     expect([...available, ...missing].sort()).toEqual([...leaves].sort());
-    expect(available.filter(id => id.startsWith("sections.")).length).toBeGreaterThanOrEqual(45);
+    // BR-RETIRE3: seven retired sections lost their fills (50 -> 43 renderable).
+    expect(available.filter(id => id.startsWith("sections.")).length).toBeGreaterThanOrEqual(43);
     expect(available.filter(id => id.startsWith("frames.")).length).toBeGreaterThanOrEqual(9);
     expect(renderToStaticMarkup(<>{designerSurfacePreview("sections.faq", emptyProfile, previews)?.node}</>)).toContain(specimenDataset.sections.faq.items[0]!.question);
     expect(JSON.stringify(input)).toBe(before);

@@ -150,7 +150,6 @@ describe("server-safe entry points resolve under react-server (test 1)", () => {
         "StockItem",
         "assertItemLink",
         "Items",
-        "LegalProse",
         "RecordLedger",
         "Scene",
         "layoutScene",
