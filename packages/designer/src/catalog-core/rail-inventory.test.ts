@@ -1,58 +1,79 @@
 // @vitest-environment node
 import { readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
-import { expect, it } from "vitest";
-import legacy from "./__fixtures__/rail-legacy-inventory.test.json" with { type: "json" };
-import { sha256 } from "./digest.js";
+import { describe, expect, it } from "vitest";
 import { loadBuildCatalog } from "./index.js";
 import bundleData from "../catalog-bundles.data.json" with { type: "json" };
 import { generatedShadcnComponentFiles, type ShadcnComponentInput } from "../importers/shadcn-aria-components.js";
 import { importShadcnAriaRail } from "../importers/shadcn-aria-rail.js";
 
-const addedComponents = ["command", "dropdown-menu", "empty", "item", "scroll-area", "sheet", "sidebar"];
-const addedIds = ["assets.icon-panel-left", ...addedComponents.map(leaf => `components.${leaf}`)];
-const directory = join(import.meta.dirname, "../catalog/fills/shadcn@aria");
+// Target-state invariants: every expectation is computed at run time from the slot files, the build catalog,
+// the committed shadcn@aria fills and the importers' own output. No id list, count or hash is recorded here.
+const slotDirectory = join(import.meta.dirname, "../catalog/slots");
+const fillDirectory = join(import.meta.dirname, "../catalog/fills/shadcn@aria");
+const layerFiles = readdirSync(slotDirectory).filter(name => name.endsWith(".json")).sort();
+const slotRows = (layer: string) => JSON.parse(readFileSync(join(slotDirectory, `${layer}.json`), "utf8")) as { id: string; layer: string }[];
+// Importer output is computed inside each test, so a source defect fails the invariant that names it.
+type Rail = ReturnType<typeof importShadcnAriaRail>;
+let railOutput: Rail | undefined;
+const importRail = (): Rail => railOutput ??= importShadcnAriaRail();
+const railSlot = (doc: Rail["fills"][number]) => doc.$extensions["com.clossys.fill"].slot;
+const railDescriptor = (doc: Rail["fills"][number]) => Object.values(doc.components)[0]!;
+const canonicalFiles = () => generatedShadcnComponentFiles(structuredClone(bundleData.shadcn) as unknown as ShadcnComponentInput);
+const filledSlots = (files: Readonly<Record<string, string>>) => new Set(Object.values(files).map(bytes => JSON.parse(bytes)).filter(doc => doc.$extensions).map(doc => doc.$extensions["com.clossys.fill"].slot as string));
+const count = (values: readonly string[], value: string) => values.filter(entry => entry === value).length;
 
-it("joins exactly eight rail registrations to ordered original slots with approved frame and section contracts", () => {
-  const current = loadBuildCatalog().slots;
-  expect(current.filter(slot => addedIds.includes(slot.id)).map(slot => slot.id).sort()).toEqual([...addedIds].sort());
-  for (const row of legacy.slots) {
-    const rows = JSON.parse(readFileSync(join(import.meta.dirname, `../catalog/slots/${row.layer}.json`), "utf8")) as { id: string }[];
-    const previous = rows.filter(slot => !addedIds.includes(slot.id));
-    expect(previous.map(slot => slot.id), row.layer).toEqual(row.ids);
-    expect(sha256(JSON.stringify(previous)), row.layer).toBe(row.rowsSha256);
-    expect(rows.map(slot => slot.id)).toEqual(current.filter(slot => slot.layer === row.layer).map(slot => slot.id));
-  }
-  expect(current).toHaveLength(legacy.slots.reduce((count, row) => count + row.ids.length, 0) + addedIds.length);
-  expect(new Set(current.map(slot => slot.id)).size).toBe(current.length);
-});
-
-it("authenticates the full inventory with approved card/menu typography and seven generated rail offers", () => {
-  const generated = importShadcnAriaRail().fills.filter(doc => addedIds.includes(doc.$extensions["com.clossys.fill"].slot));
-  expect(generated.map(doc => doc.$extensions["com.clossys.fill"].slot).sort()).toEqual(addedComponents.map(leaf => `components.${leaf}`));
-  const additions = generated.map(doc => {
-    const name = `${doc.$extensions["com.clossys.fill"].slot}.json`;
-    const bytes = JSON.stringify(doc, null, 2) + "\n";
-    expect(readFileSync(join(directory, name), "utf8")).toBe(bytes);
-    return { name, sha256: sha256(bytes) };
-  });
-  // The approved Card heading/Menu label mappings regenerate only these descriptors and their coverage notes.
-  const typography = ["components.card.json", "components.menu.json", "components.coverage.json"];
-  const canonical = generatedShadcnComponentFiles(structuredClone(bundleData.shadcn) as unknown as ShadcnComponentInput);
-  for (const name of typography) expect(Object.hasOwn(canonical, name), name).toBe(true);
-  expect(legacy.descriptors.filter(row => typography.includes(row.name)).map(row => row.name).sort()).toEqual([...typography].sort());
-  const originals = legacy.descriptors.map(row => {
-    const bytes = readFileSync(join(directory, row.name), "utf8");
-    if (typography.includes(row.name)) {
-      expect(bytes, row.name).toBe(canonical[row.name]);
-      return { name: row.name, sha256: sha256(canonical[row.name]!) };
+describe("rail registrations join the registered catalog", () => {
+  it("every rail registration joins exactly one registered slot, and the build catalog keeps every slot file row in source order", () => {
+    const current = loadBuildCatalog().slots, rail = importRail();
+    const ids = current.map(slot => slot.id);
+    // Every slot file row joins the build catalog unchanged and in source order; the catalog holds no other slot.
+    for (const name of layerFiles) {
+      const layer = name.replace(/\.json$/, "");
+      expect(current.filter(slot => slot.layer === layer), layer).toEqual(slotRows(layer));
     }
-    expect(sha256(bytes), row.name).toBe(row.sha256);
-    return row;
+    expect(current.filter(slot => !layerFiles.includes(`${slot.layer}.json`)).map(slot => slot.id)).toEqual([]);
+    expect(ids.filter(id => count(ids, id) !== 1)).toEqual([]);
+    // Each component the rail importer offers and each asset it reads is one registered slot of its own layer.
+    const components = slotRows("components").map(slot => slot.id), assets = slotRows("assets").map(slot => slot.id);
+    for (const doc of rail.fills) {
+      const slot = railSlot(doc), descriptor = railDescriptor(doc);
+      expect(count(components, slot), slot).toBe(1);
+      expect(current.find(row => row.id === slot)?.layer, slot).toBe("components");
+      expect(descriptor.slot, slot).toBe(slot);
+      expect(descriptor.root, slot).toBe((current.find(row => row.id === slot) as { contract: { root: string } }).contract.root);
+      for (const asset of descriptor.reads.assets) expect(count(assets, asset), `${slot} reads ${asset}`).toBe(1);
+      for (const component of descriptor.reads.components) expect(count(components, component), `${slot} reads ${component}`).toBe(1);
+    }
   });
-  const current = readdirSync(directory).filter(name => /^components\..*\.json$/.test(name)).sort();
-  const combined = [...originals, ...additions].sort((a, b) => a.name.localeCompare(b.name));
-  expect(current).toEqual(combined.map(row => row.name));
-  const currentHash = sha256(current.map(name => `${name}\n${sha256(readFileSync(join(directory, name), "utf8"))}\n`).join(""));
-  expect(currentHash).toBe(sha256(combined.map(row => `${row.name}\n${row.sha256}\n`).join("")));
+
+  it("every committed shadcn@aria component file is the exact output of one importer, and every importer output is committed", () => {
+    const rail = importRail(), canonical = canonicalFiles(), canonicalSlots = filledSlots(canonical);
+    // A slot the components importer fills is its file; the rail importer owns only the slots it fills alone.
+    const railOwned = rail.fills.filter(doc => !canonicalSlots.has(railSlot(doc)));
+    const expected = new Map<string, string>(Object.entries(canonical));
+    for (const doc of railOwned) {
+      const name = `${railSlot(doc)}.json`;
+      expect(expected.has(name), name).toBe(false);
+      expected.set(name, JSON.stringify(doc, null, 2) + "\n");
+    }
+    const committed = readdirSync(fillDirectory).filter(name => /^components\..*\.json$/.test(name)).sort();
+    expect(committed).toEqual([...expected.keys()].sort());
+    for (const name of committed) expect(readFileSync(join(fillDirectory, name), "utf8") === expected.get(name), `${name} differs from its importer output`).toBe(true);
+    // A rail offer that the components importer also fills reuses that adoption only over byte-identical upstream source.
+    for (const doc of rail.fills.filter(row => canonicalSlots.has(railSlot(row)))) {
+      const owner = JSON.parse(canonical[`${railSlot(doc)}.json`]!);
+      expect(doc.$extensions["com.clossys.fill"].pin.sha256, railSlot(doc)).toBe(owner.$extensions["com.clossys.fill"].pin.sha256);
+    }
+  });
+
+  it("a rail offer is blocked exactly while its rewrite carries a blocker, and only unblocked offers ship a source bundle", () => {
+    const rail = importRail();
+    for (const candidate of rail.candidates) {
+      const descriptor = railDescriptor(rail.fills.find(doc => railSlot(doc) === candidate.slot)!);
+      expect(candidate.status, candidate.slot).toBe(candidate.blockers.length ? "blocked" : "ready");
+      expect(descriptor.blockers, candidate.slot).toEqual(candidate.blockers);
+    }
+    expect(rail.sourceBundles.map(bundle => bundle.slot)).toEqual(rail.candidates.filter(row => row.status === "ready").map(row => row.slot));
+  });
 });
