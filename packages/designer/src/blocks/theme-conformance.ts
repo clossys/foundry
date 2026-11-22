@@ -34,15 +34,15 @@ export const BLOCK_THEME_CONFORMANCE: readonly BlockThemeRegistration[] = [
   /* The selected stock checkbox paints ink-on-action on action (no CONTRAST_PAIRS entry; action-color.test.ts (not shipped) owns that contrast), not ink-on-accent. */
   { exportName: "AccessMatrix", source: "src/blocks/AccessMatrix.tsx", contrastPairs: [...BASE_READING, ...RAISED_READING] },
   /* R2F-33d2: the mapping select's label and error are the stock field parts, which own their paint. */
-  { exportName: "ColumnMapper", source: "src/blocks/ColumnMapper.tsx", contrastPairs: [...RAISED_READING, "ink-muted/surface-raised"] },
+  { exportName: "ColumnMapper", source: "src/blocks/ColumnMapper.tsx", contrastPairs: [...RAISED_READING, "muted-foreground/surface-raised"] },
   /* R2F-33d2: its select labels are the stock field label, which owns its paint; no ink-secondary of its own. */
   { exportName: "FilterBuilder", source: "src/blocks/FilterBuilder.tsx", contrastPairs: ["ink-primary/surface-base", "ink-primary/surface-raised"] },
   { exportName: "SettingsSection", source: "src/blocks/SettingsSection.tsx", contrastPairs: [...BASE_READING, ...RAISED_READING] },
   { exportName: "FormWizard", source: "src/blocks/FormWizard.tsx", contrastPairs: [...BASE_READING, ...RAISED_READING] },
   { exportName: "Lockup", source: "src/blocks/Lockup.tsx", contrastPairs: ["ink-primary/surface-base", "ink-on-inverse/surface-inverse"] },
   { exportName: "PageHeader", source: "src/blocks/PageHeader.tsx", contrastPairs: BASE_READING },
-  /* Secondary text in the stock menu, dialog and field parts is the themes --muted-foreground, which has no themes contrast pair yet; only the delegated ink is claimed. */
-  { exportName: "AccountMenu", source: "src/blocks/AccountMenu.tsx", contrastPairs: ["ink-primary/surface-raised"] },
+  /* The stock menu paints the themes --foreground and, for secondary text, --muted-foreground on its --popover surface. */
+  { exportName: "AccountMenu", source: "src/blocks/AccountMenu.tsx", contrastPairs: ["foreground/popover", "muted-foreground/popover"] },
   { exportName: "EmptyState", source: "src/blocks/EmptyState.tsx", contrastPairs: BASE_READING },
   { exportName: "ResourceList", source: "src/blocks/ResourceList.tsx", contrastPairs: [...BASE_READING, "ink-muted/surface-base"] },
   { exportName: "DataTable", source: "src/blocks/DataTable.tsx", contrastPairs: BASE_READING },
@@ -51,7 +51,7 @@ export const BLOCK_THEME_CONFORMANCE: readonly BlockThemeRegistration[] = [
   { exportName: "UsageMeter", source: "src/blocks/UsageMeter.tsx", contrastPairs: BASE_READING },
   { exportName: "Stat", source: "src/blocks/Stat.tsx", contrastPairs: BASE_READING },
   { exportName: "Form", source: "src/blocks/Form.tsx", contrastPairs: ["ink-primary/surface-base"] },
-  { exportName: "ConfirmDialog", source: "src/blocks/ConfirmDialog.tsx", contrastPairs: ["ink-primary/surface-raised"] },
+  { exportName: "ConfirmDialog", source: "src/blocks/ConfirmDialog.tsx", contrastPairs: ["foreground/popover"] },
   {
     exportName: "Toolbar", source: "src/blocks/Toolbar.tsx", contrastPairs: [],
     exemptionReason: "Owns layout and roving focus around caller-supplied leading, search and trailing controls; paints no foreground or surface. Each supplied control owns its contrast obligations.",
@@ -73,8 +73,8 @@ export const BLOCK_THEME_CONFORMANCE: readonly BlockThemeRegistration[] = [
   { exportName: "EventItem", source: "src/blocks/EventItem.tsx", contrastPairs: [...BASE_READING, "ink-muted/surface-base", "ink-secondary/surface-sunken"] },
   { exportName: "ActivityFeed", source: "src/blocks/ActivityFeed.tsx", contrastPairs: [...BASE_READING, "ink-muted/surface-base", "ink-secondary/surface-sunken"] },
   { exportName: "AuditLog", source: "src/blocks/AuditLog.tsx", contrastPairs: BASE_READING },
-  /* The selected stock parts paint primary and muted ink; secondary ink is no longer painted. */
-  { exportName: "Timeline", source: "src/blocks/Timeline.tsx", contrastPairs: ["ink-primary/surface-base", "ink-muted/surface-base"] },
+  /* The selected stock Card paints the themes --foreground on --card, and the date is muted ink; secondary ink is no longer painted. */
+  { exportName: "Timeline", source: "src/blocks/Timeline.tsx", contrastPairs: ["foreground/card", "ink-muted/surface-base"] },
   { exportName: "UsageSummary", source: "src/blocks/UsageSummary.tsx", contrastPairs: BASE_READING },
   { exportName: "Faq", source: "src/blocks/Faq.tsx", contrastPairs: GROUNDED_READING },
   { exportName: "PricingTable", source: "src/blocks/PricingTable.tsx", contrastPairs: RAISED_READING },
@@ -92,11 +92,11 @@ export const BLOCK_THEME_CONFORMANCE: readonly BlockThemeRegistration[] = [
   { exportName: "RecordCards", source: "src/blocks/RecordCards.tsx", contrastPairs: [...RAISED_READING, "ink-muted/surface-raised"] },
   { exportName: "CallToAction", source: "src/blocks/CallToAction.tsx", contrastPairs: GROUNDED_READING },
   /*
-   * The selected stock alert paints primary and muted ink on its raised surface for every tone it
-   * supports (info -> default, danger -> destructive); the tinted status plates are not painted.
+   * The selected stock alert paints the themes --foreground and --muted-foreground on its --card surface for
+   * every tone it supports (info -> default, danger -> destructive); the tinted status plates are not painted.
    * Its destructive ink is --color-status-danger, which has no raised-surface pair yet.
    */
-  { exportName: "NoticeList", source: "src/blocks/NoticeList.tsx", contrastPairs: ["ink-primary/surface-raised", "ink-muted/surface-raised"] },
+  { exportName: "NoticeList", source: "src/blocks/NoticeList.tsx", contrastPairs: ["foreground/card", "muted-foreground/card"] },
   { exportName: "Gallery", source: "src/blocks/Gallery.tsx", contrastPairs: ["ink-secondary/surface-raised", "ink-muted/surface-base"] },
   /* The stock Card paints primary and muted ink on its raised surface; an inverse ground paints it inverse raised with on-inverse ink. */
   { exportName: "Panel", source: "src/blocks/Panel.tsx", contrastPairs: [...RAISED_READING, "ink-muted/surface-raised", ...INVERSE_RAISED_READING] },
@@ -105,7 +105,8 @@ export const BLOCK_THEME_CONFORMANCE: readonly BlockThemeRegistration[] = [
     exportName: "ResizablePane", source: "src/blocks/ResizablePane.tsx",
     contrastPairs: ["focus-outline/primary/surface-raised", "link-grid/accent-on-inverse/surface-inverse-raised"],
   },
-  { exportName: "CommandMenu", source: "src/blocks/CommandMenu.tsx", contrastPairs: RAISED_READING },
+  /* The stock dialog and command parts paint the themes --foreground on --popover; the Block's own item description is secondary ink. */
+  { exportName: "CommandMenu", source: "src/blocks/CommandMenu.tsx", contrastPairs: ["foreground/popover", "ink-secondary/surface-raised"] },
   { exportName: "PageBar", source: "src/blocks/PageBar.tsx", contrastPairs: ["ink-primary/surface-base"] },
   { exportName: "AppNavigation", source: "src/blocks/AppNavigation.tsx", contrastPairs: BASE_READING },
   { exportName: "Explorer", source: "src/blocks/Explorer.tsx", contrastPairs: [...BASE_READING, ...RAISED_READING] },
@@ -113,8 +114,9 @@ export const BLOCK_THEME_CONFORMANCE: readonly BlockThemeRegistration[] = [
   { exportName: "AnatomyCallouts", source: "src/blocks/AnatomyCallouts.tsx", contrastPairs: GROUNDED_READING },
   { exportName: "Scene", source: "src/blocks/scene/Scene.tsx", contrastPairs: BASE_READING },
   { exportName: "StockItem", source: "src/blocks/items/StockItem.tsx", contrastPairs: GROUNDED_READING },
-  { exportName: "StockSelect", source: "src/blocks/stock-select.tsx", contrastPairs: ["ink-primary/surface-base"] },
-  { exportName: "StockCombobox", source: "src/blocks/stock-combobox.tsx", contrastPairs: ["ink-primary/surface-base"] },
+  /* The stock select and combo-box triggers paint the themes --foreground on the page ground. */
+  { exportName: "StockSelect", source: "src/blocks/stock-select.tsx", contrastPairs: ["foreground/background"] },
+  { exportName: "StockCombobox", source: "src/blocks/stock-combobox.tsx", contrastPairs: ["foreground/background"] },
   { exportName: "Tree", source: "src/blocks/tree/Tree.tsx", contrastPairs: GROUNDED_READING },
   { exportName: "Items", source: "src/blocks/items/Items.tsx", contrastPairs: GROUNDED_READING },
   { exportName: "GroupedTable", source: "src/blocks/GroupedTable.tsx", contrastPairs: [...RAISED_READING, "ink-primary/surface-sunken"] },

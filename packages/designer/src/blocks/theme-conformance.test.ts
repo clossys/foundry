@@ -102,6 +102,9 @@ function colorUtility(candidate: string): { token?: string; invalid?: string } {
     // Tailwind v4 variable shorthand: prefix-(--var), prefix-(color:--var), optional /opacity.
     const variable = /^\((?:(color|length):)?(--[\w-]+)\)(?:\/\d+)?$/.exec(suffix);
     if (variable?.[1] !== "length" && variable && variable[2]!.startsWith("--color-") && TOKENS[variable[2]!]) return { token: variable[2] };
+    // A stock part reads its themes variable directly (`text-(--foreground)`, U-K4): that is the paint it
+    // delegates, so it counts for a Block's contrast registration. The shorthand stays a finding in a Block's own source.
+    if (variable?.[1] !== "length" && variable && STOCK_COLOR_BY_PROPERTY.has(variable[2]!)) return { token: variable[2], invalid: candidate };
     if (variable?.[1] === "length" && /^(?:text|stroke|border(?:-[trblsexy])?|outline|ring(?:-offset)?)$/.test(prefix)) return {};
   }
   if (suffix.startsWith("[")) {
@@ -774,6 +777,44 @@ describe("stock shadcn colour vocabulary", () => {
     expect(colorUtility("bg-surface-raised")).toEqual({ token: "--color-surface-raised" });
     expect(colorUtility("bg-(--color-action)")).toEqual({ token: "--color-action" });
     expect(colorUtility("bg-primary-imaginary")).toEqual({ invalid: "bg-primary-imaginary" });
+  });
+
+  it("counts a stock part's direct themes read as its paint, and keeps it a finding in a Block's own source", () => {
+    expect(colorUtility("text-(--foreground)")).toEqual({ token: "--foreground", invalid: "text-(--foreground)" });
+    expect(colorUtility("bg-(--popover)")).toEqual({ token: "--popover", invalid: "bg-(--popover)" });
+    expect(colorUtility("bg-(--not-a-themes-variable)")).toEqual({ invalid: "bg-(--not-a-themes-variable)" });
+    const input = realInputs();
+    const file = "src/blocks/PageHeader.tsx";
+    const source = input.sources.get(file)!;
+    expect(source).toContain('className={cx("');
+    input.sources.set(file, source.replace('className={cx("', 'className={cx("text-(--foreground) '));
+    expect(conformanceFindings(input)).toEqual([`${file}: color utility has no token text-(--foreground)`]);
+  });
+
+  // The 8 Blocks whose stock parts paint the themes text (planner ruling R1), and the stock pair each claims.
+  const STOCK_TEXT_BLOCKS = [
+    ["AccountMenu", "foreground/popover"], ["AccountMenu", "muted-foreground/popover"], ["ConfirmDialog", "foreground/popover"],
+    ["CommandMenu", "foreground/popover"], ["NoticeList", "foreground/card"], ["NoticeList", "muted-foreground/card"],
+    ["Timeline", "foreground/card"], ["ColumnMapper", "muted-foreground/surface-raised"],
+    ["StockSelect", "foreground/background"], ["StockCombobox", "foreground/background"],
+  ] as const;
+
+  it("refuses a stock text pair whose foreground no part paints [mutant: drop every direct themes foreground read]", () => {
+    const input = realInputs();
+    for (const [name, id] of STOCK_TEXT_BLOCKS) expect(BLOCK_THEME_CONFORMANCE.find(entry => entry.exportName === name)?.contrastPairs, name).toContain(id);
+    for (const [file, source] of input.sources) input.sources.set(file, source.replace(/-\(--(?:muted-)?foreground\)/g, "-current"));
+    const findings = conformanceFindings(input);
+    for (const [name, id] of STOCK_TEXT_BLOCKS) expect(findings, `${name} ${id}`).toContain(`${name}: contrast foreground is not used or delegated ${id}`);
+  });
+
+  it("contrast-checks the registered stock text pairs against the shipped values [mutant: light --foreground on its card]", () => {
+    const input = realInputs();
+    const light = parseRootDeclarations(input.themeCss);
+    input.themeCss = input.themeCss.replace(/^(\s*--foreground:)[^;]+;/m, `$1 ${light.get("--card")};`);
+    const findings = conformanceFindings(input);
+    for (const name of ["AccountMenu", "ConfirmDialog", "CommandMenu", "NoticeList", "Timeline", "StockSelect", "StockCombobox"]) {
+      expect(findings.some(finding => finding.startsWith(`${name}: light contrast failed`)), name).toBe(true);
+    }
   });
 
   const STOCK_BLOCK = "ResizablePane";

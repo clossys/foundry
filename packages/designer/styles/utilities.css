@@ -940,12 +940,12 @@
 @source inline("forced-colors:fill-current forced-colors:focus-visible:outline");
 @source inline("forced-colors:focus-visible:outline-solid forced-colors:outline forced-colors:outline-1");
 @source inline("forced-colors:outline-2 forced-colors:outline-current forced-colors:outline-offset-2");
-@source inline("forced-colors:outline-solid forced-colors:stroke-current forcedColors: foreground foreignobject form");
-@source inline("form. form.contact form/API formRef format format. formatCopyMessage formatDisclosureLabel");
-@source inline("formatValue formats formatter forms forward forwardRef found founded foundry");
-@source inline("foundry.studio.open-target foundry/ foundry/<export> foundry/GradientMesh");
-@source inline("foundry/components.date-field foundry/components.rich-text foundry/frames.app-shell");
-@source inline("foundry/frames.auth-shell foundry/frames.document foundry/frames.inspector");
+@source inline("forced-colors:outline-solid forced-colors:stroke-current forcedColors: foreground");
+@source inline("foreground/background foreground/card foreground/popover foreignobject form form. form.contact");
+@source inline("form/API formRef format format. formatCopyMessage formatDisclosureLabel formatValue formats");
+@source inline("formatter forms forward forwardRef found founded foundry foundry.studio.open-target foundry/");
+@source inline("foundry/<export> foundry/GradientMesh foundry/components.date-field foundry/components.rich-text");
+@source inline("foundry/frames.app-shell foundry/frames.auth-shell foundry/frames.document foundry/frames.inspector");
 @source inline("foundry/frames.site-footer foundry/frames.site-header foundry/frames.site-shell");
 @source inline("foundry/sections.access-matrix foundry/sections.activity-feed foundry/sections.article");
 @source inline("foundry/sections.audit-log foundry/sections.band foundry/sections.call-to-action");
@@ -1328,7 +1328,8 @@
 @source inline("ms-[calc(var(--spacing,0.25rem)*4)] ms-auto ms-lg ms-md ms-xs msqrt mstyle msub msubsup msup mt-0");
 @source inline("mt-2xl mt-3xl mt-[calc(var(--spacing,0.25rem)*2)] mt-[calc(var(--spacing,0.25rem)*4)] mt-auto mt-lg");
 @source inline("mt-md mt-sm mt-xl mt-xs mtext mthhwq multi multi-colour multiple multiples must mutants mute muted");
-@source inline("muted-foreground mx-[calc(var(--spacing,0.25rem)*2)] mx-[calc(var(--spacing,0.25rem)*4)] mx-auto");
+@source inline("muted-foreground muted-foreground/card muted-foreground/popover muted-foreground/surface-raised");
+@source inline("mx-[calc(var(--spacing,0.25rem)*2)] mx-[calc(var(--spacing,0.25rem)*4)] mx-auto");
 @source inline("my-[calc(var(--spacing,0.25rem)*1)] my-[calc(var(--spacing,0.25rem)*2)] my-lg my-md my-sm my-xl");
 @source inline("my-xs n name name-label name. named named-icons names names. namespace narrow");
 @source inline("narrow-right-panel-drawer native native-consumer-components nav nav-disclosure-panel");

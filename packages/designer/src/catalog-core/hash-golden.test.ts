@@ -188,13 +188,18 @@ describe("real package-surface library golden", () => {
     // (then --check exit 0), U-K4's stock shadcn reads move the component sources and the measured surfaces (themes.spacing
     // now scanned). Values unchanged: composite 96d7e132 -> c9fe2b5b, component 26453c45 -> f74c3c3c,
     // surface 4c409424 -> 8bda9ad9, whole d02289a1 -> 7ad52f48.
-    expect(compositeLibraryHash(library)).toMatchInlineSnapshot(`"sha256:c9fe2b5be3e37a92c9aa00d7d773487faf787718fd8cca25078b91a1b9e3df34"`);
+    // Re-pinned by foundry-build-0048 U-K4-CASCADE run 2 from the same green scripted computation (no `-u`, not from a
+    // failing run): on the committed head be8731a21 it reproduces every pin above byte for byte. TableOfContents.server.tsx
+    // takes font-normal on non-current links (ruling R2), so its measured sha256 moves in the table-of-contents fill and
+    // surface-consumption.data.json (generate-surface-consumption.mjs --write, then --check exit 0). Values and components
+    // unchanged: composite c9fe2b5b -> 935fa6fa, surface 8bda9ad9 -> 619b0b22, whole 7ad52f48 -> 54b74d82.
+    expect(compositeLibraryHash(library)).toMatchInlineSnapshot(`"sha256:935fa6fae14c8f52adecfd1e811250d6b389ce481df65978ddb8a1a86cfbe8b3"`);
     const values = { ...library.values, source: library.source, adoptedAt: library.adoptedAt } as LibraryData;
     expect(libraryHash(values)).toMatchInlineSnapshot(`"fnv1a64:149d271dd68aea6f"`);
     expect(libraryHash(values)).toBe(referenceLibraryHash(values));
     expect(componentLibraryHash({ ...library.components, source: library.source, adoptedAt: library.adoptedAt })).toMatchInlineSnapshot(`"sha256:f74c3c3c8b50cdb4e2420bedd4224d772f4930c1ec4c7aadd927000ba91dc21d"`);
-    expect(surfacePortionHash(library.surfaces!)).toMatchInlineSnapshot(`"sha256:8bda9ad90f96ab178ef08680324e75cea085663e7341c3cb657bcc4f833295bf"`);
-    expect(nodeSha256(stableStringify(library))).toMatchInlineSnapshot(`"7ad52f48fec9a9ecb8d6b48785d68d02070462c0d67e982f00872766089e049d"`);
+    expect(surfacePortionHash(library.surfaces!)).toMatchInlineSnapshot(`"sha256:619b0b22a8437d0cbb7c8190e24932f2e568c8723208e266cf2e03a4054f9e31"`);
+    expect(nodeSha256(stableStringify(library))).toMatchInlineSnapshot(`"54b74d82fd5d67b8cfecf1f693b0738cfc0e2ca90b32ca3c7419e37e45351b1a"`);
     expect(stableStringify(library)).toBe(referenceStringify(library));
   });
 });
