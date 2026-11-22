@@ -17,12 +17,13 @@ Run each step only after the last one exits 0, and tell the owner in plain words
    - An intake with a skipped or failed question is partial. Run `npx advisor intake --answers <file>` again with the missing answers: answers already recorded are kept and never recorded twice.
    - Once every question is recorded the intake is complete and runs once. Afterwards the owner talks to `@clossys-director`, which records later answers as new evidence.
 5. `npx advisor relations --set <file>` records, for context only, which sister repositories exist (`name`, `relation` upstream, downstream or sibling, and a one-line `note`; no path, URL or command). Nothing reads, writes or runs anything in a sister repository.
+6. Then run `clossys run loop.fill --init` (Producer's fill loop on its first trigger; installed as `npx clossys`). This is the last front-door step.
 
 The workspace root is the Git top level of the folder you run in; pass `--root <dir>` only to name it explicitly.
 
 ## Hand-over
 
-After intake, hand over: "Talk to @clossys-director next." In Claude Code that is `Open <repository> in Claude Code and type "/clossys-director loop".`; in Cursor, mention `@clossys-director loop`.
+After step 6, hand over: "Talk to @clossys-director next." In Claude Code that is `Open <repository> in Claude Code and type "/clossys-director".`; in Cursor, mention `@clossys-director`.
 
 Advisor's own loops only run the steps above and then reach Producer through Producer's own loops: `loop.onboard` (doctor, install, init, intake) ends with `clossys run loop.fill --init`, Producer's fill loop on its first trigger, and `loop.update` (doctor, update) ends with `clossys check`, whose failure raises `queue.fix` for Producer's audit loop. `npx advisor conform` runs the L0-L3 round over Advisor's draft tree, loops and `conform.json` against Producer's own loop names, triggers and schemas. The tree is owner-reserved: report its findings and never move a node.
 

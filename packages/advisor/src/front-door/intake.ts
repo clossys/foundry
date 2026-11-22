@@ -14,7 +14,6 @@ import { join } from "node:path";
 import { intakePlanIssues, isSecretPath, type PlannedCommand } from "./guard.js";
 import { ok, refused, tail, type Host, type VerbResult } from "./host.js";
 import { clossysBin } from "./init.js";
-import { INSTALL_RECORD } from "./install.js";
 import { directorCells, slotsByVerb, type AdvisorTree } from "./tree.js";
 
 export const INTAKE_RECORD = "clossys/advisor/intake.json";
@@ -52,7 +51,8 @@ export function runIntake(tree: AdvisorTree, root: string, options: IntakeOption
   const previous = readIntakeRecord(root);
   if (previous === "unreadable") return refused([`intake: ${INTAKE_RECORD} is not a clossys.advisor-intake/1 record; it is left as it is`]);
   if (previous?.status === "complete") return refused([`intake: ${INTAKE_RECORD} is complete; intake runs once. Tell @clossys-director in chat; it records later answers as new evidence.`]);
-  if (!existsSync(join(root, INSTALL_RECORD))) return refused([`intake: no ${INSTALL_RECORD}; run advisor install --from <pack-dir> first`]);
+  const cells = directorCells(options.directorRoots ?? [join(root, "node_modules", "@clossys", "director")]);
+  if (!cells) return refused(["intake: no installed @clossys/director tree; run advisor install --from <pack-dir> first"]);
   const bin = clossysBin(root);
   if (!existsSync(bin)) return refused(["intake: node_modules/.bin/clossys is missing; run advisor update --from <pack-dir> to reinstall"]);
 
@@ -69,9 +69,7 @@ export function runIntake(tree: AdvisorTree, root: string, options: IntakeOption
     else if (/[\r\n]/.test(value)) issues.push(`${id} must be one line`);
     else if (value.length > 500) issues.push(`${id} is longer than 500 characters`);
   }
-  const cells = directorCells(options.directorRoots ?? [join(root, "node_modules", "@clossys", "director")]);
-  if (!cells) issues.push("no installed @clossys/director tree; cannot check which cells the answers inform");
-  else for (const [id, slot] of questions) for (const cell of slot.feeds ?? []) if (!cells.has(cell)) issues.push(`${id} feeds ${cell}, which the installed Director does not have`);
+  for (const [id, slot] of questions) for (const cell of slot.feeds ?? []) if (!cells.has(cell)) issues.push(`${id} feeds ${cell}, which the installed Director does not have`);
   if (issues.length) return refused(issues.map(issue => `intake: refused: ${issue}`));
 
   const kept = previous?.recorded ?? [];
