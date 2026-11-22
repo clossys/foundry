@@ -262,13 +262,7 @@
     "components.keyboard": {
       "standard": "component"
     },
-    "components.link": {
-      "standard": "component"
-    },
     "components.logo": {
-      "standard": "component"
-    },
-    "components.media-player": {
       "standard": "component"
     },
     "components.menu": {
@@ -323,9 +317,6 @@
       "standard": "component"
     },
     "components.spinner": {
-      "standard": "component"
-    },
-    "components.status-mark": {
       "standard": "component"
     },
     "components.switch": {

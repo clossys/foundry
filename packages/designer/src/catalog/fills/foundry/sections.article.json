@@ -27,23 +27,23 @@
   "sections": {
     "article": {
       "composes": [
+        "components.button",
         "components.card",
-        "components.link",
         "components.semantic-content"
       ],
       "configs": {},
       "consumption": {
         "scanStatus": "lower-bound",
         "scannedComposes": [
+          "components.button",
           "components.card",
-          "components.link",
           "components.semantic-content"
         ],
         "scannedReads": {
           "assets": [],
           "components": [
+            "components.button",
             "components.card",
-            "components.link",
             "components.semantic-content"
           ],
           "themes": [
@@ -53,7 +53,7 @@
         "sourceFiles": [
           {
             "path": "packages/designer/src/blocks/ArticleBody.tsx",
-            "sha256": "a079894e03be800872f3b777d9ba6adc7615e2a9ffc644e717a369352f64a6d6"
+            "sha256": "dc042424936bfae943bc5084c3dece1a63d7a1a7367f883589702de3d2f3ce20"
           },
           {
             "path": "packages/designer/src/blocks/ArticleReading.tsx",

@@ -11,7 +11,7 @@ import { DESIGNER_SPECIMEN_REQUIRED_LEAVES } from "../specimen/designer-specimen
 import { studioEvidence, studioSurfaceDefaults, type StudioReportSink } from './studio-render-policy.js';
 
 /** Seats Studio always fills; each is a live Designer leaf (retired leaves are never seated). */
-export const STUDIO_REQUIRED_LEAVES: readonly string[] = ["frames.app-shell", "sections.band", "sections.section-header", "sections.content", "sections.article", "sections.empty-state", "components.badge", "components.disclosure", "components.icon", "components.link", "components.navigation-tree", "components.button", "components.rich-text", "components.semantic-content", "sections.link-index", "components.card", "components.table", ...DESIGNER_SPECIMEN_REQUIRED_LEAVES];
+export const STUDIO_REQUIRED_LEAVES: readonly string[] = ["frames.app-shell", "sections.band", "sections.section-header", "sections.content", "sections.article", "sections.empty-state", "components.badge", "components.disclosure", "components.icon", "components.navigation-tree", "components.button", "components.rich-text", "components.semantic-content", "sections.link-index", "components.card", "components.table", ...DESIGNER_SPECIMEN_REQUIRED_LEAVES];
 const meta = (fill: any) => fill.$extensions["com.clossys.fill"];
 
 /** Preserve authored selections; fill missing seats through Designer's default planners. */

@@ -17,7 +17,7 @@ import type { FormProps as SelectedFormProps } from "../components/Form.js";
 import { componentLeaf } from "../runtime/component-leaf.js";
 
 const LeafForm = componentLeaf<typeof import("../components/Form.js").Form>("components.form");
-const Link = componentLeaf<typeof import("../components/preview-runtime/components/button/button.js").LinkButton>("components.link");
+const Link = componentLeaf<typeof import("../components/preview-runtime/components/button/button.js").LinkButton>("components.button", "LinkButton");
 const SemanticContent = componentLeaf<typeof import("../components/SemanticContent.js").SemanticContent>("components.semantic-content");
 const FieldGroup = componentLeaf<typeof import("../components/preview-runtime/components/field/field.js").FieldGroup>("components.field", "FieldGroup");
 const Alert = componentLeaf<typeof import("../components/preview-runtime/components/banner/alert.js").Alert>("components.banner");

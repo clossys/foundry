@@ -1,5 +1,5 @@
 // Generated from sections.usage by src/generated/props/generate.ts; do not edit.
-export const usageContractSha256 = "d5ade5705ee7898b993ede9fdc1cb73600c5e9a6eb7c80f8857a80c851b496b3";
+export const usageContractSha256 = "aed6330e4427e3ac4cfa6df366223969bee9469ec835e2af55d419d74e60d6f4";
 
 export type UsageCopy = {
   header?: {

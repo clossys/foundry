@@ -73,24 +73,25 @@ const STUDIO_IDS = [
 describe("Designer tree counts (3 L0)", () => {
   const counts = countTree(DESIGNER_TREES, DESIGNER_RETIRED);
 
-  it("has 3 L0, 10 L1, 37 L2 and 209 live L3 (204 before build-0048's five admin record sections; 38 L2 before build-0035's regroup; 39 L2 and 212 L3 before build-0032)", () => {
-    expect({ l0: counts.l0, l1: counts.l1, l2: counts.l2, l3: counts.l3 }).toEqual({ l0: 3, l1: 10, l2: 37, l3: 209 });
+  it("has 3 L0, 10 L1, 37 L2 and 206 live L3 (209 before the owner's 2026-11-20 component retirements; 204 before build-0048's five admin record sections; 38 L2 before build-0035's regroup; 39 L2 and 212 L3 before build-0032)", () => {
+    expect({ l0: counts.l0, l1: counts.l1, l2: counts.l2, l3: counts.l3 }).toEqual({ l0: 3, l1: 10, l2: 37, l3: 206 });
   });
 
   it("counts per L0 in owner order: Theme, Art, Interface", () => {
     expect(counts.byL0).toEqual({
       theme: { l1: 4, l2: 8, l3: 42 },
       art: { l1: 3, l2: 10, l3: 47 },
-      interface: { l1: 3, l2: 19, l3: 120 },
+      interface: { l1: 3, l2: 19, l3: 117 },
     });
     // foundry-build-0048 (Amendment 2026-11-18b, A3): five data-bound admin record sections join Sections Records.
-    expect(counts.byLayer).toEqual({ themes: 42, assets: 47, components: 59, sections: 50, frames: 11 });
+    // Owner 2026-11-20 (BR-RETIRE3): components.link, components.media-player and components.status-mark retire in place.
+    expect(counts.byLayer).toEqual({ themes: 42, assets: 47, components: 56, sections: 50, frames: 11 });
   });
 
-  it("keeps every one of the 258 placed ids (253 before build-0048); 49 retire in place", () => {
+  it("keeps every one of the 258 placed ids (253 before build-0048); 52 retire in place (49 before the owner's 2026-11-20 retirements)", () => {
     expect(counts.placed).toBe(258);
     expect(new Set(placedLeaves(DESIGNER_TREES)).size).toBe(258);
-    expect(counts.retired).toBe(49);
+    expect(counts.retired).toBe(52);
     expect(counts.placed - counts.retired).toBe(counts.l3);
   });
 
@@ -170,8 +171,9 @@ describe("starter leaves resolve to a package default", () => {
     ...packageDefaults.keys(),
   ]);
 
-  it("lists 133 starter leaves (themes 35, assets 29, components 35, sections 26, frames 8; build-0035 re-derived sections from Publisher layouts)", () => {
-    expect(DESIGNER_TREES.map(layer => [layer.layer, layer.starter?.length ?? 0])).toEqual([["themes", 35], ["assets", 29], ["components", 35], ["sections", 26], ["frames", 8]]);
+  // BR-RETIRE3 (owner 2026-11-20): retired components.link leaves the starter list (a retired leaf cannot be a starter), 35 -> 34.
+  it("lists 132 starter leaves (themes 35, assets 29, components 34, sections 26, frames 8; build-0035 re-derived sections from Publisher layouts)", () => {
+    expect(DESIGNER_TREES.map(layer => [layer.layer, layer.starter?.length ?? 0])).toEqual([["themes", 35], ["assets", 29], ["components", 34], ["sections", 26], ["frames", 8]]);
   });
 
   it("every starter leaf, including steps, pricing, table-of-contents and consent, has a default fill", () => {
@@ -355,7 +357,7 @@ describe("slot-defaults.json carries live leaves only (build-0032, audit P9)", (
   const rows = (slotDefaults as { slots: Record<string, unknown> }).slots;
 
   it("has one row per live placed leaf, frames.deck included, and none for a retired leaf", () => {
-    expect(Object.keys(rows)).toHaveLength(209);
+    expect(Object.keys(rows)).toHaveLength(206);
     expect(rows["frames.deck"]).toEqual({ standard: "frame" });
     expect(slotDefaultFindings(rows, DESIGNER_TREES, DESIGNER_RETIRED)).toEqual([]);
   });

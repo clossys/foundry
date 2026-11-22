@@ -38,35 +38,37 @@ it("passes the full host input through the client reference without dropping cal
   expect(node.props.input.host?.onNavigate).toBe(onNavigate);
 });
 
+// BR-RETIRE3: retargeted from retired sections.logo-mark (renderer removed with its fill) to sections.logo-cloud,
+// the live section that draws the consumer's components.logo mark from asset content.
 it("renders actual section content after resolving the client reference", async () => {
-  const leaf = "sections.logo-mark", asset = specimenDataset.assets.mark;
+  const leaf = "sections.logo-cloud", asset = specimenDataset.assets.mark;
   const input = {
-    fill: { leaf, slots: ["mark"], members: [] }, selection: { leaf, members: [] },
-    content: { mark: { value: { slot: asset.slot, member: asset.member, src: asset.src, name: "Example mark" } } },
+    fill: { leaf, slots: ["logos"], members: [] }, selection: { leaf, members: [] },
+    content: { logos: { value: ["Example mark", "Second mark", "Third mark"].map((name, index) => ({ id: `example-${index}`, name, src: asset.src })) } },
   } as unknown as RuntimeRenderInput<ReactNode>;
   // The module namespace stays in this client host provider, outside the
   // serializable input delivered through the server surface reference.
   const { container } = render(<ConsumerComponentProvider value={fixtureConsumerComponents()}><Suspense fallback={<span>Loading</span>}>{surfaceRuntimeRenderers[leaf]!.render(input)}</Suspense></ConsumerComponentProvider>);
-  expect(await screen.findByRole("img", { name: "Example mark" })).toBeInTheDocument();
+  expect(await screen.findByText("Example mark")).toBeInTheDocument();
   expect(container.querySelector("img")).toHaveAttribute("src", asset.src);
-  expect(container.querySelector("section")).toHaveAttribute("data-provenance-leaf", leaf);
+  expect(container.querySelector(`[data-provenance-leaf="${leaf}"]`)).not.toBeNull();
 });
 
 it("refuses to serialize a live consumer module index across a server reference", () => {
   const { profile: _profile, ...componentIndex } = fixtureConsumerComponents();
   const input = { componentIndex } as unknown as RuntimeRenderInput<ReactNode>;
-  expect(() => surfaceRuntimeRenderers["sections.logo-mark"]!.render(input)).toThrow(/install the module index in the client host/);
+  expect(() => surfaceRuntimeRenderers["sections.logo-cloud"]!.render(input)).toThrow(/install the module index in the client host/);
 });
 
 it("binds the live module index through the public client runtime callback", async () => {
-  const leaf = "sections.logo-mark", asset = specimenDataset.assets.mark;
+  const leaf = "sections.logo-cloud", asset = specimenDataset.assets.mark;
   const { profile, ...componentIndex } = fixtureConsumerComponents();
   const input = {
     profile, componentIndex,
-    fill: { leaf, slots: ["mark"], members: [] }, selection: { leaf, members: [] },
-    content: { mark: { value: { slot: asset.slot, member: asset.member, src: asset.src, name: "Selected runtime mark" } } },
+    fill: { leaf, slots: ["logos"], members: [] }, selection: { leaf, members: [] },
+    content: { logos: { value: ["Selected runtime mark", "Second mark", "Third mark"].map((name, index) => ({ id: `selected-${index}`, name, src: asset.src })) } },
   } as unknown as RuntimeRenderInput<ReactNode>;
   const { container } = render(<Suspense>{clientCallbacks([leaf])[surfaceRendererId(leaf)]!(input)}</Suspense>);
-  expect(await screen.findByRole("img", { name: "Selected runtime mark" })).toBeInTheDocument();
+  expect(await screen.findByText("Selected runtime mark")).toBeInTheDocument();
   expect(container.querySelector("img")).toHaveAttribute("src", asset.src);
 });

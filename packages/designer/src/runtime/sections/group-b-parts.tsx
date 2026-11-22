@@ -5,7 +5,7 @@ import { componentLeaf } from "../component-leaf.js";
 
 const Button = componentLeaf<import("../component-leaf.js").ButtonLeaf>("components.button");
 const Checkbox = componentLeaf<typeof import("../../components/preview-runtime/components/checkbox/checkbox.js").Checkbox>("components.checkbox");
-const Link = componentLeaf<typeof import("../../components/preview-runtime/components/button/button.js").LinkButton>("components.link");
+const Link = componentLeaf<typeof import("../../components/preview-runtime/components/button/button.js").LinkButton>("components.button", "LinkButton");
 const SearchField = componentLeaf<typeof import("../../components/SearchField.js").SearchField>("components.search-field");
 const TextField = componentLeaf<typeof import("../../components/preview-runtime/components/text-field/text-field.js").TextField>("components.text-field");
 const Toolbar = componentLeaf<typeof import("../../components/Toolbar.js").Toolbar>("components.toolbar");

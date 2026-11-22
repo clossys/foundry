@@ -77,7 +77,7 @@ function registeredServerSlot(module: string, symbol: string): string | undefine
   return module === `${DOGFOOD_PACKAGE_NAME}/components/server` ? knownSlot(symbol) : serverBlockSlots.get(symbol);
 }
 const interactive = new Set(["button", "input", "select", "textarea", "details", "summary"]);
-const capabilities: Record<string, string> = { button: "components.button", input: "components.text-field", select: "components.select", textarea: "components.text-field", a: "components.link", details: "components.disclosure", summary: "components.disclosure", svg: "components.icon", form: "components.form", fieldset: "components.field", legend: "components.field", label: "components.field", table: "components.table", tr: "components.table", td: "components.table", th: "components.table", thead: "components.table", tbody: "components.table", option: "components.select", progress: "components.progress-bar", meter: "components.meter", dialog: "components.dialog" };
+const capabilities: Record<string, string> = { button: "components.button", input: "components.text-field", select: "components.select", textarea: "components.text-field", a: "components.button", details: "components.disclosure", summary: "components.disclosure", svg: "components.icon", form: "components.form", fieldset: "components.field", legend: "components.field", label: "components.field", table: "components.table", tr: "components.table", td: "components.table", th: "components.table", thead: "components.table", tbody: "components.table", option: "components.select", progress: "components.progress-bar", meter: "components.meter", dialog: "components.dialog" };
 interface Attribute { name: string; value: string; start: number; dynamic: boolean }
 interface Element { tag: string; start: number; end: number; attributes: Attribute[] }
 interface SourceExport { symbol: string; original: string; module?: string }
@@ -292,7 +292,7 @@ function frameStage(node: Element, parsed: Parsed): boolean {
 
 function composeAt(file: string, node: Element, parsed: Parsed, input: DogfoodInput): DogfoodCompose | undefined {
   if (!/^[A-Z]/.test(node.tag)) return undefined;
-  if (input.consumerBoundary) { const identity = importedIdentity(node, parsed, input, file); if (identity?.module === "next/link" && identity.symbol === "default") return { file, line: 0, tag: node.tag, slotId: "components.link", module: identity.module, symbol: identity.symbol }; }
+  if (input.consumerBoundary) { const identity = importedIdentity(node, parsed, input, file); if (identity?.module === "next/link" && identity.symbol === "default") return { file, line: 0, tag: node.tag, slotId: "components.button", module: identity.module, symbol: identity.symbol }; }
   const [binding, ...parts] = node.tag.split("."), imported = parsed.imports.get(binding!);
   if (!imported) {
     const leaf = input.resolvedLeaves && Object.hasOwn(input.resolvedLeaves, `${file}:${binding}`) ? input.resolvedLeaves[`${file}:${binding}`] : undefined;

@@ -29,7 +29,6 @@
       "composes": [
         "components.meter",
         "components.semantic-content",
-        "components.status-mark",
         "sections.empty-state"
       ],
       "configs": {},
@@ -38,22 +37,20 @@
         "scannedComposes": [
           "components.meter",
           "components.semantic-content",
-          "components.status-mark",
           "sections.empty-state"
         ],
         "scannedReads": {
           "assets": [],
           "components": [
             "components.meter",
-            "components.semantic-content",
-            "components.status-mark"
+            "components.semantic-content"
           ],
           "themes": []
         },
         "sourceFiles": [
           {
             "path": "packages/designer/src/blocks/UsageMeter.tsx",
-            "sha256": "3d69b266f801c25a55fd76b173709368f17e6142b2b018e95764bc878e165995"
+            "sha256": "3d4abf185969c72e853866807f71b33676cf1170a3cbb74a9f297d255d9e3900"
           },
           {
             "path": "packages/designer/src/blocks/UsageSummary.tsx",

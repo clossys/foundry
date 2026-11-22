@@ -140,7 +140,8 @@ describe("component build IA registry", () => {
     expect(build.placements.filter(row => row.layer === "themes" || row.layer === "assets")).toEqual(runtime.placements);
     expect(build.retired).toEqual(retired);
     // planner:C5-DREC: owner D2/LAD-1/LAD-2 retirements, plus foundry-build-0018 (22 studio-killed and 6 recut; frames.sheet and frames.command stay live, review r1 P1), plus foundry-build-0032 audit P12 (assets.icon-business and assets.icon-institution dedupe into assets.icon-organization); retired-leaves.test.ts pins the ids.
-    expect(retired).toHaveLength(43);
+    // BR-RETIRE3: the owner's 2026-11-20 three (components.link, components.media-player, components.status-mark) make 46.
+    expect(retired).toHaveLength(46);
     const component = build.slots.find(slot => slot.layer === "components")!;
     component.id = "components.changed";
     expect(loadBuildCatalog().slots.some(slot => slot.id === "components.changed")).toBe(false);

@@ -35,7 +35,7 @@ export const renderPageHeader: SectionRenderer = input => {
     return { id, label, href: stringField(row, "href") };
   });
   const actions = actionsOf(LEAF, "actions", slotValue(input, "actions"), 2).map((action, index) => {
-    if (action.href) throw new TypeError(`${LEAF}: action ${action.label} has an href, but the contract allows Buttons only (NEED: components.link)`);
+    if (action.href) throw new TypeError(`${LEAF}: action ${action.label} has an href, but the contract allows Buttons only (NEED: components.button LinkButton)`);
     return <Button key={action.id} variant={index === 0 ? "primary" : "secondary"} onPress={noop}>{action.label}</Button>;
   });
   return (

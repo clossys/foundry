@@ -109,7 +109,7 @@ export const APP_FRAME_MATERIALS = [
   {
     id: "flow-canvas", layer: "blocks", exportName: "FlowCanvas", component: FlowCanvas, source: "src/blocks/FlowCanvas.tsx",
     regions: ["content", "viewport", "drawing", "edge-labels", "nodes"],
-    dependencies: [{ exportName: "StatusMark", source: "src/components/StatusMark.tsx" }],
+    dependencies: [],
     configs: [{ prop: "orientation", values: ["horizontal", "vertical"], default: "horizontal", source: "src/blocks/flow-canvas-layout.ts" }],
     authoredInputs: ["nodes", "edges", "label", "emptyMessage", "outgoingLabel", "orientation", "selectedId", "onSelect"],
   },

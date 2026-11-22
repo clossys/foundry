@@ -27,7 +27,6 @@
         "components.button",
         "components.dialog",
         "components.icon",
-        "components.link",
         "components.menu",
         "components.popover",
         "components.semantic-content",
@@ -39,7 +38,6 @@
           "components.button",
           "components.dialog",
           "components.icon",
-          "components.link",
           "components.menu",
           "components.popover",
           "components.semantic-content",
@@ -51,7 +49,6 @@
             "components.button",
             "components.dialog",
             "components.icon",
-            "components.link",
             "components.menu",
             "components.popover",
             "components.semantic-content",
@@ -76,7 +73,7 @@
           },
           {
             "path": "packages/designer/src/blocks/PageBar.tsx",
-            "sha256": "2bce2bd8cc168716665febaa396c6b3eb6b920be4f006c896b77322842282744"
+            "sha256": "aab1aa12153aab729c402423877826b4fe25724b086e1b8752ab3502a6686b7c"
           },
           {
             "path": "packages/designer/src/blocks/shell-menu.tsx",

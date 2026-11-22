@@ -2,7 +2,7 @@ import type { CSSProperties, ReactNode } from "react";
 import { assertNoNestedInteractive } from "../stretched-link.js";
 import { Meter } from "../../components/Meter.server.js";
 import type { MeterDirection } from "../../components/Meter.js";
-import { StatusMark, type StatusMarkTone } from "../../components/StatusMark.js";
+import type { StatusMarkTone } from "../../components/StatusMark.js";
 import { cx } from "../../components/internal/cx.js";
 import { UI_BORDER_HAIRLINE } from "../../components/internal/ui-vars.js";
 
@@ -291,7 +291,7 @@ function dividedRow(index: number, count: number): { className: string | undefin
 }
 
 function Status({ status }: { status: SpecimenStatus | undefined }) {
-  return status ? <StatusMark tone={status.tone}>{status.label}</StatusMark> : null;
+  return status ? <span data-tone={status.tone}>{status.label}</span> : null;
 }
 
 /** Decorative number; the enclosing key list carries the accessible ordinal. */
@@ -366,7 +366,7 @@ function MeterBody({ part, marker }: { part: SpecimenMeterPart; marker?: number 
 }
 
 function CellContent({ cell }: { cell: SpecimenTableCell }) {
-  if (cell.status) return <StatusMark tone={cell.status.tone}>{cell.status.label}</StatusMark>;
+  if (cell.status) return <span data-tone={cell.status.tone}>{cell.status.label}</span>;
   return <>{cell.text}</>;
 }
 

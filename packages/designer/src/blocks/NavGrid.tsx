@@ -10,7 +10,7 @@ import { componentLeaf } from "../runtime/component-leaf.js";
 
 const Button = componentLeaf<import("../runtime/component-leaf.js").ButtonLeaf>("components.button");
 const SemanticContent = componentLeaf<typeof import("../components/SemanticContent.js").SemanticContent>("components.semantic-content");
-const Link = componentLeaf<typeof import("../components/preview-runtime/components/button/button.js").LinkButton>("components.link");
+const Link = componentLeaf<typeof import("../components/preview-runtime/components/button/button.js").LinkButton>("components.button", "LinkButton");
 
 /** Section root provenance (D1): the selected Foundry fill this block is. */
 const SECTION_STAMP = dsAttrs("sections", "sections.link-index", "foundry/sections.link-index");

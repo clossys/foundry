@@ -31,7 +31,6 @@
         "components.button",
         "components.card",
         "components.icon",
-        "components.link",
         "components.navigation-tree",
         "components.semantic-content",
         "frames.sheet"
@@ -42,7 +41,6 @@
           "components.button",
           "components.card",
           "components.icon",
-          "components.link",
           "components.navigation-tree",
           "components.semantic-content",
           "frames.sheet"
@@ -53,7 +51,6 @@
             "components.button",
             "components.card",
             "components.icon",
-            "components.link",
             "components.navigation-tree",
             "components.semantic-content"
           ],
@@ -72,7 +69,7 @@
           },
           {
             "path": "packages/designer/src/blocks/AppNavigation.tsx",
-            "sha256": "9b60271cc0953730111bfef428c5fda381774c19782a282778025a4ed15569b3"
+            "sha256": "7c6df2bd9bba50b3373594c97702f6254283bd1bf8075076df62f7351b43190d"
           },
           {
             "path": "packages/designer/src/blocks/frame-navigation.ts",

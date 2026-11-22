@@ -152,9 +152,9 @@ function violations(uses: readonly Use[]): Record<string, string[]> {
   return Object.fromEntries(Object.entries(rows).sort(([a], [b]) => a.localeCompare(b)).map(([file, set]) => [file, [...set].sort()]));
 }
 
-const BASELINE: Readonly<Record<string, readonly string[]>> = {
-  "shell/SiteHeader.tsx": ["components.button.LinkButton -> aria-current"],
-};
+// BR-RETIRE3: the stock LinkButton now declares aria-current (approved preview adaptation), so the
+// frozen SiteHeader row is fixed and removed; the baseline is empty and stays ratchet-only.
+const BASELINE: Readonly<Record<string, readonly string[]>> = {};
 
 describe("stock-bound slot props (T14)", () => {
   const uses = compositionFiles().flatMap(file => leafUses(file));

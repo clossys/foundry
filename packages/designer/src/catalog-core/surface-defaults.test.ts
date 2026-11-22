@@ -32,20 +32,18 @@ const MEASURED_MARKETING_DECLARATIONS = [
   {
     slot: "sections.content",
     // components.card: the authored summary aside (943cabcbd), composed through componentLeaf("components.card") in ContentSection.
-    composes: ["components.link", "components.semantic-content", "components.card"],
+    // BR-RETIRE3 (owner 2026-11-20): components.link is retired; the content links render components.button's LinkButton.
+    composes: ["components.button", "components.semantic-content", "components.card"],
   },
   {
     slot: "sections.logo-cloud",
     themes: ["themes.spacing", "themes.background", "themes.card", "themes.popover", "themes.secondary", "themes.accent", "themes.muted", "themes.sidebar", "themes.sidebar-accent", "themes.animate-marquee", "themes.animate-marquee-vertical", "themes.animate-shiny-text", "themes.primary", "themes.border", "themes.input", "themes.sidebar-border", "themes.radius", "themes.destructive", "themes.foreground", "themes.card-foreground", "themes.popover-foreground", "themes.primary-foreground", "themes.secondary-foreground", "themes.accent-foreground", "themes.muted-foreground", "themes.sidebar-foreground", "themes.sidebar-primary-foreground", "themes.sidebar-accent-foreground", "themes.sidebar-primary", "themes.ring", "themes.sidebar-ring", "themes.font-sans", "themes.font-heading", "themes.font-mono"],
   },
   {
-    slot: "sections.logo-mark",
-    composes: ["components.logo", "components.semantic-content"],
-  },
-  {
     slot: "frames.site-footer",
     themes: ["themes.background", "themes.card", "themes.popover", "themes.secondary", "themes.accent", "themes.muted", "themes.sidebar", "themes.sidebar-accent", "themes.foreground", "themes.card-foreground", "themes.popover-foreground", "themes.primary-foreground", "themes.secondary-foreground", "themes.accent-foreground", "themes.muted-foreground", "themes.sidebar-foreground", "themes.sidebar-primary-foreground", "themes.sidebar-accent-foreground", "themes.border", "themes.input", "themes.sidebar-border", "themes.spacing", "themes.font-sans", "themes.font-heading", "themes.font-mono", "themes.primary", "themes.sidebar-primary", "themes.radius", "themes.ring", "themes.sidebar-ring", "themes.destructive"],
-    composes: ["components.link", "components.icon", "components.logo", "components.separator", "components.semantic-content", "components.button"],
+    // BR-RETIRE3 (owner 2026-11-20): components.link becomes components.button, the first occurrence kept.
+    composes: ["components.button", "components.icon", "components.logo", "components.separator", "components.semantic-content"],
   },
 ] as const;
 
@@ -85,7 +83,7 @@ describe("surface default fills", () => {
     }
     expect(plan.rows.find(row => row.slot === "frames.inspector")).toEqual({ slot: "frames.inspector", status: "default", basis: "preference", source: "foundry", fill: "foundry/frames.inspector", reasons: [] });
     for (const leaf of ["filter-builder", "settings", "wizard"]) expect(plan.rows.find(row => row.slot === `sections.${leaf}`), leaf).toMatchObject({ status: "default", source: "foundry", fill: `foundry/sections.${leaf}`, reasons: [] });
-    for (const slot of ["sections.chat", "sections.explorer", "sections.hero", "sections.newsletter", "frames.app-shell", "frames.app-sidebar", "frames.command"]) {
+    for (const slot of ["sections.chat", "sections.explorer", "sections.hero", "frames.app-shell", "frames.app-sidebar", "frames.command"]) {
       expect(plan.rows.find(row => row.slot === slot), slot).toMatchObject({ status: "default", source: "foundry", reasons: [] });
     }
   });

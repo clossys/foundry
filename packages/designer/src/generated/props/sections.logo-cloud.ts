@@ -1,5 +1,5 @@
 // Generated from sections.logo-cloud by src/generated/props/generate.ts; do not edit.
-export const logoCloudContractSha256 = "541f367223cdf62cba5287a2fac1686720debe7f8da1a8e8d3f302be045768de";
+export const logoCloudContractSha256 = "e883cf16f24a2216247124f34318f4de8b2a15aad1085c2abaf60b56a06256e3";
 
 export type LogoCloudCopy = {
   header?: {

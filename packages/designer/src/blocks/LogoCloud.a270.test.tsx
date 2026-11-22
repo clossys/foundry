@@ -4,6 +4,7 @@ import { afterEach, describe, expect, it } from "vitest";
 import selected from "../specimen/default-component-preview-profile.json" with { type: "json" };
 import * as components from "../components/index.js";
 import * as itemModule from "../components/item/item.js";
+import * as buttonModule from "../components/preview-runtime/components/button/button.js";
 import { importShadcnAriaRail } from "../importers/shadcn-aria-rail.js";
 import { importFoundrySections } from "../importers/foundry-sections.js";
 import { packageSurfacePreview } from "../specimen/planned-surface-previews.js";
@@ -24,7 +25,7 @@ function selection(override = false): ConsumerComponentSelection {
   const complete = { ...profile, components: { ...profile.components, "components.item": item }, files: [...profile.files, ...rail.files] };
   return { profile: { components: complete }, selectionHash: complete.selectionHash,
     descriptors: Object.fromEntries(Object.entries(complete.components).map(([id, value]) => [id, componentDescriptorHash(value.descriptor)])),
-    modules: { "@clossys/designer/components": components, "components/item/item.tsx": override ? { ...itemModule, ItemTitle: (props: React.ComponentProps<typeof itemModule.ItemTitle>) => <itemModule.ItemTitle {...props} data-consumer-title="" /> } : itemModule } };
+    modules: { "@clossys/designer/components": components, "components/button/button.tsx": buttonModule, "components/item/item.tsx": override ? { ...itemModule, ItemTitle: (props: React.ComponentProps<typeof itemModule.ItemTitle>) => <itemModule.ItemTitle {...props} data-consumer-title="" /> } : itemModule } };
 }
 
 afterEach(cleanup);

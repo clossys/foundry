@@ -12,7 +12,7 @@ import { componentLeaf } from "../component-leaf.js";
 
 const BarChart = componentLeaf<typeof import("../../charts/BarChart.js").BarChart>("components.chart-bar");
 const LineChart = componentLeaf<typeof import("../../charts/LineChart.js").LineChart>("components.chart-line");
-const Link = componentLeaf<typeof import("../../components/preview-runtime/components/button/button.js").LinkButton>("components.link");
+const Link = componentLeaf<typeof import("../../components/preview-runtime/components/button/button.js").LinkButton>("components.button", "LinkButton");
 const Logomark = componentLeaf<typeof import("../../components/Logomark.js").Logomark>("components.logo");
 const SemanticContent = componentLeaf<typeof import("../../components/SemanticContent.js").SemanticContent>("components.semantic-content");
 

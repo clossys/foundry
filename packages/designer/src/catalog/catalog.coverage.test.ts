@@ -41,7 +41,6 @@ import type { TokenId } from "./types.js";
 import { CANONICAL_SECTION_BLOCK_REGISTRATIONS } from "./blocks.js";
 import { resolveComponentId } from "./component-aliases.js";
 import retiredLeaves from "./retired.json" with { type: "json" };
-import legalProseFill from "./fills/foundry/sections.legal-prose.json" with { type: "json" };
 import comparisonFill from "./fills/foundry/sections.comparison.json" with { type: "json" };
 import sectionSlots from "./slots/sections.json" with { type: "json" };
 
@@ -551,7 +550,6 @@ describe("block catalog coverage", () => {
 
   it("registers each canonical section export once, at a section slot, declared in its own source", () => {
     expect(CANONICAL_SECTION_BLOCK_REGISTRATIONS.map(entry => [entry.id, entry.export])).toEqual([
-      ["sections.legal-prose", "LegalProse"],
       ["sections.comparison", "LibraryBoardSection"],
       ...["swatch", "color-ramp", "type-ladder", "spacing-ladder", "radius-ladder", "motion-player", "asset-grid", "icon-grid"].map(leaf =>
         [`sections.specimen-${leaf}`, `Specimen${leaf.split("-").map(part => part[0]!.toUpperCase() + part.slice(1)).join("")}`]),
@@ -567,21 +565,6 @@ describe("block catalog coverage", () => {
     }
     const comparison = comparisonFill.sections.comparison;
     expect(comparison.consumption.sourceFiles.map(file => file.path)).toContain("packages/designer/src/blocks/library-board/LibraryBoardSection.tsx");
-  });
-
-  it("registers LegalProse exactly once at its existing canonical section and own implementation", () => {
-    const fill = legalProseFill.sections["legal-prose"];
-    const registration = CANONICAL_SECTION_BLOCK_REGISTRATIONS.find(entry => entry.export === "LegalProse")!;
-    expect(registration).toEqual({ id: "sections.legal-prose", export: "LegalProse", source: "src/blocks/LegalProse.tsx" });
-    expect(registration.id).toBe(fill.slot);
-    expect(registration.export).toBe(fill.impl.export);
-    expect(legalProseFill.$extensions["com.clossys.fill"].slot).toBe(registration.id);
-    expect(sectionSlots.filter(slot => slot.id === registration.id).map(slot => slot.id)).toEqual([registration.id]);
-    expect(sectionSlots.find(slot => slot.id === registration.id)?.contract.kind).toBe("section");
-    expect(fill.consumption.sourceFiles.map(file => file.path)).toContain(`packages/designer/${registration.source}`);
-    expect(existsSync(join(dirname(fileURLToPath(import.meta.url)), "..", registration.source.replace(/^src\//, "")))).toBe(true);
-    expect(BLOCK_ENTRIES.some(entry => entry.export === registration.export)).toBe(false);
-    expect(BLOCK_EXPORT_EXCLUSIONS).not.toHaveProperty(registration.export);
   });
 
   it("points every recipe at a built leaf with its own export", () => {

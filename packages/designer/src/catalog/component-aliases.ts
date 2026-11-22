@@ -8,7 +8,8 @@ export const COMPONENT_ALIASES: Readonly<Record<string, string>> = Object.freeze
   "act.menu": "components.menu",
   "act.toolbar": "components.toolbar",
   "act.toggle-button": "components.toggle-button",
-  "act.link": "components.link",
+  // Owner 2026-11-20 (BR-RETIRE3): components.link is retired with replacedBy components.button (the LinkButton part).
+  "act.link": "components.button",
   "act.breadcrumb": "components.breadcrumbs",
   "reveal.tabs": "components.tabs",
   "act.navigation-tree": "components.navigation-tree",
@@ -42,7 +43,6 @@ export const COMPONENT_ALIASES: Readonly<Record<string, string>> = Object.freeze
   "depict.line-chart": "components.chart-line",
   "depict.area-chart": "components.chart-area",
   "inform.banner": "components.banner",
-  "inform.status-mark": "components.status-mark",
   "inform.toast": "components.toast",
   "inform.progress-bar": "components.progress-bar",
   "inform.spinner": "components.spinner",

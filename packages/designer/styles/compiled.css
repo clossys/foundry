@@ -3695,9 +3695,6 @@
   .text-code-block {
     font-size: var(--text-code-block, 13px);
   }
-  .text-display-l {
-    font-size: var(--text-display-l, 56px);
-  }
   .text-display-m {
     font-size: var(--text-display-m, 44px);
   }

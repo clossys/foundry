@@ -10,12 +10,8 @@ import { GROUP_A_CONTENT, GROUP_A_LEAVES, type GroupALeaf } from "./group-a-data
 import { groupBRenderers } from "./group-b.js";
 import { groupBDataset } from "./group-b-dataset.js";
 import { GROUP_C_LEAVES, sectionDatasetC, sectionRenderersC, type GroupCLeaf } from "./group-c.js";
-import { logoMarkRenderer } from "./logo-mark.js";
 import { signInFormRenderer } from "./sign-in-form.js";
-import { boundaryMessageRenderer } from "./boundary-message.js";
-import { legalProseRenderer } from "./legal-prose.js";
 import { accountSummaryRenderer } from "./account-summary.js";
-import { logoHeroRenderer } from "./logo-hero.js";
 
 type SampleContent = Readonly<Record<string, RuntimeJson>>;
 type SampleOf = (dataset: SpecimenDataset) => SampleContent;
@@ -50,4 +46,4 @@ const groupC = adaptSectionGroup(sectionRenderersC, leaf => {
   return short ? sectionDatasetC[short] : undefined;
 });
 
-export const sectionRenderers = mergeRendererGroups(groupA, groupB, groupC, { "sections.logo-hero": logoHeroRenderer, "sections.logo-mark": logoMarkRenderer, "sections.sign-in-form": signInFormRenderer, "sections.boundary-message": boundaryMessageRenderer, "sections.legal-prose": legalProseRenderer, "sections.account-summary": accountSummaryRenderer });
+export const sectionRenderers = mergeRendererGroups(groupA, groupB, groupC, { "sections.sign-in-form": signInFormRenderer, "sections.account-summary": accountSummaryRenderer });

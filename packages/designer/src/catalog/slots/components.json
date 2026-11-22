@@ -228,7 +228,7 @@
         ]
       },
       "composes": [
-        "components.link"
+        "components.button"
       ],
       "apg": "breadcrumb",
       "copy": {
@@ -3970,7 +3970,7 @@
       },
       "composes": [
         "components.badge",
-        "components.link",
+        "components.button",
         "components.semantic-content",
         "components.table"
       ]

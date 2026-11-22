@@ -1,5 +1,4 @@
 import { useId, useMemo, useRef, useState, type KeyboardEvent, type ReactNode } from "react";
-import { StatusMark } from "../components/StatusMark.js";
 import { cx } from "../components/internal/cx.js";
 import { UI_BORDER_HAIRLINE, UI_BORDER_RULE } from "../components/internal/ui-vars.js";
 import { layoutFlowCanvas, type FlowCanvasEdge, type FlowCanvasNode, type FlowCanvasOrientation } from "./flow-canvas-layout.js";
@@ -214,7 +213,7 @@ export function FlowCanvas({ nodes, edges, label, emptyMessage, outgoingLabel, o
                   >
                     {node.kind !== undefined && <span id={id + "-1"} className="block max-w-full truncate text-caption text-ink-secondary">{node.kind}</span>}
                     <span id={labelId} className="line-clamp-2 max-w-full text-body-s font-semibold text-ink-primary">{node.label}</span>
-                    {node.status !== undefined && <StatusMark id={id + "-2"} tone={node.status.tone} className="max-w-full">{node.status.label}</StatusMark>}
+                    {node.status !== undefined && <span id={id + "-2"} data-tone={node.status.tone} className="max-w-full">{node.status.label}</span>}
                   </button>
                   {outgoing.length > 0 && (
                     <div id={id + "-3"} className="sr-only">

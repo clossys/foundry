@@ -9,7 +9,6 @@ import { dsAttrs } from "../catalog-core/provenance-attrs.js";
 import { componentLeaf } from "../runtime/component-leaf.js";
 
 const Meter = componentLeaf<typeof import("../components/Meter.server.js").Meter>("components.meter");
-const StatusMark = componentLeaf<typeof import("../components/StatusMark.js").StatusMark>("components.status-mark");
 const SemanticContent = componentLeaf<typeof import("../components/SemanticContent.js").SemanticContent>("components.semantic-content");
 
 /** Section root provenance (D1): the selected Foundry fill this block is. */
@@ -59,7 +58,7 @@ export function TaskList({ items, statusLabels, progressText, emptyState, classN
                 className={cx("relative isolate flex items-start gap-md py-md", index > 0 ? "border-t border-line-base" : undefined, linkedClassName)}
                 style={{ minBlockSize: item.href !== undefined ? UI_LAYOUT_TAP_TARGET : undefined, borderBlockStartWidth: index > 0 ? UI_BORDER_HAIRLINE : undefined }}
               >
-                <StatusMark tone={isDone ? "success" : item.status === "in-progress" ? "info" : item.status === "blocked" ? "danger" : "neutral"} className="shrink-0">{statusLabels[item.status]}</StatusMark>
+                <SemanticContent as="span" data-tone={isDone ? "success" : item.status === "in-progress" ? "info" : item.status === "blocked" ? "danger" : "neutral"} className="shrink-0">{statusLabels[item.status]}</SemanticContent>
                 <SemanticContent as="div" className="min-w-0 flex-1 break-words">
                   <SemanticContent as="p" className={cx("text-body", isDone ? "text-ink-muted" : "text-ink-primary")}>
                     {item.href !== undefined ? <CardLinkTitle href={item.href} frame="plain" ground="base">{item.title}</CardLinkTitle> : item.title}

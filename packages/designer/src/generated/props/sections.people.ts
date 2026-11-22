@@ -1,5 +1,5 @@
 // Generated from sections.people by src/generated/props/generate.ts; do not edit.
-export const peopleContractSha256 = "baeb2862a1707f69ed8dade1dab4a6630247207e4530a3adcf1fdd75f3bc06fa";
+export const peopleContractSha256 = "661b4ab3479a24c75810d57d9424c2b8c61a86cf42a65392f812993bd6c33310";
 
 export type PeopleCopy = {
   header?: {

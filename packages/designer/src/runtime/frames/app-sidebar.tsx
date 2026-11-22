@@ -15,7 +15,7 @@ import { frameContent, guardedNavigate, type FrameInput, type FrameJson } from "
 import { componentLeaf } from "../../runtime/component-leaf.js";
 
 const Button = componentLeaf<import("../component-leaf.js").ButtonLeaf>("components.button");
-const Link = componentLeaf<typeof import("../../components/preview-runtime/components/button/button.js").LinkButton>("components.link");
+const Link = componentLeaf<typeof import("../../components/preview-runtime/components/button/button.js").LinkButton>("components.button", "LinkButton");
 
 const read = frameContent("frames.app-sidebar");
 type Presentation = "docked" | "collapsed" | "overlay";

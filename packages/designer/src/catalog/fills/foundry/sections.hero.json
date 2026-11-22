@@ -27,14 +27,12 @@
   "sections": {
     "hero": {
       "composes": [
-        "components.media-player",
         "components.semantic-content"
       ],
       "configs": {},
       "consumption": {
         "scanStatus": "lower-bound",
         "scannedComposes": [
-          "components.media-player",
           "components.semantic-content"
         ],
         "scannedReads": {
@@ -42,7 +40,6 @@
             "assets.pattern"
           ],
           "components": [
-            "components.media-player",
             "components.semantic-content"
           ],
           "themes": []
@@ -70,11 +67,11 @@
           },
           {
             "path": "packages/designer/src/blocks/Hero.tsx",
-            "sha256": "f70b4edc8fcf7f7c7fd8f7a6cead59014a6f6b282d897ea6c9cd4557eb3edad1"
+            "sha256": "1be6ea2f34d587577b48ed3f9305064bcbac5f80a26b096ee845c71c32209ab0"
           },
           {
             "path": "packages/designer/src/blocks/hero/hero-backdrop.ts",
-            "sha256": "d59f217fe819d1bc09d24e154c1912dfac4bc7203c4073abf8f5b94f1f24efcb"
+            "sha256": "8bd2e766ac70f87948f3ca5e95b432da437f2dac9db0fe9c13af0ecf20d2411d"
           },
           {
             "path": "packages/designer/src/blocks/hero/HeroIntro.tsx",
@@ -91,10 +88,6 @@
           {
             "path": "packages/designer/src/blocks/section-ground.ts",
             "sha256": "ebdb8cb4e374aacc923896a97fbc1d94f8fc73470b711c80be8fcf307c04be14"
-          },
-          {
-            "path": "packages/designer/src/catalog-assets/media.ts",
-            "sha256": "518af66b317c4dcca79c99e33098a942430522f024c2c6416cb9ca817aa49313"
           },
           {
             "path": "packages/designer/src/catalog-assets/pattern-backdrop.ts",
@@ -166,7 +159,7 @@
             "code": "DF2",
             "evidence": "unresolved injected runtime inventory ../tokens/tokens.js#TOKENS",
             "file": "packages/designer/src/blocks/Hero.tsx",
-            "line": 7
+            "line": 6
           },
           {
             "code": "DF2",
