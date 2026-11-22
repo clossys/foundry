@@ -155,7 +155,7 @@ const treeHash = (files) =>
  * sha256 and treeHash stay local and certify/source.test.ts (not shipped) pins them equal to source.ts's.
  */
 const SOURCE_ANCHOR = "@clossys/producer/records/slots";
-/** The fix a stale consumer adoption names; the same words as Producer's records/code-adopt.ts READOPT_HINT. */
+/** The fix a stale consumer adoption names; the same words as Producer's READOPT_HINT export. */
 const READOPT_HINT = "re-adopt it (code:adopt the stock item again) to take the consumer's current pinned theme values";
 let producerSourceDir; let producerSourceMissing;
 try { producerSourceDir = new URL("../constitution/certify/", import.meta.resolve(SOURCE_ANCHOR)).href; }
