@@ -3,55 +3,55 @@
  "ran_on": "cloud",
  "unit": "R2",
  "branch": "claude/r2f-0048-r2",
- "head": "267dd82945b42ca7f59d751e97f00b4842bfcd97",
- "tree": "cdfef9ff31c96882a5ab7f77fcf8474306fb27d0",
+ "head": "a528444c5019f9b0acf44591e4f6c90662799974",
+ "tree": "cf6c7277e366aee8fec51a78571fad9ec4181ce3",
  "int2": "claude/r2f-int2",
  "int2_sha": "5a2e197ea42dde155f0882fef533f7f4bf414605",
- "generated_at": "2026-11-23T20:13:40Z",
+ "generated_at": "2026-11-23T20:39:30Z",
  "spec_sha256": "1a1b9af00ba1822751ac156e8f9826d8af4ac1c42f39823964f3392823df9390",
  "runner_sha256": "d8bb5e204990d40dfb33553a1750acd5e73c10d0ca4ee98ca3f1065683820383",
  "prep": [
   {
    "command": "npm run build -w @clossys/advisor",
    "exit": 0,
-   "seconds": 2.0,
+   "seconds": 1.8,
    "tail": "\n> @clossys/advisor@0.7.0 build\n> node scripts/pack-capability-catalogue.mjs && tsc -p tsconfig.json\n\npack-capability-catalogue: wrote 19 role(s), 5 preset(s), and 19 client problem(s) to src/generated/offering.generated.ts, and the plan, brief, repository-inventory and registry snapshot contracts to src/generated/plan-contracts.generated.ts, and the publishing scope and registry to src/generated/package-scope.generated.ts"
   },
   {
    "command": "npm run build -w @clossys/controller",
    "exit": 0,
-   "seconds": 3.2,
+   "seconds": 3.4,
    "tail": "\n> @clossys/controller@0.10.0 build\n> tsc -p tsconfig.json\n"
   },
   {
    "command": "npm run build -w @clossys/director",
    "exit": 0,
-   "seconds": 2.2,
+   "seconds": 2.3,
    "tail": "\n> @clossys/director@0.6.0 build\n> node scripts/pack-brief-contract.mjs && tsc -p tsconfig.json\n\npack-brief-contract: wrote the brief and engagement-context contracts and the contract checker copy into src/generated/"
   },
   {
    "command": "npm run build -w @clossys/designer",
    "exit": 0,
-   "seconds": 28.0,
+   "seconds": 27.7,
    "tail": "\n> @clossys/designer@0.12.0 build\n> tsc -p tsconfig.json\n"
   },
   {
    "command": "npm run build -w @clossys/writer",
    "exit": 0,
-   "seconds": 5.4,
+   "seconds": 5.3,
    "tail": "\n> @clossys/writer@0.6.0 build\n> node scripts/pack-plan-contract.mjs && tsc -p tsconfig.json && node scripts/check-record-drift.mjs\n\npack-plan-contract: wrote the plan contract and the contract checker copy into src/generated/\nWriter record drift: 1492 records, 12 sources, 0 findings; approval not evaluated."
   },
   {
    "command": "npm run build -w @clossys/publisher",
    "exit": 0,
-   "seconds": 618.6,
+   "seconds": 622.2,
    "tail": "> @clossys/publisher@0.13.0 check:client-boundary\n> node ../../scripts/check-client-boundary.mjs . --report ../../node_modules/.cache/client-boundary/publisher.json\n\nPASS ./content-map (production): 412 inputs\nPASS ./content-map (development): 412 inputs\nPASS ./web/preview (production): 4385 inputs\nPASS ./web/preview (development): 4385 inputs\nPASS ./web (production): 4557 inputs\nPASS ./web (development): 4557 inputs\nPASS ./web/host (production): 4323 inputs\nPASS ./web/host (development): 4323 inputs\nPASS ./web/content-route (production): 4381 inputs\nPASS ./web/content-route (development): 4381 inputs\nPASS ./web/publisher-v2 (production): 4045 inputs\nPASS ./web/publisher-v2 (development): 4045 inputs\nPASS ./web/client (production): 4404 inputs\nPASS ./web/client (development): 4404 inputs\nPASS ./web/consent (production): 4038 inputs\nPASS ./web/consent (development): 4038 inputs\nPASS ./web/consent/preview (production): 1 inputs\nPASS ./web/consent/preview (development): 3 inputs\nPASS ./web/registered-route-check (production): 1 inputs\nPASS ./web/registered-route-check (development): 1 inputs\nPASS ./web/registered-route-wiring (production): 1 inputs\nPASS ./web/registered-route-wiring (development): 1 inputs\nPASS ./web/admin-pages (production): 4399 inputs\nPASS ./web/admin-pages (development): 4399 inputs\nPASS ./web/registered-route (production): 4399 inputs\nPASS ./web/registered-route (development): 4399 inputs\nclient-boundary: PASS; report ./node_modules/.cache/client-boundary/publisher.json"
   },
   {
    "command": "npm run build -w @clossys/producer",
    "exit": 0,
-   "seconds": 19.3,
-   "tail": "\n> @clossys/producer@0.1.0 build\n> tsc -p tsconfig.json && node scripts/check-generated-derived.mjs --write && npm run -s generate:specimen-evidence && node scripts/generate-page-check-receipt.mjs\n\ncheck-generated-derived: no $CLOSSYS_ROOT consumer; wrote nothing\nWrote: 0 real native compiler certificates\nPROC-5 source receipt: 267dd82945b42ca7f59d751e97f00b4842bfcd97"
+   "seconds": 18.0,
+   "tail": "\n> @clossys/producer@0.1.0 build\n> tsc -p tsconfig.json && node scripts/check-generated-derived.mjs --write && npm run -s generate:specimen-evidence && node scripts/generate-page-check-receipt.mjs\n\ncheck-generated-derived: no $CLOSSYS_ROOT consumer; wrote nothing\nWrote: 0 real native compiler certificates\nPROC-5 source receipt: a528444c5019f9b0acf44591e4f6c90662799974"
   }
  ],
  "commands": [
@@ -60,7 +60,7 @@
    "expect": 0,
    "exit": 0,
    "ok": true,
-   "seconds": 9.1,
+   "seconds": 9.3,
    "tail": "\n> @clossys/producer@0.1.0 typecheck\n> tsc -p tsconfig.json --noEmit\n"
   },
   {
@@ -68,8 +68,8 @@
    "expect": 0,
    "exit": 1,
    "ok": false,
-   "seconds": 131.8,
-   "tail": "+         {\n+           \"rel\": \"raisedBy\",\n+           \"to\": \"designer/themes.background\",\n+         },\n+       ],\n+       \"route\": {\n+         \"assignee\": \"owner\",\n+         \"packet\": {\n+           \"queue\": \"queue.pick\",\n+           \"skill\": \"packages/director/actions/director.candidates/skill.md\",\n+           \"step\": \"loop.choose/choose-v1#owner-pick\",\n+         },\n+         \"row\": \"owner.class\",\n+         \"table\": \"ceb9890678db86be17bc2e25ad19bc226db227b875fcd858a3a354bd3b9d34c7\",\n+       },\n+       \"schema\": \"clossys.queue-entry/2\",\n+       \"source\": \"interview\",\n+       \"status\": \"open\",\n+       \"target\": \"director/identity.visual.style\",\n+       \"want\": \"candidate\",\n+       \"why\": \"212 designer slots (designer/themes.background, designer/themes.foreground, designer/themes.card, designer/themes.card-foreground, +208) cite director/identity.visual.style, which is unclear: 2 blocking findings (Q4, Q7)\",\n+     },\n+   },\n+ ]\n\n \u276f src/queue/routing.test.ts:97:46\n\n\n\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af[25/25]\u23af\n"
+   "seconds": 108.7,
+   "tail": "Error: ENOENT: no such file or directory, open '/tmp/writer-wording-hJN7z8/clossys/agents/writer/strings.actions/pin.json'\n \u276f exclaimed src/pipeline/writer-wording.test.ts:39:26\n     37| function exclaimed(root: string): { pinned: string; original: string; \u2026\n     38|   const consumer = join(root, \"clossys\");\n     39|   const pin = JSON.parse(readFileSync(join(consumer, \"agents\", \"writer\u2026\n       |                          ^\n     40|   const bytes = directorTraced(readCandidate(consumer, \"writer\", SLOT,\u2026\n     41|   const fixture = bytes.replace(/^Request change$/m, \"Request change!\"\u2026\n \u276f src/pipeline/writer-wording.test.ts:91:35\n\n\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af[21/22]\u23af\n\n FAIL  src/pipeline/writer-wording.test.ts > Writer wording findings reach the Writer's owner questions (R2F-W1) > a narrative (JSON block) record reads its title and block text: a redraft that differs is offered\nError: ENOENT: no such file or directory, open '/tmp/writer-wording-OTCQR9/clossys/agents/writer/narratives.article/pin.json'\n \u276f src/pipeline/writer-wording.test.ts:107:28\n    105|     const consumer = join(root, \"clossys\");\n    106|     const slot = \"narratives.article\";\n    107|     const pin = JSON.parse(readFileSync(join(consumer, \"agents\", \"writ\u2026\n       |                            ^\n    108|     const bytes = readCandidate(consumer, \"writer\", slot, pin.candidat\u2026\n    109|     const fixture = bytes.replace(\"A change is a new version, so histo\u2026\n\n\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af[22/22]\u23af\n\n\n Test Files  5 failed | 20 passed (25)\n      Tests  22 failed | 341 passed (363)\n   Start at  20:37:41\n   Duration  108.12s (tests 85%, import 10%, transform 5%)\n"
   },
   {
    "command": "git merge-tree --write-tree claude/r2f-int2 HEAD",
@@ -77,13 +77,13 @@
    "exit": 0,
    "ok": true,
    "seconds": 0.0,
-   "tail": "cdfef9ff31c96882a5ab7f77fcf8474306fb27d0"
+   "tail": "cf6c7277e366aee8fec51a78571fad9ec4181ce3"
   }
  ],
  "merge_tree": {
-  "command": "git merge-tree --write-tree claude/r2f-int2 267dd82945b42ca7f59d751e97f00b4842bfcd97",
+  "command": "git merge-tree --write-tree claude/r2f-int2 a528444c5019f9b0acf44591e4f6c90662799974",
   "exit": 0,
-  "tree": "cdfef9ff31c96882a5ab7f77fcf8474306fb27d0",
+  "tree": "cf6c7277e366aee8fec51a78571fad9ec4181ce3",
   "conflicts": []
  },
  "tree_clean": true,
