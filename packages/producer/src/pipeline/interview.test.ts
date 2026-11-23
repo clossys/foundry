@@ -216,7 +216,7 @@ describe("Director content questions (next --owner --agent director)", { timeout
     const interview = interviewOf(root, { agent: "director" });
     const all = interview.rounds.flat().filter(question => question.step !== "seats");
     expect(all[0]!.id).toBe("director.archetype");
-    expect(all[0]!.options[0]!.calls[0]).toEqual(["clossys", "director", "check", "archetype", "default", "--by", "owner"]);
+    expect(all[0]!.options[0]!.calls[0]).toEqual(["clossys", "director", "check", "archetype", "default", "--by", "owner", "--via", "chat", "--quote", all[0]!.options[0]!.label]);
     const content = contentOf(all);
     expect(content.length).toBe(24);
     expect(all.slice(1, 1 + content.length).map(question => question.id)).toEqual(content.map(question => question.id));

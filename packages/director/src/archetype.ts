@@ -26,7 +26,15 @@ export function recordedArchetype(findings: readonly Finding[], catalog: Strateg
   return { ok: true, archetype: record.value, by: record.by };
 }
 
-/** The record's bytes, in the finding format the evidence reader parses. */
-export function archetypeRecord(archetype: string, by: string, observed: string): string {
-  return `---\nid: ${ARCHETYPE_RECORD_ID}\nsource: user\nobserved: ${observed}\nby: ${by}\nvalue: ${archetype}\n---\n- Archetype ${archetype}, decided by ${by}: its extra core cells join the default core.\n`;
+/** The channels an owner answer comes through (the same set `clossys answer --via` takes). */
+export const ARCHETYPE_VIAS = ["chat", "app", "cli"] as const;
+export type ArchetypeVia = (typeof ARCHETYPE_VIAS)[number];
+
+/**
+ * The record's bytes, in the finding format the evidence reader parses. An owner answer given in their own words
+ * carries its channel and the words verbatim in the finding's bullet (the finding fields stay as they are).
+ */
+export function archetypeRecord(archetype: string, by: string, observed: string, said?: { via: ArchetypeVia; quote: string }): string {
+  const words = said ? ` The owner chose it via ${said.via}: "${said.quote}"` : "";
+  return `---\nid: ${ARCHETYPE_RECORD_ID}\nsource: user\nobserved: ${observed}\nby: ${by}\nvalue: ${archetype}\n---\n- Archetype ${archetype}, decided by ${by}: its extra core cells join the default core.${words}\n`;
 }

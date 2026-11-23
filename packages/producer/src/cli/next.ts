@@ -18,7 +18,7 @@
  * and its run record keeps the model, tier, basis, ladder, skill file and output file with their sha256.
  */
 import { createHash } from "node:crypto";
-import { readFileSync } from "node:fs";
+import { readFileSync, realpathSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { KIND_EXT, SEAT_AGENT, SLOT_AGENTS, seatStepOf } from "../records/slot-model/types.js";
 import type { ModelAgent, SlotAgent } from "../records/slot-model/types.js";
@@ -62,7 +62,7 @@ export const NEXT_USAGE = "Usage: clossys next [--json] [--root <dir>]\n"
   + "  --owner: the interview: the owner questions the gaps hold (clossys gaps), in rounds of at most 4, each with 2-4 answers\n"
   + "  (recommended first, each the exact argv of every call it runs) and a free-text answer; --agent <id> keeps one agent's.\n"
   + "  --model <tier>=<id>: the seat-policy question's recommended answer while clossys/seat-policy.json is missing (never guessed).\n"
-  + "  --submit: record one candidate for <agent>/<slot> (the <agent>.candidates step); --skill must be that step's skill.\n"
+  + "  --submit: record one candidate for <agent>/<slot> (the <agent>.candidates step); --skill must be that step's skill: its id or the installed file it names.\n"
   + "  --rung: the ladder rung it came from (adopt, adapt, create; the Designer's L1 stock, L2 partner, L3 question, L4 Foundry);\n"
   + "  --seed names the seed adopted or adapted; --reason says why no seed fit (required to create).\n"
   + "  The candidate is named after the slot leaf (<leaf>-v<n>, R08.1). adapt and create (P2) need the slot's latest verdict to be\n"
@@ -193,6 +193,18 @@ export function submitTarget(argv: readonly string[], cwd: string, steps: readon
 
 const reject = (message: string): CliResult => ({ exitCode: 1, unrecorded: true, message: `next --submit refused: ${message}` });
 
+/**
+ * Whether `--skill` names the step's skill: its logical id (`packages/<agent>/actions/<step>/skill.md`, what the run
+ * records), or a path, relative to the working folder, that resolves to the same file as the installed skill the id
+ * names (`node_modules/@clossys/<agent>/actions/<step>/skill.md` in a consumer; CHAT-DIR gap 13).
+ */
+function isStepSkill(given: string, step: Step, packageRoot: string, cwd: string): boolean {
+  if (given === step.command.skill) return true;
+  const file = skillFile(step, packageRoot);
+  if (!file) return false;
+  try { return realpathSync(resolve(cwd, given)) === realpathSync(file); } catch { return false; }
+}
+
 /** `clossys next <agent>/<slot> --submit <file> ...`: the `<agent>.candidates` step. */
 export async function runNextSubmitCli(argv: readonly string[], cwd: string, step?: Step, packageRoot = PACKAGE_ROOT, guard: WriteGuard = true): Promise<CliResult> {
   const flags = parse(argv);
@@ -217,7 +229,7 @@ export async function runNextSubmitCli(argv: readonly string[], cwd: string, ste
   if (ladderFindings.length) return reject(`ladder ${ladderFindings.map(issue => `${issue.rule}: ${issue.detail}`).join("; ")}`);
   // The skill is the contract's: a submission made with any other skill is not this step's output.
   const contractSkill = owning.command.skill;
-  if (!contractSkill || flags.skill !== contractSkill) return reject(`--skill ${flags.skill} is not ${owning.id}'s skill (${contractSkill ?? "none"})`);
+  if (!contractSkill || !isStepSkill(flags.skill!, owning, packageRoot, cwd)) return reject(`--skill ${flags.skill} is not ${owning.id}'s skill (${contractSkill ?? "none"}, or the installed file it names)`);
   const skillPath = skillFile(owning, packageRoot);
   let skillBytes: Buffer;
   try { skillBytes = readFileSync(skillPath!); } catch (error) { return reject(`${owning.id}'s skill ${contractSkill} cannot be read: ${errorMessage(error)}`); }
@@ -383,7 +395,7 @@ export async function runNextStageCli(flags: Flags, cwd: string, steps: readonly
   const owning = steps.find(each => each.id === (seat ? SEAT_STEP : `${agent}.candidates`));
   if (!owning) return refuse(`${target} is not a candidates slot of a defined step`);
   const contractSkill = owning.command.skill;
-  if (!contractSkill || flags.skill !== contractSkill) return refuse(`--skill ${flags.skill} is not ${owning.id}'s skill (${contractSkill ?? "none"})`);
+  if (!contractSkill || !isStepSkill(flags.skill!, owning, packageRoot, cwd)) return refuse(`--skill ${flags.skill} is not ${owning.id}'s skill (${contractSkill ?? "none"}, or the installed file it names)`);
   let skillBytes: Buffer;
   try { skillBytes = readFileSync(skillFile(owning, packageRoot)!); } catch (error) { return refuse(`${owning.id}'s skill ${contractSkill} cannot be read: ${errorMessage(error)}`); }
   const root = rootOf(cwd, flags.root);
