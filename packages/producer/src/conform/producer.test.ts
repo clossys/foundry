@@ -10,7 +10,7 @@ import { packageLoopSet } from "../loop/agent-loops.js";
 import { readProducerIa } from "../loop/producer-ia.js";
 import { LOOP_NAMES, type LoopName } from "../loop/names.js";
 import { cellOf, conform, conformProducer, formatReport, readRegistry } from "./run.js";
-import { mkdtempSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { deadEndSteps, PRODUCER_ASSERTIONS, readProducerModel, schemaQueueKinds, type ProducerLoop, type ProducerModel } from "./producer.js";
 import { readConformModel } from "./model.js";
@@ -107,6 +107,19 @@ describe("Producer conformance rows (U9)", () => {
     expect(deadEndSteps(steps(world(), "loop.fill").map(each => each.decider.by === "human" ? { ...each, onFail: undefined } : each))).toEqual([]);
     // The same step id running another cli is no route step: the step before it is a dead end again.
     expect(deadEndSteps(audit.map((each, at) => at === route - 1 ? { ...each, onFail: undefined } : at === route ? { ...each, cli: "clossys check" } : each))).toEqual([audit[route - 1].id]);
+  });
+  it("P5 reads a queue-entry/2 entry's subject from its target: a slot target resumes a run, no usable target is a row (R2)", () => {
+    const consumer = join(mkdtempSync(join(tmpdir(), "r2-p5-")), "clossys");
+    const entries = join(consumer, "agents", "producer", "queue.change", "entries");
+    mkdirSync(entries, { recursive: true });
+    const entry = (id: string, target: string) => writeFileSync(join(entries, `${id}.json`), JSON.stringify({ schema: "clossys.queue-entry/2", id, kind: "change", status: "open", target }));
+    entry("20261123T1200Z-change-slot", "director/focus.segment.core");
+    const slot = readProducerModel(consumer);
+    expect(slot.entries.map(each => each.subject)).toEqual(["director/focus.segment.core"]);
+    expect(PRODUCER_ASSERTIONS.P5!(world(model => { model.entries = slot.entries; })).rows).toEqual([]);
+    entry("20261123T1200Z-change-nothing", "nothing");
+    expect(PRODUCER_ASSERTIONS.P5!(world(model => { model.entries = readProducerModel(consumer).entries; })).rows)
+      .toEqual(["queue.change#20261123T1200Z-change-nothing: open, no waiting run holds it, and its subject nothing is no slot or publication a run can start from"]);
   });
   it("takes queue kinds from the queue-entry/2 schema too: a kind it admits that no loop serves is red on P1, P3 and P5 (U9 fix r1, blind2 B4)", () => {
     expect(readProducerModel(FIXTURE).queueKinds).toContain("queue.change");

@@ -207,7 +207,8 @@ function readEntries(consumer: string, kinds: readonly string[]): QueueEntryFact
       const doc = json(join(dir, name));
       if (!object(doc)) { out.push({ queue, id, issues: ["not JSON"] }); continue; }
       const issues = queue === SLOT_QUEUE ? requestIssues(doc) : [];
-      const subject = object(doc.subject) && typeof doc.subject.to === "string" ? doc.subject.to : undefined;
+      // queue-entry/1 names its subject in subject.to; queue-entry/2 names it in target.
+      const subject = object(doc.subject) && typeof doc.subject.to === "string" ? doc.subject.to : typeof doc.target === "string" ? doc.target : undefined;
       out.push({ queue, id, ...(typeof doc.status === "string" ? { status: doc.status } : {}), ...(subject ? { subject } : {}), issues });
     }
   }
