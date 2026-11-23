@@ -311,6 +311,9 @@ export async function resolvePage(page: InstallPageRecord, pins: InstallPins, so
         }
         await visit(candidates[0]!, "dependency", id);
       }
+      // A composition's pinned parts (`meta.source.parts[].slot`) install as dependencies too; `done` dedupes.
+      const composition = found.item.meta?.source;
+      if (composition?.kind === "composition" && Array.isArray(composition.parts)) for (const part of composition.parts) if (isRecord(part) && typeof part.slot === "string" && pins[part.slot]) await visit(part.slot, "dependency", id);
       const mount = mountOf(record);
       // Declared copy slots rewrite props in place: the record's own fixtures stay untouched.
       mount.props = structuredClone(mount.props);

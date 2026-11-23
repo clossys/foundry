@@ -294,6 +294,19 @@ describe("slot-id registry dependencies", () => {
     const { slots } = await resolvePage(stripPage, { "sections.strip": { element: "strip", version: 1 } }, libSource);
     expect(JSON.parse(slots[0]!.item).registryDependencies).toEqual(["components.badge", "separator"]);
   });
+
+  it("installs a composition's pinned meta.source.parts slot once, even when a registry dependency already names it", async () => {
+    const shell = { name: "shell", type: "registry:block", registryDependencies: ["components.badge"], files: [{ path: "shell.tsx", type: "registry:component", target: "components/frames/shell.tsx", content: "export function Shell() { return null; }\n" }] };
+    const composed = (registryDependencies: string[]) => ({ ...shell, registryDependencies, meta: { source: { kind: "composition", parts: [{ slot: "components.badge", files: ["badge.tsx"] }, { slot: "components.unpinned" }] } } });
+    const pins: InstallPins = { "frames.shell": { element: "shell", version: 1 }, "components.badge": { element: "badge", version: 1 } };
+    const sourceFor = (value: unknown) => recordStoreSource({ async load(id, version) { return version !== 1 ? undefined : id === "frames.shell/shell" ? record(id, value) : items[id] ? record(id, items[id]) : undefined; } });
+    const page: InstallPageRecord = { id: "p", frame: "frames.shell", sections: [] };
+    for (const value of [composed([]), composed(["components.badge"])]) {
+      const { slots, findings } = await resolvePage(page, pins, sourceFor(value));
+      expect(findings).toEqual([]);
+      expect(slots.map(slot => [slot.slot, slot.role])).toEqual([["components.badge", "dependency"], ["frames.shell", "frame"]]);
+    }
+  });
 });
 
 describe("an interactive backdrop on the pinned code candidate of a backdrop-declaring surface (foundry-build-0048 A4, U23)", () => {
