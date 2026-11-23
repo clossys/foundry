@@ -1,7 +1,8 @@
 /**
  * R08 Immutability and naming, over every candidate of every slot:
- * - R08.1 the name is `<leaf>-v<n>.<ext>`: `<leaf>` is the slot id's last dot-segment, `ext` is the
- *   kind's extension, and n is never reused, retired candidates included;
+ * - R08.1 the name is `<leaf>-v<n>.<ext>`: `<leaf>` is the slot id's last dot-segment or a record the slot's
+ *   contract declares (slot-model candidateStemIssue), `ext` is the kind's extension, and n is never reused, retired
+ *   candidates included;
  * - R08.2 the file's bytes are the bytes it was created with, proven twice:
  *   - by the ledger: sha256(file bytes) equals the slot ledger's `submit` event sha256 for that name,
  *     carried through later `migrate` events (records/ledger.ts expectedCandidateSha, the same sha R14.1
@@ -16,7 +17,7 @@
  *     (a conflict resolution or an evil merge), not when it only carries a side-line change in.
  * R08.3 (variants ride the vary tag, never the stem) is pending.
  */
-import { AGENT_KIND, CANDIDATE_NAME, KIND_EXT } from "../../records/slot-model/index.js";
+import { AGENT_KIND, CANDIDATE_NAME, KIND_EXT, candidateStemIssue } from "../../records/slot-model/index.js";
 import { expectedCandidateSha, ledgerEventsOf } from "../../records/ledger.js";
 import { LOOP_KIND } from "../../loop/agent-loops.js";
 import type { CandidateRecord, ConstitutionContext, PathChange, Row, RuleModule, SlotRecord } from "../types.js";
@@ -35,7 +36,6 @@ function allowedExtensions(agent: string, kind: unknown): Set<string> {
 export function naming(ctx: ConstitutionContext): Row[] {
   const rows: Row[] = [];
   for (const slot of allSlots(ctx)) {
-    const leaf = slot.id.split(".").pop()!;
     const doc = slotDoc(slot);
     const extensions = allowedExtensions(slot.agent, isObject(doc) ? doc.kind : undefined);
     const versions = new Map<number, string[]>();
@@ -53,7 +53,8 @@ export function naming(ctx: ConstitutionContext): Row[] {
       const defects: string[] = [];
       if (!match) defects.push("name is not <leaf>-v<n>.<ext>");
       else {
-        if (match[1] !== leaf) defects.push(`stem ${match[1]} is not the slot leaf ${leaf}`);
+        const stemIssue = candidateStemIssue(slot.id, isObject(doc) ? doc.contract : undefined, match[1]!);
+        if (stemIssue) defects.push(`stem ${match[1]} ${stemIssue}`);
         if (extensions.size && !extensions.has(match[3]!)) defects.push(`.${match[3]} is not this kind's extension (.${[...extensions].join("/.")})`);
         const sharing = versions.get(Number(match[2]))!.filter(other => other !== candidate.name);
         if (sharing.length) defects.push(`v${match[2]} is also used by ${sharing.sort().join(", ")}${retiredNames.has(sharing[0]!) ? " (retired)" : ""}`);

@@ -264,3 +264,15 @@ export const WRITER_KEY_REF = /^[a-z][a-z0-9-]*(\.[a-z0-9][a-z0-9-]*){1,3}#[^\s#
 export const INSTANCE_KEY = /^[a-z][a-z0-9-]*(\.[a-z0-9][a-z0-9-]*){1,3}(#[1-9][0-9]*)?$/;
 export const NODE_ID = /^[a-z0-9][a-z0-9.-]*$/;
 export const CANDIDATE_NAME = /^([a-z0-9][a-z0-9.-]*)-v([1-9][0-9]*)\.(md|json)$/;
+/**
+ * R08.1: why `stem` is not a stem `slotId`'s candidates may carry, or undefined when it is: the slot's leaf (its id's
+ * last dot-segment) or a record its contract declares (a Writer contract's `records` keys, e.g. `home.meta` for
+ * page.home.meta). Constitution R08.1 and `next --submit --name` both judge by it.
+ */
+export function candidateStemIssue(slotId: string, contract: unknown, stem: string): string | undefined {
+  const leaf = slotId.split(".").at(-1)!;
+  const declared = typeof contract === "object" && contract !== null ? (contract as { records?: unknown }).records : undefined;
+  const records = typeof declared === "object" && declared !== null && !Array.isArray(declared) ? Object.keys(declared) : [];
+  if (stem === leaf || records.includes(stem)) return undefined;
+  return `is not the slot leaf ${leaf}${records.length ? ` or a record its contract declares (${records.join(", ")})` : ""}`;
+}

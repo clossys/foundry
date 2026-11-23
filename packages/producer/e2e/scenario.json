@@ -321,8 +321,8 @@
         "ref": "writer/page.home.meta",
         "standard": "string",
         "file": "home-meta.md",
-        "candidate": "meta-v1.md",
-        "pin": "writer/page.home.meta#meta",
+        "candidate": "home.meta-v1.md",
+        "pin": "writer/page.home.meta#home.meta",
         "gap": "copy.entries",
         "rung": "create",
         "skill": "packages/writer/actions/writer.candidates/skill.md"
