@@ -1,0 +1,36 @@
+{
+ "branch": "claude/r2f-0048-s1-placed",
+ "commands": [
+  {
+   "command": "npm run typecheck -w @clossys/producer",
+   "expect": 0
+  },
+  {
+   "command": "npm exec -w @clossys/producer -- vitest run src/conform/assertions.test.ts",
+   "expect": 0
+  },
+  {
+   "command": "npm exec -w @clossys/producer -- vitest run src/conform",
+   "expect": 0
+  },
+  {
+   "command": "node packages/producer/dist/cli/index.js conform --all --json | node -e 'const r=JSON.parse(require(\"fs\").readFileSync(0,\"utf8\"));const s=r.agents.map(a=>[a.agent,a.cells.find(c=>c.id===\"S1\")]).filter(([,c])=>c);s.forEach(([a,c])=>console.log(a,c.red?\"RED\":\"GREEN\",c.rows.slice(0,2).join(\" | \")));process.exit(s.find(([a])=>a===\"designer\")[1].red?1:0)'",
+   "expect": 0
+  },
+  {
+   "command": "git merge-tree --write-tree claude/r2f-int2 HEAD",
+   "expect": 0
+  }
+ ],
+ "int2": "claude/r2f-int2",
+ "prep": [
+  "npm run build -w @clossys/advisor",
+  "npm run build -w @clossys/controller",
+  "npm run build -w @clossys/director",
+  "npm run build -w @clossys/designer",
+  "npm run build -w @clossys/writer",
+  "npm run build -w @clossys/publisher",
+  "npm run build -w @clossys/producer"
+ ],
+ "unit": "S1-PLACED"
+}
