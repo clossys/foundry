@@ -1,0 +1,94 @@
+{
+ "tool": "cloud-gate-run.py",
+ "ran_on": "cloud",
+ "unit": "R2",
+ "branch": "claude/r2f-0048-r2",
+ "head": "267dd82945b42ca7f59d751e97f00b4842bfcd97",
+ "tree": "cdfef9ff31c96882a5ab7f77fcf8474306fb27d0",
+ "int2": "claude/r2f-int2",
+ "int2_sha": "5a2e197ea42dde155f0882fef533f7f4bf414605",
+ "generated_at": "2026-11-23T20:13:40Z",
+ "spec_sha256": "1a1b9af00ba1822751ac156e8f9826d8af4ac1c42f39823964f3392823df9390",
+ "runner_sha256": "d8bb5e204990d40dfb33553a1750acd5e73c10d0ca4ee98ca3f1065683820383",
+ "prep": [
+  {
+   "command": "npm run build -w @clossys/advisor",
+   "exit": 0,
+   "seconds": 2.0,
+   "tail": "\n> @clossys/advisor@0.7.0 build\n> node scripts/pack-capability-catalogue.mjs && tsc -p tsconfig.json\n\npack-capability-catalogue: wrote 19 role(s), 5 preset(s), and 19 client problem(s) to src/generated/offering.generated.ts, and the plan, brief, repository-inventory and registry snapshot contracts to src/generated/plan-contracts.generated.ts, and the publishing scope and registry to src/generated/package-scope.generated.ts"
+  },
+  {
+   "command": "npm run build -w @clossys/controller",
+   "exit": 0,
+   "seconds": 3.2,
+   "tail": "\n> @clossys/controller@0.10.0 build\n> tsc -p tsconfig.json\n"
+  },
+  {
+   "command": "npm run build -w @clossys/director",
+   "exit": 0,
+   "seconds": 2.2,
+   "tail": "\n> @clossys/director@0.6.0 build\n> node scripts/pack-brief-contract.mjs && tsc -p tsconfig.json\n\npack-brief-contract: wrote the brief and engagement-context contracts and the contract checker copy into src/generated/"
+  },
+  {
+   "command": "npm run build -w @clossys/designer",
+   "exit": 0,
+   "seconds": 28.0,
+   "tail": "\n> @clossys/designer@0.12.0 build\n> tsc -p tsconfig.json\n"
+  },
+  {
+   "command": "npm run build -w @clossys/writer",
+   "exit": 0,
+   "seconds": 5.4,
+   "tail": "\n> @clossys/writer@0.6.0 build\n> node scripts/pack-plan-contract.mjs && tsc -p tsconfig.json && node scripts/check-record-drift.mjs\n\npack-plan-contract: wrote the plan contract and the contract checker copy into src/generated/\nWriter record drift: 1492 records, 12 sources, 0 findings; approval not evaluated."
+  },
+  {
+   "command": "npm run build -w @clossys/publisher",
+   "exit": 0,
+   "seconds": 618.6,
+   "tail": "> @clossys/publisher@0.13.0 check:client-boundary\n> node ../../scripts/check-client-boundary.mjs . --report ../../node_modules/.cache/client-boundary/publisher.json\n\nPASS ./content-map (production): 412 inputs\nPASS ./content-map (development): 412 inputs\nPASS ./web/preview (production): 4385 inputs\nPASS ./web/preview (development): 4385 inputs\nPASS ./web (production): 4557 inputs\nPASS ./web (development): 4557 inputs\nPASS ./web/host (production): 4323 inputs\nPASS ./web/host (development): 4323 inputs\nPASS ./web/content-route (production): 4381 inputs\nPASS ./web/content-route (development): 4381 inputs\nPASS ./web/publisher-v2 (production): 4045 inputs\nPASS ./web/publisher-v2 (development): 4045 inputs\nPASS ./web/client (production): 4404 inputs\nPASS ./web/client (development): 4404 inputs\nPASS ./web/consent (production): 4038 inputs\nPASS ./web/consent (development): 4038 inputs\nPASS ./web/consent/preview (production): 1 inputs\nPASS ./web/consent/preview (development): 3 inputs\nPASS ./web/registered-route-check (production): 1 inputs\nPASS ./web/registered-route-check (development): 1 inputs\nPASS ./web/registered-route-wiring (production): 1 inputs\nPASS ./web/registered-route-wiring (development): 1 inputs\nPASS ./web/admin-pages (production): 4399 inputs\nPASS ./web/admin-pages (development): 4399 inputs\nPASS ./web/registered-route (production): 4399 inputs\nPASS ./web/registered-route (development): 4399 inputs\nclient-boundary: PASS; report ./node_modules/.cache/client-boundary/publisher.json"
+  },
+  {
+   "command": "npm run build -w @clossys/producer",
+   "exit": 0,
+   "seconds": 19.3,
+   "tail": "\n> @clossys/producer@0.1.0 build\n> tsc -p tsconfig.json && node scripts/check-generated-derived.mjs --write && npm run -s generate:specimen-evidence && node scripts/generate-page-check-receipt.mjs\n\ncheck-generated-derived: no $CLOSSYS_ROOT consumer; wrote nothing\nWrote: 0 real native compiler certificates\nPROC-5 source receipt: 267dd82945b42ca7f59d751e97f00b4842bfcd97"
+  }
+ ],
+ "commands": [
+  {
+   "command": "npm run typecheck -w @clossys/producer",
+   "expect": 0,
+   "exit": 0,
+   "ok": true,
+   "seconds": 9.1,
+   "tail": "\n> @clossys/producer@0.1.0 typecheck\n> tsc -p tsconfig.json --noEmit\n"
+  },
+  {
+   "command": "npm exec -w @clossys/producer -- vitest run src/pipeline src/queue src/conform",
+   "expect": 0,
+   "exit": 1,
+   "ok": false,
+   "seconds": 131.8,
+   "tail": "+         {\n+           \"rel\": \"raisedBy\",\n+           \"to\": \"designer/themes.background\",\n+         },\n+       ],\n+       \"route\": {\n+         \"assignee\": \"owner\",\n+         \"packet\": {\n+           \"queue\": \"queue.pick\",\n+           \"skill\": \"packages/director/actions/director.candidates/skill.md\",\n+           \"step\": \"loop.choose/choose-v1#owner-pick\",\n+         },\n+         \"row\": \"owner.class\",\n+         \"table\": \"ceb9890678db86be17bc2e25ad19bc226db227b875fcd858a3a354bd3b9d34c7\",\n+       },\n+       \"schema\": \"clossys.queue-entry/2\",\n+       \"source\": \"interview\",\n+       \"status\": \"open\",\n+       \"target\": \"director/identity.visual.style\",\n+       \"want\": \"candidate\",\n+       \"why\": \"212 designer slots (designer/themes.background, designer/themes.foreground, designer/themes.card, designer/themes.card-foreground, +208) cite director/identity.visual.style, which is unclear: 2 blocking findings (Q4, Q7)\",\n+     },\n+   },\n+ ]\n\n \u276f src/queue/routing.test.ts:97:46\n\n\n\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af[25/25]\u23af\n"
+  },
+  {
+   "command": "git merge-tree --write-tree claude/r2f-int2 HEAD",
+   "expect": 0,
+   "exit": 0,
+   "ok": true,
+   "seconds": 0.0,
+   "tail": "cdfef9ff31c96882a5ab7f77fcf8474306fb27d0"
+  }
+ ],
+ "merge_tree": {
+  "command": "git merge-tree --write-tree claude/r2f-int2 267dd82945b42ca7f59d751e97f00b4842bfcd97",
+  "exit": 0,
+  "tree": "cdfef9ff31c96882a5ab7f77fcf8474306fb27d0",
+  "conflicts": []
+ },
+ "tree_clean": true,
+ "failures": [
+  "`npm exec -w @clossys/producer -- vitest run src/pipeline src/queue src/conform` exit 1, expected 0"
+ ],
+ "verdict": "FAIL"
+}
