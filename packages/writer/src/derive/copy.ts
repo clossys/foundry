@@ -78,19 +78,11 @@ export function loadDesignerCopyInput(
   return { placements, slots, retired: new Set(placements.flatMap(placement => placement.retired ?? [])), directory };
 }
 
-/** Page metadata fields (Publisher `meta.title`, `meta.description`, `meta.og.*`; writer.md: title, description, share). */
-export const PAGE_META_FIELDS: readonly DesignerCopyField[] = [
-  { key: "title", kind: "plain", role: "heading", required: true, maxLength: { en: 60 }, dir: "auto" },
-  { key: "description", kind: "plain", role: "body", required: true, maxLength: { en: 160 }, dir: "auto" },
-  { key: "share.title", kind: "plain", role: "heading", required: false, maxLength: { en: 70 }, dir: "auto" },
-  { key: "share.description", kind: "plain", role: "body", required: false, maxLength: { en: 200 }, dir: "auto" },
-];
-/** Publication metadata fields (writer.md: site name, default share). */
-export const PUBLICATION_META_FIELDS: readonly DesignerCopyField[] = [
-  { key: "siteName", kind: "plain", role: "label", required: true, maxLength: { en: 40 }, dir: "auto" },
-  { key: "share.title", kind: "plain", role: "heading", required: true, maxLength: { en: 70 }, dir: "auto" },
-  { key: "share.description", kind: "plain", role: "body", required: true, maxLength: { en: 200 }, dir: "auto" },
-];
+const META_FIELDS = JSON.parse(readFileSync(new URL("../../src/derive/meta-fields.json", import.meta.url), "utf8")) as { page: DesignerCopyField[]; publication: DesignerCopyField[] };
+/** Page metadata fields (Publisher `meta.title`, `meta.description`, `meta.og.*`; writer.md: title, description, share), read from the meta-fields data file. */
+export const PAGE_META_FIELDS: readonly DesignerCopyField[] = Object.freeze(META_FIELDS.page);
+/** Publication metadata fields (writer.md: site name, default share), read from the meta-fields data file. */
+export const PUBLICATION_META_FIELDS: readonly DesignerCopyField[] = Object.freeze(META_FIELDS.publication);
 export const PAGE_METADATA_L1 = { id: "copy/page-metadata", label: "Page metadata" } as const;
 const META_REF = /^writer\/(page\.([a-z0-9]+(?:-[a-z0-9]+)*)\.meta)#([a-z0-9]+(?:-[a-z0-9]+)*\.meta)$/;
 
@@ -143,8 +135,8 @@ export function deriveCopyTree(input: DesignerCopyInput): GroupTree {
   return { schema: "clossys.writer-ia/1", group: "copy", label: "Copy", nodes, slots, awaiting };
 }
 
-const metaSlot = (id: string, unit: string, record: string, placement: string, fields: readonly DesignerCopyField[]): GroupSlot => ({
-  id, kind: "copy", mark: "starter", inputs: [...VOICE_INPUTS, ...DIRECTOR_INPUTS].map(ref => ({ ...ref })),
+const metaSlot = (id: string, unit: string, record: string, placement: string, fields: readonly DesignerCopyField[], extra: readonly WriterRef[] = []): GroupSlot => ({
+  id, kind: "copy", mark: "starter", inputs: [...VOICE_INPUTS, ...DIRECTOR_INPUTS, ...extra].map(ref => ({ ...ref })),
   contract: {
     unit,
     records: { [record]: { placement } },
@@ -172,7 +164,7 @@ function derivePageMetadata(directory: PublisherDirectory, nodes: GroupL1[], slo
         const ref = META_REF.exec(page.records.meta);
         if (!ref || `page.${ref[2]}` !== pageId || ref[3] !== `${ref[2]}.meta`) throw new Error(`Writer derive: ${pageId} names meta ${page.records.meta}; expected writer/${pageId}.meta#${pageId.slice(5)}.meta`);
         leaves.push(ref[1]!);
-        slots.push(metaSlot(ref[1]!, `publisher/${pageId}`, ref[3]!, `publisher/${pageId}#meta`, PAGE_META_FIELDS));
+        slots.push(metaSlot(ref[1]!, `publisher/${pageId}`, ref[3]!, `publisher/${pageId}#meta`, PAGE_META_FIELDS, [{ to: `writer/${pubId}`, rel: "input" }]));
       }
       l1.children.push({ id: `${l1.id}/${publication}`, label: publication, leaves });
     }

@@ -20,7 +20,8 @@
   "refs": [
     {
       "to": "director/identity.verbal.voice",
-      "rel": "input"
+      "rel": "input",
+      "key": "Do"
     }
   ],
   "base": null,
@@ -31,7 +32,8 @@
     "inputs": [
       {
         "to": "director/identity.verbal.voice",
-        "rel": "input"
+        "rel": "input",
+        "key": "Do"
       }
     ],
     "acceptance": []
@@ -54,15 +56,7 @@
       {
         "check": "lexicon.record"
       }
-    ],
-    "fixture": {
-      "keys": [
-        "mood"
-      ],
-      "locales": [
-        "en"
-      ]
-    }
+    ]
   },
   "tighten": [],
   "family": {

@@ -20,11 +20,13 @@
   "refs": [
     {
       "to": "director/identity.verbal.voice",
-      "rel": "input"
+      "rel": "input",
+      "key": "Do"
     },
     {
       "to": "director/identity.naming.name",
-      "rel": "input"
+      "rel": "input",
+      "key": "Casing"
     }
   ],
   "base": null,
@@ -35,11 +37,13 @@
     "inputs": [
       {
         "to": "director/identity.verbal.voice",
-        "rel": "input"
+        "rel": "input",
+        "key": "Do"
       },
       {
         "to": "director/identity.naming.name",
-        "rel": "input"
+        "rel": "input",
+        "key": "Casing"
       }
     ],
     "acceptance": []
@@ -62,15 +66,7 @@
       {
         "check": "lexicon.record"
       }
-    ],
-    "fixture": {
-      "keys": [
-        "headings"
-      ],
-      "locales": [
-        "en"
-      ]
-    }
+    ]
   },
   "tighten": [],
   "family": {

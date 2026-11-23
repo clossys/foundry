@@ -82,6 +82,25 @@
           "sha256": "cd08f2e5f7de49ad85aa0586afc6f3ece2f132fa91601fd68e1476b4483159a2"
         }
       ]
+    },
+    {
+      "op": "slot",
+      "at": "2026-11-23T00:00:00Z",
+      "by": "planner",
+      "verb": "ia",
+      "skill": {
+        "path": "packages/producer/actions/ia/skill.md",
+        "sha256": "147a7eaf66267728953e0c8111a9c20b93475f95f8063745d9d1d1087658fe73"
+      },
+      "model": "none",
+      "tier": "none",
+      "kind": "ia",
+      "records": [
+        {
+          "file": "slot.json",
+          "sha256": "cc5dfdeda2cb2b74be8a4fa2e2ec74a9c706d9dff7befdedd28b9bebcca683ae"
+        }
+      ]
     }
   ]
 }

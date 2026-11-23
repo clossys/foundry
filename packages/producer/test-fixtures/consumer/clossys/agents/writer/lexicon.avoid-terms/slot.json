@@ -20,11 +20,13 @@
   "refs": [
     {
       "to": "director/identity.verbal.voice",
-      "rel": "input"
+      "rel": "input",
+      "key": "Never"
     },
     {
       "to": "director/identity.brand.personality",
-      "rel": "input"
+      "rel": "input",
+      "key": "Not"
     }
   ],
   "base": null,
@@ -35,11 +37,13 @@
     "inputs": [
       {
         "to": "director/identity.verbal.voice",
-        "rel": "input"
+        "rel": "input",
+        "key": "Never"
       },
       {
         "to": "director/identity.brand.personality",
-        "rel": "input"
+        "rel": "input",
+        "key": "Not"
       }
     ],
     "acceptance": []
@@ -62,15 +66,7 @@
       {
         "check": "lexicon.record"
       }
-    ],
-    "fixture": {
-      "keys": [
-        "leverage"
-      ],
-      "locales": [
-        "en"
-      ]
-    }
+    ]
   },
   "tighten": [],
   "family": {

@@ -1,7 +1,7 @@
 {
   "schema": "clossys.index/1",
-  "events": 1268,
-  "head": "1ef54bc517b421e7911a0a433b1d0a04a44591933bacac4de77b91f4fdfce501",
+  "events": 1307,
+  "head": "26993dad41e9a3f05056e537a475218cfc70a18db929986dc657e1bc372f5fe5",
   "subjects": {
     "designer": {
       "seq": 417,
@@ -1360,238 +1360,238 @@
       "at": "2026-11-19T00:00:00.000Z"
     },
     "writer/lexicon.avoid-patterns": {
-      "seq": 1203,
-      "kind": "slot.pin",
-      "actor": "planner:fixture-world",
-      "at": "2026-11-19T00:00:00.000Z"
+      "seq": 1279,
+      "kind": "slot.slot",
+      "actor": "planner",
+      "at": "2026-11-23T19:45:27.733Z"
     },
     "writer/lexicon.avoid-terms": {
-      "seq": 1194,
-      "kind": "slot.pin",
-      "actor": "planner:fixture-world",
-      "at": "2026-11-19T00:00:00.000Z"
+      "seq": 1278,
+      "kind": "slot.slot",
+      "actor": "planner",
+      "at": "2026-11-23T19:45:27.717Z"
     },
     "writer/lexicon.capitalization": {
-      "seq": 1159,
-      "kind": "slot.pin",
-      "actor": "planner:fixture-world",
-      "at": "2026-11-19T00:00:00.000Z"
+      "seq": 1275,
+      "kind": "slot.slot",
+      "actor": "planner",
+      "at": "2026-11-23T19:45:27.667Z"
     },
     "writer/lexicon.energy": {
-      "seq": 1114,
-      "kind": "slot.pin",
-      "actor": "planner:fixture-world",
-      "at": "2026-11-19T00:00:00.000Z"
+      "seq": 1270,
+      "kind": "slot.slot",
+      "actor": "planner",
+      "at": "2026-11-23T19:45:27.570Z"
     },
     "writer/lexicon.formality": {
-      "seq": 1096,
-      "kind": "slot.pin",
-      "actor": "planner:fixture-world",
-      "at": "2026-11-19T00:00:00.000Z"
+      "seq": 1268,
+      "kind": "slot.slot",
+      "actor": "planner",
+      "at": "2026-11-23T19:45:27.528Z"
     },
     "writer/lexicon.mood": {
-      "seq": 1132,
-      "kind": "slot.pin",
-      "actor": "planner:fixture-world",
-      "at": "2026-11-19T00:00:00.000Z"
+      "seq": 1272,
+      "kind": "slot.slot",
+      "actor": "planner",
+      "at": "2026-11-23T19:45:27.610Z"
     },
     "writer/lexicon.person": {
-      "seq": 1123,
-      "kind": "slot.pin",
-      "actor": "planner:fixture-world",
-      "at": "2026-11-19T00:00:00.000Z"
+      "seq": 1271,
+      "kind": "slot.slot",
+      "actor": "planner",
+      "at": "2026-11-23T19:45:27.590Z"
     },
     "writer/lexicon.preferred-terms": {
-      "seq": 1185,
-      "kind": "slot.pin",
-      "actor": "planner:fixture-world",
-      "at": "2026-11-19T00:00:00.000Z"
+      "seq": 1277,
+      "kind": "slot.slot",
+      "actor": "planner",
+      "at": "2026-11-23T19:45:27.701Z"
     },
     "writer/lexicon.punctuation": {
-      "seq": 1168,
-      "kind": "slot.pin",
-      "actor": "planner:fixture-world",
-      "at": "2026-11-19T00:00:00.000Z"
+      "seq": 1276,
+      "kind": "slot.slot",
+      "actor": "planner",
+      "at": "2026-11-23T19:45:27.686Z"
     },
     "writer/lexicon.reading-level": {
-      "seq": 1150,
-      "kind": "slot.pin",
-      "actor": "planner:fixture-world",
-      "at": "2026-11-19T00:00:00.000Z"
+      "seq": 1274,
+      "kind": "slot.slot",
+      "actor": "planner",
+      "at": "2026-11-23T19:45:27.647Z"
     },
     "writer/lexicon.sentence-length": {
-      "seq": 1141,
-      "kind": "slot.pin",
-      "actor": "planner:fixture-world",
-      "at": "2026-11-19T00:00:00.000Z"
+      "seq": 1273,
+      "kind": "slot.slot",
+      "actor": "planner",
+      "at": "2026-11-23T19:45:27.629Z"
     },
     "writer/lexicon.warmth": {
-      "seq": 1105,
-      "kind": "slot.pin",
-      "actor": "planner:fixture-world",
-      "at": "2026-11-19T00:00:00.000Z"
+      "seq": 1269,
+      "kind": "slot.slot",
+      "actor": "planner",
+      "at": "2026-11-23T19:45:27.549Z"
     },
     "writer/page.about.meta": {
-      "seq": 230,
+      "seq": 1281,
       "kind": "slot.slot",
-      "actor": "agent:writer",
-      "at": "2026-11-19T00:00:00.000Z"
+      "actor": "planner",
+      "at": "2026-11-23T19:45:27.760Z"
     },
     "writer/page.admin-gallery.meta": {
-      "seq": 254,
+      "seq": 1302,
       "kind": "slot.slot",
-      "actor": "agent:writer",
-      "at": "2026-11-19T00:00:00.000Z"
+      "actor": "planner",
+      "at": "2026-11-23T19:45:28.080Z"
     },
     "writer/page.admin-home.meta": {
-      "seq": 253,
+      "seq": 1301,
       "kind": "slot.slot",
-      "actor": "agent:writer",
-      "at": "2026-11-19T00:00:00.000Z"
+      "actor": "planner",
+      "at": "2026-11-23T19:45:28.066Z"
     },
     "writer/page.admin-questions.meta": {
-      "seq": 257,
+      "seq": 1305,
       "kind": "slot.slot",
-      "actor": "agent:writer",
-      "at": "2026-11-19T00:00:00.000Z"
+      "actor": "planner",
+      "at": "2026-11-23T19:45:28.123Z"
     },
     "writer/page.admin-requests.meta": {
-      "seq": 256,
+      "seq": 1304,
       "kind": "slot.slot",
-      "actor": "agent:writer",
-      "at": "2026-11-19T00:00:00.000Z"
+      "actor": "planner",
+      "at": "2026-11-23T19:45:28.108Z"
     },
     "writer/page.admin-slot.meta": {
-      "seq": 255,
+      "seq": 1303,
       "kind": "slot.slot",
-      "actor": "agent:writer",
-      "at": "2026-11-19T00:00:00.000Z"
+      "actor": "planner",
+      "at": "2026-11-23T19:45:28.094Z"
     },
     "writer/page.app-home.meta": {
-      "seq": 248,
+      "seq": 1297,
       "kind": "slot.slot",
-      "actor": "agent:writer",
-      "at": "2026-11-19T00:00:00.000Z"
+      "actor": "planner",
+      "at": "2026-11-23T19:45:28.003Z"
     },
     "writer/page.app-not-found.meta": {
-      "seq": 251,
+      "seq": 1300,
       "kind": "slot.slot",
-      "actor": "agent:writer",
-      "at": "2026-11-19T00:00:00.000Z"
+      "actor": "planner",
+      "at": "2026-11-23T19:45:28.049Z"
     },
     "writer/page.article.meta": {
-      "seq": 241,
+      "seq": 1291,
       "kind": "slot.slot",
-      "actor": "agent:writer",
-      "at": "2026-11-19T00:00:00.000Z"
+      "actor": "planner",
+      "at": "2026-11-23T19:45:27.910Z"
     },
     "writer/page.changelog.meta": {
-      "seq": 242,
+      "seq": 1292,
       "kind": "slot.slot",
-      "actor": "agent:writer",
-      "at": "2026-11-19T00:00:00.000Z"
+      "actor": "planner",
+      "at": "2026-11-23T19:45:27.926Z"
     },
     "writer/page.contact.meta": {
-      "seq": 232,
+      "seq": 1283,
       "kind": "slot.slot",
-      "actor": "agent:writer",
-      "at": "2026-11-19T00:00:00.000Z"
+      "actor": "planner",
+      "at": "2026-11-23T19:45:27.786Z"
     },
     "writer/page.deck.meta": {
-      "seq": 259,
+      "seq": 1306,
       "kind": "slot.slot",
-      "actor": "agent:writer",
-      "at": "2026-11-19T00:00:00.000Z"
+      "actor": "planner",
+      "at": "2026-11-23T19:45:28.139Z"
     },
     "writer/page.docs-index.meta": {
-      "seq": 239,
+      "seq": 1289,
       "kind": "slot.slot",
-      "actor": "agent:writer",
-      "at": "2026-11-19T00:00:00.000Z"
+      "actor": "planner",
+      "at": "2026-11-23T19:45:27.876Z"
     },
     "writer/page.error.meta": {
-      "seq": 237,
+      "seq": 1288,
       "kind": "slot.slot",
-      "actor": "agent:writer",
-      "at": "2026-11-19T00:00:00.000Z"
+      "actor": "planner",
+      "at": "2026-11-23T19:45:27.862Z"
     },
     "writer/page.guide.meta": {
-      "seq": 240,
+      "seq": 1290,
       "kind": "slot.slot",
-      "actor": "agent:writer",
-      "at": "2026-11-19T00:00:00.000Z"
+      "actor": "planner",
+      "at": "2026-11-23T19:45:27.892Z"
     },
     "writer/page.home.meta": {
-      "seq": 1259,
-      "kind": "slot.pin",
-      "actor": "planner:fixture-world",
-      "at": "2026-11-19T00:00:00.000Z"
+      "seq": 1280,
+      "kind": "slot.slot",
+      "actor": "planner",
+      "at": "2026-11-23T19:45:27.748Z"
     },
     "writer/page.list.meta": {
-      "seq": 249,
+      "seq": 1298,
       "kind": "slot.slot",
-      "actor": "agent:writer",
-      "at": "2026-11-19T00:00:00.000Z"
+      "actor": "planner",
+      "at": "2026-11-23T19:45:28.019Z"
     },
     "writer/page.not-authorized.meta": {
-      "seq": 246,
+      "seq": 1295,
       "kind": "slot.slot",
-      "actor": "agent:writer",
-      "at": "2026-11-19T00:00:00.000Z"
+      "actor": "planner",
+      "at": "2026-11-23T19:45:27.975Z"
     },
     "writer/page.not-found.meta": {
-      "seq": 236,
+      "seq": 1287,
       "kind": "slot.slot",
-      "actor": "agent:writer",
-      "at": "2026-11-19T00:00:00.000Z"
+      "actor": "planner",
+      "at": "2026-11-23T19:45:27.848Z"
     },
     "writer/page.pricing.meta": {
-      "seq": 231,
+      "seq": 1282,
       "kind": "slot.slot",
-      "actor": "agent:writer",
-      "at": "2026-11-19T00:00:00.000Z"
+      "actor": "planner",
+      "at": "2026-11-23T19:45:27.774Z"
     },
     "writer/page.privacy.meta": {
-      "seq": 235,
+      "seq": 1286,
       "kind": "slot.slot",
-      "actor": "agent:writer",
-      "at": "2026-11-19T00:00:00.000Z"
+      "actor": "planner",
+      "at": "2026-11-23T19:45:27.829Z"
     },
     "writer/page.service-unavailable.meta": {
-      "seq": 247,
+      "seq": 1296,
       "kind": "slot.slot",
-      "actor": "agent:writer",
-      "at": "2026-11-19T00:00:00.000Z"
+      "actor": "planner",
+      "at": "2026-11-23T19:45:27.989Z"
     },
     "writer/page.settings.meta": {
-      "seq": 250,
+      "seq": 1299,
       "kind": "slot.slot",
-      "actor": "agent:writer",
-      "at": "2026-11-19T00:00:00.000Z"
+      "actor": "planner",
+      "at": "2026-11-23T19:45:28.034Z"
     },
     "writer/page.sign-in.meta": {
-      "seq": 244,
+      "seq": 1293,
       "kind": "slot.slot",
-      "actor": "agent:writer",
-      "at": "2026-11-19T00:00:00.000Z"
+      "actor": "planner",
+      "at": "2026-11-23T19:45:27.945Z"
     },
     "writer/page.sign-out-confirm.meta": {
-      "seq": 245,
+      "seq": 1294,
       "kind": "slot.slot",
-      "actor": "agent:writer",
-      "at": "2026-11-19T00:00:00.000Z"
+      "actor": "planner",
+      "at": "2026-11-23T19:45:27.961Z"
     },
     "writer/page.site-page.meta": {
-      "seq": 233,
+      "seq": 1284,
       "kind": "slot.slot",
-      "actor": "agent:writer",
-      "at": "2026-11-19T00:00:00.000Z"
+      "actor": "planner",
+      "at": "2026-11-23T19:45:27.800Z"
     },
     "writer/page.terms.meta": {
-      "seq": 234,
+      "seq": 1285,
       "kind": "slot.slot",
-      "actor": "agent:writer",
-      "at": "2026-11-19T00:00:00.000Z"
+      "actor": "planner",
+      "at": "2026-11-23T19:45:27.816Z"
     },
     "writer/publication.admin.meta": {
       "seq": 252,
@@ -4194,9 +4194,9 @@
       "disk": "a18c7cb00684c342127fa2e3df894bbcbee737a03e77b28d6f84d3657095481e"
     },
     "clossys/agents/writer/lexicon.avoid-patterns/ledger.json": {
-      "seq": 1203,
-      "logged": "e27327bbe938bd006c585e63633999586202f8799261fc5bf9d2260d3378c310",
-      "disk": "e27327bbe938bd006c585e63633999586202f8799261fc5bf9d2260d3378c310"
+      "seq": 1279,
+      "logged": "bcaa79c92ad39a761231d25a3721ca2cb82d5636bf7c5218011a9ffd29aa29c1",
+      "disk": "bcaa79c92ad39a761231d25a3721ca2cb82d5636bf7c5218011a9ffd29aa29c1"
     },
     "clossys/agents/writer/lexicon.avoid-patterns/pin.json": {
       "seq": 1203,
@@ -4204,14 +4204,14 @@
       "disk": "bcd097b72b1bece0fa17fe3343f22c933845d5d51a659d3b97a6edc7b91a9f61"
     },
     "clossys/agents/writer/lexicon.avoid-patterns/slot.json": {
-      "seq": 1195,
-      "logged": "c37081af9f1646b91ef795a2be510939b055da254a18b07ac4723b2f5809b205",
-      "disk": "c37081af9f1646b91ef795a2be510939b055da254a18b07ac4723b2f5809b205"
+      "seq": 1279,
+      "logged": "a41d0fddb6fd8bd855ce174869242a61074169a445672b84cdfd8bd317c38a3e",
+      "disk": "a41d0fddb6fd8bd855ce174869242a61074169a445672b84cdfd8bd317c38a3e"
     },
     "clossys/agents/writer/lexicon.avoid-terms/ledger.json": {
-      "seq": 1194,
-      "logged": "f6626da0347ee03f495c803ce8d7a429311c4f8aa17f9e5a69d06949592a4681",
-      "disk": "f6626da0347ee03f495c803ce8d7a429311c4f8aa17f9e5a69d06949592a4681"
+      "seq": 1278,
+      "logged": "2928b382c6ddd939b4d8bd719c903d2afbb261f2b185a34128ee4e2cb4bf2303",
+      "disk": "2928b382c6ddd939b4d8bd719c903d2afbb261f2b185a34128ee4e2cb4bf2303"
     },
     "clossys/agents/writer/lexicon.avoid-terms/pin.json": {
       "seq": 1194,
@@ -4219,14 +4219,14 @@
       "disk": "2960cc8930143e0ee0d745a4dfbb4ec92a2fea8afe3f2e7941039d4da08655d4"
     },
     "clossys/agents/writer/lexicon.avoid-terms/slot.json": {
-      "seq": 1186,
-      "logged": "d1f21fa5642060d7d603fdaacc672c1bd0e5cde80f931d4cfe56604f56bd7cc3",
-      "disk": "d1f21fa5642060d7d603fdaacc672c1bd0e5cde80f931d4cfe56604f56bd7cc3"
+      "seq": 1278,
+      "logged": "60a9f298e3e122c510ddd71cd2982c8dc9a78ed8a27fd8ced32d218f6cea0edb",
+      "disk": "60a9f298e3e122c510ddd71cd2982c8dc9a78ed8a27fd8ced32d218f6cea0edb"
     },
     "clossys/agents/writer/lexicon.capitalization/ledger.json": {
-      "seq": 1159,
-      "logged": "92eb73023e16ba142947ff4bd6c396ed0cdfed6c8d5a264d2aaf6b1cf04e3b0b",
-      "disk": "92eb73023e16ba142947ff4bd6c396ed0cdfed6c8d5a264d2aaf6b1cf04e3b0b"
+      "seq": 1275,
+      "logged": "764cf0c5feb8688b030c59b467de2927dbb31718e5cfe8c5e355f668dbde98ff",
+      "disk": "764cf0c5feb8688b030c59b467de2927dbb31718e5cfe8c5e355f668dbde98ff"
     },
     "clossys/agents/writer/lexicon.capitalization/pin.json": {
       "seq": 1159,
@@ -4234,14 +4234,14 @@
       "disk": "54bfb96996b7c92ca6c407e6aaaea6ce87c672043ae3c15e9b61943b2df69daf"
     },
     "clossys/agents/writer/lexicon.capitalization/slot.json": {
-      "seq": 1151,
-      "logged": "a42db4755d5cef68901f53d34fb1c0a123ac136c48e979acefcf4e56dd7985f3",
-      "disk": "a42db4755d5cef68901f53d34fb1c0a123ac136c48e979acefcf4e56dd7985f3"
+      "seq": 1275,
+      "logged": "74248b244af9369c7f8fb9600ee90146648adf944141633b9c23f91789191776",
+      "disk": "74248b244af9369c7f8fb9600ee90146648adf944141633b9c23f91789191776"
     },
     "clossys/agents/writer/lexicon.energy/ledger.json": {
-      "seq": 1114,
-      "logged": "22e27efc04e25ebb5b044701bc1dda07288a50474dba866f2ba51432d6967e54",
-      "disk": "22e27efc04e25ebb5b044701bc1dda07288a50474dba866f2ba51432d6967e54"
+      "seq": 1270,
+      "logged": "edcbe1362d2a3e37d058c0b47f0e1c9449446b7a15eed067fa946e9baae94078",
+      "disk": "edcbe1362d2a3e37d058c0b47f0e1c9449446b7a15eed067fa946e9baae94078"
     },
     "clossys/agents/writer/lexicon.energy/pin.json": {
       "seq": 1114,
@@ -4249,14 +4249,14 @@
       "disk": "9270c42feb91496db9a88cf87533e58ee7ad4c5f2a7759e05613df9b05071ee5"
     },
     "clossys/agents/writer/lexicon.energy/slot.json": {
-      "seq": 1106,
-      "logged": "9fe4c6f3b680fe60e170d03a607cd15a6f7274c25ad5a0ead227e9e9df319720",
-      "disk": "9fe4c6f3b680fe60e170d03a607cd15a6f7274c25ad5a0ead227e9e9df319720"
+      "seq": 1270,
+      "logged": "f117c5936337b4ec0fbde468ebf2a6a81325b3cd658a6d2655c1c6490a0d2761",
+      "disk": "f117c5936337b4ec0fbde468ebf2a6a81325b3cd658a6d2655c1c6490a0d2761"
     },
     "clossys/agents/writer/lexicon.formality/ledger.json": {
-      "seq": 1096,
-      "logged": "962e8390f717b8b49b35a10651d4d40a8521fc61ff01bf27e8fb5ebd09729d59",
-      "disk": "962e8390f717b8b49b35a10651d4d40a8521fc61ff01bf27e8fb5ebd09729d59"
+      "seq": 1268,
+      "logged": "08a916d7b507441710970f309292a99ca87e4f6d51b3640deacdf581dfc5b2a6",
+      "disk": "08a916d7b507441710970f309292a99ca87e4f6d51b3640deacdf581dfc5b2a6"
     },
     "clossys/agents/writer/lexicon.formality/pin.json": {
       "seq": 1096,
@@ -4264,14 +4264,14 @@
       "disk": "a5f08bfd71c70921b0699916b833d38ff53922eaeb0a171a308f109c5b201d75"
     },
     "clossys/agents/writer/lexicon.formality/slot.json": {
-      "seq": 1088,
-      "logged": "4cefbf3e23839f7bbfd6c73c6425e8c07d2afb5d3246fab5064996d81177e090",
-      "disk": "4cefbf3e23839f7bbfd6c73c6425e8c07d2afb5d3246fab5064996d81177e090"
+      "seq": 1268,
+      "logged": "3012173f9b1a907093d87c930dbeda1f54efe034f64359a291fd25e25689620a",
+      "disk": "3012173f9b1a907093d87c930dbeda1f54efe034f64359a291fd25e25689620a"
     },
     "clossys/agents/writer/lexicon.mood/ledger.json": {
-      "seq": 1132,
-      "logged": "5ddee253de15704b686b84f19f5c92bfad9c99aff2f6cd0e2db5e00bf91e8774",
-      "disk": "5ddee253de15704b686b84f19f5c92bfad9c99aff2f6cd0e2db5e00bf91e8774"
+      "seq": 1272,
+      "logged": "c68a583cb4ed8b71267e7fd4fcbd6c42cd790285f24d5188996ee5608f97f57b",
+      "disk": "c68a583cb4ed8b71267e7fd4fcbd6c42cd790285f24d5188996ee5608f97f57b"
     },
     "clossys/agents/writer/lexicon.mood/pin.json": {
       "seq": 1132,
@@ -4279,14 +4279,14 @@
       "disk": "5fbd877f33751c4e168ed827f854d55f0106de36b612346b00ea62caf83f2c19"
     },
     "clossys/agents/writer/lexicon.mood/slot.json": {
-      "seq": 1124,
-      "logged": "367d739a9cb21c5b5e2de23442795c602f848b120ec9c3871b1c9da87169a119",
-      "disk": "367d739a9cb21c5b5e2de23442795c602f848b120ec9c3871b1c9da87169a119"
+      "seq": 1272,
+      "logged": "717fe930f7e3a239921594b15297a140e5b23b55e05a36029e2c7691fd6d383d",
+      "disk": "717fe930f7e3a239921594b15297a140e5b23b55e05a36029e2c7691fd6d383d"
     },
     "clossys/agents/writer/lexicon.person/ledger.json": {
-      "seq": 1123,
-      "logged": "16dbf2913c5019a6278cf922e41a03b2c728b0df98a81e98bc54ad5ff8c6c0e3",
-      "disk": "16dbf2913c5019a6278cf922e41a03b2c728b0df98a81e98bc54ad5ff8c6c0e3"
+      "seq": 1271,
+      "logged": "f76568b4d4073eb53a032d395fccf4fe6110a6f508ffea7516f28c205ac1f2d6",
+      "disk": "f76568b4d4073eb53a032d395fccf4fe6110a6f508ffea7516f28c205ac1f2d6"
     },
     "clossys/agents/writer/lexicon.person/pin.json": {
       "seq": 1123,
@@ -4294,14 +4294,14 @@
       "disk": "df3ac33c441f58c3053cbae78a5ab770885f8d8885c0f73eb477416b45a0a067"
     },
     "clossys/agents/writer/lexicon.person/slot.json": {
-      "seq": 1115,
-      "logged": "171bc7b0da3c43cae8f5824b9e9d9d0f4a6f0cd30717d14b4c8c84028bb74a07",
-      "disk": "171bc7b0da3c43cae8f5824b9e9d9d0f4a6f0cd30717d14b4c8c84028bb74a07"
+      "seq": 1271,
+      "logged": "545f153498cb5a48da3a36189e5ab1559fe13a5bffd4f34c9f672e9b031a31a7",
+      "disk": "545f153498cb5a48da3a36189e5ab1559fe13a5bffd4f34c9f672e9b031a31a7"
     },
     "clossys/agents/writer/lexicon.preferred-terms/ledger.json": {
-      "seq": 1185,
-      "logged": "0c288b063afbb21e8c3abc3d5a11ae1f85863220fe776c7dfa25841189c823fd",
-      "disk": "0c288b063afbb21e8c3abc3d5a11ae1f85863220fe776c7dfa25841189c823fd"
+      "seq": 1277,
+      "logged": "320cf38dfff1860226ff2052f17d733a9ea68f32e95ec27f4743d4281efa1f3f",
+      "disk": "320cf38dfff1860226ff2052f17d733a9ea68f32e95ec27f4743d4281efa1f3f"
     },
     "clossys/agents/writer/lexicon.preferred-terms/pin.json": {
       "seq": 1185,
@@ -4309,14 +4309,14 @@
       "disk": "7b20137f11c72af04972fd2504fda1c27685b314be0d2f39b246deada178040d"
     },
     "clossys/agents/writer/lexicon.preferred-terms/slot.json": {
-      "seq": 1177,
-      "logged": "c674c6082ae3079901f1ae79073754bee0e15586a8bc01211348ae53c8aae001",
-      "disk": "c674c6082ae3079901f1ae79073754bee0e15586a8bc01211348ae53c8aae001"
+      "seq": 1277,
+      "logged": "9d07a44ca6508352bf088607d2a64cf80abceb6229b5ca9f17c942ece222c618",
+      "disk": "9d07a44ca6508352bf088607d2a64cf80abceb6229b5ca9f17c942ece222c618"
     },
     "clossys/agents/writer/lexicon.punctuation/ledger.json": {
-      "seq": 1168,
-      "logged": "1fa7f0971363ba5364d623f6bedf0e0c49098e773cfd741b83a0d33983c61a9e",
-      "disk": "1fa7f0971363ba5364d623f6bedf0e0c49098e773cfd741b83a0d33983c61a9e"
+      "seq": 1276,
+      "logged": "bf50c5f9bf22313a78608fd24cf65a6308b777d0ecacf95d42160bda63a698ba",
+      "disk": "bf50c5f9bf22313a78608fd24cf65a6308b777d0ecacf95d42160bda63a698ba"
     },
     "clossys/agents/writer/lexicon.punctuation/pin.json": {
       "seq": 1168,
@@ -4324,14 +4324,14 @@
       "disk": "a837b823094d4b0f8a47889de14afee8d86589e9d0469afaf85eaef07367bdee"
     },
     "clossys/agents/writer/lexicon.punctuation/slot.json": {
-      "seq": 1160,
-      "logged": "9e5316d33f04609aa196283322fc68c9843b72a1a0170633ad55a473ba2bd8e7",
-      "disk": "9e5316d33f04609aa196283322fc68c9843b72a1a0170633ad55a473ba2bd8e7"
+      "seq": 1276,
+      "logged": "e872774e6f4ab13b7c9068402bc19f0713d71795080ee989a778a49ea30dbac0",
+      "disk": "e872774e6f4ab13b7c9068402bc19f0713d71795080ee989a778a49ea30dbac0"
     },
     "clossys/agents/writer/lexicon.reading-level/ledger.json": {
-      "seq": 1150,
-      "logged": "108af599d78973986b5e6f5e2028c6cee0c8b2dbf5d10abec25a9e3c723f9cbd",
-      "disk": "108af599d78973986b5e6f5e2028c6cee0c8b2dbf5d10abec25a9e3c723f9cbd"
+      "seq": 1274,
+      "logged": "b1eaa2d6fd15d1bd83ed6402e9522726574a759ab12e8ee7555e63bdcf438757",
+      "disk": "b1eaa2d6fd15d1bd83ed6402e9522726574a759ab12e8ee7555e63bdcf438757"
     },
     "clossys/agents/writer/lexicon.reading-level/pin.json": {
       "seq": 1150,
@@ -4339,14 +4339,14 @@
       "disk": "9704d8a06c22f89a8380c1d91be799222de79f446e4578be782beffb895b768c"
     },
     "clossys/agents/writer/lexicon.reading-level/slot.json": {
-      "seq": 1142,
-      "logged": "73170f848180f66bc1c68cc199a94b21393384ddbfae502771aaa539b19c2f3f",
-      "disk": "73170f848180f66bc1c68cc199a94b21393384ddbfae502771aaa539b19c2f3f"
+      "seq": 1274,
+      "logged": "a8ad543c244db2a5aed6c4601aac388e468cdcf5b1eb1dc3ad5d6d82ef30c416",
+      "disk": "a8ad543c244db2a5aed6c4601aac388e468cdcf5b1eb1dc3ad5d6d82ef30c416"
     },
     "clossys/agents/writer/lexicon.sentence-length/ledger.json": {
-      "seq": 1141,
-      "logged": "5f07358972f83dcfecbb894029052d49a38405675d3a740212268fa6946c1455",
-      "disk": "5f07358972f83dcfecbb894029052d49a38405675d3a740212268fa6946c1455"
+      "seq": 1273,
+      "logged": "95b0d1742780de4bd930f6bf71a69e98313bade2fdda23826bd965b4ad558cd9",
+      "disk": "95b0d1742780de4bd930f6bf71a69e98313bade2fdda23826bd965b4ad558cd9"
     },
     "clossys/agents/writer/lexicon.sentence-length/pin.json": {
       "seq": 1141,
@@ -4354,14 +4354,14 @@
       "disk": "f0ae7446e893646e1bb8687ef1ea07dfe6bf65d63a984133127805d64d9c9819"
     },
     "clossys/agents/writer/lexicon.sentence-length/slot.json": {
-      "seq": 1133,
-      "logged": "ffbb16b6940eb8cc5e82de4c0cb0161cfcee6ede7f7e53869d0a5c56a6c8afb8",
-      "disk": "ffbb16b6940eb8cc5e82de4c0cb0161cfcee6ede7f7e53869d0a5c56a6c8afb8"
+      "seq": 1273,
+      "logged": "ae1cd0b319215618262cdf54ffa192c91dddc50af00b1a51ac593b8f9ab0bf22",
+      "disk": "ae1cd0b319215618262cdf54ffa192c91dddc50af00b1a51ac593b8f9ab0bf22"
     },
     "clossys/agents/writer/lexicon.warmth/ledger.json": {
-      "seq": 1105,
-      "logged": "41ceef7b0e56ff6ffb7840d4d4dd5abd7c19306d3918dab4c0ede35c48a5ac4b",
-      "disk": "41ceef7b0e56ff6ffb7840d4d4dd5abd7c19306d3918dab4c0ede35c48a5ac4b"
+      "seq": 1269,
+      "logged": "a0b831997d3da3c9065cac1d7b2f9958f8b276fc68303e85ad8c1d28c031a7bb",
+      "disk": "a0b831997d3da3c9065cac1d7b2f9958f8b276fc68303e85ad8c1d28c031a7bb"
     },
     "clossys/agents/writer/lexicon.warmth/pin.json": {
       "seq": 1105,
@@ -4369,164 +4369,164 @@
       "disk": "fda5f62747281c73d67440cf352a10a08b9be34da1c5d2432d2a7f2277fa5133"
     },
     "clossys/agents/writer/lexicon.warmth/slot.json": {
-      "seq": 1097,
-      "logged": "bdb4e13dabbe421b20552830fb371d76a8340137557af04d257be9232cc201e1",
-      "disk": "bdb4e13dabbe421b20552830fb371d76a8340137557af04d257be9232cc201e1"
+      "seq": 1269,
+      "logged": "95c44d60cb15b63b7d9ae46f67255169b5c5997cfad0d60383adee9db766b9cf",
+      "disk": "95c44d60cb15b63b7d9ae46f67255169b5c5997cfad0d60383adee9db766b9cf"
     },
     "clossys/agents/writer/page.about.meta/ledger.json": {
-      "seq": 230,
-      "logged": "d55e0f1c8bd73f91b2a648a2a0f5b502b618322825c3d0e7d3e1e83806273fe3",
-      "disk": "d55e0f1c8bd73f91b2a648a2a0f5b502b618322825c3d0e7d3e1e83806273fe3"
+      "seq": 1281,
+      "logged": "d01f90ec04fd32d3cd1775774b9dcf13f3ff513a638eb915ea14ab12231f0d59",
+      "disk": "d01f90ec04fd32d3cd1775774b9dcf13f3ff513a638eb915ea14ab12231f0d59"
     },
     "clossys/agents/writer/page.about.meta/slot.json": {
-      "seq": 230,
-      "logged": "ad72987354e8856b4ee0f12f5460711d3b911d0f686485a64bb9ddb3a060065d",
-      "disk": "ad72987354e8856b4ee0f12f5460711d3b911d0f686485a64bb9ddb3a060065d"
+      "seq": 1281,
+      "logged": "04d4d7eaded7bbe0b20d2936f85376139e2443b83e6dbb35d6d3b0db3330c9e4",
+      "disk": "04d4d7eaded7bbe0b20d2936f85376139e2443b83e6dbb35d6d3b0db3330c9e4"
     },
     "clossys/agents/writer/page.admin-gallery.meta/ledger.json": {
-      "seq": 254,
-      "logged": "1a6f922cf1dcdce7eb8e72cead6dd8805626f0c7144746d7689ca4b5cf7435fa",
-      "disk": "1a6f922cf1dcdce7eb8e72cead6dd8805626f0c7144746d7689ca4b5cf7435fa"
+      "seq": 1302,
+      "logged": "643abc929b75a9123482c07e40705ddcca7ce65b1ec6a6dabe6537a4f5d62ebe",
+      "disk": "643abc929b75a9123482c07e40705ddcca7ce65b1ec6a6dabe6537a4f5d62ebe"
     },
     "clossys/agents/writer/page.admin-gallery.meta/slot.json": {
-      "seq": 254,
-      "logged": "caea2af9bbfcdc557fdb3481bb018a90c4c89d749a89dea38bb56b148dad0f3a",
-      "disk": "caea2af9bbfcdc557fdb3481bb018a90c4c89d749a89dea38bb56b148dad0f3a"
+      "seq": 1302,
+      "logged": "a7ebd96aed078378885a49b87d40116338c93b96b54d77518d663055aca5f406",
+      "disk": "a7ebd96aed078378885a49b87d40116338c93b96b54d77518d663055aca5f406"
     },
     "clossys/agents/writer/page.admin-home.meta/ledger.json": {
-      "seq": 253,
-      "logged": "a77188be68001463a749acffbcb19415c00ae0357532109145a32b562dccb8c2",
-      "disk": "a77188be68001463a749acffbcb19415c00ae0357532109145a32b562dccb8c2"
+      "seq": 1301,
+      "logged": "7dad99cc7eaf491917676dac68ab528da4a5b950d16c71673ace431bfabec4f4",
+      "disk": "7dad99cc7eaf491917676dac68ab528da4a5b950d16c71673ace431bfabec4f4"
     },
     "clossys/agents/writer/page.admin-home.meta/slot.json": {
-      "seq": 253,
-      "logged": "f9b8d74349563688b5251942a4e3056109a4a9be75567fcca97c14117612d38e",
-      "disk": "f9b8d74349563688b5251942a4e3056109a4a9be75567fcca97c14117612d38e"
+      "seq": 1301,
+      "logged": "78f022363889923f1baeaad374866d4391a79ce316c16ba85665d697dd55d925",
+      "disk": "78f022363889923f1baeaad374866d4391a79ce316c16ba85665d697dd55d925"
     },
     "clossys/agents/writer/page.admin-questions.meta/ledger.json": {
-      "seq": 257,
-      "logged": "f86cd1d02b7b632b4b57fe1e826484c071b1fdfc18bf9771136fc199e3478e77",
-      "disk": "f86cd1d02b7b632b4b57fe1e826484c071b1fdfc18bf9771136fc199e3478e77"
+      "seq": 1305,
+      "logged": "d3c57b5a0955d0a2d906e3da122a772236d6c11e5bdc56f7ae63e252795c7ed9",
+      "disk": "d3c57b5a0955d0a2d906e3da122a772236d6c11e5bdc56f7ae63e252795c7ed9"
     },
     "clossys/agents/writer/page.admin-questions.meta/slot.json": {
-      "seq": 257,
-      "logged": "4cfbe70d451b182f607981ee52e0d8224379157d8cd4b01b1b0206d6d1a2daae",
-      "disk": "4cfbe70d451b182f607981ee52e0d8224379157d8cd4b01b1b0206d6d1a2daae"
+      "seq": 1305,
+      "logged": "364811a5c71c73c432c0061fc1c1388ab84dcbf935ebbea7035bbd26fd3d3096",
+      "disk": "364811a5c71c73c432c0061fc1c1388ab84dcbf935ebbea7035bbd26fd3d3096"
     },
     "clossys/agents/writer/page.admin-requests.meta/ledger.json": {
-      "seq": 256,
-      "logged": "1ba699f4832a411ad6155a42f819a169a4f872656a0c1a5c7cf25457aa233a00",
-      "disk": "1ba699f4832a411ad6155a42f819a169a4f872656a0c1a5c7cf25457aa233a00"
+      "seq": 1304,
+      "logged": "e20086ba7c72edb3d3ff126ebfc10052fb35046e4648d5eed3acb2e231072b76",
+      "disk": "e20086ba7c72edb3d3ff126ebfc10052fb35046e4648d5eed3acb2e231072b76"
     },
     "clossys/agents/writer/page.admin-requests.meta/slot.json": {
-      "seq": 256,
-      "logged": "d9a651cd1ed77896d269f92518b17fafce51f6fadd9f4432150c88aed8d18a26",
-      "disk": "d9a651cd1ed77896d269f92518b17fafce51f6fadd9f4432150c88aed8d18a26"
+      "seq": 1304,
+      "logged": "e02e28297f6612a4647140281b6ace3fbeca48e029cd34243fbfa20f29c6c300",
+      "disk": "e02e28297f6612a4647140281b6ace3fbeca48e029cd34243fbfa20f29c6c300"
     },
     "clossys/agents/writer/page.admin-slot.meta/ledger.json": {
-      "seq": 255,
-      "logged": "b4441c37cd7e52cbe319767328eb6cd8212884a251208ec4a84ee4d5f5d763f9",
-      "disk": "b4441c37cd7e52cbe319767328eb6cd8212884a251208ec4a84ee4d5f5d763f9"
+      "seq": 1303,
+      "logged": "ad5e76c26ac62b2c927ac56867fdb45bf820b641a94cac0efa48be331c8d89a9",
+      "disk": "ad5e76c26ac62b2c927ac56867fdb45bf820b641a94cac0efa48be331c8d89a9"
     },
     "clossys/agents/writer/page.admin-slot.meta/slot.json": {
-      "seq": 255,
-      "logged": "a548cde9759dfbc1dae6bd67dbab4adb5a3b47b702b228ab1f5011482fe1398b",
-      "disk": "a548cde9759dfbc1dae6bd67dbab4adb5a3b47b702b228ab1f5011482fe1398b"
+      "seq": 1303,
+      "logged": "545e76b5545d30857d997016cb77520d5a1a1cf50bb994238625d50ddfeac4d6",
+      "disk": "545e76b5545d30857d997016cb77520d5a1a1cf50bb994238625d50ddfeac4d6"
     },
     "clossys/agents/writer/page.app-home.meta/ledger.json": {
-      "seq": 248,
-      "logged": "f3e95e5172cd68ca193db6d51fb79a019f4bcdb7816b5991c83918248b7e8ca8",
-      "disk": "f3e95e5172cd68ca193db6d51fb79a019f4bcdb7816b5991c83918248b7e8ca8"
+      "seq": 1297,
+      "logged": "ba43be6d36edec0f8c02aff37403221a384605bca01d7ddf04dab9e6612e3aba",
+      "disk": "ba43be6d36edec0f8c02aff37403221a384605bca01d7ddf04dab9e6612e3aba"
     },
     "clossys/agents/writer/page.app-home.meta/slot.json": {
-      "seq": 248,
-      "logged": "b4cac5c88532563de0d38981455486a4ac2ec8bb08244bece1a04cadc71e40a7",
-      "disk": "b4cac5c88532563de0d38981455486a4ac2ec8bb08244bece1a04cadc71e40a7"
+      "seq": 1297,
+      "logged": "a882d3fb958f27e34a81ae6523fe75374ce1c890931afb8420042f5d600d937c",
+      "disk": "a882d3fb958f27e34a81ae6523fe75374ce1c890931afb8420042f5d600d937c"
     },
     "clossys/agents/writer/page.app-not-found.meta/ledger.json": {
-      "seq": 251,
-      "logged": "495187c574c4051bed1d033a3691a186d7d221035583567e4e2f4237ecd6ee4e",
-      "disk": "495187c574c4051bed1d033a3691a186d7d221035583567e4e2f4237ecd6ee4e"
+      "seq": 1300,
+      "logged": "787388a5012fb33e3a4046a10bc46e33b17db93ac19869fca86880423e0bee34",
+      "disk": "787388a5012fb33e3a4046a10bc46e33b17db93ac19869fca86880423e0bee34"
     },
     "clossys/agents/writer/page.app-not-found.meta/slot.json": {
-      "seq": 251,
-      "logged": "7cd88f905c1d0fad9467a46773634a036e08f3634b7db926f3da66ee2de59b94",
-      "disk": "7cd88f905c1d0fad9467a46773634a036e08f3634b7db926f3da66ee2de59b94"
+      "seq": 1300,
+      "logged": "448afa26f269b37404447a93b9f662049c5ee49c70375d839169244f312a93f3",
+      "disk": "448afa26f269b37404447a93b9f662049c5ee49c70375d839169244f312a93f3"
     },
     "clossys/agents/writer/page.article.meta/ledger.json": {
-      "seq": 241,
-      "logged": "85a7a080299497b0da063ad4afe686d7d5b581108f32dd5ea05a18e35aaeb7ce",
-      "disk": "85a7a080299497b0da063ad4afe686d7d5b581108f32dd5ea05a18e35aaeb7ce"
+      "seq": 1291,
+      "logged": "71efaf3caa71b51fef34040241786f5308d44e383ed37040416c519efa9fb8f8",
+      "disk": "71efaf3caa71b51fef34040241786f5308d44e383ed37040416c519efa9fb8f8"
     },
     "clossys/agents/writer/page.article.meta/slot.json": {
-      "seq": 241,
-      "logged": "5e26a95dd020554238781297e921fd351cef3ef56f0d72769120544ca329f3b6",
-      "disk": "5e26a95dd020554238781297e921fd351cef3ef56f0d72769120544ca329f3b6"
+      "seq": 1291,
+      "logged": "6dddd724c32467d90657d3c6b4ae6d53c9acdd72bcb839b081d24bd74348fcd0",
+      "disk": "6dddd724c32467d90657d3c6b4ae6d53c9acdd72bcb839b081d24bd74348fcd0"
     },
     "clossys/agents/writer/page.changelog.meta/ledger.json": {
-      "seq": 242,
-      "logged": "2168aeadbfdf3935c681289362daae20441a2fe7363f6f928cdf1f81c5c7bf8e",
-      "disk": "2168aeadbfdf3935c681289362daae20441a2fe7363f6f928cdf1f81c5c7bf8e"
+      "seq": 1292,
+      "logged": "df28a6d48b537ba8c6b4ccd8945cb7c40c61080cfc4d4e282b4eb091ba2b2693",
+      "disk": "df28a6d48b537ba8c6b4ccd8945cb7c40c61080cfc4d4e282b4eb091ba2b2693"
     },
     "clossys/agents/writer/page.changelog.meta/slot.json": {
-      "seq": 242,
-      "logged": "632e0eed4e6d341b26f96593cd91342391ced595c604da775dd00264364646e1",
-      "disk": "632e0eed4e6d341b26f96593cd91342391ced595c604da775dd00264364646e1"
+      "seq": 1292,
+      "logged": "5c34837faeed95c4e52c81c5683b4f5916f6fc42e466f8a2146cf9929e829d39",
+      "disk": "5c34837faeed95c4e52c81c5683b4f5916f6fc42e466f8a2146cf9929e829d39"
     },
     "clossys/agents/writer/page.contact.meta/ledger.json": {
-      "seq": 232,
-      "logged": "6ef613438ea4b29f96cef90433971881a6d872151039a99928f92dd1a7f93788",
-      "disk": "6ef613438ea4b29f96cef90433971881a6d872151039a99928f92dd1a7f93788"
+      "seq": 1283,
+      "logged": "572ef4222a1b7eda69e7c228c0cdd9dc708cd901411ca9c4f865f56f29312d34",
+      "disk": "572ef4222a1b7eda69e7c228c0cdd9dc708cd901411ca9c4f865f56f29312d34"
     },
     "clossys/agents/writer/page.contact.meta/slot.json": {
-      "seq": 232,
-      "logged": "5cd3d1d8f338e8332073f98c7e592169b0543c06ed21174bd6d3e7b597cf7c02",
-      "disk": "5cd3d1d8f338e8332073f98c7e592169b0543c06ed21174bd6d3e7b597cf7c02"
+      "seq": 1283,
+      "logged": "e8fc053f26069cdb585c6d5b95b81e048e3225f7da89ed5c851ca6bbf98563d1",
+      "disk": "e8fc053f26069cdb585c6d5b95b81e048e3225f7da89ed5c851ca6bbf98563d1"
     },
     "clossys/agents/writer/page.deck.meta/ledger.json": {
-      "seq": 259,
-      "logged": "859195286a3d9832dcdec4e48923226f83c6d272317feb0f6545fde77dfafd84",
-      "disk": "859195286a3d9832dcdec4e48923226f83c6d272317feb0f6545fde77dfafd84"
+      "seq": 1306,
+      "logged": "d5ef7829289d45bdb27ad4cc4d96bbf209057e82fbb0b5a0c51d555be5a1ea51",
+      "disk": "d5ef7829289d45bdb27ad4cc4d96bbf209057e82fbb0b5a0c51d555be5a1ea51"
     },
     "clossys/agents/writer/page.deck.meta/slot.json": {
-      "seq": 259,
-      "logged": "7280ecdbcf97d8c60a3107b0cd778568d77d867c5a0a6f823883f2ee16428801",
-      "disk": "7280ecdbcf97d8c60a3107b0cd778568d77d867c5a0a6f823883f2ee16428801"
+      "seq": 1306,
+      "logged": "1c577c1c959907bdd2552145aced576b05a1a830d3b32ea03d751135963b9400",
+      "disk": "1c577c1c959907bdd2552145aced576b05a1a830d3b32ea03d751135963b9400"
     },
     "clossys/agents/writer/page.docs-index.meta/ledger.json": {
-      "seq": 239,
-      "logged": "19bac6c3fdc15c20101e75f6809d4b33a010c1d979bbdc74a583cda6ef4f0b30",
-      "disk": "19bac6c3fdc15c20101e75f6809d4b33a010c1d979bbdc74a583cda6ef4f0b30"
+      "seq": 1289,
+      "logged": "36d3dc18820fd905f0d0719a05efc38657cfd55ebdfa3def890a680a16ebb719",
+      "disk": "36d3dc18820fd905f0d0719a05efc38657cfd55ebdfa3def890a680a16ebb719"
     },
     "clossys/agents/writer/page.docs-index.meta/slot.json": {
-      "seq": 239,
-      "logged": "346cb09173bb8db1f61568c9be4a731bf023154640d22b6b98c59ec87bc2fedd",
-      "disk": "346cb09173bb8db1f61568c9be4a731bf023154640d22b6b98c59ec87bc2fedd"
+      "seq": 1289,
+      "logged": "8d7746e633f6b869099fe27be39b828895d7d0d55c44aa89f0f7051228f744d2",
+      "disk": "8d7746e633f6b869099fe27be39b828895d7d0d55c44aa89f0f7051228f744d2"
     },
     "clossys/agents/writer/page.error.meta/ledger.json": {
-      "seq": 237,
-      "logged": "e96ee79ee4896d1a9c4c4f6826d4e230878b591e152c05bd7e3a15cc0ae0d100",
-      "disk": "e96ee79ee4896d1a9c4c4f6826d4e230878b591e152c05bd7e3a15cc0ae0d100"
+      "seq": 1288,
+      "logged": "c70e93c2d84576181fb7ca0c7971a0d710b6e33f66656028f6370eb63b98ac7c",
+      "disk": "c70e93c2d84576181fb7ca0c7971a0d710b6e33f66656028f6370eb63b98ac7c"
     },
     "clossys/agents/writer/page.error.meta/slot.json": {
-      "seq": 237,
-      "logged": "cd08f2e5f7de49ad85aa0586afc6f3ece2f132fa91601fd68e1476b4483159a2",
-      "disk": "cd08f2e5f7de49ad85aa0586afc6f3ece2f132fa91601fd68e1476b4483159a2"
+      "seq": 1288,
+      "logged": "cc5dfdeda2cb2b74be8a4fa2e2ec74a9c706d9dff7befdedd28b9bebcca683ae",
+      "disk": "cc5dfdeda2cb2b74be8a4fa2e2ec74a9c706d9dff7befdedd28b9bebcca683ae"
     },
     "clossys/agents/writer/page.guide.meta/ledger.json": {
-      "seq": 240,
-      "logged": "9ba69f9a47a19e475acc9ddfc2a739c1daef44d643ba65ae1f589f5ae8c24060",
-      "disk": "9ba69f9a47a19e475acc9ddfc2a739c1daef44d643ba65ae1f589f5ae8c24060"
+      "seq": 1290,
+      "logged": "5e2fc9ead6939a520b00e82442a41f9d17e2dc3d32f7d89687e27c5bb259482c",
+      "disk": "5e2fc9ead6939a520b00e82442a41f9d17e2dc3d32f7d89687e27c5bb259482c"
     },
     "clossys/agents/writer/page.guide.meta/slot.json": {
-      "seq": 240,
-      "logged": "683ff3dc5056d9685bfe7c489f8bdbf2a2b07bc0cc3622592952c81c810d7a7c",
-      "disk": "683ff3dc5056d9685bfe7c489f8bdbf2a2b07bc0cc3622592952c81c810d7a7c"
+      "seq": 1290,
+      "logged": "fd7788696e92a268fc303f955694018cfa434bf473a5d8c4c93689fada86e02d",
+      "disk": "fd7788696e92a268fc303f955694018cfa434bf473a5d8c4c93689fada86e02d"
     },
     "clossys/agents/writer/page.home.meta/ledger.json": {
-      "seq": 1259,
-      "logged": "074d731566cf33867c280293f1b08992e09059880f5247e4ecd43b326e413e54",
-      "disk": "074d731566cf33867c280293f1b08992e09059880f5247e4ecd43b326e413e54"
+      "seq": 1280,
+      "logged": "5f2d26aab21950400fea9b91df663e18cae8139bc25fee89ba22abdb7874049b",
+      "disk": "5f2d26aab21950400fea9b91df663e18cae8139bc25fee89ba22abdb7874049b"
     },
     "clossys/agents/writer/page.home.meta/pin.json": {
       "seq": 1259,
@@ -4534,119 +4534,119 @@
       "disk": "2ec3f9c9560b78679650d8221147fba1c85d9f83b921a563518fc15cb4e8c624"
     },
     "clossys/agents/writer/page.home.meta/slot.json": {
-      "seq": 229,
-      "logged": "f6244a9b7273c22cb82639f3742fb5c519570c265507986c3829cd71d49449a6",
-      "disk": "f6244a9b7273c22cb82639f3742fb5c519570c265507986c3829cd71d49449a6"
+      "seq": 1280,
+      "logged": "bcf206a6f92d4500dbc6e0f654e77af6beed4a640d248bd29e64cad7c156f13e",
+      "disk": "bcf206a6f92d4500dbc6e0f654e77af6beed4a640d248bd29e64cad7c156f13e"
     },
     "clossys/agents/writer/page.list.meta/ledger.json": {
-      "seq": 249,
-      "logged": "da49d852a5d88e2d46889b9e4b2a70d1f9e1b6ace0040feb10cfd68ef304d251",
-      "disk": "da49d852a5d88e2d46889b9e4b2a70d1f9e1b6ace0040feb10cfd68ef304d251"
+      "seq": 1298,
+      "logged": "4f993aa34e908a37a29b716a8c4209176c2233435b27bd3b6878fa361c122799",
+      "disk": "4f993aa34e908a37a29b716a8c4209176c2233435b27bd3b6878fa361c122799"
     },
     "clossys/agents/writer/page.list.meta/slot.json": {
-      "seq": 249,
-      "logged": "58f4ffbb29163ea3a961f9febd54dc3748db3f09feb5e0369339d6ac097acbed",
-      "disk": "58f4ffbb29163ea3a961f9febd54dc3748db3f09feb5e0369339d6ac097acbed"
+      "seq": 1298,
+      "logged": "89d843f5d6c52e51aea09141d468f10343ebce80c80ca010b8596faae0388431",
+      "disk": "89d843f5d6c52e51aea09141d468f10343ebce80c80ca010b8596faae0388431"
     },
     "clossys/agents/writer/page.not-authorized.meta/ledger.json": {
-      "seq": 246,
-      "logged": "e9762135e46101172f333bd3d87bc38d43cca44eaaaaf86b6314f2bae036d816",
-      "disk": "e9762135e46101172f333bd3d87bc38d43cca44eaaaaf86b6314f2bae036d816"
+      "seq": 1295,
+      "logged": "587ddcf9c58913417a1e437265f681aca8fe175517d81165e195eb0db893d275",
+      "disk": "587ddcf9c58913417a1e437265f681aca8fe175517d81165e195eb0db893d275"
     },
     "clossys/agents/writer/page.not-authorized.meta/slot.json": {
-      "seq": 246,
-      "logged": "b309b6314904db0a05865d681bff4e4b138da9e05e77903c87c8c8ed5112e7d1",
-      "disk": "b309b6314904db0a05865d681bff4e4b138da9e05e77903c87c8c8ed5112e7d1"
+      "seq": 1295,
+      "logged": "9740cefd338e60af4b425b4e2b332670ad2d5850da1a67671b22308824cd27ea",
+      "disk": "9740cefd338e60af4b425b4e2b332670ad2d5850da1a67671b22308824cd27ea"
     },
     "clossys/agents/writer/page.not-found.meta/ledger.json": {
-      "seq": 236,
-      "logged": "6057f27204784bf0e94d5d1520630cea42b957767a2bf56a80f6d0985e7f6467",
-      "disk": "6057f27204784bf0e94d5d1520630cea42b957767a2bf56a80f6d0985e7f6467"
+      "seq": 1287,
+      "logged": "cf19b8f7ed7248c19a829cd666d59d40d6db8707d3a63c8247327e98995ff4ea",
+      "disk": "cf19b8f7ed7248c19a829cd666d59d40d6db8707d3a63c8247327e98995ff4ea"
     },
     "clossys/agents/writer/page.not-found.meta/slot.json": {
-      "seq": 236,
-      "logged": "9c9b5345ebbcca0dde091a6cc4795ffeee1aef108bf7092eb721e11e63a11716",
-      "disk": "9c9b5345ebbcca0dde091a6cc4795ffeee1aef108bf7092eb721e11e63a11716"
+      "seq": 1287,
+      "logged": "b26807cac5928cf0f723253fe0b1dc00d701cc361d80363f129db6d60ca52f4b",
+      "disk": "b26807cac5928cf0f723253fe0b1dc00d701cc361d80363f129db6d60ca52f4b"
     },
     "clossys/agents/writer/page.pricing.meta/ledger.json": {
-      "seq": 231,
-      "logged": "5e9dd377dc8d05195061cd07e59ecba49be9e7764dbe7ac03353b22ec859acb1",
-      "disk": "5e9dd377dc8d05195061cd07e59ecba49be9e7764dbe7ac03353b22ec859acb1"
+      "seq": 1282,
+      "logged": "466c051d2085d7cd19c7e77d6cbdc7c57fb1a6ea64022b1d65f86c17478bf549",
+      "disk": "466c051d2085d7cd19c7e77d6cbdc7c57fb1a6ea64022b1d65f86c17478bf549"
     },
     "clossys/agents/writer/page.pricing.meta/slot.json": {
-      "seq": 231,
-      "logged": "7e87005448cf8bb5dd2b7cdbf046b2abebdf5730e31b95c88e38dbf540d086f6",
-      "disk": "7e87005448cf8bb5dd2b7cdbf046b2abebdf5730e31b95c88e38dbf540d086f6"
+      "seq": 1282,
+      "logged": "9c0dc1a1e3ec7a4b70ce15eb6a5face8a15c95edbd18bedc7ad7f339b54235b0",
+      "disk": "9c0dc1a1e3ec7a4b70ce15eb6a5face8a15c95edbd18bedc7ad7f339b54235b0"
     },
     "clossys/agents/writer/page.privacy.meta/ledger.json": {
-      "seq": 235,
-      "logged": "652e53e6453f2ace58d954965e9dc2c8b47a4fd0f770f0bc4f964b9c56b841f2",
-      "disk": "652e53e6453f2ace58d954965e9dc2c8b47a4fd0f770f0bc4f964b9c56b841f2"
+      "seq": 1286,
+      "logged": "6b9556d84a1c9786c2a0f6b1db89941eaad0224ff62d5b727a6bc34e52fec9c4",
+      "disk": "6b9556d84a1c9786c2a0f6b1db89941eaad0224ff62d5b727a6bc34e52fec9c4"
     },
     "clossys/agents/writer/page.privacy.meta/slot.json": {
-      "seq": 235,
-      "logged": "767575c09b468dde1a8245b38c0e0c3a54857b2cfea1bc2b6feca83ae1f8271d",
-      "disk": "767575c09b468dde1a8245b38c0e0c3a54857b2cfea1bc2b6feca83ae1f8271d"
+      "seq": 1286,
+      "logged": "52acb000249c38ebef6c26cd5404157741fd6a1c88c5520a91f16b4aa8e66510",
+      "disk": "52acb000249c38ebef6c26cd5404157741fd6a1c88c5520a91f16b4aa8e66510"
     },
     "clossys/agents/writer/page.service-unavailable.meta/ledger.json": {
-      "seq": 247,
-      "logged": "4b4b0a6228e75b32d896e0656e5df8bc6bae9b1c604dde92fa51bdd6eb8a91aa",
-      "disk": "4b4b0a6228e75b32d896e0656e5df8bc6bae9b1c604dde92fa51bdd6eb8a91aa"
+      "seq": 1296,
+      "logged": "c602b48cf7512359c5f4af486b9ecf023f42ad7de282735c1824f20eff1b9ef3",
+      "disk": "c602b48cf7512359c5f4af486b9ecf023f42ad7de282735c1824f20eff1b9ef3"
     },
     "clossys/agents/writer/page.service-unavailable.meta/slot.json": {
-      "seq": 247,
-      "logged": "afe7a0120c5b0852cea23867470c7628e1974b182973824263f52abadabb933a",
-      "disk": "afe7a0120c5b0852cea23867470c7628e1974b182973824263f52abadabb933a"
+      "seq": 1296,
+      "logged": "fb2a568227a10bd2eba0830d0a704120f88eff05b1ae3d04fc68416314ea8bff",
+      "disk": "fb2a568227a10bd2eba0830d0a704120f88eff05b1ae3d04fc68416314ea8bff"
     },
     "clossys/agents/writer/page.settings.meta/ledger.json": {
-      "seq": 250,
-      "logged": "6784f5467d4d9f935484b106d4d49ae0e38d01c8841e127ab5cdd3e83b194e24",
-      "disk": "6784f5467d4d9f935484b106d4d49ae0e38d01c8841e127ab5cdd3e83b194e24"
+      "seq": 1299,
+      "logged": "401c16c9e820e4af84b6fa256e10afc26221a4d9e2685eef87bd4d4cb60dde01",
+      "disk": "401c16c9e820e4af84b6fa256e10afc26221a4d9e2685eef87bd4d4cb60dde01"
     },
     "clossys/agents/writer/page.settings.meta/slot.json": {
-      "seq": 250,
-      "logged": "c4fcde26315b13c6349c6ddd9602f4bf939c2992a762f22608e0435d942bd199",
-      "disk": "c4fcde26315b13c6349c6ddd9602f4bf939c2992a762f22608e0435d942bd199"
+      "seq": 1299,
+      "logged": "d27143f504abdc333f621c390e3f5a77405a85986dba31cb9f24b8e112d6d0fd",
+      "disk": "d27143f504abdc333f621c390e3f5a77405a85986dba31cb9f24b8e112d6d0fd"
     },
     "clossys/agents/writer/page.sign-in.meta/ledger.json": {
-      "seq": 244,
-      "logged": "743ac12e998784573ee050ea57d3d4c9c6e177b46347533fdc1b51facfa58684",
-      "disk": "743ac12e998784573ee050ea57d3d4c9c6e177b46347533fdc1b51facfa58684"
+      "seq": 1293,
+      "logged": "aa1f8b53107ecd92a061a44e69ab0e3cedf9be6cdaaf6e142257549a019e17fa",
+      "disk": "aa1f8b53107ecd92a061a44e69ab0e3cedf9be6cdaaf6e142257549a019e17fa"
     },
     "clossys/agents/writer/page.sign-in.meta/slot.json": {
-      "seq": 244,
-      "logged": "463ab2d296d3782ab93731e08d0bb4909645d7bf77458194d41aad94b4c291b7",
-      "disk": "463ab2d296d3782ab93731e08d0bb4909645d7bf77458194d41aad94b4c291b7"
+      "seq": 1293,
+      "logged": "85e37ae2af6fb5b0779bb3583f02070f9afc238f8d034b30989755e6aac3fe59",
+      "disk": "85e37ae2af6fb5b0779bb3583f02070f9afc238f8d034b30989755e6aac3fe59"
     },
     "clossys/agents/writer/page.sign-out-confirm.meta/ledger.json": {
-      "seq": 245,
-      "logged": "25fd96e226cf8962039952b8eaf3bac0dfd3c2c82bcfe7d260a22f3d89109f86",
-      "disk": "25fd96e226cf8962039952b8eaf3bac0dfd3c2c82bcfe7d260a22f3d89109f86"
+      "seq": 1294,
+      "logged": "5204ed0866721cd21d7f5f99bd7f719eff62667e8149e2a35e352e31ea74ef33",
+      "disk": "5204ed0866721cd21d7f5f99bd7f719eff62667e8149e2a35e352e31ea74ef33"
     },
     "clossys/agents/writer/page.sign-out-confirm.meta/slot.json": {
-      "seq": 245,
-      "logged": "4d769200188a66334e11948a8a8419bda998a39d5cb3fafe03dcf36020aa4c26",
-      "disk": "4d769200188a66334e11948a8a8419bda998a39d5cb3fafe03dcf36020aa4c26"
+      "seq": 1294,
+      "logged": "035eca5b2080f62b0fc5850b2ccd363edd9ab59728d6c928e3638f0199caae8b",
+      "disk": "035eca5b2080f62b0fc5850b2ccd363edd9ab59728d6c928e3638f0199caae8b"
     },
     "clossys/agents/writer/page.site-page.meta/ledger.json": {
-      "seq": 233,
-      "logged": "ad7d453b9d200c7aefc8c5955d8aa2d07696f2a226fdccd9c577509f39c266c4",
-      "disk": "ad7d453b9d200c7aefc8c5955d8aa2d07696f2a226fdccd9c577509f39c266c4"
+      "seq": 1284,
+      "logged": "70a35707139851322f26c1704758c76a0afa7cb3958dbfbb638b22a3d738860b",
+      "disk": "70a35707139851322f26c1704758c76a0afa7cb3958dbfbb638b22a3d738860b"
     },
     "clossys/agents/writer/page.site-page.meta/slot.json": {
-      "seq": 233,
-      "logged": "5828f98724c3ab76a6c8d930d74b0a0efd6aa4fdbd937076fce275219bb586af",
-      "disk": "5828f98724c3ab76a6c8d930d74b0a0efd6aa4fdbd937076fce275219bb586af"
+      "seq": 1284,
+      "logged": "dddc938fe411be38141baf3057f754245530f9056fa98ce40da5612ecde537e8",
+      "disk": "dddc938fe411be38141baf3057f754245530f9056fa98ce40da5612ecde537e8"
     },
     "clossys/agents/writer/page.terms.meta/ledger.json": {
-      "seq": 234,
-      "logged": "f1f5abba88ac5555d4d1e24467363e1f9760569ccdacb9d51615aaeb708e76b8",
-      "disk": "f1f5abba88ac5555d4d1e24467363e1f9760569ccdacb9d51615aaeb708e76b8"
+      "seq": 1285,
+      "logged": "3edc9659760396c551f7e425c9ab74b4319b1b34c333ecc15d85e1f0459a48b4",
+      "disk": "3edc9659760396c551f7e425c9ab74b4319b1b34c333ecc15d85e1f0459a48b4"
     },
     "clossys/agents/writer/page.terms.meta/slot.json": {
-      "seq": 234,
-      "logged": "9d8da5f9a6072f0d16636d957776843cec84053900cd49a2051d87fff4009ae7",
-      "disk": "9d8da5f9a6072f0d16636d957776843cec84053900cd49a2051d87fff4009ae7"
+      "seq": 1285,
+      "logged": "2c517fd85ceca5e1b41bf20e686ce1525b2133ef501ef10e50517496a9e962c1",
+      "disk": "2c517fd85ceca5e1b41bf20e686ce1525b2133ef501ef10e50517496a9e962c1"
     },
     "clossys/agents/writer/publication.admin.meta/ledger.json": {
       "seq": 252,

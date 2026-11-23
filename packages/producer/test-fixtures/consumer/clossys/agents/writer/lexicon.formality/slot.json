@@ -20,15 +20,18 @@
   "refs": [
     {
       "to": "director/identity.verbal.voice",
-      "rel": "input"
+      "rel": "input",
+      "key": "Sound"
     },
     {
       "to": "director/identity.brand.personality",
-      "rel": "input"
+      "rel": "input",
+      "key": "Traits"
     },
     {
       "to": "director/focus.reach.geography",
-      "rel": "input"
+      "rel": "input",
+      "key": "Language"
     }
   ],
   "base": null,
@@ -39,15 +42,18 @@
     "inputs": [
       {
         "to": "director/identity.verbal.voice",
-        "rel": "input"
+        "rel": "input",
+        "key": "Sound"
       },
       {
         "to": "director/identity.brand.personality",
-        "rel": "input"
+        "rel": "input",
+        "key": "Traits"
       },
       {
         "to": "director/focus.reach.geography",
-        "rel": "input"
+        "rel": "input",
+        "key": "Language"
       }
     ],
     "acceptance": []
@@ -70,16 +76,7 @@
       {
         "check": "lexicon.record"
       }
-    ],
-    "fixture": {
-      "keys": [
-        "register",
-        "address"
-      ],
-      "locales": [
-        "en"
-      ]
-    }
+    ]
   },
   "tighten": [],
   "family": {

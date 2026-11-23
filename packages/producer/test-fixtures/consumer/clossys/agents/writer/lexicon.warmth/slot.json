@@ -20,11 +20,13 @@
   "refs": [
     {
       "to": "director/identity.verbal.voice",
-      "rel": "input"
+      "rel": "input",
+      "key": "Sound"
     },
     {
       "to": "director/identity.brand.personality",
-      "rel": "input"
+      "rel": "input",
+      "key": "Traits"
     }
   ],
   "base": null,
@@ -35,11 +37,13 @@
     "inputs": [
       {
         "to": "director/identity.verbal.voice",
-        "rel": "input"
+        "rel": "input",
+        "key": "Sound"
       },
       {
         "to": "director/identity.brand.personality",
-        "rel": "input"
+        "rel": "input",
+        "key": "Traits"
       }
     ],
     "acceptance": []
@@ -62,15 +66,7 @@
       {
         "check": "lexicon.record"
       }
-    ],
-    "fixture": {
-      "keys": [
-        "warmth"
-      ],
-      "locales": [
-        "en"
-      ]
-    }
+    ]
   },
   "tighten": [],
   "family": {

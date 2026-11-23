@@ -20,11 +20,13 @@
   "refs": [
     {
       "to": "director/identity.verbal.voice",
-      "rel": "input"
+      "rel": "input",
+      "key": "Do"
     },
     {
       "to": "director/focus.reach.geography",
-      "rel": "input"
+      "rel": "input",
+      "key": "Language"
     },
     {
       "to": "director/focus.segment.core",
@@ -39,11 +41,13 @@
     "inputs": [
       {
         "to": "director/identity.verbal.voice",
-        "rel": "input"
+        "rel": "input",
+        "key": "Do"
       },
       {
         "to": "director/focus.reach.geography",
-        "rel": "input"
+        "rel": "input",
+        "key": "Language"
       },
       {
         "to": "director/focus.segment.core",
@@ -70,15 +74,7 @@
       {
         "check": "lexicon.record"
       }
-    ],
-    "fixture": {
-      "keys": [
-        "grade"
-      ],
-      "locales": [
-        "en"
-      ]
-    }
+    ]
   },
   "tighten": [],
   "family": {
