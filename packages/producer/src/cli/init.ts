@@ -12,6 +12,7 @@ import { resolve } from "node:path";
 import { ensureAgentsPointer } from "../views/agents-pointer.js";
 import { CliUsageError } from "./args.js";
 import { seatAdmin } from "./init-admin.js";
+import { placeSkills } from "./init-skills.js";
 import { seatStarter, type StarterSeat, starterLines } from "./init-starters.js";
 import { adoptInitLoops } from "./init-loops.js";
 import { INIT_OUTPUTS_USAGE, runInitOutputsCli } from "./init-outputs.js";
@@ -97,21 +98,25 @@ export async function runInitCli(argv: readonly string[], cwd: string): Promise<
  */
 async function initWorkspace(workspace: string, at: string | undefined, cwd: string, refused = "init refused"): Promise<CliResult> {
   const pointer = ensureAgentsPointer(workspace);
-  const said = pointer.outcome === "added" ? `added the views pointer to ${pointer.file}` : `${pointer.file} already has the views pointer`;
+  const pointerSaid = pointer.outcome === "added" ? `added the views pointer to ${pointer.file}` : `${pointer.file} already has the views pointer`;
+  // The installed packages' agent skills, copied where Claude and Codex discover them (init-skills.ts), then checked.
+  const skills = placeSkills(workspace);
+  const said = [`placed ${skills.roles.length} agent skill${skills.roles.length === 1 ? "" : "s"} (${skills.roles.join(", ") || "none installed"}); ${skills.written.length} file${skills.written.length === 1 ? "" : "s"} written${skills.claude === "added" ? "; CLAUDE.md imports @AGENTS.md" : ""}`, pointerSaid].join("\n");
+  if (skills.issues.length) return { exitCode: 1, root: workspace, output: { ...pointer, skills }, message: (refused === "init refused" ? [said, ...skills.issues.map(issue => `${refused}: ${issue}`)] : [...skills.issues.map(issue => `${refused}: ${issue}`), said]).join("\n") };
   // The slot model follows no symbolic link (records/slots.ts), so the seat runs on the workspace's real path (a tmp
   // or home folder reached through a link still seats).
   const { result, seat } = await seatAdmin(realpathSync(workspace), at ?? new Date().toISOString());
   // Plain mode keeps said-then-reason; the outputs mode leads with its own refusal (one refusal form per mode).
   const refusal = (reasons: readonly string[]): string => (refused === "init refused" ? [said, ...reasons] : [...reasons, said]).join("\n");
-  if (result) return { ...result, output: { ...pointer, admin: seat }, message: refusal([result.message.replace(/^init refused: /, `${refused}: `)]) };
+  if (result) return { ...result, output: { ...pointer, skills, admin: seat }, message: refusal([result.message.replace(/^init refused: /, `${refused}: `)]) };
   const loops = await adoptInitLoops(realpathSync(workspace), at ?? new Date().toISOString(), cwd);
-  if (loops.issues.length) return { exitCode: 1, root: workspace, output: { ...pointer, admin: seat, loops }, message: refusal(loops.issues.map(issue => `${refused}: loops ${issue}`)) };
+  if (loops.issues.length) return { exitCode: 1, root: workspace, output: { ...pointer, skills, admin: seat, loops }, message: refusal(loops.issues.map(issue => `${refused}: loops ${issue}`)) };
   const raised = seat.requests.filter(item => item.created);
   const admin = seat.placed.length
     ? `seated the admin workspace: ${seat.placed.length} Publisher slot${seat.placed.length === 1 ? "" : "s"} placed${seat.started ? " in a new Publisher IA" : ""}`
     : "the admin workspace is already seated";
   return {
-    exitCode: 0, root: workspace, output: { ...pointer, admin: seat, loops },
+    exitCode: 0, root: workspace, output: { ...pointer, skills, admin: seat, loops },
     message: [admin, ...(seat.rewired.length ? [`rewired ${seat.rewired.length} admin slot${seat.rewired.length === 1 ? "" : "s"} to the units the workspace now holds: ${seat.rewired.join(", ")}`] : []), ...(raised.length ? [`raised ${raised.length} Designer slot request${raised.length === 1 ? "" : "s"} for admin units no workspace slot holds: ${raised.map(item => item.target).join(", ")}`] : []), ...(seat.seeded.length || seat.waiting.length ? [`seeded ${seat.seeded.length} admin record${seat.seeded.length === 1 ? "" : "s"}; pinned ${seat.pinned.length}${seat.waiting.length ? `; ${seat.waiting.length} wait for upstream pins: ${seat.waiting.map(item => item.slot).join(", ")}` : ""}`] : []), ...(loops.pinned.length ? [`adopted and pinned ${loops.pinned.length} agent loop${loops.pinned.length === 1 ? "" : "s"} (${loops.agents.join(", ")})`] : []), said].join("\n"),
   };
 }
