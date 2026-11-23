@@ -40,6 +40,13 @@ export interface WriterCopy {
 }
 
 type Values = Readonly<Record<string, string | number | boolean>>;
+
+/**
+ * The key a pinned row registers under: its own id when that is a dotted Writer id, else `<slot>.<row>` (a contract row
+ * such as a meta slot's `title` registers as `page.home.meta.title`). Two slots' same-named rows never collide, and a
+ * `<slot>#<row>` ref resolves through `<slot>.<row>` as install.ts `writerKeyOf` reads it.
+ */
+const rowKey = (slot: string, id: string): string => id.includes(".") ? id : `${slot}.${id}`;
 /**
  * Keyed on every pin (its basis too: an owner re-pin of the same bytes approves) and on every pinned candidate file's stamp (`stamp`), so bytes that change in
  * place after a first read are re-read and re-hashed against their pin, never served stale.
@@ -63,9 +70,10 @@ export function writerCopyDuplicates(consumer: string): { id: string; slots: str
     try { rows = parseWriterSlotBody(parsed.value.body, locales); } catch { continue; }
     for (const row of rows) {
       if (row.locale !== locales[0] || typeof row.record.text !== "string") continue;
-      const slots = holders.get(row.record.id) ?? [];
+      const id = rowKey(entry.id, row.record.id);
+      const slots = holders.get(id) ?? [];
       if (!slots.includes(entry.id)) slots.push(entry.id);
-      holders.set(row.record.id, slots);
+      holders.set(id, slots);
     }
   }
   return [...holders].filter(([, slots]) => slots.length > 1).map(([id, slots]) => ({ id, slots: slots.sort() })).sort((a, b) => a.id.localeCompare(b.id));
@@ -95,13 +103,14 @@ export function writerCopy(consumer: string): WriterCopy {
     locale ??= locales[0];
     for (const row of parseWriterSlotBody(parsed.value.body, locales)) {
       if (row.locale !== locale || typeof row.record.text !== "string") continue;
-      if (seen.has(row.record.id)) throw new Error(`Writer copy: ${row.record.id} is recorded twice`);
-      seen.add(row.record.id);
-      if (approved) approvedIds.add(row.record.id);
+      const id = rowKey(entry.id, row.record.id);
+      if (seen.has(id)) throw new Error(`Writer copy: ${id} is recorded twice`);
+      seen.add(id);
+      if (approved) approvedIds.add(id);
       entries.push(approved
-        ? { id: row.record.id, text: row.record.text, context: row.record.context, status: "approved",
+        ? { id, text: row.record.text, context: row.record.context, status: "approved",
             approval: { approvedBy: "owner", approvedAt: pin.at, textFingerprint: computeCopyFingerprint(row.record.text), fingerprintAlgorithm: COPY_FINGERPRINT_ALGORITHM } }
-        : { id: row.record.id, text: row.record.text, context: row.record.context, status: "draft" });
+        : { id, text: row.record.text, context: row.record.context, status: "draft" });
     }
   }
   if (!locale) throw new Error("Writer copy: no pinned Writer strings");

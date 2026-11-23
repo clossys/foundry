@@ -121,6 +121,31 @@ describe("mutations that must die", () => {
     expect(checks(check("page.home", key as unknown as PageOptionContent))).toEqual(["page.record-key"]);
   });
 
+  describe("a record the bound Writer slot pinned is a record key (BR-E2E5)", () => {
+    const run = (ref: string, pinned?: (writerSlot: string) => ReadonlySet<string> | undefined) => {
+      const option = home();
+      option.sections[0]!.copy = ref;
+      (option as unknown as PageOptionContent).meta = { ...((option as unknown as PageOptionContent).meta as object), copy: "writer/page.home.meta#title" };
+      const page = slotContract("page.home") as PageSlot;
+      const layout = slotContract(String(option.layout)) as LayoutSlot | undefined;
+      return checkPageOption("page.home", option as unknown as PageOptionContent, page, layout as LayoutContract | undefined, designer, undefined, pinned);
+    };
+    const pins = (records: Record<string, readonly string[]>) => (writerSlot: string) => records[writerSlot] ? new Set(records[writerSlot]) : undefined;
+
+    it("accepts writer/sections.hero.copy#copy when sections.hero.copy pins copy, with the meta ref writer/page.home.meta#title", () => {
+      expect(run("writer/sections.hero.copy#copy", pins({ "sections.hero.copy": ["copy"] }))).toEqual([]);
+    });
+
+    it("refuses the same ref with no pin lookup, a lookup that pins another record, and an unpinned #nope", () => {
+      expect(checks(run("writer/sections.hero.copy#copy"))).toEqual(["page.record-key"]);
+      expect(checks(run("writer/sections.hero.copy#copy", pins({ "sections.hero.copy": ["other"] })))).toEqual(["page.record-key"]);
+      expect(checks(run("writer/sections.hero.copy#copy", pins({ "page.home.meta": ["copy"] })))).toEqual(["page.record-key"]);
+      expect(checks(run("writer/sections.hero.copy#nope", pins({ "sections.hero.copy": ["copy"] })))).toEqual(["page.record-key"]);
+      // The record pinned by the slot does not stand in for another slot: the copy slot must still be <unit>.copy.
+      expect(checks(run("writer/sections.page-header.copy#copy", pins({ "sections.page-header.copy": ["copy"] })))).toEqual(["page.record-key"]);
+    });
+  });
+
   it("a layout the page slot does not allow fails page.layout-allowed", () => {
     const option = { ...home(), layout: "publisher/layout.pricing" };
     expect(checks(check("page.home", option as unknown as PageOptionContent))).toContain("page.layout-allowed");

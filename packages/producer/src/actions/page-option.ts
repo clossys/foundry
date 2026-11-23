@@ -185,15 +185,18 @@ function recordWordsAndStyle(record: Record<string, unknown>): PageOptionFinding
 
 /** The Publisher check API slice the record checks call. */
 export interface PageCheckApi {
-  checkPageOption(pageId: string, content: Record<string, unknown>, page: unknown, layout: unknown, designer: unknown): readonly PageOptionFinding[];
+  checkPageOption(pageId: string, content: Record<string, unknown>, page: unknown, layout: unknown, designer: unknown, engines?: unknown, pinned?: PinnedRecords): readonly PageOptionFinding[];
   slotContract(id: string): unknown;
   /** The slugs a `<slug>` route of the publication may not take; absent in a Publisher packed before foundry-build-0048. */
   reservedSlugs?(publication?: string): readonly string[];
 }
 
+/** The record names a Writer slot's pin map pins (`checkPageOption` accepts them as record keys). */
+export type PinnedRecords = (writerSlot: string) => ReadonlySet<string> | undefined;
+
 /** Every finding of one clossys.page/1 record: the adapter's own, then Publisher's `checkPageOption` over the read option. */
-export function pageRecordFindings(api: PageCheckApi, slotId: string, record: Record<string, unknown>, page: PageSlotContract, designer: unknown, dataBound: ReadonlySet<string> = new Set()): { findings: PageOptionFinding[]; layoutId?: string; layout?: LayoutRoles } {
+export function pageRecordFindings(api: PageCheckApi, slotId: string, record: Record<string, unknown>, page: PageSlotContract, designer: unknown, dataBound: ReadonlySet<string> = new Set(), pinned?: PinnedRecords): { findings: PageOptionFinding[]; layoutId?: string; layout?: LayoutRoles } {
   const option = pageOptionOf(slotId, record, page, id => api.slotContract(id) as LayoutRoles | undefined, api.reservedSlugs?.(page.publication) ?? [], dataBound);
-  const findings = [...option.findings, ...api.checkPageOption(slotId, option.content, page, option.layout, designer)];
+  const findings = [...option.findings, ...api.checkPageOption(slotId, option.content, page, option.layout, designer, undefined, pinned)];
   return { findings, ...(option.layoutId ? { layoutId: option.layoutId, layout: option.layout } : {}) };
 }

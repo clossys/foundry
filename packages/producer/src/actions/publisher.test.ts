@@ -451,6 +451,17 @@ describe("publisher.check over clossys.page/1 records (DECISION 0048-PAGE-SHAPE,
     expect(await routes(slug)).toEqual([`page.site-page: slug ${JSON.stringify(slug)} is not one lower-case path segment (a-z, 0-9, single hyphens); a page record's slug is one route segment`]);
   });
 
+  it("accepts a section binding to the record its Writer slot's pin map pins; without that pin.json it fails page.record-key (BR-E2E5)", async () => {
+    const root = pageConsumer(record => { record.bindings["sections.hero"].copy.copy = "sections.hero.copy#copy"; });
+    const writer = join(root, "clossys", "agents", "writer", "sections.hero.copy");
+    mkdirSync(writer, { recursive: true });
+    writeFileSync(join(writer, "pin.json"), `${JSON.stringify({ schema: "clossys.pin-map/1", kind: "pin-map", status: "pinned", records: { copy: { candidate: "copy-v1.md" } } })}\n`);
+    expect((await checkPublisherPages(root)).findings).toEqual([]);
+    rmSync(join(writer, "pin.json"));
+    const unpinned = await checkPublisherPages(root);
+    expect(unpinned.findings).toEqual([{ check: "page.record-key", subject: "publisher/page.home/candidates/home-v1.json", detail: "page.home: hero copy record copy is not home.hero nor a record sections.hero.copy pins" }]);
+  });
+
   it("finds a binding keyed by the section's instance key <slot>#n", async () => {
     const keyed = await checkPublisherPages(pageConsumer(record => {
       record.sections[record.sections.indexOf("sections.faq")] = "sections.faq#1";
