@@ -1,0 +1,18 @@
+{
+  "schema": "clossys.scorecard/1",
+  "slot": "writer/loop.create",
+  "at": "2026-11-19T00:00:00Z",
+  "pick": "create-v1.json",
+  "candidates": [
+    {
+      "rank": 1,
+      "candidate": "create-v1.json",
+      "sha256": "998b424e631634a6828d9294f0dd04eb7f29b825ed289895988ad1e76907db68",
+      "submitted": true,
+      "certified": true,
+      "verdict": "certify",
+      "reasons": [],
+      "pinSet": "71ecea05448a40b85d5e1c63e8bb87ed151bb6d5bc5a98f3794806f4ab32d399"
+    }
+  ]
+}

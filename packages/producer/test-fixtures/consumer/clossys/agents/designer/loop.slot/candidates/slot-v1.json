@@ -1,0 +1,163 @@
+{
+  "clossys": {
+    "schema": "clossys.candidate/1",
+    "id": "designer/loop.slot/slot-v1.json",
+    "agent": "designer",
+    "kind": "candidate",
+    "status": "submitted",
+    "slot": "designer/loop.slot",
+    "createdBy": {
+      "actor": "package",
+      "package": "@clossys/designer",
+      "version": "0.12.0"
+    },
+    "createdAt": "2026-11-17T00:00:00Z",
+    "refs": [],
+    "source": {
+      "kind": "package-default",
+      "ref": [
+        "@clossys/designer:loops/loop.slot/slot-v1.json"
+      ]
+    },
+    "rationale": []
+  },
+  "content": {
+    "trigger": [
+      "T4",
+      "T5"
+    ],
+    "steps": [
+      {
+        "id": "overlap",
+        "does": "list the assignee's placed slots the need may already be (a part of it, or a similar purpose) on the entry, the list the decision reads",
+        "decider": {
+          "by": "code"
+        },
+        "cli": "clossys request <request> --check",
+        "reads": [
+          "producer/queue.slot/entries/<request>.json"
+        ],
+        "writes": [
+          "producer/queue.slot/entries/<request>.json"
+        ],
+        "checks": []
+      },
+      {
+        "id": "match",
+        "does": "code answers the entry when its need names a placed slot of the assignee exactly (the same leaf id): reuse that slot, decided by the producer seat and kept in a settle record; a near match or no match goes on to the assignee's decide step",
+        "decider": {
+          "by": "code"
+        },
+        "cli": "clossys settle reuse <request>",
+        "reads": [
+          "producer/queue.slot/entries/<request>.json",
+          "<agent>/ia.json"
+        ],
+        "writes": [
+          "producer/queue.slot/entries/<request>.json",
+          "clossys/.state/runs/loops/*.settle/*"
+        ],
+        "checks": [],
+        "onFail": {
+          "raise": "queue.clarify",
+          "then": "retry"
+        }
+      },
+      {
+        "id": "decide-designer",
+        "does": "the Designer answers the entry: reuse a placed slot that serves the need, or propose one new leaf with a full contract under the L2 it belongs to",
+        "decider": {
+          "by": "agent",
+          "agent": "designer",
+          "verb": "decide",
+          "tier": "mid",
+          "skill": "packages/designer/actions/designer.slot/skill.md"
+        },
+        "cli": "clossys request <request> --decide reuse --slot <agent>/<slot> | --decide create --propose <slot> --under <l1>/<l2> --kind <kind> --inputs <ref,...> --contract <file> [--overlap-reason <text>]",
+        "reads": [
+          "producer/queue.slot/entries/<request>.json",
+          "designer/*/slot.json"
+        ],
+        "writes": [
+          "producer/queue.slot/entries/<request>.json"
+        ],
+        "checks": [],
+        "when": {
+          "owner": [
+            "designer"
+          ]
+        }
+      },
+      {
+        "id": "sign",
+        "does": "owner signs a new leaf in chat: the proposed slot, its L2 and its contract (a reuse links a placed slot and asks the owner nothing)",
+        "decider": {
+          "by": "human",
+          "who": "owner",
+          "raise": "queue.approve"
+        },
+        "cli": "clossys answer <entry> approve --by owner --via chat --quote <words>",
+        "reads": [],
+        "writes": [],
+        "checks": [
+          "answer.quote-required"
+        ],
+        "when": {
+          "decision": [
+            "create"
+          ]
+        }
+      },
+      {
+        "id": "place",
+        "does": "place the signed new leaf through clossys ia (overlap and contract gates, a create decision event), then link the requester slot-to-slot, notify it and close the entry",
+        "decider": {
+          "by": "code"
+        },
+        "cli": "clossys request <request> --close --approved <entry>",
+        "reads": [
+          "producer/queue.slot/entries/<request>.json"
+        ],
+        "writes": [
+          "producer/queue.slot/entries/<request>.json",
+          "<agent>/ia.json",
+          "<agent>/<slot-id>/slot.json"
+        ],
+        "checks": [
+          "request.closed"
+        ],
+        "when": {
+          "decision": [
+            "create"
+          ]
+        }
+      },
+      {
+        "id": "link",
+        "does": "link the requester slot-to-slot to the reused placed slot of the assignee, notify it and close the entry (the reused slot is never written)",
+        "decider": {
+          "by": "code"
+        },
+        "cli": "clossys request <request> --close",
+        "reads": [
+          "producer/queue.slot/entries/<request>.json"
+        ],
+        "writes": [
+          "producer/queue.slot/entries/<request>.json",
+          "<requester>/slot.json"
+        ],
+        "checks": [
+          "request.closed"
+        ],
+        "when": {
+          "decision": [
+            "reuse"
+          ]
+        }
+      }
+    ],
+    "exit": "the entry is closed with a link to a placed slot and a notify event to its requester; the requester cites the slot",
+    "repeat": "per open queue.slot entry; a refused placement leaves the entry open for the next run",
+    "maxRounds": 1
+  }
+}
