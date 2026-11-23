@@ -13,7 +13,7 @@ import { runReleaseCli } from "../cli/release.js";
 import type { BuildRequest, ReleaseBuilder } from "../release/build.js";
 import { releaseWorld, stubBuilder, type ReleaseWorld } from "../release/__fixtures__/world.js";
 import { loadRecipes, standardRecipe } from "../records/recipes.js";
-import { E2E_CAUSES, E2E_CHECK, E2E_COHORT, E2E_DIRECTIONS, briefAxes, childEnv, divergeDirections, e2eDoc, installFindings, machineRoots, movedFinding, portableFindings, producerPackageRoot, readScenario, renderFindings, runScenario, type Clossys, type ScenarioStep } from "./e2e.js";
+import { E2E_CAUSES, E2E_CHECK, E2E_COHORT, E2E_DIRECTIONS, adoptedItemMismatch, briefAxes, childEnv, divergeDirections, e2eDoc, installFindings, machineRoots, movedFinding, portableFindings, producerPackageRoot, readScenario, renderFindings, runScenario, type Clossys, type ScenarioStep } from "./e2e.js";
 
 const PACKAGE = producerPackageRoot();
 const SHIPPED = join(PACKAGE, "e2e");
@@ -39,6 +39,20 @@ const briefOutput = (argv: readonly string[]): string => {
   const standard = readScenario(SHIPPED).steps.find(step => step.craft?.ref === argv[1])!.craft!.standard;
   return JSON.stringify({ schema: "clossys.next-stage/1", slot: argv[1], event: { op: "craft:brief", assembled: { recipe: { axes: recipeAxes(agent, standard) } } } });
 };
+/**
+ * A stand-in `clossys run loop.create --slot <ref> --json` whose adopt step settled the create: it writes `item` as the
+ * adopted candidate (a clossys.candidate/1 file, header and content) and prints the run's results as the verb does.
+ */
+const adoptRun = (consumer: string, step: ScenarioStep, item: unknown, state: Record<string, unknown> = { status: "done", settled: { create: "adopt" } }): string => {
+  const [agent, slot] = step.adopt!.ref.split("/") as [string, string];
+  const dir = join(consumer, "clossys", "agents", agent, slot, "candidates");
+  mkdirSync(dir, { recursive: true });
+  // As the candidate codec writes it: the item's meta.source moved into the header, every other field kept.
+  const { meta: { source, ...meta } = {}, ...rest } = item as { meta?: { source?: unknown } & Record<string, unknown> } & Record<string, unknown>;
+  writeFileSync(join(dir, step.adopt!.candidate), JSON.stringify({ clossys: { schema: "clossys.candidate/1", source, createdBy: { actor: "cli", command: "clossys settle adopt" } }, content: { ...rest, meta } }));
+  return JSON.stringify([{ exitCode: 0, message: "loop.create done", state: { loop: "loop.create", ...state } }]);
+};
+const shippedItem = (step: ScenarioStep): { files: { path: string; content: string }[]; meta: Record<string, unknown> } => JSON.parse(readFileSync(join(SHIPPED, step.adopt!.file), "utf8"));
 
 describe("check --e2e arguments", () => {
   it("takes --e2e with --from, --scenario and --keep on check only, and alone", () => {
@@ -80,8 +94,9 @@ describe("the shipped scenario", () => {
     for (const step of scenario.after ?? []) expect(step.expect ?? 0, step.id).toBe(0);
   });
 
-  it("holds every file a craft step submits and every {scenario}/ file a step names", () => {
+  it("holds every file a craft step submits, every item an adopt step expects and every {scenario}/ file a step names", () => {
     for (const step of crafts) expect(existsSync(join(SHIPPED, step.craft.file)), `${step.id}: ${step.craft.file}`).toBe(true);
+    for (const step of scenario.steps.filter(step => step.adopt)) expect(existsSync(join(SHIPPED, step.adopt!.file)), `${step.id}: ${step.adopt!.file}`).toBe(true);
     const named = [...scenario.steps.flatMap(step => step.run ?? []), ...scenario.build].filter(arg => arg.startsWith("{scenario}/"));
     expect(named.length).toBeGreaterThan(0);
     for (const arg of named) expect(existsSync(join(SHIPPED, arg.slice("{scenario}/".length))), arg).toBe(true);
@@ -126,6 +141,8 @@ describe("runScenario", () => {
           writeFileSync(join(builds, "01234567", "site", route, "index.html"), strings.join("\n"));
         }
       }
+      const adopting = scenario.steps.find(step => step.adopt && id === `${step.id}.adopt`);
+      if (adopting) return { code: 0, stdout: adoptRun(consumer, adopting, shippedItem(adopting)), stderr: "" };
       return { code: 0, stdout: id.endsWith(".packet") ? JSON.stringify({ manifest: [] }) : id.endsWith(".brief") ? briefOutput(argv) : "", stderr: "" };
     };
     let built: unknown;
@@ -150,6 +167,74 @@ describe("runScenario", () => {
       ["release.gates", ["publisher", "release", scenario.publication, "--gates"]],
     ]);
     for (const step of scenario.steps.filter(step => step.run)) expect(ran.map(([id]) => id)).toContain(step.id);
+    // An adopt step is loop.create on its slot (its settle adopt step installs the stock item), then the pin.
+    const adopts = scenario.steps.filter(step => step.adopt);
+    expect(adopts.map(step => step.adopt!.ref)).toEqual(["designer/components.separator"]);
+    for (const step of adopts) {
+      expect(ran.filter(([id]) => id.startsWith(`${step.id}.`))).toEqual([
+        [`${step.id}.adopt`, ["run", "loop.create", "--slot", step.adopt!.ref, "--json"]],
+        [`${step.id}.pin`, ["pin", step.adopt!.ref, step.adopt!.candidate, "--by", "agent:designer"]],
+      ]);
+    }
+  });
+});
+
+describe("the adopt step", () => {
+  const scenario = readScenario(SHIPPED);
+  const step = scenario.steps.find(each => each.adopt)!;
+  const only = { ...scenario, steps: [step] };
+  /** Runs the scenario's adopt step alone against a stand-in loop.create that adopts `item` and ends in `state`. */
+  const drive = async (item: unknown, state?: Record<string, unknown>): Promise<{ ran: string[]; run: Promise<void> }> => {
+    const consumer = temp();
+    const ran: string[] = [];
+    const clossys: Clossys = async id => { ran.push(id); return { code: 0, stdout: id.endsWith(".adopt") ? adoptRun(consumer, step, item, state) : "", stderr: "" }; };
+    return { ran, run: runScenario(only, SHIPPED, consumer, clossys, { say: () => undefined, findings: [], built: () => undefined }) };
+  };
+
+  it("ships the stock separator it expects code to install: shadcn-aria/separator@4.23.0, registry lineage, one file", () => {
+    const item = shippedItem(step);
+    expect(step.id).toBe("craft.separator");
+    expect(item.meta.source).toMatchObject({ kind: "registry", ref: ["shadcn-aria/separator@4.23.0"] });
+    expect(item.files.map(file => file.path)).toEqual(["registry/aria-nova/ui/separator.tsx"]);
+    expect(adoptedItemMismatch(item, item)).toBeUndefined();
+  });
+
+  it("refuses a candidate that is not the scenario's item byte for byte, and pins nothing", async () => {
+    const item = shippedItem(step);
+    const file = item.files[0]!;
+    // One byte changed in the content: the item code adopted is no longer the one the scenario ships.
+    const changed = { ...item, files: [{ ...file, content: `${file.content.slice(0, -1)}${file.content.endsWith("\n") ? " " : "\n"}` }] };
+    expect(adoptedItemMismatch(item, changed)).toMatch(/registry\/aria-nova\/ui\/separator\.tsx is not byte for byte the scenario's/);
+    const { ran, run } = await drive(changed);
+    await expect(run).rejects.toMatchObject({ finding: { cause: "e2e.step", subject: "craft.separator.adopt", detail: expect.stringMatching(/is not the scenario's separator\.json: registry\/aria-nova\/ui\/separator\.tsx is not byte for byte/) } });
+    expect(ran).toEqual(["craft.separator.adopt"]);
+    // Another lineage, a missing or an extra file are refused the same way.
+    expect(adoptedItemMismatch(item, { ...item, meta: { ...item.meta, source: { kind: "derived", ref: item.meta.source && (item.meta.source as { ref: unknown }).ref } } })).toMatch(/its source is/);
+    expect(adoptedItemMismatch(item, { ...item, files: [] })).toMatch(/holds 0 file\(s\), not 1/);
+    expect(adoptedItemMismatch(item, { ...item, files: [file, file] })).toMatch(/holds 2 file\(s\), not 1/);
+    expect(adoptedItemMismatch(item, { ...item, files: [{ ...file, path: "registry/aria-nova/ui/other.tsx" }] })).toMatch(/file 1 is/);
+  });
+
+  it("refuses a run that left the create to the agent or did not settle it by the adopt step", async () => {
+    const item = shippedItem(step);
+    const waiting = await drive(item, { status: "waiting", settled: {} });
+    await expect(waiting.run).rejects.toMatchObject({ finding: { cause: "e2e.step", subject: "craft.separator.adopt", detail: expect.stringMatching(/ended waiting: code did not adopt/) } });
+    const unsettled = await drive(item, { status: "done", settled: { "refine-brief": "triage" } });
+    await expect(unsettled.run).rejects.toMatchObject({ finding: { cause: "e2e.step", subject: "craft.separator.adopt", detail: expect.stringMatching(/did not settle its create step by the adopt step/) } });
+    expect([...waiting.ran, ...unsettled.ran]).not.toContain("craft.separator.pin");
+  });
+
+  it("pins the verbatim item it adopted, and only the adopt with <id>.pin dropped", async () => {
+    // The adopt step alone builds nothing: the run gets past it and its pin, then stops at the missing build pointer.
+    const past = /publisher release --build wrote no clossys\/\.state\/builds\/latest-site\.json/;
+    const pinned = await drive(shippedItem(step));
+    await expect(pinned.run).rejects.toThrow(past);
+    expect(pinned.ran).toEqual(["craft.separator.adopt", "craft.separator.pin", "build"]);
+    const unpinned = { ...only, steps: [{ ...step, adopt: { ...step.adopt!, unpinned: true } }] };
+    const consumer = temp();
+    const ran: string[] = [];
+    await expect(runScenario(unpinned, SHIPPED, consumer, async id => { ran.push(id); return { code: 0, stdout: id.endsWith(".adopt") ? adoptRun(consumer, step, shippedItem(step)) : "", stderr: "" }; }, { say: () => undefined, findings: [], built: () => undefined })).rejects.toThrow(past);
+    expect(ran).toEqual(["craft.separator.adopt", "build"]);
   });
 });
 
@@ -189,6 +274,8 @@ describe("readScenario", () => {
     expect(unpinned.steps.length).toBe(shipped.steps.length);
     expect(unpinned.steps.find(step => step.id === "craft.strings")!.craft!.unpinned).toBe(true);
     expect(unpinned.steps.filter(step => step.craft?.unpinned).map(step => step.id)).toEqual(["craft.strings"]);
+    const adoptUnpinned = readScenario(SHIPPED, write({ base: "shipped", without: ["craft.separator.pin"] }));
+    expect(adoptUnpinned.steps.filter(step => step.craft?.unpinned || step.adopt?.unpinned).map(step => step.id)).toEqual(["craft.separator"]);
     const ungated = readScenario(SHIPPED, write({ base: "shipped", without: ["release.gates"] }));
     expect(ungated.steps).toEqual(shipped.steps);
     expect(ungated.after!.map(step => step.id)).toEqual(["release.manifest"]);
@@ -201,7 +288,10 @@ describe("readScenario", () => {
     expect(() => readScenario(SHIPPED, write({ ...shipped, peers: { react: "^19.0.0" } }))).toThrow(/exact versions/);
     expect(() => readScenario(SHIPPED, write({ ...shipped, peers: { "Bad Name": "1.0.0" } }))).toThrow(/exact versions/);
     expect(() => readScenario(SHIPPED, write({ ...shipped, schema: "clossys.e2e-scenario/0" }))).toThrow(/schema is/);
-    expect(() => readScenario(SHIPPED, write({ ...shipped, steps: [{ id: "x" }] }))).toThrow(/needs run or craft/);
+    expect(() => readScenario(SHIPPED, write({ ...shipped, steps: [{ id: "x" }] }))).toThrow(/needs exactly one of run, craft or adopt/);
+    const adoptStep = (shipped.steps as ScenarioStep[]).find(step => step.adopt)!;
+    expect(() => readScenario(SHIPPED, write({ ...shipped, steps: [{ ...adoptStep, run: ["config"] }] }))).toThrow(/needs exactly one of run, craft or adopt/);
+    expect(() => readScenario(SHIPPED, write({ ...shipped, after: [{ ...adoptStep, id: "after.adopt" }] }))).toThrow(/after step after\.adopt is a adopt: after runs verbs only/);
     expect(() => readScenario(SHIPPED, write({ ...shipped, steps: [{ id: "x", run: ["config"] }, { id: "x", run: ["config"] }] }))).toThrow(/unique/);
     expect(() => readScenario(SHIPPED, write({ ...shipped, after: [{ id: "config.init", run: ["config"] }] }))).toThrow(/unique/);
     expect(() => readScenario(SHIPPED, write({ ...shipped, after: [{ id: "build", run: ["config"] }] }))).toThrow(/unique/);

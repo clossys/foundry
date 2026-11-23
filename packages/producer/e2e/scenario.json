@@ -154,6 +154,31 @@
       }
     },
     {
+      "id": "ia.separator",
+      "run": [
+        "ia",
+        "designer/components.separator",
+        "--contract",
+        "{scenario}/component.contract.json",
+        "--standard",
+        "component",
+        "--under",
+        "components/components.structure",
+        "--kind",
+        "element",
+        "--inputs",
+        "identity.verbal.voice"
+      ]
+    },
+    {
+      "id": "craft.separator",
+      "adopt": {
+        "ref": "designer/components.separator",
+        "file": "separator.json",
+        "candidate": "separator-v1.json"
+      }
+    },
+    {
       "id": "ia.frame",
       "run": [
         "ia",
@@ -167,7 +192,9 @@
         "--kind",
         "element",
         "--inputs",
-        "identity.verbal.voice"
+        "identity.verbal.voice",
+        "--uses",
+        "components.separator"
       ]
     },
     {
@@ -352,6 +379,7 @@
       "<title>Plain Studio home</title>",
       "<main data-frame=\"plain\">",
       "<p data-copy=\"frame.title\">Plain Studio</p>",
+      "data-slot=\"separator\"",
       "<h1 data-copy=\"hero.heading\">Pages built from pinned records</h1>",
       "<p data-copy=\"hero.body\">Every word on this page comes from a Writer key.</p>"
     ]

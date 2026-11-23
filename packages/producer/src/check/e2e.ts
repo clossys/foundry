@@ -18,6 +18,13 @@
  * 6. portable: no file of the build holds an absolute path of the consumer, and the consumer moved to another
  *    directory (another name, another depth) builds the same pins to the same digest.
  *
+ * A stock component is not crafted: an `adopt` step runs `clossys run loop.create --slot <ref>`, whose
+ * `clossys settle adopt` code step installs the slot's stock item unmodified (`--by code:adopt`, rung L1,
+ * records/code-adopt.ts) and whose certify step judges it, then pins it. The scenario ships the item it expects code to
+ * install; a candidate code adopted that is not that item byte for byte, or a run that leaves the create to the agent,
+ * stops the step. Code adopt normalizes the item to the consumer's shadcn flavor, `clossys/components.json`, which the
+ * scenario's first verb (`clossys config --init`) writes, as it does for any consumer.
+ *
  * There are two stand-ins. Agent judgement is scripted: the shipped candidate files, the fixed verdicts and the three
  * fixed design directions, critique scores hard-coded to 4 under the model `e2e-fixture-critic`, and a critique render
  * that is a copy of the candidate's bytes, not a visual render. And network isolation: the shadcn CLI's one base-colour
@@ -25,11 +32,13 @@
  * files. Third-party npm packages come from the npm registry or cache as any consumer's install would.
  *
  * `--scenario <file>` runs another scenario: `{ "base": "shipped", "without": [<step id>...] }` is the shipped one
- * minus those steps; `<craft step id>.pin` drops only that craft's pin verb (scripts/rules/fixtures/R-E2E-CONSUMER drops
+ * minus those steps; `<craft or adopt step id>.pin` drops only that step's pin verb (scripts/rules/fixtures/R-E2E-CONSUMER drops
  * the Writer strings pin, and the gate must go red by name).
  * Exit 0 green, 1 a finding (its cause code, the verb, its exit and stderr tail), 2 it could not run.
  */
 import { statePath, stateRel } from "../engine/state-dir.js";
+import { settlePath } from "../loop/runner.js";
+import { candidateView } from "../records/slot-current.js";
 import { spawn } from "node:child_process";
 import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, realpathSync, renameSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { createServer, type Server } from "node:http";
@@ -78,11 +87,19 @@ export interface E2eReport {
   readonly build?: { readonly publication: string; readonly id: string; readonly routes: readonly string[] };
 }
 
-/** One scenario step: a verb argv (`run`), or `craft`, the P2 create sequence of one slot as public verbs. */
+/**
+ * One scenario step: a verb argv (`run`), `craft`, the P2 create sequence of one slot as public verbs, or `adopt`, the
+ * code adopt of one byte-exact adopt slot (loop.create's `clossys settle adopt`) and its pin.
+ */
 export interface ScenarioStep {
   readonly id: string;
   readonly run?: readonly string[];
   readonly craft?: { readonly ref: string; readonly standard: string; readonly file: string; readonly candidate: string; readonly gap: string; readonly rung: string; readonly skill: string; readonly pin?: string; readonly unpinned?: boolean };
+  /**
+   * `file` is the stock item (a registry item JSON, the scenario's own copy) code must install into `ref`: the
+   * candidate `candidate` the run writes must hold its files byte for byte, under the same registry lineage.
+   */
+  readonly adopt?: { readonly ref: string; readonly file: string; readonly candidate: string; readonly pin?: string; readonly unpinned?: boolean };
   /** The exit the step must end with (default 0). */
   readonly expect?: number;
 }
@@ -109,7 +126,7 @@ export interface Scenario {
 export interface E2eOptions {
   /** A directory holding `<name>.tgz` or npm's `clossys-<name>-<version>.tgz` for every cohort package. */
   readonly from?: string;
-  /** Another scenario file (a full scenario, or `{ base: "shipped", without: [<step id> | <craft id>.pin ...] }`). */
+  /** Another scenario file (a full scenario, or `{ base: "shipped", without: [<step id> | <craft or adopt id>.pin ...] }`). */
   readonly scenario?: string;
   /** Keep the temp directory and print where it is. */
   readonly keep?: boolean;
@@ -221,7 +238,7 @@ export function installFindings(consumer: string, packed: Readonly<Record<string
 
 /**
  * Reads the scenario: the shipped one, or `file` (a full scenario, or the shipped one minus `without` step ids, where
- * `<craft id>.pin` keeps that craft but drops its pin verb).
+ * `<craft or adopt id>.pin` keeps that step but drops its pin verb).
  */
 export function readScenario(shippedDir: string, file?: string): Scenario {
   const read = (path: string): unknown => {
@@ -233,11 +250,12 @@ export function readScenario(shippedDir: string, file?: string): Scenario {
   if (raw.base === "shipped") {
     const shipped = read(shippedFile) as Scenario;
     const without = Array.isArray(raw.without) ? raw.without.filter((id): id is string => typeof id === "string") : [];
-    const pinOf = (step: ScenarioStep): string | undefined => step.craft ? `${step.id}.pin` : undefined;
+    const pinOf = (step: ScenarioStep): string | undefined => step.craft || step.adopt ? `${step.id}.pin` : undefined;
+    const unpin = (step: ScenarioStep): ScenarioStep => step.craft ? { ...step, craft: { ...step.craft, unpinned: true } } : { ...step, adopt: { ...step.adopt!, unpinned: true } };
     for (const id of without) if (![...(shipped.steps ?? []), ...(shipped.after ?? [])].some(step => step.id === id || pinOf(step) === id)) stop("e2e.scenario", file!, `without names step ${id}, which the shipped scenario does not hold`);
     scenario = {
       ...shipped,
-      steps: shipped.steps.filter(step => !without.includes(step.id)).map(step => without.includes(pinOf(step) ?? "") ? { ...step, craft: { ...step.craft!, unpinned: true } } : step),
+      steps: shipped.steps.filter(step => !without.includes(step.id)).map(step => without.includes(pinOf(step) ?? "") ? unpin(step) : step),
       ...(shipped.after ? { after: shipped.after.filter(step => !without.includes(step.id)) } : {}),
     };
   } else scenario = raw as unknown as Scenario;
@@ -253,9 +271,9 @@ export function readScenario(shippedDir: string, file?: string): Scenario {
   for (const step of [...scenario.steps, ...(scenario.after ?? [])]) {
     if (typeof step.id !== "string" || ids.has(step.id)) stop("e2e.scenario", where, `step ids must be unique strings (${String(step.id)})`);
     ids.add(step.id);
-    if (!step.run === !step.craft) stop("e2e.scenario", where, `step ${step.id} needs run or craft, not both`);
+    if ([step.run, step.craft, step.adopt].filter(kind => kind !== undefined).length !== 1) stop("e2e.scenario", where, `step ${step.id} needs exactly one of run, craft or adopt`);
   }
-  for (const step of scenario.after ?? []) if (step.craft) stop("e2e.scenario", where, `after step ${step.id} is a craft: after runs verbs only`);
+  for (const step of scenario.after ?? []) if (step.craft || step.adopt) stop("e2e.scenario", where, `after step ${step.id} is a ${step.craft ? "craft" : "adopt"}: after runs verbs only`);
   return scenario;
 }
 
@@ -455,7 +473,8 @@ export async function runE2e(options: E2eOptions = {}): Promise<{ exitCode: 0 | 
 export type Clossys = (id: string, argv: readonly string[], expect?: number) => Promise<Ran>;
 
 /**
- * The scenario's verbs on an installed consumer, in order: its steps (a craft step is its P2 sequence), the build with
+ * The scenario's verbs on an installed consumer, in order: its steps (a craft step is its P2 sequence, an adopt step its
+ * code adopt and pin), the build with
  * its render check, the repeat build with its digest check, then its `after` verbs (the release manifest and gates).
  * `clossys` runs one verb and stops on an unexpected exit; `built` receives the first build once it exists.
  */
@@ -463,6 +482,7 @@ export async function runScenario(scenario: Scenario, shipped: string, consumer:
   const { say, findings } = io;
   for (const step of scenario.steps) {
     if (step.run) { await clossys(step.id, step.run.map(arg => fill(arg, shipped, scenario)), step.expect ?? 0); continue; }
+    if (step.adopt) { await adopt(step, shipped, consumer, clossys); continue; }
     await craft(step, scenario, shipped, consumer, clossys);
   }
   const buildArgv = scenario.build.map(arg => fill(arg, shipped, scenario));
@@ -542,4 +562,65 @@ async function craft(step: ScenarioStep, scenario: Scenario, shipped: string, co
   await clossys(`${step.id}.critique`, ["critique", c.ref, "--record", join(inputs, "critique.json"), "--model", `${scenario.model}-critic`, "--tier", scenario.tier]);
   await clossys(`${step.id}.submit`, ["next", c.ref, "--submit", candidateFile, ...llm, "--basis", "planner", ...skill, "--rung", c.rung, "--reason", "no seed: a fresh consumer holds none"]);
   if (!c.unpinned) await clossys(`${step.id}.pin`, ["pin", c.pin ?? c.ref, c.candidate, "--by", `agent:${agent}`]);
+}
+
+/** A registry item's files as the adopt step compares them: path and content, in order. */
+type ItemFiles = readonly { readonly path: unknown; readonly content: unknown }[];
+interface AdoptedItem { readonly files?: ItemFiles; readonly meta?: { readonly source?: { readonly kind?: unknown; readonly ref?: unknown } } }
+
+/**
+ * Why the item code adopted (`adopted`, the candidate's content) is not the stock item the scenario ships
+ * (`expected`), or undefined when it is: the same registry lineage (meta.source kind and ref) and the same files, each
+ * path and content byte for byte, in the same order. The scenario's copy is what it expects code to install; any
+ * other byte is a candidate the step refuses.
+ */
+export function adoptedItemMismatch(expected: AdoptedItem, adopted: AdoptedItem): string | undefined {
+  const lineage = (item: AdoptedItem): string => JSON.stringify({ kind: item.meta?.source?.kind, ref: item.meta?.source?.ref });
+  if (lineage(adopted) !== lineage(expected)) return `its source is ${lineage(adopted)}, not ${lineage(expected)}`;
+  const want = expected.files ?? [], got = adopted.files ?? [];
+  if (!Array.isArray(want) || !want.length) return "the scenario's item names no files";
+  if (!Array.isArray(got) || got.length !== want.length) return `it holds ${Array.isArray(got) ? got.length : 0} file(s), not ${want.length}`;
+  for (const [at, file] of want.entries()) {
+    const other = got[at]!;
+    if (other.path !== file.path) return `file ${at + 1} is ${JSON.stringify(other.path)}, not ${JSON.stringify(file.path)}`;
+    if (typeof other.content !== "string" || other.content !== file.content) return `${String(file.path)} is not byte for byte the scenario's (${typeof other.content === "string" ? `${other.content.length} bytes against ${String((file.content as string | undefined)?.length)}` : "no content"})`;
+  }
+  return undefined;
+}
+
+/**
+ * The code adopt of one byte-exact adopt slot, every write a public verb: `clossys run loop.create --slot <ref>`, whose
+ * `adopt` step (`clossys settle adopt`, the loop runner's code adopt: records/code-adopt.ts stockItemOf, written by
+ * writeCandidate `--by code:adopt` at rung L1) installs the slot's stock item and settles the agent's create, and whose
+ * certify step judges it; then the pin (`unpinned` skips it). The run must end without waiting on any agent step, with
+ * its create settled by that adopt step, and the candidate it wrote must be the scenario's item byte for byte.
+ */
+async function adopt(step: ScenarioStep, shipped: string, consumer: string, clossys: Clossys): Promise<void> {
+  const a = step.adopt!;
+  const [agent, slot] = a.ref.split("/") as [string, string];
+  const itemFile = join(shipped, a.file);
+  if (!existsSync(itemFile)) stop("e2e.scenario", step.id, `the shipped scenario holds no ${a.file}`);
+  let expected: AdoptedItem;
+  try { expected = JSON.parse(readFileSync(itemFile, "utf8")) as AdoptedItem; } catch (error) { return stop("e2e.scenario", step.id, `${a.file} is not JSON: ${(error as Error).message}`); }
+  const ran = await clossys(`${step.id}.adopt`, ["run", "loop.create", "--slot", a.ref, "--json"]);
+  let results: unknown;
+  try { results = JSON.parse(ran.stdout); } catch { results = undefined; }
+  const last = Array.isArray(results) ? results.at(-1) as { message?: unknown; packet?: { step?: unknown }; entry?: unknown; state?: { status?: unknown; runId?: unknown; settled?: Record<string, unknown> } } | undefined : undefined;
+  if (!last?.state) stop("e2e.step", `${step.id}.adopt`, "run loop.create --json printed no run state");
+  const { state } = last!;
+  if (last!.packet !== undefined || last!.entry !== undefined || (state!.status !== "done" && state!.status !== "pinned-ready")) {
+    // The adopt step's own settle record says why code left the create to the agent (read only, never written here).
+    let why = "";
+    try { why = String((JSON.parse(readFileSync(settlePath(consumer, String(state!.runId), "adopt"), "utf8")) as { why?: unknown }).why ?? ""); } catch { why = ""; }
+    stop("e2e.step", `${step.id}.adopt`, `loop.create on ${a.ref} ended ${String(state!.status)}${last!.packet ? `, waiting on the agent step ${String(last!.packet.step)}` : ""}: code did not adopt the stock item (${why ? `settle adopt: ${why}` : tail(String(last!.message ?? ""))})`);
+  }
+  if (state!.settled?.create !== "adopt") stop("e2e.step", `${step.id}.adopt`, `loop.create on ${a.ref} did not settle its create step by the adopt step (settled: ${JSON.stringify(state!.settled ?? {})})`);
+  const written = join(consumer, "clossys", "agents", agent, slot, "candidates", a.candidate);
+  let adopted: AdoptedItem;
+  // Read through the one candidate reader: a clossys.candidate/1 file's content with its header's source as meta.source.
+  try { adopted = JSON.parse(candidateView(a.candidate, readFileSync(written, "utf8"))) as AdoptedItem; }
+  catch (error) { return stop("e2e.step", `${step.id}.adopt`, `loop.create wrote no readable ${a.candidate} into ${a.ref}: ${(error as Error).message}`); }
+  const mismatch = adoptedItemMismatch(expected, adopted);
+  if (mismatch !== undefined) stop("e2e.step", `${step.id}.adopt`, `the candidate code adopted into ${a.ref} (${a.candidate}) is not the scenario's ${a.file}: ${mismatch}`);
+  if (!a.unpinned) await clossys(`${step.id}.pin`, ["pin", a.pin ?? a.ref, a.candidate, "--by", `agent:${agent}`]);
 }

@@ -7,18 +7,23 @@
       "path": "registry/frames/site-shell.tsx",
       "type": "registry:component",
       "target": "components/frames/site-shell.tsx",
-      "content": "import type * as React from \"react\";\n\nexport function PlainFrame({ title, children }: { title: string; children?: React.ReactNode }) {\n  return (\n    <main data-frame=\"plain\">\n      <header><p data-copy=\"frame.title\">{title}</p></header>\n      {children}\n    </main>\n  );\n}\n"
+      "content": "import { Separator } from \"@clossys/designer-ui\";\n\nexport function PlainFrame({ title, children }: { title: string; children?: React.ReactNode }) {\n  return (\n    <main data-frame=\"plain\">\n      <header><p data-copy=\"frame.title\">{title}</p></header>\n      <Separator />\n      {children}\n    </main>\n  );\n}\n"
     }
   ],
   "meta": {
     "slot": "frames.site-shell",
     "source": {
-      "kind": "derived",
-      "ref": [
-        "tailark-oss/mist-hero-section-1-header@8139698"
-      ],
-      "hash": "sha256:d88ac2c6f6dee57c80af744c8f30151b4d573b7621099c3da26ef24d4a2c473c",
-      "license": "MIT"
+      "kind": "composition",
+      "ref": [],
+      "license": "MIT",
+      "parts": [
+        {
+          "slot": "components.separator",
+          "files": [
+            "registry/aria-nova/ui/separator.tsx"
+          ]
+        }
+      ]
     },
     "element": {
       "id": "site-shell",
@@ -33,7 +38,7 @@
         "agent": "designer",
         "model": "fixture"
       },
-      "reason": "e2e scenario: one crafted element for a fresh consumer",
+      "reason": "e2e scenario: one composed frame for a fresh consumer, placing its pinned stock separator",
       "createdAt": "2026-11-05T18:26:59Z",
       "checks": [],
       "deps": {

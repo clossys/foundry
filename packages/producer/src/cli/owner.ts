@@ -9,7 +9,7 @@
  *   clossys ia <agent>/<slot> --extension true|false --owner-ref <ref> [--at <iso>] [--dry] [--root <dir>]
  *   clossys ia <agent> --add|--rename|--merge|--drop|--reorder|--assign|--layers|--axes ... --owner-ref <ref> [--at <iso>] [--dry] [--root <dir>]  (IA_USAGE; cli/ia-regroup.ts)
  *   clossys evidence <id> --source <source> --observed <YYYY-MM-DD> --by <who> --body <file> [--finding] [--root <dir>]
- *   clossys config --init [--from <file>] [--root <dir>]
+ *   clossys config --init [--from <file>] [--root <dir>]   (also writes clossys/components.json, the shadcn flavor)
  *   clossys seat <step> --by <who> ((--model <id> --tier low|mid|high | --llm-from <step>) --prompt-file <path> | --no-llm) [--procedure <text> --command <verb>] --decided-by owner:queue.<kind>#<id>|planner[:<ref>] [--root <dir>]
  *   clossys rule --init [--root <dir>]
  *   clossys rule <R-ID> --quote <text> --date <YYYY-MM-DD> --status enforced|unenforced|pending-wire [--check <id>]... [--fixture <path>] [--fixture-run <cmd>]... [--note <text>] [--replace] [--root <dir>]
@@ -57,6 +57,7 @@ import { IA_KIND, slotWriteKind } from "../constitution/green.js";
 import { oldSlotRefusal, resolveCandidate } from "./pin.js";
 import { readPinFile } from "../records/pin-map.js";
 import { errorMessage } from "../errors.js";
+import { FLAVOR_FILE, writeFlavor } from "../records/consumer-flavor.js";
 import { consumerSlotFolders, positionIa, serializeSlot, SLOT_SCHEMA as SLOT_V2_SCHEMA, validateSlot } from "../records/slot.js";
 import { currentView, slotReadIssues } from "../records/slot-current.js";
 import { buildPin, cliActor, ownerAnswerRef, pinIssues, toIsoZ } from "../records/pin.js";
@@ -119,7 +120,9 @@ export const IA_USAGE = "Usage: clossys ia <agent>/<slot> --contract <file> [--s
 export const EVIDENCE_USAGE = "Usage: clossys evidence <id> --source <source> --observed <YYYY-MM-DD> --by <who> --body <file> [--finding] [--root <dir>]\n"
   + "  writes clossys/evidence/director/<id>.md (--finding: findings/<id>.md), the evidence the Director cites.";
 export const CONFIG_USAGE = "Usage: clossys config --init [--from <file>] [--root <dir>]\n"
-  + "  writes clossys/clossys.config.ts (the default config, or --from a config file) when the workspace has none; with one, validates it.";
+  + "  writes clossys/clossys.config.ts (the default config, or --from a config file) when the workspace has none; with one, validates it.\n"
+  + "  then writes clossys/components.json, the Designer's shadcn flavor the workspace's pinned components render in, unless it\n"
+  + "  already holds it (an invalid config writes neither).";
 export const SEAT_USAGE = "Usage: clossys seat <step> --by <who> (--model <id> --tier low|mid|high | --llm-from <step>) --prompt-file <path> [--procedure <text> --command <verb>] --decided-by owner:queue.<kind>#<id>|planner[:<ref>] [--root <dir>]\n"
   + "       clossys seat <step> --by <who> --no-llm [--procedure <text> --command <verb>] --decided-by owner:queue.<kind>#<id>|planner[:<ref>] [--root <dir>]\n"
   + "       clossys seat --policy (--model <tier>=<id>... | --human-only) [--root <dir>]\n"
@@ -1010,7 +1013,9 @@ export async function runConfigCli(argv: readonly string[], cwd: string): Promis
   const file = join(root, "clossys", "clossys.config.ts");
   if (existsSync(file)) {
     const issues = validateFile("workspace-config", rel, readFileSync(file, "utf8"));
-    return issues.length ? refuse("config", `${rel} exists and is invalid: ${issues.map(issue => issue.message).join("; ")}`) : { exitCode: 0, root, message: `config: ${rel} exists and is valid; nothing written` };
+    if (issues.length) return refuse("config", `${rel} exists and is invalid: ${issues.map(issue => issue.message).join("; ")}`);
+    const flavor = writeFlavor(join(root, "clossys"));
+    return { exitCode: 0, root, message: `config: ${rel} exists and is valid; ${flavor ? `wrote ${FLAVOR_FILE} (the Designer's shadcn flavor)` : "nothing written"}` };
   }
   let bytes = DEFAULT_CONFIG;
   const from = one(flags, "--from");
@@ -1020,7 +1025,10 @@ export async function runConfigCli(argv: readonly string[], cwd: string): Promis
   replaceFile(file, bytes);
   // A fresh store is current from its first write (U13 r2): it carries the store-format marker, so its readers fail closed.
   const marked = markCurrentStore(root, { at: new Date().toISOString(), version: cliActor("clossys config").version, cli: "clossys config --init" });
-  return { exitCode: 0, root, message: `config: wrote ${rel}${from ? ` from ${from}` : " (default)"}${marked ? "; marked the store clossys.slot/2 (store-format.json)" : ""}` };
+  // The workspace's shadcn flavor, from the same writer the build uses (records/consumer-flavor.ts): code adopt and
+  // ref-verbatim normalize stock items against it.
+  const flavor = writeFlavor(join(root, "clossys"));
+  return { exitCode: 0, root, message: `config: wrote ${rel}${from ? ` from ${from}` : " (default)"}${marked ? "; marked the store clossys.slot/2 (store-format.json)" : ""}; ${flavor ? `wrote ${FLAVOR_FILE} (the Designer's shadcn flavor)` : `${FLAVOR_FILE} unchanged`}` };
 }
 
 // ---------------------------------------------------------------- clossys seat
