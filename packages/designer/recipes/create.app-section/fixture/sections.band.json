@@ -1,0 +1,10 @@
+{
+  "schema": "clossys.element-preview/1",
+  "fixtures": {
+    "file": "mist/blocks/content/one.tsx",
+    "export": "default",
+    "props": {
+      "copy": {}
+    }
+  }
+}

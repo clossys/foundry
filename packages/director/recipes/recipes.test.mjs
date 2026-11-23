@@ -283,3 +283,21 @@ describe("stage-check diverge reads the recipe rung (census row 75)", () => {
     assert.ok(found.some(item => item.rule === "R15.7" && /recipe flat lists no axes/.test(item.what)), JSON.stringify(found));
   });
 });
+
+describe("every director recipe ships a fixture output that certifies under its slot contract (conform K4)", () => {
+  it("names one live slot the recipe produces for, and the K4 assertion finds no row", async () => {
+    const { readConformModel } = await dist("conform/model.js");
+    const { ASSERTIONS } = await dist("conform/assertions.js");
+    const model = readConformModel(ROOT, CONSUMER, ["director"]);
+    const agent = model.agents.find(item => item.agent === "director");
+    assert.deepEqual(agent.recipes.map(recipe => recipe.dir), RECIPE_IDS.map(id => `recipes/${id}`));
+    for (const recipe of agent.recipes) {
+      assert.ok(recipe.fixture, `${recipe.dir} ships no fixture output`);
+      assert.notEqual(recipe.fixture.value, undefined, `${recipe.dir}: ${recipe.fixture.output} is missing`);
+      const slot = agent.live.find(item => item.id === recipe.fixture.slot);
+      const doc = recipes.find(item => `recipes/${item.id}` === recipe.dir).doc;
+      assert.ok(slot && doc.produces.includes(slot.standard), `${recipe.dir}: ${recipe.fixture.slot} is not a live slot it produces for`);
+    }
+    assert.deepEqual(ASSERTIONS.K4(agent, model, {}).rows, []);
+  });
+});

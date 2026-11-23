@@ -1,0 +1,8 @@
+{
+  "schema": "clossys.element-preview/1",
+  "fixtures": {
+    "file": "ui/logo.tsx",
+    "export": "Logo",
+    "props": {}
+  }
+}

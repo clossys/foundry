@@ -1,0 +1,18 @@
+{
+  "schema": "clossys.element-preview/1",
+  "fixtures": {
+    "file": "mist/blocks/hero-section/one/header.tsx",
+    "export": "HeroHeader",
+    "props": {
+      "children": [
+        "DRAFT skip-link",
+        "DRAFT progress (components.progress-bar)",
+        "DRAFT consent (sections.consent)",
+        "DRAFT header",
+        "DRAFT main (view)",
+        "DRAFT footer",
+        "DRAFT toasts (components.toast)"
+      ]
+    }
+  }
+}
