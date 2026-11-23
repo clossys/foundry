@@ -1,0 +1,111 @@
+{
+ "tool": "cloud-gate-run.py",
+ "ran_on": "cloud",
+ "unit": "R8",
+ "branch": "claude/r2f-0048-r8",
+ "head": "06eb075144ee02b0bd7e9da8959e27eb2bfaf032",
+ "tree": "d79b685e6cd60935766bfb87cb26c508b85a6ed6",
+ "int2": "claude/r2f-int2",
+ "int2_sha": "5a2e197ea42dde155f0882fef533f7f4bf414605",
+ "generated_at": "2026-11-23T20:08:50Z",
+ "spec_sha256": "083ad37f0091cf7cf71c02ccc7cd638856f1427f843867442acab7e28fb2a4eb",
+ "runner_sha256": "d8bb5e204990d40dfb33553a1750acd5e73c10d0ca4ee98ca3f1065683820383",
+ "prep": [
+  {
+   "command": "npm run build -w @clossys/advisor",
+   "exit": 0,
+   "seconds": 2.2,
+   "tail": "\n> @clossys/advisor@0.7.0 build\n> node scripts/pack-capability-catalogue.mjs && tsc -p tsconfig.json\n\npack-capability-catalogue: wrote 19 role(s), 5 preset(s), and 19 client problem(s) to src/generated/offering.generated.ts, and the plan, brief, repository-inventory and registry snapshot contracts to src/generated/plan-contracts.generated.ts, and the publishing scope and registry to src/generated/package-scope.generated.ts"
+  },
+  {
+   "command": "npm run build -w @clossys/controller",
+   "exit": 0,
+   "seconds": 3.3,
+   "tail": "\n> @clossys/controller@0.10.0 build\n> tsc -p tsconfig.json\n"
+  },
+  {
+   "command": "npm run build -w @clossys/director",
+   "exit": 0,
+   "seconds": 2.2,
+   "tail": "\n> @clossys/director@0.6.0 build\n> node scripts/pack-brief-contract.mjs && tsc -p tsconfig.json\n\npack-brief-contract: wrote the brief and engagement-context contracts and the contract checker copy into src/generated/"
+  },
+  {
+   "command": "npm run build -w @clossys/designer",
+   "exit": 0,
+   "seconds": 28.6,
+   "tail": "\n> @clossys/designer@0.12.0 build\n> tsc -p tsconfig.json\n"
+  },
+  {
+   "command": "npm run build -w @clossys/writer",
+   "exit": 0,
+   "seconds": 5.5,
+   "tail": "\n> @clossys/writer@0.6.0 build\n> node scripts/pack-plan-contract.mjs && tsc -p tsconfig.json && node scripts/check-record-drift.mjs\n\npack-plan-contract: wrote the plan contract and the contract checker copy into src/generated/\nWriter record drift: 1492 records, 12 sources, 0 findings; approval not evaluated."
+  },
+  {
+   "command": "npm run build -w @clossys/publisher",
+   "exit": 0,
+   "seconds": 628.4,
+   "tail": "> @clossys/publisher@0.13.0 check:client-boundary\n> node ../../scripts/check-client-boundary.mjs . --report ../../node_modules/.cache/client-boundary/publisher.json\n\nPASS ./content-map (production): 412 inputs\nPASS ./content-map (development): 412 inputs\nPASS ./web/preview (production): 4385 inputs\nPASS ./web/preview (development): 4385 inputs\nPASS ./web (production): 4557 inputs\nPASS ./web (development): 4557 inputs\nPASS ./web/host (production): 4323 inputs\nPASS ./web/host (development): 4323 inputs\nPASS ./web/content-route (production): 4381 inputs\nPASS ./web/content-route (development): 4381 inputs\nPASS ./web/publisher-v2 (production): 4045 inputs\nPASS ./web/publisher-v2 (development): 4045 inputs\nPASS ./web/client (production): 4404 inputs\nPASS ./web/client (development): 4404 inputs\nPASS ./web/consent (production): 4038 inputs\nPASS ./web/consent (development): 4038 inputs\nPASS ./web/consent/preview (production): 1 inputs\nPASS ./web/consent/preview (development): 3 inputs\nPASS ./web/registered-route-check (production): 1 inputs\nPASS ./web/registered-route-check (development): 1 inputs\nPASS ./web/registered-route-wiring (production): 1 inputs\nPASS ./web/registered-route-wiring (development): 1 inputs\nPASS ./web/admin-pages (production): 4399 inputs\nPASS ./web/admin-pages (development): 4399 inputs\nPASS ./web/registered-route (production): 4399 inputs\nPASS ./web/registered-route (development): 4399 inputs\nclient-boundary: PASS; report ./node_modules/.cache/client-boundary/publisher.json"
+  },
+  {
+   "command": "npm run build -w @clossys/producer",
+   "exit": 0,
+   "seconds": 19.5,
+   "tail": "\n> @clossys/producer@0.1.0 build\n> tsc -p tsconfig.json && node scripts/check-generated-derived.mjs --write && npm run -s generate:specimen-evidence && node scripts/generate-page-check-receipt.mjs\n\ncheck-generated-derived: no $CLOSSYS_ROOT consumer; wrote nothing\nWrote: 0 real native compiler certificates\nPROC-5 source receipt: 06eb075144ee02b0bd7e9da8959e27eb2bfaf032"
+  }
+ ],
+ "commands": [
+  {
+   "command": "npm run typecheck -w @clossys/producer",
+   "expect": 0,
+   "exit": 0,
+   "ok": true,
+   "seconds": 9.2,
+   "tail": "\n> @clossys/producer@0.1.0 typecheck\n> tsc -p tsconfig.json --noEmit\n"
+  },
+  {
+   "command": "npm exec -w @clossys/producer -- vitest run src/conform/producer.test.ts",
+   "expect": 0,
+   "exit": 0,
+   "ok": true,
+   "seconds": 19.8,
+   "tail": "\n RUN  v5.0.1 ./packages/producer\n\n\n Test Files  1 passed (1)\n      Tests  16 passed (16)\n   Start at  20:06:53\n   Duration  18.71s (transform 66%, import 18%, tests 15%)\n\n  Transform  transforming modules took 4.62s \u00b7 66% of tracked time, re-done on every run\n             persist transforms across runs with fsModuleCache: true\n             learn more: https://vitest.dev/guide/improving-performance#caching-between-reruns\n"
+  },
+  {
+   "command": "npm exec -w @clossys/producer -- vitest run src/loop",
+   "expect": 0,
+   "exit": 1,
+   "ok": false,
+   "seconds": 51.7,
+   "tail": "\n\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af[12/15]\u23af\n\n FAIL  src/loop/repin-cascade.test.ts > a legacy pin fails closed (U8) > a legacy pin given the real certifier's passing verdict on the pinSet now, written as loop.cascade writes one (reverdictOf, a clossys.reverdict/1), passes slots.stale\nAssertionError: clossys pin designer/frames.site-shell site-shell-v1.json --by planner:foundry-build-0048-u6 --at 2026-11-17T12:00:00Z: pin refused: pin refused by the constitution guard: R02.2 dependency set not pinned upstream: frames.site-footer unpinned, frames.site-header unpinned (clossys/agents/designer/frames.site-shell/slot.json); fix: meet R02: Pins and order. Pins carry a closed basis and decidedBy (code decides only basis scorecard, decidedBy code:scorecard: the scorecard's single top row on a slot with no owner-pick or confirm step), upstream is pinned before downstream, and each pin equals its last ledger pin event.; R03.2 frames.site-shell/site-shell-v1.json: original item in frames.site-shell, which is not a consumer-asset slot; adopt or customize a trusted reference, or raise a NEED (clossys/agents/designer/frames.site-shell/candidates/site-shell-v1.json); fix: adopt verbatim: copy the seed or the vendored registry item byte for byte, or submit at the adapt or create rung; R14.1 slot.json bytes (4e44fdec5112) differ from its last ledger event (bb468a4f164d) (clossys/agents/designer/frames.site-shell/slot.json); fix: meet R14: Provenance. Every record byte state matches a ledger event naming its verb, action skill, model and tier.: expected 1 to be +0 // Object.is equality\n\n- Expected\n+ Received\n\n- 0\n+ 1\n\n \u276f ok src/loop/repin-cascade.test.ts:98:160\n     96| async function seated() {\n     97|   const w = world();\n     98|   const ok = (result: { exitCode: number; message: string; args: strin\u2026\n       |                                                                                                                                                                ^\n     99|   ok(await w.pin(\"designer/frames.site-shell\", w.submit(\"designer\", \"f\u2026\n    100|   ok(await w.pin(\"designer/sections.hero\", w.submit(\"designer\", \"secti\u2026\n \u276f seated src/loop/repin-cascade.test.ts:99:3\n \u276f src/loop/repin-cascade.test.ts:260:19\n\n\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af[13/15]\u23af\n\n\n Test Files  2 failed | 7 passed (9)\n      Tests  15 failed | 162 passed (177)\n   Start at  20:07:12\n   Duration  51.13s (tests 84%, transform 9%, import 8%)\n"
+  },
+  {
+   "command": "node packages/producer/dist/cli/index.js conform --all --json | node -e 'const r=JSON.parse(require(\"fs\").readFileSync(0,\"utf8\"));const all=[...(r.producer?r.producer.cells.map(c=>[\"producer\",c]):[]),...r.agents.flatMap(a=>[...a.cells,...a.dogfood].map(c=>[a.agent,c]))];const bad=process.argv[1].split(\",\").filter(w=>{const[a,id]=w.split(\":\");const hit=all.find(([x,c])=>x===a&&c.id===id);if(hit&&hit[1].red)console.log(w,hit[1].rows.slice(0,3).join(\" | \"));return !hit||hit[1].red});console.log(bad.length?\"RED \"+bad.join(\",\"):\"GREEN\");process.exit(bad.length?1:0)' producer:P1,producer:P2,producer:P3,producer:P4,producer:P5,producer:P6,producer:P7,producer:P8",
+   "expect": 0,
+   "exit": 1,
+   "ok": false,
+   "seconds": 47.1,
+   "tail": "producer:P1 producer IA queue: queue.change is not placed\nproducer:P3 queue.change: no loop fills it (no owner step raises it, no failure routes to it, no step writes it)\nproducer:P4 loop.fill: step create has no failure route: a failed run stops and lands in no queue | loop.fill: step pick has no failure route: a failed run stops and lands in no queue | loop.fill: step cascade has no failure route: a failed run stops and lands in no queue\nRED producer:P1,producer:P3,producer:P4"
+  },
+  {
+   "command": "git merge-tree --write-tree claude/r2f-int2 HEAD",
+   "expect": 0,
+   "exit": 0,
+   "ok": true,
+   "seconds": 0.0,
+   "tail": "f6a1977200aee2bac4f93871ddcc877de2884d6d"
+  }
+ ],
+ "merge_tree": {
+  "command": "git merge-tree --write-tree claude/r2f-int2 06eb075144ee02b0bd7e9da8959e27eb2bfaf032",
+  "exit": 0,
+  "tree": "f6a1977200aee2bac4f93871ddcc877de2884d6d",
+  "conflicts": []
+ },
+ "tree_clean": true,
+ "failures": [
+  "`npm exec -w @clossys/producer -- vitest run src/loop` exit 1, expected 0",
+  "`node packages/producer/dist/cli/index.js conform --all --json | node -e 'const r=JSON.parse(require(\"fs\").readFileSync(0,\"utf8\"));const all=[...(r.producer?r.producer.cells.map(c=>[\"producer\",c]):[]),...r.agents.flatMap(a=>[...a.cells,...a.dogfood].map(c=>[a.agent,c]))];const bad=process.argv[1].split(\",\").filter(w=>{const[a,id]=w.split(\":\");const hit=all.find(([x,c])=>x===a&&c.id===id);if(hit&&hit[1].red)console.log(w,hit[1].rows.slice(0,3).join(\" | \"));return !hit||hit[1].red});console.log(bad.length?\"RED \"+bad.join(\",\"):\"GREEN\");process.exit(bad.length?1:0)' producer:P1,producer:P2,producer:P3,producer:P4,producer:P5,producer:P6,producer:P7,producer:P8` exit 1, expected 0"
+ ],
+ "verdict": "FAIL"
+}
