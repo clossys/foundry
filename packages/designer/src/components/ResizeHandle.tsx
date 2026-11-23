@@ -1,7 +1,6 @@
 import { useLocale } from "react-aria-components";
 import { useRef, type HTMLAttributes, type KeyboardEvent, type PointerEvent } from "react";
 import { cx } from "./internal/cx.js";
-import { UI_BORDER_HAIRLINE, UI_LAYOUT_TAP_TARGET } from "./internal/ui-vars.js";
 
 export interface ResizeHandleProps extends Omit<HTMLAttributes<HTMLDivElement>, "children" | "onChange" | "defaultValue" | "role" | "aria-label" | "dir" | "onPointerDown" | "onPointerMove" | "onPointerUp" | "onPointerCancel" | "onLostPointerCapture" | "onKeyDown" | "onFocus" | "onBlur"> {
   value: number;
@@ -74,12 +73,11 @@ export function ResizeHandle({
       aria-valuenow={current} aria-valuemin={min} aria-valuemax={max}
       dir={dir}
       className={cx(
-        "flex shrink-0 items-center justify-center focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary",
+        "flex min-h-11 min-w-11 shrink-0 items-center justify-center focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary",
         horizontalMovement ? "cursor-col-resize" : "cursor-row-resize", className,
       )}
       style={{
         ...style,
-        minWidth: UI_LAYOUT_TAP_TARGET, minHeight: UI_LAYOUT_TAP_TARGET,
         touchAction: "none", userSelect: "none",
       }}
       onKeyDown={keyDown}
@@ -101,8 +99,7 @@ export function ResizeHandle({
     >
       <span
         aria-hidden="true"
-        style={{ borderWidth: UI_BORDER_HAIRLINE }}
-        className={horizontalMovement ? "self-stretch border-s border-line-base" : "w-full border-t border-line-base"}
+        className={horizontalMovement ? "self-stretch border-s border-border" : "w-full border-t border-border"}
       />
     </div>
   );

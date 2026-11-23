@@ -38,7 +38,7 @@ function setup(extra: Record<string, unknown> = {}) {
 describe("ResizeHandle", () => {
   it("exports a named interactive Component", () => expect((components as any).ResizeHandle).toBeTypeOf("function"));
 
-  it("names a focusable separator with its axis, bounded values and a 44px token target", () => {
+  it("names a focusable separator with its axis, bounded values and a 44px target", () => {
     const { handle } = setup({ "aria-controls": "panel" });
     expect(handle).toHaveAttribute("tabindex", "0");
     expect(handle).toHaveAttribute("aria-orientation", "vertical");
@@ -46,8 +46,9 @@ describe("ResizeHandle", () => {
     expect(handle).toHaveAttribute("aria-valuemin", "50");
     expect(handle).toHaveAttribute("aria-valuemax", "200");
     expect(handle).toHaveAttribute("aria-controls", "panel");
-    expect(handle.style.minWidth).toBe("var(--ui-layout-tap-target, 44px)");
-    expect(handle.style.minHeight).toBe("var(--ui-layout-tap-target, 44px)");
+    // min-*-11 is eleven stock spacing units (44px at the default 0.25rem unit).
+    expect(handle).toHaveClass("min-w-11", "min-h-11");
+    expect(handle.style.minWidth).toBe("");
   });
 
   it.each(["ltr", "rtl"])("steps, bounds and resets with a vertical separator in %s", async dir => {
@@ -130,7 +131,8 @@ describe("ResizeHandle", () => {
   it("keeps the visible resize edge token-bound and preserves native forced-color adjustment", () => {
     const { handle } = setup();
     const edge = handle.querySelector("span")!;
-    expect(edge.style.borderWidth).toBe("var(--ui-border-hairline, 1px)");
+    expect(edge).toHaveClass("border-s", "border-border");
+    expect(edge.style.borderWidth).toBe("");
     expect(edge.className).toContain("self-stretch");
     expect(handle.className).not.toMatch(/transition|animate|forced-color-adjust-none/);
   });

@@ -71,7 +71,7 @@ export function Logomark({ src, size, tone = "auto", plate = "self", title, pres
       </span>;
       if (plate !== "shared") return artwork;
       return <span aria-hidden className={cx("inline-flex shrink-0 items-center justify-center",
-        inverse ? "bg-background" : "bg-ink-primary")} style={{
+        inverse ? "bg-background" : "bg-foreground")} style={{
         height: plateSide, width: plateSide,
         borderRadius: `calc(${plateSide} * ${BADGE_RADIUS_SHARE})`,
       }}>{artwork}</span>;
@@ -96,7 +96,7 @@ export function Logomark({ src, size, tone = "auto", plate = "self", title, pres
       aria-hidden
       className={cx(inverse
         ? "inline-flex shrink-0 items-center justify-center bg-background"
-        : "inline-flex shrink-0 items-center justify-center bg-ink-primary")}
+        : "inline-flex shrink-0 items-center justify-center bg-foreground")}
       style={{ height, width: height, borderRadius: `calc(${height} * ${BADGE_RADIUS_SHARE})` }}
     >
       <img src={src} alt="" style={{ height: imageSide, width: imageSide, objectFit: "contain" }} title={title} />
