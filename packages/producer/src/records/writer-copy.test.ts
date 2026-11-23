@@ -5,7 +5,7 @@ import { join } from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
 import { serializeFrontmatter } from './slot-model/index.js';
 import { writerKeysUnapproved } from '../pipeline/status.js';
-import { writerCopy } from './writer-copy.js';
+import { writerCopy, writerCopyDuplicates } from './writer-copy.js';
 
 const roots: string[] = [];
 afterEach(() => { for (const root of roots.splice(0)) rmSync(root, { recursive: true, force: true }); });
@@ -47,5 +47,44 @@ describe('pinned Writer copy', () => {
     const copy = writerCopy(consumer(basis).clossys);
     expect(copy.approved('studio.probe.held')).toBe(false);
     expect(copy.text('studio.probe.held')).toBe('Held');
+  });
+});
+
+/** A synthetic consumer whose Writer IA places and pins one candidate per slot: slot id to its `### <row>` texts. */
+function metaConsumer(slots: Record<string, Record<string, string>>) {
+  const root = realpathSync(mkdtempSync(join(tmpdir(), 'writer-copy-meta-'))); roots.push(root);
+  const writer = join(root, 'clossys/agents/writer');
+  mkdirSync(writer, { recursive: true });
+  writeFileSync(join(writer, 'ia.json'), JSON.stringify({ schema: 'clossys.ia/1', source: 'synthetic-test-only#writer-copy-meta', extensions: [],
+    nodes: [{ id: 'pages', label: 'Pages', children: [{ id: 'meta', label: 'Meta', slots: Object.keys(slots) }] }] }));
+  for (const [slot, rows] of Object.entries(slots)) {
+    const dir = join(writer, slot);
+    mkdirSync(join(dir, 'candidates'), { recursive: true });
+    const body = Object.entries(rows).map(([id, text]) => `### ${id}\n<!-- {"id":${JSON.stringify(id)},"bindings":[]} -->\n${text}\n`).join('\n');
+    const bytes = serializeFrontmatter({ slot, locales: ['en'], source: { kind: 'original', ref: [] } }, `## en\n\n${body}`);
+    writeFileSync(join(dir, 'candidates/meta-v1.md'), bytes);
+    writeFileSync(join(dir, 'pin.json'), JSON.stringify({ candidate: 'meta-v1.md', sha256: createHash('sha256').update(bytes).digest('hex'), decidedBy: 'planner:synthetic-test-only', basis: 'planner', at: '2026-01-01T00:00:00Z' }));
+  }
+  return join(root, 'clossys');
+}
+
+describe('pinned Writer copy row keys (BR-E2E5 option A)', () => {
+  it('registers two pinned meta slots\' same-named rows as <slot>.<row>: both resolve, with no collision', () => {
+    const clossys = metaConsumer({
+      'page.home.meta': { title: 'Home title', description: 'Home description' },
+      'page.about.meta': { title: 'About title', description: 'About description' },
+    });
+    expect(writerCopyDuplicates(clossys)).toEqual([]);
+    const copy = writerCopy(clossys);
+    expect(copy.text('page.home.meta.title')).toBe('Home title');
+    expect(copy.text('page.about.meta.title')).toBe('About title');
+    expect(copy.text('page.about.meta.description')).toBe('About description');
+    expect(copy.has('title')).toBe(false);
+  });
+
+  it('keeps a dotted row id as its own key', () => {
+    const copy = writerCopy(metaConsumer({ 'strings.probe': { 'studio.probe.held': 'Held' } }));
+    expect(copy.text('studio.probe.held')).toBe('Held');
+    expect(copy.has('strings.probe.studio.probe.held')).toBe(false);
   });
 });
