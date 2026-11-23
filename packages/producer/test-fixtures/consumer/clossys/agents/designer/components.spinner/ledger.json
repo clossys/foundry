@@ -118,6 +118,52 @@
           "sha256": "8a149e8c2875117dbf7070fc32f19267f83fc2e9112822ed7bf6be16fef07361"
         }
       ]
+    },
+    {
+      "op": "slot",
+      "at": "2026-11-23T00:00:00Z",
+      "by": "producer",
+      "verb": "migrate",
+      "skill": {
+        "path": "packages/producer/actions/migrate/action.json",
+        "sha256": "8b07b093fc4ab43ae85ccd8c821f1d2cc02970225d90a986b2521806d9024342"
+      },
+      "model": "none",
+      "tier": "none",
+      "migration": "placement",
+      "decision": "create",
+      "overlaps": [
+        {
+          "slot": "designer/components.banner",
+          "why": "one L2 (components.components/components-feedback) and kind family, inputs a subset"
+        },
+        {
+          "slot": "designer/components.toast",
+          "why": "one L2 (components.components/components-feedback) and kind family, inputs a subset"
+        },
+        {
+          "slot": "designer/components.progress-bar",
+          "why": "one L2 (components.components/components-feedback) and kind family, inputs a subset"
+        },
+        {
+          "slot": "designer/components.meter",
+          "why": "one L2 (components.components/components-feedback) and kind family, inputs a subset"
+        },
+        {
+          "slot": "designer/components.skeleton",
+          "why": "one L2 (components.components/components-feedback) and kind family, inputs a subset"
+        },
+        {
+          "slot": "designer/components.empty",
+          "why": "one L2 (components.components/components-feedback) and kind family, inputs a subset"
+        }
+      ],
+      "records": [
+        {
+          "file": "slot.json",
+          "sha256": "8a149e8c2875117dbf7070fc32f19267f83fc2e9112822ed7bf6be16fef07361"
+        }
+      ]
     }
   ]
 }

@@ -63,6 +63,52 @@
           "sha256": "7b1d312bec9708d0797c095c73458954e7ebb708300049dd4f02bbb0d4e9b126"
         }
       ]
+    },
+    {
+      "op": "slot",
+      "at": "2026-11-23T00:00:00Z",
+      "by": "producer",
+      "verb": "migrate",
+      "skill": {
+        "path": "packages/producer/actions/migrate/action.json",
+        "sha256": "8b07b093fc4ab43ae85ccd8c821f1d2cc02970225d90a986b2521806d9024342"
+      },
+      "model": "none",
+      "tier": "none",
+      "migration": "placement",
+      "decision": "create",
+      "overlaps": [
+        {
+          "slot": "writer/sections.page-header.copy",
+          "why": "one L2 (copy.section-copy/story) and kind family, inputs Jaccard 0.83"
+        },
+        {
+          "slot": "writer/sections.pricing.copy",
+          "why": "one L2 (copy.section-copy/story) and kind family, inputs Jaccard 0.84"
+        },
+        {
+          "slot": "writer/sections.testimonials.copy",
+          "why": "one L2 (copy.section-copy/story) and kind family, inputs a superset"
+        },
+        {
+          "slot": "writer/sections.logo-cloud.copy",
+          "why": "one L2 (copy.section-copy/story) and kind family, inputs a superset"
+        },
+        {
+          "slot": "writer/sections.people.copy",
+          "why": "one L2 (copy.section-copy/story) and kind family, inputs Jaccard 0.83"
+        },
+        {
+          "slot": "writer/sections.comparison.copy",
+          "why": "one L2 (copy.section-copy/story) and kind family, inputs Jaccard 0.84"
+        }
+      ],
+      "records": [
+        {
+          "file": "slot.json",
+          "sha256": "7b1d312bec9708d0797c095c73458954e7ebb708300049dd4f02bbb0d4e9b126"
+        }
+      ]
     }
   ]
 }

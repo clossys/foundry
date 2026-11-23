@@ -118,6 +118,36 @@
           "sha256": "859fedefb164a38440d2a05d7632c427050b01f337392e54481ff2ae0716fa2e"
         }
       ]
+    },
+    {
+      "op": "slot",
+      "at": "2026-11-23T00:00:00Z",
+      "by": "producer",
+      "verb": "migrate",
+      "skill": {
+        "path": "packages/producer/actions/migrate/action.json",
+        "sha256": "8b07b093fc4ab43ae85ccd8c821f1d2cc02970225d90a986b2521806d9024342"
+      },
+      "model": "none",
+      "tier": "none",
+      "migration": "placement",
+      "decision": "create",
+      "overlaps": [
+        {
+          "slot": "designer/components.form",
+          "why": "one L2 (components.components/components-inputs) and kind family, inputs Jaccard 0.80"
+        },
+        {
+          "slot": "designer/components.file-trigger",
+          "why": "one L2 (components.components/components-inputs) and kind family, inputs a superset"
+        }
+      ],
+      "records": [
+        {
+          "file": "slot.json",
+          "sha256": "859fedefb164a38440d2a05d7632c427050b01f337392e54481ff2ae0716fa2e"
+        }
+      ]
     }
   ]
 }

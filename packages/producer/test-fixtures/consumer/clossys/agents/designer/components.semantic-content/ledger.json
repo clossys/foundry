@@ -201,6 +201,52 @@
           "sha256": "cd22b0effb43780956018ad1a021a0853b8c3b042ed8df18868124a9b083025a"
         }
       ]
+    },
+    {
+      "op": "slot",
+      "at": "2026-11-23T00:00:00Z",
+      "by": "producer",
+      "verb": "migrate",
+      "skill": {
+        "path": "packages/producer/actions/migrate/action.json",
+        "sha256": "8b07b093fc4ab43ae85ccd8c821f1d2cc02970225d90a986b2521806d9024342"
+      },
+      "model": "none",
+      "tier": "none",
+      "migration": "placement",
+      "decision": "create",
+      "overlaps": [
+        {
+          "slot": "designer/components.rich-text",
+          "why": "one L2 (components.components/components-text-and-media) and kind family, inputs a subset"
+        },
+        {
+          "slot": "designer/components.badge",
+          "why": "one L2 (components.components/components-text-and-media) and kind family, inputs a subset"
+        },
+        {
+          "slot": "designer/components.keyboard",
+          "why": "one L2 (components.components/components-text-and-media) and kind family, inputs a subset"
+        },
+        {
+          "slot": "designer/components.avatar",
+          "why": "one L2 (components.components/components-text-and-media) and kind family, inputs a subset"
+        },
+        {
+          "slot": "designer/components.icon",
+          "why": "one L2 (components.components/components-text-and-media) and kind family, inputs a subset"
+        },
+        {
+          "slot": "designer/components.logo",
+          "why": "one L2 (components.components/components-text-and-media) and kind family, inputs a subset"
+        }
+      ],
+      "records": [
+        {
+          "file": "slot.json",
+          "sha256": "0d3446d5ff23d72aaf16003f6a1dbc0ea2384cd388c2f7c4f2fce596bc0de2a9"
+        }
+      ]
     }
   ]
 }

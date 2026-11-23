@@ -114,6 +114,72 @@
           "sha256": "9efb1b82e742bce9473bdb76e4054626a9697b76e9fa796a682a4feff41ba7dd"
         }
       ]
+    },
+    {
+      "op": "slot",
+      "at": "2026-11-23T00:00:00Z",
+      "by": "producer",
+      "verb": "migrate",
+      "skill": {
+        "path": "packages/producer/actions/migrate/action.json",
+        "sha256": "8b07b093fc4ab43ae85ccd8c821f1d2cc02970225d90a986b2521806d9024342"
+      },
+      "model": "none",
+      "tier": "none",
+      "migration": "placement",
+      "decision": "create",
+      "overlaps": [
+        {
+          "slot": "designer/sections.link-index",
+          "why": "one L2 (sections.sections/sections-records) and kind family, inputs a superset"
+        },
+        {
+          "slot": "designer/sections.resource-list",
+          "why": "one L2 (sections.sections/sections-records) and kind family, inputs a superset"
+        },
+        {
+          "slot": "designer/sections.stats",
+          "why": "one L2 (sections.sections/sections-records) and kind family, inputs a superset"
+        },
+        {
+          "slot": "designer/sections.usage",
+          "why": "one L2 (sections.sections/sections-records) and kind family, inputs a superset"
+        },
+        {
+          "slot": "designer/sections.status-list",
+          "why": "one L2 (sections.sections/sections-records) and kind family, inputs a superset"
+        },
+        {
+          "slot": "designer/sections.activity-feed",
+          "why": "one L2 (sections.sections/sections-records) and kind family, inputs a superset"
+        },
+        {
+          "slot": "designer/sections.audit-log",
+          "why": "one L2 (sections.sections/sections-records) and kind family, inputs a superset"
+        },
+        {
+          "slot": "designer/sections.slot-gallery",
+          "why": "one L2 (sections.sections/sections-records) and kind family, inputs equal"
+        },
+        {
+          "slot": "designer/sections.slot-detail",
+          "why": "one L2 (sections.sections/sections-records) and kind family, inputs equal"
+        },
+        {
+          "slot": "designer/sections.candidate-preview",
+          "why": "one L2 (sections.sections/sections-records) and kind family, inputs equal"
+        },
+        {
+          "slot": "designer/sections.queue-list",
+          "why": "one L2 (sections.sections/sections-records) and kind family, inputs equal"
+        }
+      ],
+      "records": [
+        {
+          "file": "slot.json",
+          "sha256": "9efb1b82e742bce9473bdb76e4054626a9697b76e9fa796a682a4feff41ba7dd"
+        }
+      ]
     }
   ]
 }

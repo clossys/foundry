@@ -347,6 +347,32 @@
           "sha256": "2e8e52fc4670fb67c01e2d14000380e0c7d8d0b38d5e9e8ad8b6a151a2898926"
         }
       ]
+    },
+    {
+      "op": "slot",
+      "at": "2026-11-23T00:00:00Z",
+      "by": "producer",
+      "verb": "migrate",
+      "skill": {
+        "path": "packages/producer/actions/migrate/action.json",
+        "sha256": "8b07b093fc4ab43ae85ccd8c821f1d2cc02970225d90a986b2521806d9024342"
+      },
+      "model": "none",
+      "tier": "none",
+      "migration": "placement",
+      "decision": "create",
+      "overlaps": [
+        {
+          "slot": "director/aspiration.purpose.vision",
+          "why": "one L2 (aspiration/purpose) and kind family, inputs empty on both sides, requirements equal"
+        }
+      ],
+      "records": [
+        {
+          "file": "slot.json",
+          "sha256": "98e175e311aada3e261bae9e066fa26444f2425f05415d5cab37325fb3a70e14"
+        }
+      ]
     }
   ]
 }

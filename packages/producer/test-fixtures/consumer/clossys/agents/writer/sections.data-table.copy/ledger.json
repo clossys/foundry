@@ -63,6 +63,76 @@
           "sha256": "925291ffec77cf8f7731d8ed1fbf7055db3cb8344d0597c41d470808cec60a5e"
         }
       ]
+    },
+    {
+      "op": "slot",
+      "at": "2026-11-23T00:00:00Z",
+      "by": "producer",
+      "verb": "migrate",
+      "skill": {
+        "path": "packages/producer/actions/migrate/action.json",
+        "sha256": "8b07b093fc4ab43ae85ccd8c821f1d2cc02970225d90a986b2521806d9024342"
+      },
+      "model": "none",
+      "tier": "none",
+      "migration": "placement",
+      "decision": "create",
+      "overlaps": [
+        {
+          "slot": "writer/sections.link-index.copy",
+          "why": "one L2 (copy.section-copy/records) and kind family, inputs a subset"
+        },
+        {
+          "slot": "writer/sections.resource-list.copy",
+          "why": "one L2 (copy.section-copy/records) and kind family, inputs equal"
+        },
+        {
+          "slot": "writer/sections.task-list.copy",
+          "why": "one L2 (copy.section-copy/records) and kind family, inputs a subset"
+        },
+        {
+          "slot": "writer/sections.data-grid.copy",
+          "why": "one L2 (copy.section-copy/records) and kind family, inputs equal"
+        },
+        {
+          "slot": "writer/sections.stats.copy",
+          "why": "one L2 (copy.section-copy/records) and kind family, inputs a superset"
+        },
+        {
+          "slot": "writer/sections.usage.copy",
+          "why": "one L2 (copy.section-copy/records) and kind family, inputs a subset"
+        },
+        {
+          "slot": "writer/sections.account-summary.copy",
+          "why": "one L2 (copy.section-copy/records) and kind family, inputs equal"
+        },
+        {
+          "slot": "writer/sections.status-list.copy",
+          "why": "one L2 (copy.section-copy/records) and kind family, inputs a subset"
+        },
+        {
+          "slot": "writer/sections.activity-feed.copy",
+          "why": "one L2 (copy.section-copy/records) and kind family, inputs equal"
+        },
+        {
+          "slot": "writer/sections.audit-log.copy",
+          "why": "one L2 (copy.section-copy/records) and kind family, inputs equal"
+        },
+        {
+          "slot": "writer/sections.explorer.copy",
+          "why": "one L2 (copy.section-copy/records) and kind family, inputs equal"
+        },
+        {
+          "slot": "writer/sections.filter-builder.copy",
+          "why": "one L2 (copy.section-copy/records) and kind family, inputs equal"
+        }
+      ],
+      "records": [
+        {
+          "file": "slot.json",
+          "sha256": "925291ffec77cf8f7731d8ed1fbf7055db3cb8344d0597c41d470808cec60a5e"
+        }
+      ]
     }
   ]
 }

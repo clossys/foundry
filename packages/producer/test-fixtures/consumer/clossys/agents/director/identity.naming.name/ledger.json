@@ -351,6 +351,32 @@
           "sha256": "351bcce4a4d00c42d04305778aa6e0b53c6d7586c67e7e9f51dacfd2e73ef437"
         }
       ]
+    },
+    {
+      "op": "slot",
+      "at": "2026-11-23T00:00:00Z",
+      "by": "producer",
+      "verb": "migrate",
+      "skill": {
+        "path": "packages/producer/actions/migrate/action.json",
+        "sha256": "8b07b093fc4ab43ae85ccd8c821f1d2cc02970225d90a986b2521806d9024342"
+      },
+      "model": "none",
+      "tier": "none",
+      "migration": "placement",
+      "decision": "create",
+      "overlaps": [
+        {
+          "slot": "director/identity.naming.architecture",
+          "why": "one L2 (identity/naming) and kind family, inputs empty on both sides, requirements equal"
+        }
+      ],
+      "records": [
+        {
+          "file": "slot.json",
+          "sha256": "f0aa8c64e3de001b5e3ee35fcdd70dac2f7ea1b3fda2ffa537a0826323066f6a"
+        }
+      ]
     }
   ]
 }
