@@ -94,6 +94,13 @@ function historyIssues(root: string, queue: string, id: string): string[] {
     .map(finding => finding.detail);
 }
 
+/** The pin command an owner's answer to a queue.pick runs next, when the chosen option names a candidate (else undefined). */
+export function pickFollowUp(entry: QueueEntry, event: QueueEntry["events"][number]): string | undefined {
+  const option = (entry.options ?? []).find(candidate => candidate.id === event.answer);
+  return event.op === "answered" && event.by === "owner" && entry.queue === "queue.pick" && option?.candidate
+    ? `clossys pin ${refLabel(entry.subject)} ${option.candidate} --by owner:${entry.queue}#${entry.id}` : undefined;
+}
+
 export function answerQueueEntry(root: string, input: AnswerInput, now: Date = new Date()): AnswerResult {
   const { by } = input;
   if (!ANSWER_BY.test(by)) throw new AnswerRefused(ANSWER_DECIDER_MATCH, `--by ${by} is not owner, agent:<agent> or code:<cli>`);
@@ -141,9 +148,7 @@ export function answerQueueEntry(root: string, input: AnswerInput, now: Date = n
     if (history.length) throw new AnswerRefused(LEDGER_APPEND_ONLY, `${queue}#${id}: ${history.join("; ")}`);
 
     replaceQueueEntry(file, next);
-    const option = (next.options ?? []).find(candidate => candidate.id === input.answer);
-    const pinNext = owner && queue === "queue.pick" && option?.candidate
-      ? `clossys pin ${refLabel(next.subject)} ${option.candidate} --by owner:${queue}#${id}` : undefined;
+    const pinNext = pickFollowUp(next, event);
     return { queue, id, file, event, entry: next, ...(pinNext ? { next: pinNext } : {}) };
   });
 }
