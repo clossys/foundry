@@ -29,8 +29,8 @@ const STYLE_KEYS = /^(?:class|className|style|styles|css|tw|color|colour|backgro
 export const INSTANCE_KEY = /^[a-z][a-z0-9-]*$/;
 /** A variant value is a Designer axis token, never prose or a style value. */
 const AXIS_TOKEN = /^[a-z][a-z0-9-]*$/;
-/** A Writer record ref: `writer/<slot>#<record>`. */
-const WRITER_REF = /^writer\/([a-z][a-z0-9-]*(?:\.[a-z0-9][a-z0-9-]*)+)#([a-z0-9][a-z0-9-]*(?:\.[a-z0-9][a-z0-9-]*)+)$/;
+/** A Writer record ref: `writer/<slot>#<record>`; the record is one segment (`copy`) or dotted (`home.hero`). */
+const WRITER_REF = /^writer\/([a-z][a-z0-9-]*(?:\.[a-z0-9][a-z0-9-]*)+)#([a-z0-9][a-z0-9-]*(?:\.[a-z0-9][a-z0-9-]*)*)$/;
 /** A link target: a Publisher page id, optionally with `#<role>` on that page. */
 const PAGE_LINK = /^publisher\/page\.[a-z0-9][a-z0-9-]*(?:#[a-z][a-z0-9-]*)?$/;
 const PATH = /^\/[a-z0-9<>/-]*$/;
@@ -102,6 +102,8 @@ export function checkPageOption(
   layout: LayoutContract | undefined,
   designer: DesignerIds,
   engines: LayoutEngineMap = LAYOUT_ENGINE_MAP,
+  /** The record names a Writer slot's pin map pins; a pinned record is a record key too. Absent: only `<page>.<role>`. */
+  pinned?: (writerSlot: string) => ReadonlySet<string> | undefined,
 ): PageFinding[] {
   const findings: PageFinding[] = [];
   const add = (check: string, message: string) => findings.push({ check, message: `${pageId}: ${message}` });
@@ -134,7 +136,7 @@ export function checkPageOption(
     if (contract && use && !contract.kinds.includes(use)) add("page.role-allowed", `${key} places ${use}; the role allows ${contract.kinds.join(", ")}`);
     if (typeof section.copy === "string") {
       const match = WRITER_REF.exec(section.copy);
-      if (match && match[2] !== `${record}.${key}`) add("page.record-key", `${key} copy record ${match[2]} is not ${record}.${key}`);
+      if (match && match[2] !== `${record}.${key}` && !pinned?.(match[1]!)?.has(match[2]!)) add("page.record-key", `${key} copy record ${match[2]} is not ${record}.${key} nor a record ${match[1]} pins`);
       if (match && use && match[1] !== `${unitId(use)}.copy`) add("page.record-key", `${key} copy slot ${match[1]} is not ${unitId(use)}.copy`);
     }
   });
