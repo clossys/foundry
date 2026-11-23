@@ -1,7 +1,7 @@
 {
   "schema": "clossys.index/1",
-  "events": 1269,
-  "head": "28be9bfbd03a0b6553dfa7917490ba171df971d93bb8430dbd6d17f4dfd4d5cc",
+  "events": 1268,
+  "head": "1ef54bc517b421e7911a0a433b1d0a04a44591933bacac4de77b91f4fdfce501",
   "subjects": {
     "designer": {
       "seq": 417,
@@ -1612,7 +1612,7 @@
       "at": "2026-11-19T00:00:00.000Z"
     },
     "writer/publication.site.meta": {
-      "seq": 1268,
+      "seq": 1267,
       "kind": "slot.pin",
       "actor": "planner:fixture-world",
       "at": "2026-11-19T00:00:00.000Z"
@@ -4170,13 +4170,13 @@
     },
     "clossys/agents/writer/frames.site-header.copy/ledger.json": {
       "seq": 1243,
-      "logged": "dfcf6288ae0021fbef73054ab800fb8effa0a9663c066aea5c62e90300533200",
-      "disk": "dfcf6288ae0021fbef73054ab800fb8effa0a9663c066aea5c62e90300533200"
+      "logged": "22c4a17ac3408bbc33d234e1b3170d84a1b1da50caae31ca4053f47a72a94af6",
+      "disk": "22c4a17ac3408bbc33d234e1b3170d84a1b1da50caae31ca4053f47a72a94af6"
     },
     "clossys/agents/writer/frames.site-header.copy/pin.json": {
       "seq": 1243,
-      "logged": "bc9d1061b73e58acebcdc8a8459eb2bab716fdcbceb9b4c4988b89a63531d290",
-      "disk": "bc9d1061b73e58acebcdc8a8459eb2bab716fdcbceb9b4c4988b89a63531d290"
+      "logged": "23bc9d2b2a737d3d87026d7b2f9924edd5f1968938a2e146a335b2e8439fd182",
+      "disk": "23bc9d2b2a737d3d87026d7b2f9924edd5f1968938a2e146a335b2e8439fd182"
     },
     "clossys/agents/writer/frames.site-header.copy/slot.json": {
       "seq": 220,
@@ -4195,13 +4195,13 @@
     },
     "clossys/agents/writer/lexicon.avoid-patterns/ledger.json": {
       "seq": 1203,
-      "logged": "9cead093f3ec2df29b11ad5cd815ea8b216eed8570da7c34d6e69b8d49c75971",
-      "disk": "9cead093f3ec2df29b11ad5cd815ea8b216eed8570da7c34d6e69b8d49c75971"
+      "logged": "e27327bbe938bd006c585e63633999586202f8799261fc5bf9d2260d3378c310",
+      "disk": "e27327bbe938bd006c585e63633999586202f8799261fc5bf9d2260d3378c310"
     },
     "clossys/agents/writer/lexicon.avoid-patterns/pin.json": {
       "seq": 1203,
-      "logged": "aa4c43bb46ba0cadbfb3f40603c0c6c27c886124c465bf58c609d75e427aed7f",
-      "disk": "aa4c43bb46ba0cadbfb3f40603c0c6c27c886124c465bf58c609d75e427aed7f"
+      "logged": "bcd097b72b1bece0fa17fe3343f22c933845d5d51a659d3b97a6edc7b91a9f61",
+      "disk": "bcd097b72b1bece0fa17fe3343f22c933845d5d51a659d3b97a6edc7b91a9f61"
     },
     "clossys/agents/writer/lexicon.avoid-patterns/slot.json": {
       "seq": 1195,
@@ -4210,13 +4210,13 @@
     },
     "clossys/agents/writer/lexicon.avoid-terms/ledger.json": {
       "seq": 1194,
-      "logged": "4b85830438bfb9113dac0bfeee9c0548daddd29b818732b5288468124521e1af",
-      "disk": "4b85830438bfb9113dac0bfeee9c0548daddd29b818732b5288468124521e1af"
+      "logged": "f6626da0347ee03f495c803ce8d7a429311c4f8aa17f9e5a69d06949592a4681",
+      "disk": "f6626da0347ee03f495c803ce8d7a429311c4f8aa17f9e5a69d06949592a4681"
     },
     "clossys/agents/writer/lexicon.avoid-terms/pin.json": {
       "seq": 1194,
-      "logged": "05ff2611ed1d1f0a488bed2bbe6d8db413a9faaad8387f7e22723c36b2a92863",
-      "disk": "05ff2611ed1d1f0a488bed2bbe6d8db413a9faaad8387f7e22723c36b2a92863"
+      "logged": "2960cc8930143e0ee0d745a4dfbb4ec92a2fea8afe3f2e7941039d4da08655d4",
+      "disk": "2960cc8930143e0ee0d745a4dfbb4ec92a2fea8afe3f2e7941039d4da08655d4"
     },
     "clossys/agents/writer/lexicon.avoid-terms/slot.json": {
       "seq": 1186,
@@ -4225,13 +4225,13 @@
     },
     "clossys/agents/writer/lexicon.capitalization/ledger.json": {
       "seq": 1159,
-      "logged": "25a780e4981a5ad3b3a1ae41188282c469e6c234b8bc4c31baadab525c85cd9d",
-      "disk": "25a780e4981a5ad3b3a1ae41188282c469e6c234b8bc4c31baadab525c85cd9d"
+      "logged": "92eb73023e16ba142947ff4bd6c396ed0cdfed6c8d5a264d2aaf6b1cf04e3b0b",
+      "disk": "92eb73023e16ba142947ff4bd6c396ed0cdfed6c8d5a264d2aaf6b1cf04e3b0b"
     },
     "clossys/agents/writer/lexicon.capitalization/pin.json": {
       "seq": 1159,
-      "logged": "25220acf894135ac76213e1a6134ad94d6f527d39190364933052b09ed4e3f44",
-      "disk": "25220acf894135ac76213e1a6134ad94d6f527d39190364933052b09ed4e3f44"
+      "logged": "54bfb96996b7c92ca6c407e6aaaea6ce87c672043ae3c15e9b61943b2df69daf",
+      "disk": "54bfb96996b7c92ca6c407e6aaaea6ce87c672043ae3c15e9b61943b2df69daf"
     },
     "clossys/agents/writer/lexicon.capitalization/slot.json": {
       "seq": 1151,
@@ -4240,13 +4240,13 @@
     },
     "clossys/agents/writer/lexicon.energy/ledger.json": {
       "seq": 1114,
-      "logged": "406b1978478df8972109fae77a6130e92a9ee37f618dd2ce43202d191eeb10b7",
-      "disk": "406b1978478df8972109fae77a6130e92a9ee37f618dd2ce43202d191eeb10b7"
+      "logged": "22e27efc04e25ebb5b044701bc1dda07288a50474dba866f2ba51432d6967e54",
+      "disk": "22e27efc04e25ebb5b044701bc1dda07288a50474dba866f2ba51432d6967e54"
     },
     "clossys/agents/writer/lexicon.energy/pin.json": {
       "seq": 1114,
-      "logged": "8c980fc95c0da68e6f68db438d14949777f08597d54f203a1a986b05e3136629",
-      "disk": "8c980fc95c0da68e6f68db438d14949777f08597d54f203a1a986b05e3136629"
+      "logged": "9270c42feb91496db9a88cf87533e58ee7ad4c5f2a7759e05613df9b05071ee5",
+      "disk": "9270c42feb91496db9a88cf87533e58ee7ad4c5f2a7759e05613df9b05071ee5"
     },
     "clossys/agents/writer/lexicon.energy/slot.json": {
       "seq": 1106,
@@ -4255,13 +4255,13 @@
     },
     "clossys/agents/writer/lexicon.formality/ledger.json": {
       "seq": 1096,
-      "logged": "2469e0cdb2c6868a2af391d449c96d03a4f9ed3dabf651d7f760d0d2a5ed769f",
-      "disk": "2469e0cdb2c6868a2af391d449c96d03a4f9ed3dabf651d7f760d0d2a5ed769f"
+      "logged": "962e8390f717b8b49b35a10651d4d40a8521fc61ff01bf27e8fb5ebd09729d59",
+      "disk": "962e8390f717b8b49b35a10651d4d40a8521fc61ff01bf27e8fb5ebd09729d59"
     },
     "clossys/agents/writer/lexicon.formality/pin.json": {
       "seq": 1096,
-      "logged": "8f647ba94b60820c3735f13b4602b86d5fdf5e9028f2777cea8b5e7b37629791",
-      "disk": "8f647ba94b60820c3735f13b4602b86d5fdf5e9028f2777cea8b5e7b37629791"
+      "logged": "a5f08bfd71c70921b0699916b833d38ff53922eaeb0a171a308f109c5b201d75",
+      "disk": "a5f08bfd71c70921b0699916b833d38ff53922eaeb0a171a308f109c5b201d75"
     },
     "clossys/agents/writer/lexicon.formality/slot.json": {
       "seq": 1088,
@@ -4270,13 +4270,13 @@
     },
     "clossys/agents/writer/lexicon.mood/ledger.json": {
       "seq": 1132,
-      "logged": "eee068031e8660cdebabfe33c446d335344acfc39f27ce72c873676807a05eba",
-      "disk": "eee068031e8660cdebabfe33c446d335344acfc39f27ce72c873676807a05eba"
+      "logged": "5ddee253de15704b686b84f19f5c92bfad9c99aff2f6cd0e2db5e00bf91e8774",
+      "disk": "5ddee253de15704b686b84f19f5c92bfad9c99aff2f6cd0e2db5e00bf91e8774"
     },
     "clossys/agents/writer/lexicon.mood/pin.json": {
       "seq": 1132,
-      "logged": "487dc17a9cc6d69e75851d5ee253cab780c3721cf47d1e889bb5fdea95304578",
-      "disk": "487dc17a9cc6d69e75851d5ee253cab780c3721cf47d1e889bb5fdea95304578"
+      "logged": "5fbd877f33751c4e168ed827f854d55f0106de36b612346b00ea62caf83f2c19",
+      "disk": "5fbd877f33751c4e168ed827f854d55f0106de36b612346b00ea62caf83f2c19"
     },
     "clossys/agents/writer/lexicon.mood/slot.json": {
       "seq": 1124,
@@ -4285,13 +4285,13 @@
     },
     "clossys/agents/writer/lexicon.person/ledger.json": {
       "seq": 1123,
-      "logged": "d51614430907096ddba6156967068cc168adb4cd206e8715006ecfa98077bf43",
-      "disk": "d51614430907096ddba6156967068cc168adb4cd206e8715006ecfa98077bf43"
+      "logged": "16dbf2913c5019a6278cf922e41a03b2c728b0df98a81e98bc54ad5ff8c6c0e3",
+      "disk": "16dbf2913c5019a6278cf922e41a03b2c728b0df98a81e98bc54ad5ff8c6c0e3"
     },
     "clossys/agents/writer/lexicon.person/pin.json": {
       "seq": 1123,
-      "logged": "4f942f55a17ea15aed13580a2ab95fc2239337840fb86df2c3f71cadc4e86dc2",
-      "disk": "4f942f55a17ea15aed13580a2ab95fc2239337840fb86df2c3f71cadc4e86dc2"
+      "logged": "df3ac33c441f58c3053cbae78a5ab770885f8d8885c0f73eb477416b45a0a067",
+      "disk": "df3ac33c441f58c3053cbae78a5ab770885f8d8885c0f73eb477416b45a0a067"
     },
     "clossys/agents/writer/lexicon.person/slot.json": {
       "seq": 1115,
@@ -4300,13 +4300,13 @@
     },
     "clossys/agents/writer/lexicon.preferred-terms/ledger.json": {
       "seq": 1185,
-      "logged": "92c0c1518d22cb47f7e8beb1cdb83644ccf7a379d932efdde31f476251022cec",
-      "disk": "92c0c1518d22cb47f7e8beb1cdb83644ccf7a379d932efdde31f476251022cec"
+      "logged": "0c288b063afbb21e8c3abc3d5a11ae1f85863220fe776c7dfa25841189c823fd",
+      "disk": "0c288b063afbb21e8c3abc3d5a11ae1f85863220fe776c7dfa25841189c823fd"
     },
     "clossys/agents/writer/lexicon.preferred-terms/pin.json": {
       "seq": 1185,
-      "logged": "1cd440475e276e765ccdd89e2d7c5d4fd3155af0f60cbacbdc074a00163e2883",
-      "disk": "1cd440475e276e765ccdd89e2d7c5d4fd3155af0f60cbacbdc074a00163e2883"
+      "logged": "7b20137f11c72af04972fd2504fda1c27685b314be0d2f39b246deada178040d",
+      "disk": "7b20137f11c72af04972fd2504fda1c27685b314be0d2f39b246deada178040d"
     },
     "clossys/agents/writer/lexicon.preferred-terms/slot.json": {
       "seq": 1177,
@@ -4315,13 +4315,13 @@
     },
     "clossys/agents/writer/lexicon.punctuation/ledger.json": {
       "seq": 1168,
-      "logged": "20b52476cbea1013d0f8532814b4b46ce35ff98adcbc37b4abf627d1cdc47295",
-      "disk": "20b52476cbea1013d0f8532814b4b46ce35ff98adcbc37b4abf627d1cdc47295"
+      "logged": "1fa7f0971363ba5364d623f6bedf0e0c49098e773cfd741b83a0d33983c61a9e",
+      "disk": "1fa7f0971363ba5364d623f6bedf0e0c49098e773cfd741b83a0d33983c61a9e"
     },
     "clossys/agents/writer/lexicon.punctuation/pin.json": {
       "seq": 1168,
-      "logged": "1725d1ad53eec5b87736cacf0ea5164de18e71af10c544f6c0c034be6dca8b5c",
-      "disk": "1725d1ad53eec5b87736cacf0ea5164de18e71af10c544f6c0c034be6dca8b5c"
+      "logged": "a837b823094d4b0f8a47889de14afee8d86589e9d0469afaf85eaef07367bdee",
+      "disk": "a837b823094d4b0f8a47889de14afee8d86589e9d0469afaf85eaef07367bdee"
     },
     "clossys/agents/writer/lexicon.punctuation/slot.json": {
       "seq": 1160,
@@ -4330,13 +4330,13 @@
     },
     "clossys/agents/writer/lexicon.reading-level/ledger.json": {
       "seq": 1150,
-      "logged": "1f6bd06823a7fbdaaabb4b777587b2ca73c534a8b61dc9656afdda861e2e50d7",
-      "disk": "1f6bd06823a7fbdaaabb4b777587b2ca73c534a8b61dc9656afdda861e2e50d7"
+      "logged": "108af599d78973986b5e6f5e2028c6cee0c8b2dbf5d10abec25a9e3c723f9cbd",
+      "disk": "108af599d78973986b5e6f5e2028c6cee0c8b2dbf5d10abec25a9e3c723f9cbd"
     },
     "clossys/agents/writer/lexicon.reading-level/pin.json": {
       "seq": 1150,
-      "logged": "6d076372d5653adc7d8499d48df980104232a31b298e6c8cedcfa8b796d38560",
-      "disk": "6d076372d5653adc7d8499d48df980104232a31b298e6c8cedcfa8b796d38560"
+      "logged": "9704d8a06c22f89a8380c1d91be799222de79f446e4578be782beffb895b768c",
+      "disk": "9704d8a06c22f89a8380c1d91be799222de79f446e4578be782beffb895b768c"
     },
     "clossys/agents/writer/lexicon.reading-level/slot.json": {
       "seq": 1142,
@@ -4345,13 +4345,13 @@
     },
     "clossys/agents/writer/lexicon.sentence-length/ledger.json": {
       "seq": 1141,
-      "logged": "667bc0f9867d2c4b972bdec0bff19721e536a76342a26975571ad14166b8f37c",
-      "disk": "667bc0f9867d2c4b972bdec0bff19721e536a76342a26975571ad14166b8f37c"
+      "logged": "5f07358972f83dcfecbb894029052d49a38405675d3a740212268fa6946c1455",
+      "disk": "5f07358972f83dcfecbb894029052d49a38405675d3a740212268fa6946c1455"
     },
     "clossys/agents/writer/lexicon.sentence-length/pin.json": {
       "seq": 1141,
-      "logged": "43807a2fff0d6746c1a6e3b04aaae12e30cd8f7a8c43806e5b2fa9cc80b98407",
-      "disk": "43807a2fff0d6746c1a6e3b04aaae12e30cd8f7a8c43806e5b2fa9cc80b98407"
+      "logged": "f0ae7446e893646e1bb8687ef1ea07dfe6bf65d63a984133127805d64d9c9819",
+      "disk": "f0ae7446e893646e1bb8687ef1ea07dfe6bf65d63a984133127805d64d9c9819"
     },
     "clossys/agents/writer/lexicon.sentence-length/slot.json": {
       "seq": 1133,
@@ -4360,13 +4360,13 @@
     },
     "clossys/agents/writer/lexicon.warmth/ledger.json": {
       "seq": 1105,
-      "logged": "45eba3bf9bd2da128daa1702b5c86ce7d49d7f77db3af67f6d37849c95c6e5a6",
-      "disk": "45eba3bf9bd2da128daa1702b5c86ce7d49d7f77db3af67f6d37849c95c6e5a6"
+      "logged": "41ceef7b0e56ff6ffb7840d4d4dd5abd7c19306d3918dab4c0ede35c48a5ac4b",
+      "disk": "41ceef7b0e56ff6ffb7840d4d4dd5abd7c19306d3918dab4c0ede35c48a5ac4b"
     },
     "clossys/agents/writer/lexicon.warmth/pin.json": {
       "seq": 1105,
-      "logged": "2e3a0df9b8cf1e500b5b7cb41b28f3b4c883a73240d52ecddd487e993d6dde48",
-      "disk": "2e3a0df9b8cf1e500b5b7cb41b28f3b4c883a73240d52ecddd487e993d6dde48"
+      "logged": "fda5f62747281c73d67440cf352a10a08b9be34da1c5d2432d2a7f2277fa5133",
+      "disk": "fda5f62747281c73d67440cf352a10a08b9be34da1c5d2432d2a7f2277fa5133"
     },
     "clossys/agents/writer/lexicon.warmth/slot.json": {
       "seq": 1097,
@@ -4525,13 +4525,13 @@
     },
     "clossys/agents/writer/page.home.meta/ledger.json": {
       "seq": 1259,
-      "logged": "269c2d4271fb2ebba466bb16697f5b26a16a1ba4e570b846d6de5f983e9ab466",
-      "disk": "269c2d4271fb2ebba466bb16697f5b26a16a1ba4e570b846d6de5f983e9ab466"
+      "logged": "074d731566cf33867c280293f1b08992e09059880f5247e4ecd43b326e413e54",
+      "disk": "074d731566cf33867c280293f1b08992e09059880f5247e4ecd43b326e413e54"
     },
     "clossys/agents/writer/page.home.meta/pin.json": {
       "seq": 1259,
-      "logged": "e92b103dccfb7c348d2dca4fc094346756c7a7e78325ca97b38f9478a707164e",
-      "disk": "e92b103dccfb7c348d2dca4fc094346756c7a7e78325ca97b38f9478a707164e"
+      "logged": "2ec3f9c9560b78679650d8221147fba1c85d9f83b921a563518fc15cb4e8c624",
+      "disk": "2ec3f9c9560b78679650d8221147fba1c85d9f83b921a563518fc15cb4e8c624"
     },
     "clossys/agents/writer/page.home.meta/slot.json": {
       "seq": 229,
@@ -4679,19 +4679,19 @@
       "disk": "689a751979f64e8669e6e3fd9ea17ef3dee6c0ec83e009a6750e72e82fa3f241"
     },
     "clossys/agents/writer/publication.site.meta/ledger.json": {
-      "seq": 1268,
-      "logged": "8ff9c7ccaec2b76b2c7db84e1c30a6ee6b0da5c917595148fa957780220cb3db",
-      "disk": "8ff9c7ccaec2b76b2c7db84e1c30a6ee6b0da5c917595148fa957780220cb3db"
+      "seq": 1267,
+      "logged": "66a2ac99cb2c27913cbc4424022a5a7d0ee1a9714f13086c449a8fa674516330",
+      "disk": "66a2ac99cb2c27913cbc4424022a5a7d0ee1a9714f13086c449a8fa674516330"
     },
     "clossys/agents/writer/publication.site.meta/pin.json": {
-      "seq": 1268,
-      "logged": "06fe44b429c22741272911c85ba0449e4b552ea2a454b2810f65510222103901",
-      "disk": "06fe44b429c22741272911c85ba0449e4b552ea2a454b2810f65510222103901"
+      "seq": 1267,
+      "logged": "62a1e52289c51331f3fc0ff886b235c01cd3eb318cb52378f06bf8e4f6571990",
+      "disk": "62a1e52289c51331f3fc0ff886b235c01cd3eb318cb52378f06bf8e4f6571990"
     },
     "clossys/agents/writer/publication.site.meta/slot.json": {
-      "seq": 1260,
-      "logged": "51ca9ff790b621df218e3e74409e1a7f5d01076453d582aa3c18047212a332d3",
-      "disk": "51ca9ff790b621df218e3e74409e1a7f5d01076453d582aa3c18047212a332d3"
+      "seq": 228,
+      "logged": "375e49f2d958cd96056e22d6e19e641e37d2c97e8fcad61282501d36327b528e",
+      "disk": "375e49f2d958cd96056e22d6e19e641e37d2c97e8fcad61282501d36327b528e"
     },
     "clossys/agents/writer/publication.slides.meta/ledger.json": {
       "seq": 258,
@@ -4915,13 +4915,13 @@
     },
     "clossys/agents/writer/sections.hero.copy/ledger.json": {
       "seq": 1235,
-      "logged": "7e544ce6dc090808b3307e72837cf11db5055cb6fe11334b4999ca1181c8e046",
-      "disk": "7e544ce6dc090808b3307e72837cf11db5055cb6fe11334b4999ca1181c8e046"
+      "logged": "3980c7dafc27668f83a6b06f6b6748bbe1b68c616b4457669b34a1cf0e2cd933",
+      "disk": "3980c7dafc27668f83a6b06f6b6748bbe1b68c616b4457669b34a1cf0e2cd933"
     },
     "clossys/agents/writer/sections.hero.copy/pin.json": {
       "seq": 1235,
-      "logged": "2d7e1024e3a084340754dd48cb1b2d3047197f3240b666ac8a6bbcd8fc63a4fa",
-      "disk": "2d7e1024e3a084340754dd48cb1b2d3047197f3240b666ac8a6bbcd8fc63a4fa"
+      "logged": "f497991801849640fdb4f66942a8c2bb8619d85cdd9232d7b671d8534a542ec8",
+      "disk": "f497991801849640fdb4f66942a8c2bb8619d85cdd9232d7b671d8534a542ec8"
     },
     "clossys/agents/writer/sections.hero.copy/slot.json": {
       "seq": 180,

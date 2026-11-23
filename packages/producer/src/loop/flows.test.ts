@@ -994,6 +994,7 @@ ${tone ? `vary: {"tone":"${tone}"}\n` : ""}slot: "${SLOT}"
 locales: ["en"]
 reason: "realises director:advantage.proposition.promise for the hero"
 source: {"kind":"derived","ref":["director:identity.verbal.voice","director:advantage.proposition.promise","director:identity.naming.name"]}
+provenance: {"voice":"director:identity.verbal.voice"}
 ---
 
 ## en

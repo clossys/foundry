@@ -302,7 +302,7 @@
         "reason": "fixture world: a synthetic consumer, so its copy is written from its own pinned upstream"
       },
       "name": "formality-v1.md",
-      "sha256": "1e914c401254ec89e3ec9aac78259376c592eeeefd52a6cd70590a97942d257b"
+      "sha256": "c2c822a7ca8f596ddc0514d7c7a6618dcdd4e656b172640fd470880202cffdc4"
     },
     {
       "op": "pin",
@@ -316,13 +316,13 @@
       "model": "none",
       "tier": "none",
       "candidate": "formality-v1.md",
-      "sha256": "1e914c401254ec89e3ec9aac78259376c592eeeefd52a6cd70590a97942d257b",
+      "sha256": "c2c822a7ca8f596ddc0514d7c7a6618dcdd4e656b172640fd470880202cffdc4",
       "decidedBy": "planner:fixture-world",
       "basis": "planner",
       "records": [
         {
           "file": "pin.json",
-          "sha256": "8f647ba94b60820c3735f13b4602b86d5fdf5e9028f2777cea8b5e7b37629791"
+          "sha256": "a5f08bfd71c70921b0699916b833d38ff53922eaeb0a171a308f109c5b201d75"
         }
       ]
     }

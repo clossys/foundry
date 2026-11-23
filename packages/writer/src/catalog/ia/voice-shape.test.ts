@@ -98,6 +98,17 @@ describe("Director inputs are named keys; style goes through Voice (foundry-audi
     expect(text(checkWriterInputs(next))).toContain("identity.verbal.voice");
   });
 
+  it("U-VOICE-PROV: no Copy or Prose slot lists the voice as an input (candidates name it as provenance.voice); listing it on any of them fails", () => {
+    for (const id of ["copy", "prose"]) {
+      for (const slot of group(id, trees).slots) expect(slot.inputs.some(ref => ref.to === "director/identity.verbal.voice"), `${id}/${slot.id}`).toBe(false);
+      for (const [index, slot] of group(id, trees).slots.entries()) {
+        const next = clone(trees);
+        group(id, next).slots[index]!.inputs.push({ to: "director/identity.verbal.voice", key: "Sound" });
+        expect(text(checkWriterInputs(next)), `${id}/${slot.id}`).toContain(`INPUTS: ${slot.id} lists director/identity.verbal.voice directly`);
+      }
+    }
+  });
+
   it("mutation: a Prose slot that drops a Voice input fails", () => {
     const next = clone(trees);
     const prose = group("prose", next).slots[0]!;

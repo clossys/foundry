@@ -5,7 +5,7 @@ Creates one headline copy slot (hero, tagline, page and section headings) when t
 - Produces: `copy.headline` (rung `create`).
 - Tier: high. Axes: `angle`, `register`, `length`.
 - Base reference: the slot contract (kind `passage`, `pattern` or `string`, its fields, parts and limits); the pinned Director voice and the other pinned upstream the slot lists.
-- Director (and Writer) derivation: all Writer copy derives from the pinned voice: the source cites `director:identity.verbal.voice` (`copy.voice-derived`) and every ref is `director:<slot>`, `writer:<slot>[#key]` or a finding (`copy.derived-upstream`).
+- Director (and Writer) derivation: all Writer copy derives from the pinned voice: the frontmatter `provenance: {"voice": "director:identity.verbal.voice"}` names it (`copy.voice-derived`; provenance, never an input, so the slot's inputs need not list it) and every source ref is `director:<slot>`, `writer:<slot>[#key]` or a finding (`copy.derived-upstream`).
 - Judge: the standard and its certifier, which import nothing from this folder (R16.1). This recipe
   carries no rubric; the standard's requirements and taste are the only measure (R15.5).
 
@@ -78,10 +78,10 @@ clossys next writer/<slot> --stage diverge --file directions.json --recipe creat
 
 ### 3. render (deterministic)
 
-Write each direction's draft candidate in the contract's shape: a Markdown copy file: frontmatter `slot`, `locales: ["en"]`, `source: {"kind": "derived", "ref": ["director:identity.verbal.voice", ...]}`; then `## en`, and per key `### <key>`, the meta comment `<!-- {"id": "<key>", "bindings": []} -->` and a plain value (no Markdown or HTML, no placeholder, no doubled spaces, valid ICU), sentence case, within the contract's limits (160 characters by default).
+Write each direction's draft candidate in the contract's shape: a Markdown copy file: frontmatter `slot`, `locales: ["en"]`, `source: {"kind": "derived", "ref": [<the slot's pinned inputs>]}`, `provenance: {"voice": "director:identity.verbal.voice"}`; then `## en`, and per key `### <key>`, the meta comment `<!-- {"id": "<key>", "bindings": []} -->` and a plain value (no Markdown or HTML, no placeholder, no doubled spaces, valid ICU), sentence case, within the contract's limits (160 characters by default).
 Nothing is generated; the checks read it mechanically.
 
-For each direction's draft candidate, check the draft first (the voice cited, a derived source of `director:`/`writer:` pins and findings, one entry per key with its meta id equal to the key, plain values (no markup or placeholder, valid ICU), within the contract's limits, sentence case except the standard's proper names, pattern parts where the contract has them; a requirement it does not
+For each direction's draft candidate, check the draft first (the voice named in provenance, a derived source of `director:`/`writer:` pins and findings, one entry per key with its meta id equal to the key, plain values (no markup or placeholder, valid ICU), within the contract's limits, sentence case except the standard's proper names, pattern parts where the contract has them; a requirement it does not
 check is named in its clean line as left to `clossys check --constitution --slot`), then render and preflight:
 
 ```sh

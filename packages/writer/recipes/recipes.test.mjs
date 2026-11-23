@@ -1,8 +1,8 @@
 /**
  * The Writer recipes (unit RC-ND): every Writer standard has a valid recipe (R15.5), every craft.md
  * runs the fixed 5b stages with a mechanical self-check per stage, the stage checks pass real pins and
- * fail on the faults they exist for (the 3S-ND worklist classes: copy that does not cite the brand
- * voice, a non-upstream source, a wrong entry id, markup in a value, a value over its limit, a
+ * fail on the faults they exist for (the 3S-ND worklist classes: copy whose provenance does not name
+ * the brand voice, a non-upstream source, a wrong entry id, markup in a value, a value over its limit, a
  * headline not in sentence case, a malformed record, a missing part), the draft check agrees with the
  * judge, and no judge imports a recipe (R16.1).
  *
@@ -191,13 +191,23 @@ describe("stage-check draft: the maker's preflight agrees with the judge", () =>
     }
   });
 
-  it("copy whose source does not cite the brand voice fails (worklist)", async () => {
-    await failsBoth("frames.site-header.copy", edit(fixture["frames.site-header.copy"], '"ref":["director:identity.verbal.voice",', '"ref":["writer:lexicon.formality",'), "copy.voice-derived");
+  it("copy whose provenance does not name the brand voice fails, the voice in source.ref is not read (worklist, mutation)", async () => {
+    const header = fixture["frames.site-header.copy"];
+    const PROVENANCE = 'provenance: {"voice":"director:identity.verbal.voice"}';
+    const missing = edit(header, `${PROVENANCE}\n`, "");
+    await failsBoth("frames.site-header.copy", missing, "copy.voice-derived");
+    assert.ok(checkDraft(CONSUMER_ROOT, "frames.site-header.copy", asDraft(missing)).issues.some(item => item.check === "copy.voice-derived" && /no provenance/.test(item.what)));
+    const inRefOnly = edit(missing, '"ref":["', '"ref":["director:identity.verbal.voice","');
+    await failsBoth("frames.site-header.copy", inRefOnly, "copy.voice-derived");
+    const other = edit(header, PROVENANCE, 'provenance: {"voice":"director:advantage.proposition.promise"}');
+    await failsBoth("frames.site-header.copy", other, "copy.voice-derived");
+    assert.ok(checkDraft(CONSUMER_ROOT, "frames.site-header.copy", asDraft(other)).issues.some(item => item.check === "copy.voice-derived" && /not director:identity\.verbal\.voice/.test(item.what)));
+    await failsBoth("frames.site-header.copy", edit(header, PROVENANCE, "provenance: {}"), "copy.voice-derived");
   });
 
   it("a source ref that is a URL fails; an unpinned upstream slot fails the maker (worklist)", async () => {
-    await failsBoth("frames.site-header.copy", edit(fixture["frames.site-header.copy"], '"ref":["director:identity.verbal.voice",', '"ref":["director:identity.verbal.voice","https://example.com/voice",'), "copy.derived-upstream");
-    const unpinned = checkDraft(CONSUMER_ROOT, "frames.site-header.copy", asDraft(edit(fixture["frames.site-header.copy"], '"ref":["director:identity.verbal.voice",', '"ref":["director:identity.verbal.voice","writer:strings.no-such-slot",'))).issues;
+    await failsBoth("frames.site-header.copy", edit(fixture["frames.site-header.copy"], '"ref":["', '"ref":["https://example.com/voice","'), "copy.derived-upstream");
+    const unpinned = checkDraft(CONSUMER_ROOT, "frames.site-header.copy", asDraft(edit(fixture["frames.site-header.copy"], '"ref":["', '"ref":["writer:strings.no-such-slot","'))).issues;
     assert.ok(unpinned.some(item => item.check === "copy.derived-upstream" && /not a pinned writer slot/.test(item.what)));
   });
 
@@ -245,12 +255,12 @@ describe("stage-check draft: the maker's preflight agrees with the judge", () =>
   it("reads the clossys.candidate/1 envelope: no envelope source, a broken envelope or a frontmatter source beside it is refused (mutation)", async () => {
     const header = fixture["frames.site-header.copy"];
     const noSource = edit(header, /"source":\{"kind":"derived","ref":\[[^\]]*\]\},/.exec(header.text)[0], "");
-    for (const check of ["copy.voice-derived", "copy.derived-upstream"]) await failsBoth("frames.site-header.copy", noSource, check);
+    await failsBoth("frames.site-header.copy", noSource, "copy.derived-upstream");
     assert.ok(checkDraft(CONSUMER_ROOT, "frames.site-header.copy", asDraft(noSource)).issues.some(item => /clossys\.candidate\/1 header has no source/.test(item.what)));
     const beside = edit(noSource, 'slot: "frames.site-header.copy"', 'slot: "frames.site-header.copy"\nsource: {"kind":"derived","ref":["director:identity.verbal.voice"]}');
-    assert.ok(checkDraft(CONSUMER_ROOT, "frames.site-header.copy", asDraft(beside)).issues.some(item => item.check === "copy.voice-derived"), "a frontmatter source beside the envelope is not read");
+    assert.ok(checkDraft(CONSUMER_ROOT, "frames.site-header.copy", asDraft(beside)).issues.some(item => item.check === "copy.derived-upstream"), "a frontmatter source beside the envelope is not read");
     const broken = edit(header, '"schema":"clossys.candidate/1"', '"schema":"clossys.candidate/0"');
-    assert.ok(checkDraft(CONSUMER_ROOT, "frames.site-header.copy", asDraft(broken)).issues.some(item => item.check === "copy.voice-derived" && /not a clossys\.candidate\/1 envelope/.test(item.what)));
+    assert.ok(checkDraft(CONSUMER_ROOT, "frames.site-header.copy", asDraft(broken)).issues.some(item => item.check === "copy.derived-upstream" && /not a clossys\.candidate\/1 envelope/.test(item.what)));
   });
 
   it("takes limits from contract copy.fields[].maxLength; a copy field with no maxLength is refused, naming it (mutation)", () => {

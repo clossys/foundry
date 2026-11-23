@@ -46,25 +46,6 @@
       ]
     },
     {
-      "op": "slot",
-      "at": "2026-11-19T00:00:00Z",
-      "by": "planner",
-      "verb": "ia",
-      "skill": {
-        "path": "packages/producer/actions/ia/skill.md",
-        "sha256": "147a7eaf66267728953e0c8111a9c20b93475f95f8063745d9d1d1087658fe73"
-      },
-      "model": "none",
-      "tier": "none",
-      "kind": "ia",
-      "records": [
-        {
-          "file": "slot.json",
-          "sha256": "51ca9ff790b621df218e3e74409e1a7f5d01076453d582aa3c18047212a332d3"
-        }
-      ]
-    },
-    {
       "op": "verdict",
       "at": "2026-11-19T00:00:00Z",
       "by": "agent:writer.verdict",
@@ -102,73 +83,73 @@
             "agent": "writer",
             "slot": "lexicon.formality",
             "candidate": "formality-v1.md",
-            "sha256": "1e914c401254ec89e3ec9aac78259376c592eeeefd52a6cd70590a97942d257b"
+            "sha256": "c2c822a7ca8f596ddc0514d7c7a6618dcdd4e656b172640fd470880202cffdc4"
           },
           {
             "agent": "writer",
             "slot": "lexicon.warmth",
             "candidate": "warmth-v1.md",
-            "sha256": "7cf5a6b4fea3b362d78d22343f2e18f0b9c29efef211a07d31825cf00cacf4f6"
+            "sha256": "a4659695af5c55582e1c2df30fb30d00a87138b43cf68d79d4af413bcacb634e"
           },
           {
             "agent": "writer",
             "slot": "lexicon.energy",
             "candidate": "energy-v1.md",
-            "sha256": "8addd1c3bfb8b37a8feae159976eef83b5392f5e77cbe4a45d160a8598095774"
+            "sha256": "076e9035be78ab5bea89da0ea1bb59f0f2fec12707a690a3a912bb65efe0ad74"
           },
           {
             "agent": "writer",
             "slot": "lexicon.person",
             "candidate": "person-v1.md",
-            "sha256": "52d4db42e48e75823e85404bf70a4c7a300771a2ebdbcf505c0b567cd33b5ebf"
+            "sha256": "7ea8c63557945aba4135a76dada3af015ebbecae9d5ce233be639f7e4bfc2359"
           },
           {
             "agent": "writer",
             "slot": "lexicon.mood",
             "candidate": "mood-v1.md",
-            "sha256": "eaed3f30521151c3116577fb03e6da1022f9532e52655fc8d8d233faab036e1c"
+            "sha256": "b870de040965102112276c5efb99f4737910cca66a7e6a06ffa4b7740f41c11b"
           },
           {
             "agent": "writer",
             "slot": "lexicon.sentence-length",
             "candidate": "sentence-length-v1.md",
-            "sha256": "9650fb2707e43400e3759bf4ebf8550f54eb36368dccab90ad98d99754d5f813"
+            "sha256": "6fc6e201be7d1af55ad428c133d2bdc513abec2381b323a7699f737b21be83b5"
           },
           {
             "agent": "writer",
             "slot": "lexicon.reading-level",
             "candidate": "reading-level-v1.md",
-            "sha256": "c723ce163dd81b55ca4cca6418bcf741140e369dd73d628e6e7320393bfa2d77"
+            "sha256": "728a317a4e0a1fa73426544848ea997b4c3ab0e2f6086b8d322a9960bd707b2b"
           },
           {
             "agent": "writer",
             "slot": "lexicon.capitalization",
             "candidate": "capitalization-v1.md",
-            "sha256": "217237eea7b514f5b2a9fb9d14f076fa535f05f9de553764ae35d5d1e196effa"
+            "sha256": "03c7d0b852ae11e71905ddf8f6f45b12f52a838c9edafbb97d14a3b89a72590e"
           },
           {
             "agent": "writer",
             "slot": "lexicon.punctuation",
             "candidate": "punctuation-v1.md",
-            "sha256": "5e63443d82de11cb8da09b80d13c294716ce7c4180d5ee5c5342836f364f93f6"
+            "sha256": "93dc684c1a1e67527519c85939ac4db852d8441982694528c844f5a43d644f35"
           },
           {
             "agent": "writer",
             "slot": "lexicon.preferred-terms",
             "candidate": "preferred-terms-v1.md",
-            "sha256": "58794a3e65d3e215969aa5388520304db8a4c144365e40ebf200bbc0401f83c4"
+            "sha256": "6c19bddc61bfb1501f38769e9e470e2d0d010262a04609395f737666ff96f443"
           },
           {
             "agent": "writer",
             "slot": "lexicon.avoid-terms",
             "candidate": "avoid-terms-v1.md",
-            "sha256": "7cee3d4012e7b7b00384d679161c204b63e16ddbadcf22f7ee9e5969b501761b"
+            "sha256": "f4210351deedc5745002ec55ecb87892efa79a22368d2a6442a40c1c5fa16a83"
           },
           {
             "agent": "writer",
             "slot": "lexicon.avoid-patterns",
             "candidate": "avoid-patterns-v1.md",
-            "sha256": "2d96ce800a7572fb3e02df3a0c8feb903c5fac2942c9b73c54922665b45f389f"
+            "sha256": "63666903576c15d8389f0db235b0480dff7444aeed9792364d5930cb20220696"
           },
           {
             "agent": "director",
@@ -187,12 +168,6 @@
             "slot": "identity.naming.name",
             "candidate": "name-v1.md",
             "sha256": "aa5e2e5d1b992271f3cd6441d7bdad9145d9b08d646658d40cc95ab8d270fe8d"
-          },
-          {
-            "agent": "director",
-            "slot": "identity.verbal.voice",
-            "candidate": "voice-v1.md",
-            "sha256": "bd81813a81ea950e1a410866471900190ffba47ae9768282849ffe699f7676ca"
           }
         ],
         "contract": {
@@ -465,7 +440,7 @@
         "reason": "fixture world: a synthetic consumer, so its copy is written from its own pinned upstream"
       },
       "name": "meta-v1.md",
-      "sha256": "7a98498db331f19897fd90287434b0614e0fb7731f3f4b51a5e9cf0ec5a377de"
+      "sha256": "9b1139e1ca19450777711d5d08a366c998a95211979759ed33d8e18931a0ecb3"
     },
     {
       "op": "pin",
@@ -479,14 +454,14 @@
       "model": "none",
       "tier": "none",
       "candidate": "meta-v1.md",
-      "sha256": "7a98498db331f19897fd90287434b0614e0fb7731f3f4b51a5e9cf0ec5a377de",
+      "sha256": "9b1139e1ca19450777711d5d08a366c998a95211979759ed33d8e18931a0ecb3",
       "decidedBy": "planner:fixture-world",
       "basis": "planner",
       "record": "meta",
       "records": [
         {
           "file": "pin.json",
-          "sha256": "06fe44b429c22741272911c85ba0449e4b552ea2a454b2810f65510222103901"
+          "sha256": "62a1e52289c51331f3fc0ff886b235c01cd3eb318cb52378f06bf8e4f6571990"
         }
       ]
     }
