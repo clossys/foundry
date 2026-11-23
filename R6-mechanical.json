@@ -3,55 +3,55 @@
  "ran_on": "cloud",
  "unit": "R6",
  "branch": "claude/r2f-0048-r6",
- "head": "06eb075144ee02b0bd7e9da8959e27eb2bfaf032",
- "tree": "d79b685e6cd60935766bfb87cb26c508b85a6ed6",
+ "head": "aaacf9237dbcf72a049a20aa9c3189375ee24cae",
+ "tree": "3b5c7c708df3cb8901bea4137f7cb9f4b509e09f",
  "int2": "claude/r2f-int2",
  "int2_sha": "5a2e197ea42dde155f0882fef533f7f4bf414605",
- "generated_at": "2026-11-23T19:57:36Z",
+ "generated_at": "2026-11-23T21:32:13Z",
  "spec_sha256": "fb6a06c39e3aa652455251b53a1927703a20c0d6e8933da04c97b84b6eccfaa9",
  "runner_sha256": "d8bb5e204990d40dfb33553a1750acd5e73c10d0ca4ee98ca3f1065683820383",
  "prep": [
   {
    "command": "npm run build -w @clossys/advisor",
    "exit": 0,
-   "seconds": 1.6,
+   "seconds": 1.8,
    "tail": "\n> @clossys/advisor@0.7.0 build\n> node scripts/pack-capability-catalogue.mjs && tsc -p tsconfig.json\n\npack-capability-catalogue: wrote 19 role(s), 5 preset(s), and 19 client problem(s) to src/generated/offering.generated.ts, and the plan, brief, repository-inventory and registry snapshot contracts to src/generated/plan-contracts.generated.ts, and the publishing scope and registry to src/generated/package-scope.generated.ts"
   },
   {
    "command": "npm run build -w @clossys/controller",
    "exit": 0,
-   "seconds": 3.0,
+   "seconds": 2.9,
    "tail": "\n> @clossys/controller@0.10.0 build\n> tsc -p tsconfig.json\n"
   },
   {
    "command": "npm run build -w @clossys/director",
    "exit": 0,
-   "seconds": 1.9,
+   "seconds": 1.8,
    "tail": "\n> @clossys/director@0.6.0 build\n> node scripts/pack-brief-contract.mjs && tsc -p tsconfig.json\n\npack-brief-contract: wrote the brief and engagement-context contracts and the contract checker copy into src/generated/"
   },
   {
    "command": "npm run build -w @clossys/designer",
    "exit": 0,
-   "seconds": 23.2,
+   "seconds": 24.5,
    "tail": "\n> @clossys/designer@0.12.0 build\n> tsc -p tsconfig.json\n"
   },
   {
    "command": "npm run build -w @clossys/writer",
    "exit": 0,
-   "seconds": 4.4,
+   "seconds": 4.5,
    "tail": "\n> @clossys/writer@0.6.0 build\n> node scripts/pack-plan-contract.mjs && tsc -p tsconfig.json && node scripts/check-record-drift.mjs\n\npack-plan-contract: wrote the plan contract and the contract checker copy into src/generated/\nWriter record drift: 1492 records, 12 sources, 0 findings; approval not evaluated."
   },
   {
    "command": "npm run build -w @clossys/publisher",
    "exit": 0,
-   "seconds": 518.1,
+   "seconds": 530.4,
    "tail": "> @clossys/publisher@0.13.0 check:client-boundary\n> node ../../scripts/check-client-boundary.mjs . --report ../../node_modules/.cache/client-boundary/publisher.json\n\nPASS ./content-map (production): 412 inputs\nPASS ./content-map (development): 412 inputs\nPASS ./web/preview (production): 4385 inputs\nPASS ./web/preview (development): 4385 inputs\nPASS ./web (production): 4557 inputs\nPASS ./web (development): 4557 inputs\nPASS ./web/host (production): 4323 inputs\nPASS ./web/host (development): 4323 inputs\nPASS ./web/content-route (production): 4381 inputs\nPASS ./web/content-route (development): 4381 inputs\nPASS ./web/publisher-v2 (production): 4045 inputs\nPASS ./web/publisher-v2 (development): 4045 inputs\nPASS ./web/client (production): 4404 inputs\nPASS ./web/client (development): 4404 inputs\nPASS ./web/consent (production): 4038 inputs\nPASS ./web/consent (development): 4038 inputs\nPASS ./web/consent/preview (production): 1 inputs\nPASS ./web/consent/preview (development): 3 inputs\nPASS ./web/registered-route-check (production): 1 inputs\nPASS ./web/registered-route-check (development): 1 inputs\nPASS ./web/registered-route-wiring (production): 1 inputs\nPASS ./web/registered-route-wiring (development): 1 inputs\nPASS ./web/admin-pages (production): 4399 inputs\nPASS ./web/admin-pages (development): 4399 inputs\nPASS ./web/registered-route (production): 4399 inputs\nPASS ./web/registered-route (development): 4399 inputs\nclient-boundary: PASS; report ./node_modules/.cache/client-boundary/publisher.json"
   },
   {
    "command": "npm run build -w @clossys/producer",
    "exit": 0,
-   "seconds": 15.6,
-   "tail": "\n> @clossys/producer@0.1.0 build\n> tsc -p tsconfig.json && node scripts/check-generated-derived.mjs --write && npm run -s generate:specimen-evidence && node scripts/generate-page-check-receipt.mjs\n\ncheck-generated-derived: no $CLOSSYS_ROOT consumer; wrote nothing\nWrote: 0 real native compiler certificates\nPROC-5 source receipt: 06eb075144ee02b0bd7e9da8959e27eb2bfaf032"
+   "seconds": 14.5,
+   "tail": "\n> @clossys/producer@0.1.0 build\n> tsc -p tsconfig.json && node scripts/check-generated-derived.mjs --write && npm run -s generate:specimen-evidence && node scripts/generate-page-check-receipt.mjs\n\ncheck-generated-derived: no $CLOSSYS_ROOT consumer; wrote nothing\nWrote: 0 real native compiler certificates\nPROC-5 source receipt: aaacf9237dbcf72a049a20aa9c3189375ee24cae"
   }
  ],
  "commands": [
@@ -68,7 +68,7 @@
    "expect": 0,
    "exit": 0,
    "ok": true,
-   "seconds": 7.3,
+   "seconds": 8.7,
    "tail": "\n> @clossys/producer@0.1.0 typecheck\n> tsc -p tsconfig.json --noEmit\n"
   },
   {
@@ -76,24 +76,24 @@
    "expect": 0,
    "exit": 0,
    "ok": true,
-   "seconds": 12.8,
-   "tail": "\n RUN  v5.0.1 ./packages/publisher\n\n\n Test Files  4 passed (4)\n      Tests  52 passed (52)\n   Start at  19:55:58\n   Duration  12.31s (transform 67%, import 13%, tests 13%, setup 5%, worker 2%)\n"
+   "seconds": 14.0,
+   "tail": "\n RUN  v5.0.1 ./packages/publisher\n\n\n Test Files  4 passed (4)\n      Tests  52 passed (52)\n   Start at  21:30:37\n   Duration  13.54s (transform 61%, import 19%, tests 13%, setup 5%, worker 2%)\n"
   },
   {
    "command": "npm exec -w @clossys/producer -- vitest run src/conform src/cli/ia",
    "expect": 0,
    "exit": 1,
    "ok": false,
-   "seconds": 47.0,
-   "tail": "   \u276f dogfood probes (14)\n     \u00d7 upstream-pinned on a model read from disk: the slot/2 reader's refusal of the Director pin makes Designer's CASCADE probe red (U37) 221ms\n\n\u23af\u23af\u23af\u23af\u23af\u23af\u23af Failed Tests 1 \u23af\u23af\u23af\u23af\u23af\u23af\u23af\n\n FAIL  src/conform/conform.test.ts > dogfood probes > upstream-pinned on a model read from disk: the slot/2 reader's refusal of the Director pin makes Designer's CASCADE probe red (U37)\nAssertionError: expected false to be true // Object.is equality\n\n- Expected\n+ Received\n\n- true\n+ false\n\n \u276f src/conform/conform.test.ts:478:54\n    476|     expect(broken.director.pin).toBeDefined();\n    477|     expect(broken.director.pinRejection).toBe(\"invalid-candidate\");\n    478|     expect(cellOf(\"DF\", \"DF\", broken.judgement).red).toBe(true);\n       |                                                      ^\n    479|     expect(broken.judgement.rows.join(\"\\n\")).toMatch(/pinned but refus\u2026\n    480|   });\n\n\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af[1/1]\u23af\n\n\n Test Files  1 failed | 17 passed (18)\n      Tests  1 failed | 252 passed (253)\n   Start at  19:56:11\n   Duration  46.49s (tests 73%, import 16%, transform 11%)\n"
+   "seconds": 47.3,
+   "tail": "   \u276f dogfood probes (14)\n     \u00d7 upstream-pinned on a model read from disk: the slot/2 reader's refusal of the Director pin makes Designer's CASCADE probe red (U37) 354ms\n\n\u23af\u23af\u23af\u23af\u23af\u23af\u23af Failed Tests 1 \u23af\u23af\u23af\u23af\u23af\u23af\u23af\n\n FAIL  src/conform/conform.test.ts > dogfood probes > upstream-pinned on a model read from disk: the slot/2 reader's refusal of the Director pin makes Designer's CASCADE probe red (U37)\nAssertionError: expected false to be true // Object.is equality\n\n- Expected\n+ Received\n\n- true\n+ false\n\n \u276f src/conform/conform.test.ts:478:54\n    476|     expect(broken.director.pin).toBeDefined();\n    477|     expect(broken.director.pinRejection).toBe(\"invalid-candidate\");\n    478|     expect(cellOf(\"DF\", \"DF\", broken.judgement).red).toBe(true);\n       |                                                      ^\n    479|     expect(broken.judgement.rows.join(\"\\n\")).toMatch(/pinned but refus\u2026\n    480|   });\n\n\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af[1/1]\u23af\n\n\n Test Files  1 failed | 18 passed (19)\n      Tests  1 failed | 254 passed (255)\n   Start at  21:30:51\n   Duration  46.82s (tests 70%, import 17%, transform 13%)\n"
   },
   {
    "command": "node packages/producer/dist/cli/index.js conform --all --json | node -e 'const r=JSON.parse(require(\"fs\").readFileSync(0,\"utf8\"));const all=[...(r.producer?r.producer.cells.map(c=>[\"producer\",c]):[]),...r.agents.flatMap(a=>[...a.cells,...a.dogfood].map(c=>[a.agent,c]))];const bad=process.argv[1].split(\",\").filter(w=>{const[a,id]=w.split(\":\");const hit=all.find(([x,c])=>x===a&&c.id===id);if(hit&&hit[1].red)console.log(w,hit[1].rows.slice(0,3).join(\" | \"));return !hit||hit[1].red});console.log(bad.length?\"RED \"+bad.join(\",\"):\"GREEN\");process.exit(bad.length?1:0)' publisher:S1,publisher:S6,publisher:C1,publisher:C2",
    "expect": 0,
-   "exit": 1,
-   "ok": false,
-   "seconds": 38.5,
-   "tail": "publisher:S1 package tree has 60 leaves, the placed tree 0 | layout.marketing-home: in the package tree, not placed | layout.about: in the package tree, not placed\npublisher:S6 layout.marketing-home: declares no inputs list | layout.about: declares no inputs list | layout.pricing: declares no inputs list\npublisher:C1 layout.marketing-home: no family {options, varyOn, values} | layout.about: no family {options, varyOn, values} | layout.pricing: no family {options, varyOn, values}\npublisher:C2 layout.marketing-home: contract carries no requirements | layout.about: contract carries no requirements | layout.pricing: contract carries no requirements\nRED publisher:S1,publisher:S6,publisher:C1,publisher:C2"
+   "exit": 0,
+   "ok": true,
+   "seconds": 35.4,
+   "tail": "GREEN"
   },
   {
    "command": "git merge-tree --write-tree claude/r2f-int2 HEAD",
@@ -101,19 +101,18 @@
    "exit": 0,
    "ok": true,
    "seconds": 0.0,
-   "tail": "f6a1977200aee2bac4f93871ddcc877de2884d6d"
+   "tail": "3b5c7c708df3cb8901bea4137f7cb9f4b509e09f"
   }
  ],
  "merge_tree": {
-  "command": "git merge-tree --write-tree claude/r2f-int2 06eb075144ee02b0bd7e9da8959e27eb2bfaf032",
+  "command": "git merge-tree --write-tree claude/r2f-int2 aaacf9237dbcf72a049a20aa9c3189375ee24cae",
   "exit": 0,
-  "tree": "f6a1977200aee2bac4f93871ddcc877de2884d6d",
+  "tree": "3b5c7c708df3cb8901bea4137f7cb9f4b509e09f",
   "conflicts": []
  },
  "tree_clean": true,
  "failures": [
-  "`npm exec -w @clossys/producer -- vitest run src/conform src/cli/ia` exit 1, expected 0",
-  "`node packages/producer/dist/cli/index.js conform --all --json | node -e 'const r=JSON.parse(require(\"fs\").readFileSync(0,\"utf8\"));const all=[...(r.producer?r.producer.cells.map(c=>[\"producer\",c]):[]),...r.agents.flatMap(a=>[...a.cells,...a.dogfood].map(c=>[a.agent,c]))];const bad=process.argv[1].split(\",\").filter(w=>{const[a,id]=w.split(\":\");const hit=all.find(([x,c])=>x===a&&c.id===id);if(hit&&hit[1].red)console.log(w,hit[1].rows.slice(0,3).join(\" | \"));return !hit||hit[1].red});console.log(bad.length?\"RED \"+bad.join(\",\"):\"GREEN\");process.exit(bad.length?1:0)' publisher:S1,publisher:S6,publisher:C1,publisher:C2` exit 1, expected 0"
+  "`npm exec -w @clossys/producer -- vitest run src/conform src/cli/ia` exit 1, expected 0"
  ],
  "verdict": "FAIL"
 }
