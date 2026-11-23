@@ -1,7 +1,7 @@
 {
   "schema": "clossys.page/1",
   "path": "/",
-  "title": "page.home.meta#home.meta",
+  "title": "page.home.meta#title",
   "frame": "frames.site-shell",
   "sections": [
     "sections.hero"
@@ -14,7 +14,7 @@
   "bindings": {
     "sections.hero": {
       "copy": {
-        "copy": "sections.hero.copy#home.hero"
+        "copy": "sections.hero.copy#copy"
       }
     }
   },

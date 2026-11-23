@@ -90,6 +90,17 @@ it("refuses a literal publication tree name: names are pinned Writer keys", asyn
   }
 });
 
+it("resolves a <writer slot>#<key> entry title by its key; an unheld key is still refused (BR-E2E5)", async () => {
+  await author();
+  const { readPinnedPublication, resolvePublicationTitles } = await import("../publish/pinned-publication.js");
+  const publication = await readPinnedPublication(join(root, "clossys"), "example-site");
+  const entry = publication.map.entries[0]!;
+  const held = resolvePublicationTitles(join(root, "clossys"), publication).map.entries[0]!.title;
+  const titled = (title: string) => ({ ...publication, map: { ...publication.map, entries: [{ ...entry, title }, ...publication.map.entries.slice(1)] } }) as typeof publication;
+  expect(resolvePublicationTitles(join(root, "clossys"), titled(`page.home.meta#${entry.title}`)).map.entries[0]!.title).toBe(held);
+  expect(() => resolvePublicationTitles(join(root, "clossys"), titled("page.home.meta#nope"))).toThrow(/title names "page\.home\.meta#nope", which no pinned Writer string registers/);
+});
+
 it("retains only declared app targets and refuses unavailable, escaping and aliased app mappings", async () => {
   await author();
   expect((await consumerApps(root)).publications[0]!.target).toBeUndefined();
