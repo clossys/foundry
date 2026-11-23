@@ -43,7 +43,7 @@ import { OPTION_TABLE } from "./option-classes.js";
 import { CONTRACT_AGENTS, familyFor, seededContract } from "../../migrate/contracts.js";
 import { readStandard } from "../standards.js";
 import { AGENT_LOOPS, holdsAgentLoops, isLoopAgent, withAgentLoopsIa } from "../../loop/agent-loops-ia.js";
-import { consumedIds, consumedLeaves, filterFoundryIa, isConsumedAgent } from "./consumed.js";
+import { consumedIds, consumedLeaves, filterFoundryIa, scopedToConsumed } from "./consumed.js";
 
 /**
  * The agents whose IA a package owns: the three catalog agents and the Producer seat tree
@@ -342,9 +342,10 @@ export interface SyncState {
 }
 
 /**
- * The sync state of one agent. With the package IA defaulted, a Director, Designer or Writer package is scoped to the
+ * The sync state of one agent. With the package IA defaulted, a Designer or Writer package is scoped to the
  * leaves a publication reaches (consumed.ts) plus the package leaves the consumer already places: the sync adopts a
- * newly consumed leaf and never re-adds an unconsumed one. `consumed` scopes a given package the same way (tests).
+ * newly consumed leaf and never re-adds an unconsumed one; the Director's whole catalog is its target (scopedToConsumed).
+ * `consumed` scopes a given package the same way (tests).
  */
 export function syncState(consumerDir: string, agent: SyncAgent, pkg?: FoundryIa, consumed?: ReadonlySet<string>): SyncState {
   const full = pkg ?? PACKAGE_IA[agent]();
@@ -359,7 +360,7 @@ export function syncState(consumerDir: string, agent: SyncAgent, pkg?: FoundryIa
   const stepGone = (id: string) => { const step = seatStepOf(id); return steps !== undefined && step !== undefined && !steps.has(step); };
   const retiring = loose.filter(stepGone);
   const undeclared = loose.filter(id => !stepGone(id));
-  const reach = consumed ?? (pkg === undefined && isConsumedAgent(agent) ? consumedIds(consumedLeaves(dirname(consumerDir)), agent) : undefined);
+  const reach = consumed ?? (pkg === undefined && scopedToConsumed(agent) ? consumedIds(consumedLeaves(dirname(consumerDir)), agent) : undefined);
   const scoped = reach ? filterFoundryIa(full, new Set([...packageIds].filter(id => reach.has(id) || placedNow.has(id)))) : full;
   const unconsumed = reach ? [...packageIds].filter(id => placedNow.has(id) && !reach.has(id)) : [];
   const target = targetIa(agent, scoped.ia, consumer);

@@ -108,6 +108,21 @@ describe("W5b item 2: the archetype is set by the director verb", () => {
     expect(invoke(["archetype", "product-saas", "--by", "owner:2026-11-10 interview", "--root", root]).value.result.changed).toBe(false);
     expect(existsSync(join(base, "clossys", "agents", "director", `${ARCHETYPE_RECORD_ID}.md`))).toBe(false);
   });
+  it("--by owner needs --via and --quote; the record keeps the owner's words and names the repo-root path (CHAT-DIR gap 12)", () => {
+    const { root } = fullRoot();
+    const record = join(evidenceDir(root), `${ARCHETYPE_RECORD_ID}.md`);
+    expect(invoke(["archetype", "default", "--by", "owner", "--root", root]).code).toBe(2);
+    expect(invoke(["archetype", "default", "--by", "owner", "--via", "chat", "--root", root]).code).toBe(2);
+    expect(invoke(["archetype", "default", "--by", "owner", "--quote", "default", "--root", root]).code).toBe(2);
+    expect(invoke(["archetype", "default", "--by", "owner", "--via", "email", "--quote", "default", "--root", root]).code).toBe(2);
+    expect(existsSync(record)).toBe(false);
+    const label = "default: the 24 core cells stay as they are.";
+    const set = invoke(["archetype", "default", "--by", "owner", "--via", "chat", "--quote", label, "--root", root]);
+    expect(set).toMatchObject({ code: 0, value: { result: { archetype: "default", recorded: { path: `clossys/evidence/director/${ARCHETYPE_RECORD_ID}.md`, by: "owner", via: "chat", quote: label } } } });
+    expect(readFileSync(record, "utf8")).toContain(`via chat: "${label}"`);
+    expect(readStrategyRoot(root, reader).issues).toEqual([]);
+    expect(invoke(["archetype", "--root", root]).value.result).toMatchObject({ archetype: "default", recorded: { path: `clossys/evidence/director/${ARCHETYPE_RECORD_ID}.md`, by: "owner" } });
+  });
   it("refuses a non-owner decider or an unknown archetype, and a bad record is a root issue", () => {
     const { root } = fullRoot();
     const record = join(evidenceDir(root), `${ARCHETYPE_RECORD_ID}.md`);
@@ -175,7 +190,7 @@ describe("W5b item 4: direct --check and check complete use one evaluator", () =
     expect(direct()).toEqual(cli());
     expect(direct().mvs).toBe(true);
     // A bulk core pin and the archetype record move both paths together.
-    invoke(["archetype", "services", "--by", "owner", "--root", root]);
+    invoke(["archetype", "services", "--by", "owner", "--via", "chat", "--quote", "services", "--root", root]);
     expect(direct()).toEqual(cli());
     expect(direct().core.counts.total).toBe(cli().core.counts.total);
     stage(root, cells.find(cell => cell.id === CORE)!, { pin: BULK });

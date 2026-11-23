@@ -145,7 +145,7 @@ There is no session log. What the owner says is recorded as findings:
    retention, moat, driver and buying. If no finding records the owner's
    choice, your first question is the archetype, with your hypothesis. Record
    the owner's answer with
-   `npx clossys director check archetype <name> --by owner`, never by editing
+   `npx clossys director check archetype <name> --by owner --via chat --quote "<their words>"`, never by editing
    a file: it writes `<root>/clossys/evidence/director/director-archetype.md` and the
    run is traced. `status`, `complete` and `clossys direct --check` then use
    its core cells; `npx clossys director check archetype` shows the recorded
@@ -175,7 +175,9 @@ There is no session log. What the owner says is recorded as findings:
    the finding's `Informs:` bullet, and say in one clause what you noted for
    later ("Noted for pricing; back to who we serve.").
 6. **Draft** the candidate from the template in a scratch file, then submit it:
-   `npx clossys next director/<id> --submit <name>.md --name <name> --model <id> --tier <tier> --basis owner --skill <packet skill path> --rung <adopt|adapt|create> [--seed <id>@<N>] [--reason <why no seed fit>]`.
+   `npx clossys next director/<id> --submit <name>.md --name <name> --model <id> --tier <tier> --basis owner --skill packages/director/actions/director.candidates/skill.md --rung <adopt|adapt|create> [--seed <id>@<N>] [--reason <why no seed fit>]`.
+   `--skill` takes that logical id (the same on `--stage`), or the installed file
+   it names, `node_modules/@clossys/director/actions/director.candidates/skill.md`.
    The verb writes `<id>/candidates/<name>-v<N>.md` and refuses an invalid or
    byte-identical draft. Select or adapt a pinned version or template first;
    create only when none fits, saying why. Options the owner wants to compare in
@@ -354,8 +356,8 @@ Run the Producer skill's Interview contract (`clossys-producer`, section Intervi
 unclear pinned cells (TODO-OWNER lines, blocking checks) and open request records. The rounds hold
 the owner decisions (pins, requests); the cell interview above stays one question per turn.
 
-What the Director's rounds ask: the archetype first while none is recorded (each option runs
-`clossys director check archetype <name> --by owner`); then every owner-held core cell with an open
+What the Director's rounds ask: the archetype first while none is recorded, with or without candidates (each option runs
+`clossys director check archetype <name> --by owner --via chat --quote "<the option's label>"`); then every owner-held core cell with an open
 option round as "Pick <cell>", in dependency order (a cited cell before the cells citing it), one
 option per candidate with its one-line summary, each the exact
 `clossys pin director/<cell> <name> --by owner:queue.pick#<entry id>`. A downstream request for an asked cell is

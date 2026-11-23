@@ -274,8 +274,9 @@ function allGaps(root: string, options: InterviewOptions): { gaps: Gap[]; notes:
   }
   const director = directorView(consumer, context);
   const content = director.content;
-  // Director content: the archetype (while unrecorded), owner-held core rounds, agent picks to confirm.
-  if (content && content.owner.length && !content.archetypeRecorded) gaps.push({ kind: "coverage", code: "director.archetype", agent: "director", item: `evidence/director/${ARCHETYPE_RECORD_ID}.md`, step: "director.store", decider: "owner",
+  // Director content: the archetype (while unrecorded, whenever the root reads, with or without candidates), owner-held
+  // core rounds, agent picks to confirm.
+  if (content && !content.archetypeRecorded) gaps.push({ kind: "coverage", code: "director.archetype", agent: "director", item: `evidence/director/${ARCHETYPE_RECORD_ID}.md`, step: "director.store", decider: "owner",
     message: `no archetype is recorded: the core (${content.core.length} cells, default) waits on it` });
   const openPin = new Set(gaps.filter(gap => gap.code === "open.pin.director").map(gap => gap.item));
   for (const row of content?.owner ?? []) if (!openPin.has(row.item)) gaps.push({ kind: "coverage", code: "director.owner-round", agent: "director", item: row.item, step: "pin.director", decider: "owner",
@@ -624,10 +625,11 @@ const ownWords = (item: string) => ({
 });
 
 function archetypeQuestion(content: DirectorContent): Built {
-  const rows = content.archetypes.map(each => ({
-    label: each.name === "default" ? `default: the ${content.core.length} core cells stay as they are.` : `${each.name}: adds ${each.extras.join(", ")} to the core.`,
-    calls: [["clossys", "director", "check", "archetype", each.name, "--by", "owner"]],
-  }));
+  // The owner's pick is their words: each call records the chat channel and the option's label, verbatim (CHAT-DIR gap 12).
+  const rows = content.archetypes.map(each => {
+    const label = each.name === "default" ? `default: the ${content.core.length} core cells stay as they are.` : `${each.name}: adds ${each.extras.join(", ")} to the core.`;
+    return { label, calls: [["clossys", "director", "check", "archetype", each.name, "--by", "owner", "--via", "chat", "--quote", label]] };
+  });
   return {
     id: ARCHETYPE_QUESTION, agent: "director", step: "director.store", header: "Archetype", items: [`evidence/director/${ARCHETYPE_RECORD_ID}.md`],
     question: "Which archetype is the project? (it decides which cells are core; no archetype is recorded yet)",

@@ -30,6 +30,12 @@ import type { IaDoc } from "./types.js";
 export const CONSUMED_AGENTS = ["director", "designer", "writer"] as const;
 export type ConsumedAgent = (typeof CONSUMED_AGENTS)[number];
 export const isConsumedAgent = (agent: string): agent is ConsumedAgent => (CONSUMED_AGENTS as readonly string[]).includes(agent);
+/**
+ * Whether an agent's adoption and sync are scoped to consumed leaves. The Director is not (CHAT-DIR, gaps 9 and 10): its
+ * reader takes the whole catalog, every leaf placed exactly once (director/src/format/tree.ts), so `ia director --adopt`
+ * places every leaf and nothing is pruned. Its leaves still count in the walk, as the cells Designer and Writer cite.
+ */
+export const scopedToConsumed = (agent: string): agent is Exclude<ConsumedAgent, "director"> => isConsumedAgent(agent) && agent !== "director";
 
 const PACKAGE_IA: Readonly<Record<ConsumedAgent, () => FoundryIa>> = { director: directorIa, designer: designerIa, writer: writerIa };
 const SLOT_REF = /^(director|designer|writer|publisher|producer)\/([a-z][a-z0-9-]*(?:\.[a-z0-9][a-z0-9-]*){1,3})(?:[/#:].*)?$/;
