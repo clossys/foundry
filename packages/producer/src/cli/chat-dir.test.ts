@@ -4,12 +4,16 @@
  * when the root is missing and leaves it alone after;
  * the archetype question opens the Director interview with no candidate yet; an owner's archetype answer carries
  * `--via` and `--quote`; and `next --stage/--submit --skill` takes the logical skill id or the installed file.
+ * Run 2 (planner ruling): the reader reads the tree without init's agent-loop L1 (A1), and each adopted Director leaf
+ * records the Director's reader consumedBy edge, so ia.orphans fails none of them (B1).
  */
 import { mkdtempSync, readFileSync, realpathSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, relative } from "node:path";
 import { readStrategyRoot } from "@clossys/director";
 import { afterEach, describe, expect, it } from "vitest";
+import { runIaOrphans } from "../check/ia-orphans.js";
+import { AGENT_LOOPS } from "../loop/agent-loops-ia.js";
 import { interviewOf } from "../pipeline/interview.js";
 import { skillFile } from "../pipeline/chain.js";
 import { STEPS } from "../pipeline/steps/index.js";
@@ -50,6 +54,8 @@ describe("CHAT-DIR: the Director interview opens in a fresh consumer", { timeout
     const leaves = placed(root);
     expect(new Set(leaves).size).toBe(leaves.length);
     expect([...leaves].sort()).toEqual([...directorIa().slots.keys()].sort());
+    // Each placed leaf carries the Director's reader edge, so ia.orphans fails none of them (ruling B1).
+    expect(runIaOrphans(root).findings.filter(finding => finding.subject.startsWith("director/"))).toEqual([]);
     // The adopt re-run keeps the whole catalog (no pruning for the Director).
     const bytes = readFileSync(iaFile(root), "utf8");
     const again = await runCli(["ia", "director", "--adopt", "--root", root], root);
@@ -63,6 +69,12 @@ describe("CHAT-DIR: the Director interview opens in a fresh consumer", { timeout
     expect(first.exitCode, first.message).toBe(0);
     expect((first.output as { director?: string }).director).toBe("adopted");
     expect([...catalogPlaced(root)].sort()).toEqual([...directorIa().slots.keys()].sort());
+    // Init also places the Director's agent loops L1 in its ia.json; the reader reads the tree without it (ruling A1).
+    expect(placed(root).filter(id => !directorIa().slots.has(id)).sort()).toEqual([...AGENT_LOOPS].sort());
+    expect(readStrategyRoot(join(root, "clossys", "agents", "director"), directorStoreReader).issues).toEqual([]);
+    const status = await runCli(["director", "check", "status", "--root", join(root, "clossys", "agents", "director")], root);
+    expect(status.exitCode, status.message).toBe(1);
+    expect(runIaOrphans(root).findings.filter(finding => finding.subject.startsWith("director/"))).toEqual([]);
     const bytes = readFileSync(iaFile(root), "utf8");
     const second = await runCli(["init", "--root", root], root);
     expect(second.exitCode, second.message).toBe(0);
@@ -82,7 +94,9 @@ describe("CHAT-DIR: the Director interview opens in a fresh consumer", { timeout
     const archetype = (...more: string[]) => runCli(["director", "check", "archetype", name, "--by", "owner", ...more, "--root", join(root, "clossys", "agents", "director")], root);
     expect((await archetype()).exitCode).toBe(2);
     expect((await archetype("--via", "chat")).exitCode).toBe(2);
-    const recorded = await archetype("--via", "chat", "--quote", option.label);
+    // The option's own argv, run in the workspace (not the test's cwd) with no --root, records there.
+    expect(call[0]).toBe("clossys");
+    const recorded = await runCli(call.slice(1), root);
     expect(recorded.exitCode, recorded.message).toBe(0);
     const record = readFileSync(join(root, "clossys", "evidence", "director", "director-archetype.md"), "utf8");
     expect(record).toContain(`via chat: "${option.label}"`);

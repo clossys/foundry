@@ -120,17 +120,20 @@ describe("the remaining fix r1 items", () => {
     mkdirSync(dirname(directory), { recursive: true });
     writeFileSync(directory, "{ not json\n");
     const listing = (dir: string): string[] => readdirSync(dir, { recursive: true }).map(String).sort();
+    // The Director adopt places its whole catalog (CHAT-DIR), so it reads no Publisher data; a scoped adopt refuses.
+    const director = await runCli(["ia", "director", "--adopt", "--root", root], root);
+    expect(director.exitCode, director.message).toBe(0);
     const before = listing(join(root, "clossys"));
-    const refused = await runCli(["ia", "director", "--adopt", "--root", root], root);
+    const refused = await runCli(["ia", "designer", "--adopt", "--root", root], root);
     expect(refused.exitCode).toBe(1);
     expect(refused.message).toMatch(/^ia refused: the Publisher package IA is missing or unreadable \(.*directory\.json\)/);
-    expect(existsSync(join(root, "clossys", "agents", "director", "ia.json"))).toBe(false);
+    expect(existsSync(join(root, "clossys", "agents", "designer", "ia.json"))).toBe(false);
     expect(listing(join(root, "clossys"))).toEqual(before);
     const check = runIaOrphans(root);
     expect(check.findings).toContainEqual({ subject: "@clossys/publisher", detail: expect.stringContaining("the Publisher package IA is missing or unreadable") });
     // A Publisher package folder without its IA file refuses the same way (missing is unreadable).
     rmSync(directory);
-    const missing = await runCli(["ia", "director", "--adopt", "--root", root], root);
+    const missing = await runCli(["ia", "designer", "--adopt", "--root", root], root);
     expect(missing.exitCode).toBe(1);
     expect(missing.message).toContain("ia refused: the Publisher package IA is missing or unreadable");
     expect(listing(join(root, "clossys"))).toEqual(before);

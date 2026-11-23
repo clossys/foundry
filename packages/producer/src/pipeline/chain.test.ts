@@ -481,7 +481,8 @@ describe("clossys next", { timeout: 60_000 }, () => {
     // A slot with no candidate is its agent's to draft: no owner question asks it, and every agent's questions hold the rules.
     const pins = gapsOf(root).gaps.filter(gap => gap.code.startsWith("open.pin."));
     // One open pin per placed slot: the consumed leaves of each Foundry IA (CONSISTENCY D5 option 1: a fresh adopt
-    // places only the package leaves a declared or seated publication reaches, records/slot-model/consumed.ts).
+    // places only the package leaves a declared or seated publication reaches, records/slot-model/consumed.ts; the
+    // Director places its whole catalog, each leaf consumed by the Director's reader, CHAT-DIR ruling B1).
     // Designer's tree is already minus retired.json, since a fresh adopt skips retired leaves as `clossys migrate recut` does.
     const consumed = consumedLeaves(root);
     const live = consumed.size;
@@ -489,6 +490,7 @@ describe("clossys next", { timeout: 60_000 }, () => {
     expect(live).toBeLessThan(directorIa().slots.size + designerIa().slots.size + writerIa().slots.size);
     expect(placedIds.size).toBe(live);
     for (const [id, agent] of placedIds) expect(consumed.has(`${agent}/${id}`), `${agent}/${id}`).toBe(true);
+    expect([...placedIds].filter(([, agent]) => agent === "director").length).toBe(directorIa().slots.size);
     expect(pins.length).toBeGreaterThanOrEqual(live);
     for (const gap of pins) expect(gap.decider, gap.item).toBe("agent");
     expect(gapsOf(root, { agent: "director" }).notes.filter(note => note.startsWith("no designer request")).join("\n")).toContain("not drafted either");

@@ -44,6 +44,7 @@ import { CONTRACT_AGENTS, familyFor, seededContract } from "../../migrate/contra
 import { readStandard } from "../standards.js";
 import { AGENT_LOOPS, holdsAgentLoops, isLoopAgent, withAgentLoopsIa } from "../../loop/agent-loops-ia.js";
 import { consumedIds, consumedLeaves, filterFoundryIa, scopedToConsumed } from "./consumed.js";
+import { DIRECTOR_READER_EDGE } from "../../check/ia-orphans.js";
 
 /**
  * The agents whose IA a package owns: the three catalog agents and the Producer seat tree
@@ -292,7 +293,9 @@ function adoptedCurrent(consumerDir: string, agent: SyncAgent, id: string, slot:
     const holder = agents.includes(agent as AgentId) ? agent as AgentId : agents[0];
     return holder ? [{ to: `${holder}/${use}` as Ref["to"], rel: "uses" as const }] : [];
   });
-  const made = slotFromV1(v1, { kind, status: "starter", ia: positionIa(id, position), inputs, uses, createdBy: { actor: "code", cli: options.cli ?? "clossys ia sync", version: options.version }, at: options.at });
+  const built = slotFromV1(v1, { kind, status: "starter", ia: positionIa(id, position), inputs, uses, createdBy: { actor: "code", cli: options.cli ?? "clossys ia sync", version: options.version }, at: options.at });
+  // A Director leaf carries the Director's reader edge (CHAT-DIR B1): the Director reads every strategy cell it holds.
+  const made = agent === "director" ? { ...built, refs: [...built.refs, { ...DIRECTOR_READER_EDGE }] } : built;
   if (!(CONTRACT_AGENTS as readonly string[]).includes(agent)) return made;
   const family = familyFor(agent as (typeof CONTRACT_AGENTS)[number], id, `${position.l1}/${position.l2}`);
   return { ...made, contract: seededPackageContract(consumerDir, agent, made.contract, made.standard) as Slot["contract"], ...(family ? { family } : {}) };
