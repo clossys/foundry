@@ -1,0 +1,40 @@
+{
+ "branch": "claude/r2f-0048-r9a",
+ "commands": [
+  {
+   "command": "npm run typecheck -w @clossys/designer",
+   "expect": 0
+  },
+  {
+   "command": "npm exec -w @clossys/designer -- vitest run src/catalog",
+   "expect": 0
+  },
+  {
+   "command": "npm exec -w @clossys/producer -- vitest run src/conform src/cli/ia-sync.test.ts",
+   "expect": 0
+  },
+  {
+   "command": "node packages/producer/dist/cli/index.js ia sync --check --root packages/producer/test-fixtures/consumer",
+   "expect": 0
+  },
+  {
+   "command": "node packages/producer/dist/cli/index.js conform --all --json | node -e 'const r=JSON.parse(require(\"fs\").readFileSync(0,\"utf8\"));const all=[...(r.producer?r.producer.cells.map(c=>[\"producer\",c]):[]),...r.agents.flatMap(a=>[...a.cells,...a.dogfood].map(c=>[a.agent,c]))];const bad=process.argv[1].split(\",\").filter(w=>{const[a,id]=w.split(\":\");const hit=all.find(([x,c])=>x===a&&c.id===id);if(hit&&hit[1].red)console.log(w,hit[1].rows.slice(0,3).join(\" | \"));return !hit||hit[1].red});console.log(bad.length?\"RED \"+bad.join(\",\"):\"GREEN\");process.exit(bad.length?1:0)' designer:S1",
+   "expect": 0
+  },
+  {
+   "command": "git merge-tree --write-tree claude/r2f-int2 HEAD",
+   "expect": 0
+  }
+ ],
+ "int2": "claude/r2f-int2",
+ "prep": [
+  "npm run build -w @clossys/advisor",
+  "npm run build -w @clossys/controller",
+  "npm run build -w @clossys/director",
+  "npm run build -w @clossys/designer",
+  "npm run build -w @clossys/writer",
+  "npm run build -w @clossys/publisher",
+  "npm run build -w @clossys/producer"
+ ],
+ "unit": "R9a"
+}

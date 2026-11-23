@@ -1,0 +1,28 @@
+{
+ "branch": "claude/r2f-0048-r2",
+ "commands": [
+  {
+   "command": "npm run typecheck -w @clossys/producer",
+   "expect": 0
+  },
+  {
+   "command": "npm exec -w @clossys/producer -- vitest run src/pipeline src/queue src/conform",
+   "expect": 0
+  },
+  {
+   "command": "git merge-tree --write-tree claude/r2f-int2 HEAD",
+   "expect": 0
+  }
+ ],
+ "int2": "claude/r2f-int2",
+ "prep": [
+  "npm run build -w @clossys/advisor",
+  "npm run build -w @clossys/controller",
+  "npm run build -w @clossys/director",
+  "npm run build -w @clossys/designer",
+  "npm run build -w @clossys/writer",
+  "npm run build -w @clossys/publisher",
+  "npm run build -w @clossys/producer"
+ ],
+ "unit": "R2"
+}

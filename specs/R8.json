@@ -1,0 +1,36 @@
+{
+ "branch": "claude/r2f-0048-r8",
+ "commands": [
+  {
+   "command": "npm run typecheck -w @clossys/producer",
+   "expect": 0
+  },
+  {
+   "command": "npm exec -w @clossys/producer -- vitest run src/conform/producer.test.ts",
+   "expect": 0
+  },
+  {
+   "command": "npm exec -w @clossys/producer -- vitest run src/loop",
+   "expect": 0
+  },
+  {
+   "command": "node packages/producer/dist/cli/index.js conform --all --json | node -e 'const r=JSON.parse(require(\"fs\").readFileSync(0,\"utf8\"));const all=[...(r.producer?r.producer.cells.map(c=>[\"producer\",c]):[]),...r.agents.flatMap(a=>[...a.cells,...a.dogfood].map(c=>[a.agent,c]))];const bad=process.argv[1].split(\",\").filter(w=>{const[a,id]=w.split(\":\");const hit=all.find(([x,c])=>x===a&&c.id===id);if(hit&&hit[1].red)console.log(w,hit[1].rows.slice(0,3).join(\" | \"));return !hit||hit[1].red});console.log(bad.length?\"RED \"+bad.join(\",\"):\"GREEN\");process.exit(bad.length?1:0)' producer:P1,producer:P2,producer:P3,producer:P4,producer:P5,producer:P6,producer:P7,producer:P8",
+   "expect": 0
+  },
+  {
+   "command": "git merge-tree --write-tree claude/r2f-int2 HEAD",
+   "expect": 0
+  }
+ ],
+ "int2": "claude/r2f-int2",
+ "prep": [
+  "npm run build -w @clossys/advisor",
+  "npm run build -w @clossys/controller",
+  "npm run build -w @clossys/director",
+  "npm run build -w @clossys/designer",
+  "npm run build -w @clossys/writer",
+  "npm run build -w @clossys/publisher",
+  "npm run build -w @clossys/producer"
+ ],
+ "unit": "R8"
+}
