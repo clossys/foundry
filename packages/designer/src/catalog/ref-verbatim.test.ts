@@ -7,7 +7,7 @@ import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import { writeDesignerSlot } from "../../scripts/__fixtures__/slot-model.mjs";
-import { BASELINE_CEILING, CODES, ADAPTATION_KINDS, adaptationHash, baselineKey, byteExactAdoption, checkElement, checkRegistryItem, engineFamily, loadBaseline, refVerbatimFindings, refVerbatimReport } from "../../scripts/check-ref-verbatim.mjs";
+import { BASELINE_CEILING, CODES, ADAPTATION_KINDS, adaptationHash, baselineKey, byteExactAdoption, checkElement, checkRegistryItem, engineFamily, loadBaseline, pinnedThemeFallbackReader, refVerbatimFindings, refVerbatimReport } from "../../scripts/check-ref-verbatim.mjs";
 import { cleanClasses, configFromComponents, mapImport, normalizeReference } from "../../scripts/ref-verbatim/normalize.mjs";
 import { replayDataFit, sourceHash } from "../../scripts/ref-verbatim/data-fit.mjs";
 import { ALLOWED, HUNK_CODES, diffSources, isEngineNeutral, tokenSwapAllowed } from "../../scripts/ref-verbatim/diff.mjs";
@@ -1060,6 +1060,56 @@ describe("composition lineage (W6)", () => {
     const drifted = locked(setup());
     writeSlot(drifted, "components.flow.canvas", npmItem(CANVAS, "12.11.0"));
     expect(check(drifted, composed(FLOW, [part("card"), canvasPart]), ["components.card", "components.flow.canvas"])).toContain("REF-COMP-PART");
+  });
+
+  // A packed consumer installs no component layer (ui: false): an `@/` import resolves to a declared part's pinned file by its install path.
+  describe("with no component layer installed (BR-DIMPORT)", () => {
+    const PLAIN = 'import { Separator } from "@/components/ui/separator"\n\nexport function Plain({ children }: { children?: React.ReactNode }) {\n  return (\n    <div>\n      <Separator />\n      {children}\n    </div>\n  )\n}\n';
+    const installed = (name: string, content = ui(name), patch: Record<string, unknown> = {}) => {
+      const item = stockItem(name);
+      return { ...item, files: [{ ...item.files[0], type: "registry:ui", content }], meta: { ...item.meta, ...patch } };
+    };
+    const world = (separator = installed("separator")) => {
+      const root = consumer([]);
+      writeSlot(root, "components.separator", separator);
+      writeSlot(root, "components.button", installed("button"));
+      return root;
+    };
+    const plain = (root: string, content: string, options: Record<string, unknown> = { ui: false }, parts = [part("separator")]) => {
+      const item = { ...composed(content, parts), name: "plain" };
+      writeSlot(root, "sections.plain", item, parts.map(each => each.slot));
+      return checkRegistryItem(root, "sections.plain", item, { strict: true, ...options }).findings;
+    };
+    it("passes an @/ import of a declared, pinned part by its install path", () => {
+      expect(plain(world(), PLAIN)).toEqual([]);
+    });
+    it("fails an @/ import one byte off the part's install path (mutation)", () => {
+      const findings = plain(world(), PLAIN.replace("@/components/ui/separator", "@/components/ui/separatos"));
+      expect(codes(findings)).toEqual(["REF-COMP-IMPORT", "REF-COMP-UNUSED"]);
+      expect(findings[0].detail).toContain("@/components/ui/separatos is no declared part's install path");
+    });
+    it("fails a declared part whose pinned file is one byte different from stock", () => {
+      expect(codes(plain(world(installed("separator", ui("separator").replace("bg-border", "bg-bordes"))), PLAIN))).toEqual(["REF-COMP-IMPORT", "REF-COMP-PART"]);
+    });
+    it("fails an @/ import of an undeclared part, even one pinned in the consumer", () => {
+      const text = PLAIN.replace('import { Separator } from "@/components/ui/separator"', 'import { Button } from "@/components/ui/button"\nimport { Separator } from "@/components/ui/separator"').replace("<Separator />", "<Separator />\n      <Button />");
+      expect(codes(plain(world(), text))).toEqual(["REF-COMP-IMPORT"]);
+    });
+    it("fails a bare layer import, since no layer is installed to resolve it", () => {
+      expect(codes(plain(world(), PLAIN.replace('"@/components/ui/separator"', '"@clossys/designer-ui"')))).toEqual(["REF-COMP-IMPORT", "REF-COMP-UNUSED"]);
+    });
+    it("with the designer-ui layer present, behaviour is unchanged", () => {
+      expect(plain(world(), PLAIN, {})).toEqual([]);
+      expect(plain(world(), PLAIN.replace('"@/components/ui/separator"', '"@clossys/designer-ui"'), {})).toEqual([]);
+      const off = plain(world(), PLAIN.replace("@/components/ui/separator", "@/components/ui/separatos"), {});
+      expect(codes(off)).toEqual(["REF-COMP-IMPORT", "REF-COMP-UNUSED"]);
+      expect(off[0].detail).toContain("does not resolve in the component layer");
+    });
+    it("re-checks a code-adopted part through its own adoption reader (readerOf)", () => {
+      const adopted = world(installed("separator", ui("separator"), { refVerbatim: { files: { "separator.tsx": vendored("separator") }, reader: "consumer-pins" } }));
+      expect(codes(plain(adopted, PLAIN))).toEqual(["REF-COMP-IMPORT", "REF-COMP-PART"]);
+      expect(plain(adopted, PLAIN, { ui: false, readerOf: () => pinnedThemeFallbackReader({}, "consumer-pins") })).toEqual([]);
+    });
   });
 });
 

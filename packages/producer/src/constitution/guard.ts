@@ -141,7 +141,9 @@ export function refVerbatimRows(ctx: ConstitutionContext, targets: readonly Guar
       const doc = slotDoc(slot) as { uses?: readonly string[] } | undefined;
       // A consumer adoption names its fallback reader: the gate normalizes its reference through the same one.
       const reader = adoptionReaderOf(ctx.consumer, candidate.json);
-      findings = checkRegistryItem(ctx.consumer, slot.id, candidate.json, { strict: true, ...(doc ? { slotDoc: doc } : {}), ...(reader ? { reader } : {}) }).findings;
+      // A composition's stock parts are each re-checked through their own adoption's reader.
+      const readerOf = (item: unknown) => adoptionReaderOf(ctx.consumer, item);
+      findings = checkRegistryItem(ctx.consumer, slot.id, candidate.json, { strict: true, ...(doc ? { slotDoc: doc } : {}), ...(reader ? { reader } : {}), readerOf }).findings;
     } catch (error) { findings = [{ code: "REF-NO-SOURCE", detail: `ref-verbatim could not run: ${error instanceof Error ? error.message : String(error)}` }]; }
     for (const finding of findings) rows.push({ ...base, reason: `${finding.code} ${finding.detail}${finding.file ? ` (${finding.file})` : ""} [${gated.label}: ${gated.why}]` });
   }

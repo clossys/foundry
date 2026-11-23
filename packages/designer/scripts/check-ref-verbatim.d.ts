@@ -82,8 +82,11 @@ export type RefVerbatimOptions = {
   readonly ceiling?: readonly string[];
   readonly linkComponents?: readonly string[];
   readonly strict?: boolean;
-  /** The component layer package (@clossys/designer-ui) a composition's imports resolve through; default the components.json folder, then the package's ui/. */
-  readonly ui?: string;
+  /**
+   * The component layer package (@clossys/designer-ui) a composition's imports resolve through; default the components.json folder,
+   * then the package's ui/. `false` is no layer, as in a packed consumer: an `@/` import resolves to a declared part's pinned file by install path.
+   */
+  readonly ui?: string | false;
   /** The slot document whose `uses` a composition is checked against; default the slot's own slot.json. */
   readonly slotDoc?: { readonly uses?: readonly string[] };
   /** Canonical element dependencies (`<slot>/<element>/v<N>`) whose strict proof is already in progress; a repeat is a cycle. */
@@ -95,6 +98,8 @@ export type RefVerbatimOptions = {
    * source is compared with its reference normalized through it; one naming a reader not given here fails.
    */
   readonly reader?: DeclaredFallbackReader;
+  /** The adoption reader of each stock part a composition places (its own `meta.refVerbatim.reader`), for that part's strict re-check. */
+  readonly readerOf?: (item: unknown) => DeclaredFallbackReader | undefined;
 };
 
 /** A declared-source fallback reader (`src/importers/declared-fallback-reader.ts`): `fallback` refuses an undeclared name. */
