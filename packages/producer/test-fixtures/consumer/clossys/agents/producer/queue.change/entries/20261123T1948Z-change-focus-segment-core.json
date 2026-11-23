@@ -1,0 +1,74 @@
+{
+  "schema": "clossys.queue-entry/2",
+  "id": "20261123T1948Z-change-focus-segment-core",
+  "kind": "change",
+  "from": "designer/themes.background",
+  "assignee": "owner",
+  "target": "director/focus.segment.core",
+  "status": "open",
+  "opened": "20261123T1948Z-change-focus-segment-core#1",
+  "why": "212 designer slots (designer/themes.background, designer/themes.foreground, designer/themes.card, designer/themes.card-foreground, +208) cite director/focus.segment.core, which is unclear: 2 blocking findings (Q4, Q7)",
+  "source": "interview",
+  "createdBy": {
+    "actor": "code",
+    "cli": "clossys interview",
+    "version": "0.1.0"
+  },
+  "createdAt": "2026-11-23T19:48:05Z",
+  "refs": [
+    {
+      "to": "designer/themes.background",
+      "rel": "raisedBy"
+    }
+  ],
+  "route": {
+    "row": "owner.class",
+    "table": "ceb9890678db86be17bc2e25ad19bc226db227b875fcd858a3a354bd3b9d34c7",
+    "assignee": "owner",
+    "packet": {
+      "queue": "queue.pick",
+      "step": "loop.choose/choose-v1#owner-pick",
+      "skill": "packages/director/actions/director.candidates/skill.md"
+    }
+  },
+  "options": [
+    {
+      "id": "handoff",
+      "label": "Hand it to director to answer by its skill",
+      "then": {
+        "verb": "handoff",
+        "args": [
+          "director"
+        ]
+      }
+    },
+    {
+      "id": "decline",
+      "label": "Decline: close it declined",
+      "then": {
+        "verb": "close",
+        "args": [
+          "declined"
+        ]
+      }
+    }
+  ],
+  "want": "candidate",
+  "events": [
+    {
+      "id": "20261123T1948Z-change-focus-segment-core#1",
+      "at": "2026-11-23T19:48:05Z",
+      "op": "raised",
+      "by": "producer",
+      "via": "cli",
+      "detail": "212 designer slots (designer/themes.background, designer/themes.foreground, designer/themes.card, designer/themes.card-foreground, +208) cite director/focus.segment.core, which is unclear: 2 blocking findings (Q4, Q7)"
+    },
+    {
+      "id": "20261123T1948Z-change-focus-segment-core#2",
+      "at": "2026-11-23T19:48:05Z",
+      "op": "routed",
+      "by": "producer",
+      "detail": "row owner.class -> owner (queue.pick from loop.choose/choose-v1#owner-pick)"
+    }
+  ]
+}

@@ -43,7 +43,8 @@ import { join } from "node:path";
 import { blocks, checkCell, readStrategyRoot } from "@clossys/director";
 import type { Cell, StrategyModel } from "@clossys/director";
 import { confirmableBasis } from "../records/pin.js";
-import { listRequests, listWorkEntries, slotlessNeeds } from "../records/request.js";
+import { listRequests, listWorkEntries, raiseRequest, raiseWork, RequestError, slotlessNeeds } from "../records/request.js";
+import type { SlotRequest } from "../records/types.js";
 import { checkSlotModel } from "../records/slot-check.js";
 import { SLOT_AGENTS } from "../records/slot-model/types.js";
 import type { SlotAgent } from "../records/slot-model/types.js";
@@ -417,7 +418,8 @@ function allGaps(root: string, options: InterviewOptions): { gaps: Gap[]; notes:
   for (const request of directorOpen) {
     const from = request.from.split("/")[0]!;
     requested.add(`${from}>director`);
-    gaps.push({ kind: "request", code: `request.director-${request.kind}`, agent: "director", from, to: "director", item: request.target, step: "director.candidates", decider: "owner", need: [request.target],
+    // The gap is the open entry itself (already filed), named by its kind.
+    gaps.push({ kind: "request", code: DIRECTOR_ENTRY_CODE[request.kind], agent: "director", from, to: "director", item: request.target, step: "director.candidates", decider: "owner", need: [request.from.includes("/") ? request.from : request.target],
       message: `queue.${request.kind}#${request.id} (open) from ${request.from}: ${request.why}` });
   }
   for (const [pair, count] of [...citations].sort()) {
@@ -434,6 +436,43 @@ function allGaps(root: string, options: InterviewOptions): { gaps: Gap[]; notes:
   const order = (gap: Gap) => [INTERVIEW_AGENTS.indexOf(gap.agent), GAP_KINDS.indexOf(gap.kind)];
   gaps.sort((a, b) => { const [x, y] = [order(a), order(b)]; return x[0]! - y[0]! || x[1]! - y[1]!; });
   return { gaps, notes, director: content, unclear: director.unclear, wording: wording.rows };
+}
+
+/** An open queue entry on a Director cell, as its request gap's code. */
+const DIRECTOR_ENTRY_CODE: Readonly<Record<SlotRequest["kind"], string>> = { slot: "request.director-slot", change: "request.director-change", fix: "request.director-fix" };
+
+/** What fileInterviewNeeds did: the entries it created, and each need the queue refused (nothing written for it). */
+export interface FiledNeeds {
+  readonly created: readonly string[];
+  readonly refused: readonly { readonly item: string; readonly code: string; readonly reason: string }[];
+}
+
+/**
+ * `clossys next --owner` files every request need it prints (foundry-build-0048 Q2): a gap no open queue entry records
+ * (none targets its item or one of its downstream slots) is raised through the queue's own write path, a slotless need
+ * as a kind slot entry, every other as a kind change on the upstream slot from the first downstream slot that cites it.
+ * Idempotent: a re-run finds each need filed and writes nothing.
+ */
+export function fileInterviewNeeds(root: string, gaps: readonly Gap[], at: string): FiledNeeds {
+  const consumer = join(root, "clossys");
+  const filed = new Set(listWorkEntries(consumer).flatMap(read => read.request && read.request.status === "open" ? [read.request.target] : []));
+  const created: string[] = [], refused: { item: string; code: string; reason: string }[] = [];
+  for (const gap of gaps) {
+    if (gap.kind !== "request" || !gap.need?.length || filed.has(gap.item) || gap.need.some(need => filed.has(need))) continue;
+    const row = [{ code: "request.slot-missing", want: undefined }, { code: "request.input-unpinned", want: "repin" }, { code: "request.input-no-candidates", want: "candidate" },
+      { code: "request.input-unclear", want: "candidate" }, { code: "request.input-not-needed", want: "contract" }, { code: "request.writer-keys", want: "candidate" }].find(each => each.code === gap.code);
+    if (!row) continue;
+    const from = gap.need[0]!, base = { target: gap.item, from, why: gap.message, source: "interview" as const, by: "producer", at };
+    try {
+      const raised = row.want === undefined ? raiseRequest(consumer, base) : raiseWork(consumer, { ...base, kind: "change", want: row.want as NonNullable<SlotRequest["want"]> });
+      if (raised.created) created.push(`queue.${raised.request.kind}#${raised.request.id}`);
+      filed.add(gap.item);
+    } catch (error) {
+      if (!(error instanceof RequestError)) throw error;
+      refused.push({ item: gap.item, code: gap.code, reason: error.message });
+    }
+  }
+  return { created, refused };
 }
 
 /** One agent's gaps (its own and the requests it raised); every gap when no agent is named. */

@@ -1,7 +1,7 @@
 {
   "schema": "clossys.index/1",
-  "events": 1268,
-  "head": "1ef54bc517b421e7911a0a433b1d0a04a44591933bacac4de77b91f4fdfce501",
+  "events": 1282,
+  "head": "ae00f1614a79b57656b3246b743df38fe001e2bc703b8ac75eae3f1b94c6906b",
   "subjects": {
     "designer": {
       "seq": 417,
@@ -1286,6 +1286,90 @@
       "kind": "slot.migrate",
       "actor": "code:clossys migrate slots",
       "at": "2026-11-19T00:00:00.000Z"
+    },
+    "request:20261123T1948Z-change-advantage-proposition-promise": {
+      "seq": 1268,
+      "kind": "request.create",
+      "actor": "producer",
+      "at": "2026-11-23T19:48:05.108Z"
+    },
+    "request:20261123T1948Z-change-advantage-proposition-proof": {
+      "seq": 1279,
+      "kind": "request.create",
+      "actor": "producer",
+      "at": "2026-11-23T19:48:05.608Z"
+    },
+    "request:20261123T1948Z-change-aspiration-purpose-mission": {
+      "seq": 1281,
+      "kind": "request.create",
+      "actor": "producer",
+      "at": "2026-11-23T19:48:05.671Z"
+    },
+    "request:20261123T1948Z-change-focus-category-definition": {
+      "seq": 1269,
+      "kind": "request.create",
+      "actor": "producer",
+      "at": "2026-11-23T19:48:05.165Z"
+    },
+    "request:20261123T1948Z-change-focus-lifecycle-acquisition": {
+      "seq": 1280,
+      "kind": "request.create",
+      "actor": "producer",
+      "at": "2026-11-23T19:48:05.640Z"
+    },
+    "request:20261123T1948Z-change-focus-reach-geography": {
+      "seq": 1277,
+      "kind": "request.create",
+      "actor": "producer",
+      "at": "2026-11-23T19:48:05.532Z"
+    },
+    "request:20261123T1948Z-change-focus-segment-core": {
+      "seq": 1270,
+      "kind": "request.create",
+      "actor": "producer",
+      "at": "2026-11-23T19:48:05.204Z"
+    },
+    "request:20261123T1948Z-change-identity-brand-essence": {
+      "seq": 1271,
+      "kind": "request.create",
+      "actor": "producer",
+      "at": "2026-11-23T19:48:05.251Z"
+    },
+    "request:20261123T1948Z-change-identity-brand-personality": {
+      "seq": 1272,
+      "kind": "request.create",
+      "actor": "producer",
+      "at": "2026-11-23T19:48:05.295Z"
+    },
+    "request:20261123T1948Z-change-identity-naming-architecture": {
+      "seq": 1278,
+      "kind": "request.create",
+      "actor": "producer",
+      "at": "2026-11-23T19:48:05.566Z"
+    },
+    "request:20261123T1948Z-change-identity-naming-name": {
+      "seq": 1276,
+      "kind": "request.create",
+      "actor": "producer",
+      "at": "2026-11-23T19:48:05.498Z"
+    },
+    "request:20261123T1948Z-change-identity-verbal-voice": {
+      "seq": 1273,
+      "kind": "request.create",
+      "actor": "producer",
+      "at": "2026-11-23T19:48:05.357Z"
+    },
+    "request:20261123T1948Z-change-identity-visual-imagery": {
+      "seq": 1274,
+      "kind": "request.create",
+      "actor": "producer",
+      "at": "2026-11-23T19:48:05.418Z"
+    },
+    "request:20261123T1948Z-change-identity-visual-style": {
+      "seq": 1275,
+      "kind": "request.create",
+      "actor": "producer",
+      "at": "2026-11-23T19:48:05.457Z"
     },
     "writer": {
       "seq": 420,
@@ -3832,6 +3916,76 @@
       "seq": 421,
       "logged": "c7767ed032baba868ef3e13a8aceae3080dd97b1dc24af9e388a39dc3445f44f",
       "disk": "c7767ed032baba868ef3e13a8aceae3080dd97b1dc24af9e388a39dc3445f44f"
+    },
+    "clossys/agents/producer/queue.change/entries/20261123T1948Z-change-advantage-proposition-promise.json": {
+      "seq": 1268,
+      "logged": "4220789207bb5abea2692284a0fefa72afdbf25559d5b9490a5e5b7466297b36",
+      "disk": "4220789207bb5abea2692284a0fefa72afdbf25559d5b9490a5e5b7466297b36"
+    },
+    "clossys/agents/producer/queue.change/entries/20261123T1948Z-change-advantage-proposition-proof.json": {
+      "seq": 1279,
+      "logged": "6efc4f44eca35124ea31471ca6ea20a166ec06ffad11fcccfe44f5953ddc53ca",
+      "disk": "6efc4f44eca35124ea31471ca6ea20a166ec06ffad11fcccfe44f5953ddc53ca"
+    },
+    "clossys/agents/producer/queue.change/entries/20261123T1948Z-change-aspiration-purpose-mission.json": {
+      "seq": 1281,
+      "logged": "a234933d385eb5340a5b43e53e2bd9f6ae7443f07e6f37dd13bff76b6e9bf40e",
+      "disk": "a234933d385eb5340a5b43e53e2bd9f6ae7443f07e6f37dd13bff76b6e9bf40e"
+    },
+    "clossys/agents/producer/queue.change/entries/20261123T1948Z-change-focus-category-definition.json": {
+      "seq": 1269,
+      "logged": "ec26a0595b436fb3c403ce8e74ebe8453ba3a42cc1c694d8f4868412035cea04",
+      "disk": "ec26a0595b436fb3c403ce8e74ebe8453ba3a42cc1c694d8f4868412035cea04"
+    },
+    "clossys/agents/producer/queue.change/entries/20261123T1948Z-change-focus-lifecycle-acquisition.json": {
+      "seq": 1280,
+      "logged": "1263c1b1fe67617911aab7ffdc9f0e5613d4782afa924a95eb70f0553cb694b5",
+      "disk": "1263c1b1fe67617911aab7ffdc9f0e5613d4782afa924a95eb70f0553cb694b5"
+    },
+    "clossys/agents/producer/queue.change/entries/20261123T1948Z-change-focus-reach-geography.json": {
+      "seq": 1277,
+      "logged": "1a9fbeb20773ab759b178f0ef88d3ce4ab01650d43bfc877e035b036ef1d4a19",
+      "disk": "1a9fbeb20773ab759b178f0ef88d3ce4ab01650d43bfc877e035b036ef1d4a19"
+    },
+    "clossys/agents/producer/queue.change/entries/20261123T1948Z-change-focus-segment-core.json": {
+      "seq": 1270,
+      "logged": "ecc3ea1ffa84384cd745d4ef3703726b662c5e8a70495182edcc322ae4086eb5",
+      "disk": "ecc3ea1ffa84384cd745d4ef3703726b662c5e8a70495182edcc322ae4086eb5"
+    },
+    "clossys/agents/producer/queue.change/entries/20261123T1948Z-change-identity-brand-essence.json": {
+      "seq": 1271,
+      "logged": "036981c0b249df24c50b3ff59aa15afc78b0f9e94e52b2157e54c37603b2598b",
+      "disk": "036981c0b249df24c50b3ff59aa15afc78b0f9e94e52b2157e54c37603b2598b"
+    },
+    "clossys/agents/producer/queue.change/entries/20261123T1948Z-change-identity-brand-personality.json": {
+      "seq": 1272,
+      "logged": "d8c4a0e5c7b4e3bf05cb4e057ffade8adede3dfd0c7a16ee789833351c1e9c64",
+      "disk": "d8c4a0e5c7b4e3bf05cb4e057ffade8adede3dfd0c7a16ee789833351c1e9c64"
+    },
+    "clossys/agents/producer/queue.change/entries/20261123T1948Z-change-identity-naming-architecture.json": {
+      "seq": 1278,
+      "logged": "5e0892edd152d99f909ef9be35cc29a05fc3516631eacc7b250ac6c02bbc9422",
+      "disk": "5e0892edd152d99f909ef9be35cc29a05fc3516631eacc7b250ac6c02bbc9422"
+    },
+    "clossys/agents/producer/queue.change/entries/20261123T1948Z-change-identity-naming-name.json": {
+      "seq": 1276,
+      "logged": "a361b1e67e252dcf2e3c75f95a8d25fe7157ea271b7cdf2e88515185cfcd13d7",
+      "disk": "a361b1e67e252dcf2e3c75f95a8d25fe7157ea271b7cdf2e88515185cfcd13d7"
+    },
+    "clossys/agents/producer/queue.change/entries/20261123T1948Z-change-identity-verbal-voice.json": {
+      "seq": 1273,
+      "logged": "227a0d9d849ed20145ddd21542fefb117caa1c40fb6cbc688bb9ba30cf8f466c",
+      "disk": "227a0d9d849ed20145ddd21542fefb117caa1c40fb6cbc688bb9ba30cf8f466c"
+    },
+    "clossys/agents/producer/queue.change/entries/20261123T1948Z-change-identity-visual-imagery.json": {
+      "seq": 1274,
+      "logged": "d75d5882965ce50cf03acc4a22d66718952dfdc27a66bfd14db6e2063a1c23b3",
+      "disk": "d75d5882965ce50cf03acc4a22d66718952dfdc27a66bfd14db6e2063a1c23b3"
+    },
+    "clossys/agents/producer/queue.change/entries/20261123T1948Z-change-identity-visual-style.json": {
+      "seq": 1275,
+      "logged": "17092730440ebdeede181f722f44862c4bc5fa4da49ad2051823da9be07f187f",
+      "disk": "17092730440ebdeede181f722f44862c4bc5fa4da49ad2051823da9be07f187f"
     },
     "clossys/agents/producer/seat.critic/ledger.json": {
       "seq": 427,
