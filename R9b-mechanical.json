@@ -1,0 +1,127 @@
+{
+ "tool": "cloud-gate-run.py",
+ "ran_on": "cloud",
+ "unit": "R9b",
+ "branch": "claude/r2f-0048-r9b",
+ "head": "ad486983e8135bd82d3a27a2e9a5a3f4b9865bd4",
+ "tree": "e3792dbf0b39ae075b8269e9e0f466a870706d6c",
+ "int2": "claude/r2f-int2",
+ "int2_sha": "5a2e197ea42dde155f0882fef533f7f4bf414605",
+ "generated_at": "2026-11-23T20:21:55Z",
+ "spec_sha256": "6b6c18769749e5ddfe7e158c1adcda34d26db87dc7178a89138677db0f927235",
+ "runner_sha256": "d8bb5e204990d40dfb33553a1750acd5e73c10d0ca4ee98ca3f1065683820383",
+ "prep": [
+  {
+   "command": "npm run build -w @clossys/advisor",
+   "exit": 0,
+   "seconds": 10.0,
+   "tail": "\n> @clossys/advisor@0.7.0 build\n> node scripts/pack-capability-catalogue.mjs && tsc -p tsconfig.json\n\npack-capability-catalogue: wrote 19 role(s), 5 preset(s), and 19 client problem(s) to src/generated/offering.generated.ts, and the plan, brief, repository-inventory and registry snapshot contracts to src/generated/plan-contracts.generated.ts, and the publishing scope and registry to src/generated/package-scope.generated.ts"
+  },
+  {
+   "command": "npm run build -w @clossys/controller",
+   "exit": 0,
+   "seconds": 3.0,
+   "tail": "\n> @clossys/controller@0.10.0 build\n> tsc -p tsconfig.json\n"
+  },
+  {
+   "command": "npm run build -w @clossys/director",
+   "exit": 0,
+   "seconds": 2.2,
+   "tail": "\n> @clossys/director@0.6.0 build\n> node scripts/pack-brief-contract.mjs && tsc -p tsconfig.json\n\npack-brief-contract: wrote the brief and engagement-context contracts and the contract checker copy into src/generated/"
+  },
+  {
+   "command": "npm run build -w @clossys/designer",
+   "exit": 0,
+   "seconds": 31.7,
+   "tail": "\n> @clossys/designer@0.12.0 build\n> tsc -p tsconfig.json\n"
+  },
+  {
+   "command": "npm run build -w @clossys/writer",
+   "exit": 0,
+   "seconds": 4.9,
+   "tail": "\n> @clossys/writer@0.6.0 build\n> node scripts/pack-plan-contract.mjs && tsc -p tsconfig.json && node scripts/check-record-drift.mjs\n\npack-plan-contract: wrote the plan contract and the contract checker copy into src/generated/\nWriter record drift: 1492 records, 12 sources, 0 findings; approval not evaluated."
+  },
+  {
+   "command": "npm run build -w @clossys/publisher",
+   "exit": 0,
+   "seconds": 563.2,
+   "tail": "> @clossys/publisher@0.13.0 check:client-boundary\n> node ../../scripts/check-client-boundary.mjs . --report ../../node_modules/.cache/client-boundary/publisher.json\n\nPASS ./content-map (production): 412 inputs\nPASS ./content-map (development): 412 inputs\nPASS ./web/preview (production): 4385 inputs\nPASS ./web/preview (development): 4385 inputs\nPASS ./web (production): 4557 inputs\nPASS ./web (development): 4557 inputs\nPASS ./web/host (production): 4323 inputs\nPASS ./web/host (development): 4323 inputs\nPASS ./web/content-route (production): 4381 inputs\nPASS ./web/content-route (development): 4381 inputs\nPASS ./web/publisher-v2 (production): 4045 inputs\nPASS ./web/publisher-v2 (development): 4045 inputs\nPASS ./web/client (production): 4404 inputs\nPASS ./web/client (development): 4404 inputs\nPASS ./web/consent (production): 4038 inputs\nPASS ./web/consent (development): 4038 inputs\nPASS ./web/consent/preview (production): 1 inputs\nPASS ./web/consent/preview (development): 3 inputs\nPASS ./web/registered-route-check (production): 1 inputs\nPASS ./web/registered-route-check (development): 1 inputs\nPASS ./web/registered-route-wiring (production): 1 inputs\nPASS ./web/registered-route-wiring (development): 1 inputs\nPASS ./web/admin-pages (production): 4399 inputs\nPASS ./web/admin-pages (development): 4399 inputs\nPASS ./web/registered-route (production): 4399 inputs\nPASS ./web/registered-route (development): 4399 inputs\nclient-boundary: PASS; report ./node_modules/.cache/client-boundary/publisher.json"
+  },
+  {
+   "command": "npm run build -w @clossys/producer",
+   "exit": 0,
+   "seconds": 17.5,
+   "tail": "\n> @clossys/producer@0.1.0 build\n> tsc -p tsconfig.json && node scripts/check-generated-derived.mjs --write && npm run -s generate:specimen-evidence && node scripts/generate-page-check-receipt.mjs\n\ncheck-generated-derived: no $CLOSSYS_ROOT consumer; wrote nothing\nWrote: 0 real native compiler certificates\nPROC-5 source receipt: ad486983e8135bd82d3a27a2e9a5a3f4b9865bd4"
+  }
+ ],
+ "commands": [
+  {
+   "command": "npm run typecheck -w @clossys/writer",
+   "expect": 0,
+   "exit": 0,
+   "ok": true,
+   "seconds": 3.0,
+   "tail": "\n> @clossys/writer@0.6.0 typecheck\n> node scripts/pack-plan-contract.mjs && tsc -p tsconfig.json --noEmit\n\npack-plan-contract: wrote the plan contract and the contract checker copy into src/generated/"
+  },
+  {
+   "command": "npm exec -w @clossys/writer -- vitest run src/derive/copy.test.ts",
+   "expect": 0,
+   "exit": 0,
+   "ok": true,
+   "seconds": 5.8,
+   "tail": "\n RUN  v5.0.1 ./packages/writer\n\n\n Test Files  1 passed (1)\n      Tests  18 passed (18)\n   Start at  20:20:04\n   Duration  4.14s (tests 62%, transform 24%, import 9%, setup 4%, worker 1%)\n"
+  },
+  {
+   "command": "npm run check:records -w @clossys/writer",
+   "expect": 0,
+   "exit": 0,
+   "ok": true,
+   "seconds": 0.8,
+   "tail": "\n> @clossys/writer@0.6.0 check:records\n> node scripts/check-record-drift.mjs\n\nWriter record drift: 1492 records, 12 sources, 0 findings; approval not evaluated."
+  },
+  {
+   "command": "npm exec -w @clossys/writer -- vitest run src/catalog",
+   "expect": 0,
+   "exit": 1,
+   "ok": false,
+   "seconds": 26.5,
+   "tail": "       |                                                                           ^\n     74|   });\n     75|\n\n\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af[9/10]\u23af\n\n FAIL  src/catalog/records/admin-names.test.ts > admin display-name drafts > keeps actual Designer siblings and flat layer-board group names distinct\nTypeError: Cannot read properties of undefined (reading 'text')\n \u276f name src/catalog/records/admin-names.test.ts:141:84\n    139|   it(\"keeps actual Designer siblings and flat layer-board group names \u2026\n    140|     const refs = new Map(studio.bindings.map(row => [row.cellId, row.r\u2026\n    141|     const name = (cell: string) => all.find(record => record.id === re\u2026\n       |                                                                                    ^\n    142|     const unique = (parent: string, names: string[]) => expect(new Set\u2026\n    143|     for (const layer of [\"themes\", \"assets\", \"components\", \"sections\",\u2026\n \u276f src/catalog/records/admin-names.test.ts:146:61\n \u276f src/catalog/records/admin-names.test.ts:146:32\n\n\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af[10/10]\u23af\n\n\n Test Files  6 failed | 15 passed (21)\n      Tests  10 failed | 257 passed (267)\n   Start at  20:20:10\n   Duration  25.92s (tests 56%, transform 31%, import 10%, environment 2%)\n\n  Transform  transforming modules took 13.48s \u00b7 31% of tracked time, re-done on every run\n             persist transforms across runs with fsModuleCache: true\n             learn more: https://vitest.dev/guide/improving-performance#caching-between-reruns\n"
+  },
+  {
+   "command": "npm exec -w @clossys/producer -- vitest run src/conform src/cli/ia-sync.test.ts",
+   "expect": 0,
+   "exit": 1,
+   "ok": false,
+   "seconds": 38.6,
+   "tail": "   \u276f dogfood probes (14)\n     \u00d7 upstream-pinned on a model read from disk: the slot/2 reader's refusal of the Director pin makes Designer's CASCADE probe red (U37) 275ms\n\n\u23af\u23af\u23af\u23af\u23af\u23af\u23af Failed Tests 1 \u23af\u23af\u23af\u23af\u23af\u23af\u23af\n\n FAIL  src/conform/conform.test.ts > dogfood probes > upstream-pinned on a model read from disk: the slot/2 reader's refusal of the Director pin makes Designer's CASCADE probe red (U37)\nAssertionError: expected false to be true // Object.is equality\n\n- Expected\n+ Received\n\n- true\n+ false\n\n \u276f src/conform/conform.test.ts:478:54\n    476|     expect(broken.director.pin).toBeDefined();\n    477|     expect(broken.director.pinRejection).toBe(\"invalid-candidate\");\n    478|     expect(cellOf(\"DF\", \"DF\", broken.judgement).red).toBe(true);\n       |                                                      ^\n    479|     expect(broken.judgement.rows.join(\"\\n\")).toMatch(/pinned but refus\u2026\n    480|   });\n\n\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af[1/1]\u23af\n\n\n Test Files  1 failed | 7 passed (8)\n      Tests  1 failed | 165 passed (166)\n   Start at  20:20:36\n   Duration  38.04s (tests 71%, transform 16%, import 13%)\n"
+  },
+  {
+   "command": "node packages/producer/dist/cli/index.js conform --all --json | node -e 'const r=JSON.parse(require(\"fs\").readFileSync(0,\"utf8\"));const all=[...(r.producer?r.producer.cells.map(c=>[\"producer\",c]):[]),...r.agents.flatMap(a=>[...a.cells,...a.dogfood].map(c=>[a.agent,c]))];const bad=process.argv[1].split(\",\").filter(w=>{const[a,id]=w.split(\":\");const hit=all.find(([x,c])=>x===a&&c.id===id);if(hit&&hit[1].red)console.log(w,hit[1].rows.slice(0,3).join(\" | \"));return !hit||hit[1].red});console.log(bad.length?\"RED \"+bad.join(\",\"):\"GREEN\");process.exit(bad.length?1:0)' writer:S1,writer:S4,writer:L5",
+   "expect": 0,
+   "exit": 0,
+   "ok": true,
+   "seconds": 40.4,
+   "tail": "GREEN"
+  },
+  {
+   "command": "git merge-tree --write-tree claude/r2f-int2 HEAD",
+   "expect": 0,
+   "exit": 0,
+   "ok": true,
+   "seconds": 0.0,
+   "tail": "e3792dbf0b39ae075b8269e9e0f466a870706d6c"
+  }
+ ],
+ "merge_tree": {
+  "command": "git merge-tree --write-tree claude/r2f-int2 ad486983e8135bd82d3a27a2e9a5a3f4b9865bd4",
+  "exit": 0,
+  "tree": "e3792dbf0b39ae075b8269e9e0f466a870706d6c",
+  "conflicts": []
+ },
+ "tree_clean": true,
+ "failures": [
+  "`npm exec -w @clossys/writer -- vitest run src/catalog` exit 1, expected 0",
+  "`npm exec -w @clossys/producer -- vitest run src/conform src/cli/ia-sync.test.ts` exit 1, expected 0"
+ ],
+ "verdict": "FAIL"
+}
