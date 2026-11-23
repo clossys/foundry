@@ -1,0 +1,147 @@
+{
+  "schema": "clossys.slot/2",
+  "id": "layout.deck",
+  "agent": "publisher",
+  "kind": "layout",
+  "status": "starter",
+  "ia": {
+    "l0": "layout",
+    "l1": "layout/layouts",
+    "l2": "layout/layouts/deck",
+    "order": 48
+  },
+  "createdBy": {
+    "actor": "code",
+    "cli": "clossys ia",
+    "version": "0.1.0"
+  },
+  "createdAt": "2026-11-19T00:00:00Z",
+  "updatedAt": "2026-11-19T00:00:00Z",
+  "refs": [
+    {
+      "to": "designer/frames.deck",
+      "rel": "input"
+    },
+    {
+      "to": "designer/sections.hero",
+      "rel": "input"
+    },
+    {
+      "to": "designer/sections.table-of-contents",
+      "rel": "input"
+    },
+    {
+      "to": "designer/sections.content",
+      "rel": "input"
+    },
+    {
+      "to": "designer/sections.testimonials",
+      "rel": "input"
+    },
+    {
+      "to": "designer/sections.call-to-action",
+      "rel": "input"
+    }
+  ],
+  "base": null,
+  "standard": "layout",
+  "brief": {
+    "purpose": "One deck: a 16:9 canvas with one slide per role, in order, and no chrome.",
+    "mustDo": [],
+    "inputs": [
+      {
+        "to": "designer/frames.deck",
+        "rel": "input"
+      },
+      {
+        "to": "designer/sections.hero",
+        "rel": "input"
+      },
+      {
+        "to": "designer/sections.table-of-contents",
+        "rel": "input"
+      },
+      {
+        "to": "designer/sections.content",
+        "rel": "input"
+      },
+      {
+        "to": "designer/sections.testimonials",
+        "rel": "input"
+      },
+      {
+        "to": "designer/sections.call-to-action",
+        "rel": "input"
+      }
+    ],
+    "acceptance": []
+  },
+  "contract": {
+    "kind": "layout",
+    "purpose": "One deck: a 16:9 canvas with one slide per role, in order, and no chrome.",
+    "frame": "designer/frames.deck",
+    "chrome": [],
+    "roles": {
+      "title": {
+        "kinds": [
+          "designer/sections.hero"
+        ],
+        "required": true
+      },
+      "agenda": {
+        "kinds": [
+          "designer/sections.table-of-contents"
+        ],
+        "required": false
+      },
+      "statement": {
+        "kinds": [
+          "designer/sections.content"
+        ],
+        "required": false
+      },
+      "two-column": {
+        "kinds": [
+          "designer/sections.content"
+        ],
+        "required": false
+      },
+      "quote": {
+        "kinds": [
+          "designer/sections.testimonials"
+        ],
+        "required": false
+      },
+      "closing": {
+        "kinds": [
+          "designer/sections.call-to-action"
+        ],
+        "required": true
+      }
+    },
+    "requirements": [
+      {
+        "check": "citation.grammar"
+      },
+      {
+        "check": "composes.allowed",
+        "params": {
+          "allowed": [
+            "designer/frames.deck",
+            "designer/sections.hero",
+            "designer/sections.table-of-contents",
+            "designer/sections.content",
+            "designer/sections.testimonials",
+            "designer/sections.call-to-action"
+          ]
+        }
+      }
+    ]
+  },
+  "tighten": [],
+  "family": {
+    "options": 1,
+    "varyOn": null,
+    "values": []
+  }
+}

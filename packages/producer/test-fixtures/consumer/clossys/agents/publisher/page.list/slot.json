@@ -1,0 +1,74 @@
+{
+  "schema": "clossys.slot/2",
+  "id": "page.list",
+  "agent": "publisher",
+  "kind": "page",
+  "status": "starter",
+  "ia": {
+    "l0": "page",
+    "l1": "page/apps",
+    "l2": "page/apps/app",
+    "order": 18
+  },
+  "createdBy": {
+    "actor": "code",
+    "cli": "clossys ia",
+    "version": "0.1.0"
+  },
+  "createdAt": "2026-11-19T00:00:00Z",
+  "updatedAt": "2026-11-19T00:00:00Z",
+  "refs": [
+    {
+      "to": "publisher/layout.app-list",
+      "rel": "input"
+    },
+    {
+      "to": "writer/page.list.meta",
+      "rel": "input"
+    }
+  ],
+  "base": null,
+  "standard": "page",
+  "brief": {
+    "purpose": "Fill publisher/page.list to the page standard.",
+    "mustDo": [],
+    "inputs": [
+      {
+        "to": "publisher/layout.app-list",
+        "rel": "input"
+      },
+      {
+        "to": "writer/page.list.meta",
+        "rel": "input"
+      }
+    ],
+    "acceptance": []
+  },
+  "contract": {
+    "kind": "page",
+    "publication": "app",
+    "path": "/app/<collection>",
+    "collection": "records",
+    "layouts": [
+      "publisher/layout.app-list"
+    ],
+    "records": {
+      "pattern": "list.<role>",
+      "meta": "writer/page.list.meta#list.meta"
+    },
+    "requirements": [
+      {
+        "check": "page.assembled"
+      },
+      {
+        "check": "page.no-inline-copy"
+      }
+    ]
+  },
+  "tighten": [],
+  "family": {
+    "options": 1,
+    "varyOn": null,
+    "values": []
+  }
+}

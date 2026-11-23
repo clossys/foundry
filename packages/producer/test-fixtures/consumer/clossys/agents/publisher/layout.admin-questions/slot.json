@@ -1,0 +1,107 @@
+{
+  "schema": "clossys.slot/2",
+  "id": "layout.admin-questions",
+  "agent": "publisher",
+  "kind": "layout",
+  "status": "starter",
+  "ia": {
+    "l0": "layout",
+    "l1": "layout/layouts",
+    "l2": "layout/layouts/admin",
+    "order": 47
+  },
+  "createdBy": {
+    "actor": "code",
+    "cli": "clossys ia",
+    "version": "0.1.0"
+  },
+  "createdAt": "2026-11-19T00:00:00Z",
+  "updatedAt": "2026-11-19T00:00:00Z",
+  "refs": [
+    {
+      "to": "designer/frames.app-shell",
+      "rel": "input"
+    },
+    {
+      "to": "publisher/chrome.admin-sidebar",
+      "rel": "input"
+    },
+    {
+      "to": "designer/sections.page-header",
+      "rel": "input"
+    },
+    {
+      "to": "designer/sections.question-packet",
+      "rel": "input"
+    }
+  ],
+  "base": null,
+  "standard": "layout",
+  "brief": {
+    "purpose": "The owner's open questions, one packet each.",
+    "mustDo": [],
+    "inputs": [
+      {
+        "to": "designer/frames.app-shell",
+        "rel": "input"
+      },
+      {
+        "to": "publisher/chrome.admin-sidebar",
+        "rel": "input"
+      },
+      {
+        "to": "designer/sections.page-header",
+        "rel": "input"
+      },
+      {
+        "to": "designer/sections.question-packet",
+        "rel": "input"
+      }
+    ],
+    "acceptance": []
+  },
+  "contract": {
+    "kind": "layout",
+    "purpose": "The owner's open questions, one packet each.",
+    "frame": "designer/frames.app-shell",
+    "chrome": [
+      "publisher/chrome.admin-sidebar"
+    ],
+    "roles": {
+      "header": {
+        "kinds": [
+          "designer/sections.page-header"
+        ],
+        "required": true
+      },
+      "questions": {
+        "kinds": [
+          "designer/sections.question-packet"
+        ],
+        "required": true
+      }
+    },
+    "requirements": [
+      {
+        "check": "citation.grammar"
+      },
+      {
+        "check": "composes.allowed",
+        "params": {
+          "allowed": [
+            "designer/frames.app-shell",
+            "publisher/chrome.admin-sidebar",
+            "designer/sections.page-header",
+            "designer/sections.question-packet"
+          ]
+        }
+      }
+    ]
+  },
+  "tighten": [],
+  "family": {
+    "options": 1,
+    "varyOn": null,
+    "values": []
+  }
+}

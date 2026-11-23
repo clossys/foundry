@@ -1,0 +1,65 @@
+{
+  "schema": "clossys.ledger/1",
+  "events": [
+    {
+      "op": "slot",
+      "at": "2026-11-19T00:00:00Z",
+      "by": "planner",
+      "verb": "ia",
+      "skill": {
+        "path": "packages/producer/actions/ia/skill.md",
+        "sha256": "147a7eaf66267728953e0c8111a9c20b93475f95f8063745d9d1d1087658fe73"
+      },
+      "model": "none",
+      "tier": "none",
+      "kind": "ia",
+      "decision": "create",
+      "overlaps": [],
+      "records": [
+        {
+          "file": "slot.json",
+          "sha256": "8cf23b6228fb4f35979bbcf963947e992dfd3a54d72722c597480804126d4788"
+        }
+      ]
+    },
+    {
+      "op": "submit",
+      "at": "2026-11-19T00:00:00Z",
+      "by": "planner",
+      "verb": "submit",
+      "skill": {
+        "path": "packages/publisher/actions/publisher.candidates/skill.md",
+        "sha256": "5c72becf74bd0b03ccad9a99074ffe8d1070aa99f734df4e42ae111aaee544b0"
+      },
+      "model": "none",
+      "tier": "none",
+      "rung": "adapt",
+      "seed": "@clossys/publisher:loops/loop.create/create-v1.json",
+      "reason": "publisher's package loop.create candidate, its header re-addressed to this consumer slot; content unchanged",
+      "name": "create-v1.json",
+      "sha256": "b0322988ce22434668fdec646b98ae15875ca3b4eb23e1e9955e6a43dd4f3cfe"
+    },
+    {
+      "op": "pin",
+      "at": "2026-11-19T00:00:00Z",
+      "by": "planner:package-default",
+      "verb": "pin",
+      "skill": {
+        "path": "packages/producer/actions/pin.publisher/skill.md",
+        "sha256": "33cd1658345c92487f91680b664148b1ace9a2d314b845f4e4c2d139f2dc2c51"
+      },
+      "model": "none",
+      "tier": "none",
+      "candidate": "create-v1.json",
+      "sha256": "b0322988ce22434668fdec646b98ae15875ca3b4eb23e1e9955e6a43dd4f3cfe",
+      "decidedBy": "planner:package-default",
+      "basis": "planner",
+      "records": [
+        {
+          "file": "pin.json",
+          "sha256": "2ece65d4ea69ab17a9d8f36d3e8d0a34cac0b5dcd51a636250d8c064318d9006"
+        }
+      ]
+    }
+  ]
+}

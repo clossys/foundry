@@ -1,0 +1,122 @@
+{
+  "schema": "clossys.slot/2",
+  "id": "layout.admin-slot",
+  "agent": "publisher",
+  "kind": "layout",
+  "status": "starter",
+  "ia": {
+    "l0": "layout",
+    "l1": "layout/layouts",
+    "l2": "layout/layouts/admin",
+    "order": 45
+  },
+  "createdBy": {
+    "actor": "code",
+    "cli": "clossys ia",
+    "version": "0.1.0"
+  },
+  "createdAt": "2026-11-19T00:00:00Z",
+  "updatedAt": "2026-11-19T00:00:00Z",
+  "refs": [
+    {
+      "to": "designer/frames.app-shell",
+      "rel": "input"
+    },
+    {
+      "to": "publisher/chrome.admin-sidebar",
+      "rel": "input"
+    },
+    {
+      "to": "designer/sections.page-header",
+      "rel": "input"
+    },
+    {
+      "to": "designer/sections.slot-detail",
+      "rel": "input"
+    },
+    {
+      "to": "designer/sections.candidate-preview",
+      "rel": "input"
+    }
+  ],
+  "base": null,
+  "standard": "layout",
+  "brief": {
+    "purpose": "One slot: its contract and pin, beside its candidates.",
+    "mustDo": [],
+    "inputs": [
+      {
+        "to": "designer/frames.app-shell",
+        "rel": "input"
+      },
+      {
+        "to": "publisher/chrome.admin-sidebar",
+        "rel": "input"
+      },
+      {
+        "to": "designer/sections.page-header",
+        "rel": "input"
+      },
+      {
+        "to": "designer/sections.slot-detail",
+        "rel": "input"
+      },
+      {
+        "to": "designer/sections.candidate-preview",
+        "rel": "input"
+      }
+    ],
+    "acceptance": []
+  },
+  "contract": {
+    "kind": "layout",
+    "purpose": "One slot: its contract and pin, beside its candidates.",
+    "frame": "designer/frames.app-shell",
+    "chrome": [
+      "publisher/chrome.admin-sidebar"
+    ],
+    "roles": {
+      "header": {
+        "kinds": [
+          "designer/sections.page-header"
+        ],
+        "required": true
+      },
+      "detail": {
+        "kinds": [
+          "designer/sections.slot-detail"
+        ],
+        "required": true
+      },
+      "candidates": {
+        "kinds": [
+          "designer/sections.candidate-preview"
+        ],
+        "required": true
+      }
+    },
+    "requirements": [
+      {
+        "check": "citation.grammar"
+      },
+      {
+        "check": "composes.allowed",
+        "params": {
+          "allowed": [
+            "designer/frames.app-shell",
+            "publisher/chrome.admin-sidebar",
+            "designer/sections.page-header",
+            "designer/sections.slot-detail",
+            "designer/sections.candidate-preview"
+          ]
+        }
+      }
+    ]
+  },
+  "tighten": [],
+  "family": {
+    "options": 1,
+    "varyOn": null,
+    "values": []
+  }
+}

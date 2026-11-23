@@ -492,8 +492,9 @@ describe("conformance over the repo and its fixture", () => {
     for (const agent of report.agents) {
       expect(agent.cells).toHaveLength(36);
       expect(agent.dogfood).toHaveLength(5);
-      // Shared today: placement records no decision.
-      expect(agent.cells.find(cell => cell.id === "L2")!.red, `${agent.agent} L2`).toBe(true);
+      // Shared today: placement records no decision, but for the Publisher, whose every leaf the fixture placed with
+      // clossys ia (R6), each recording its create decision with its overlaps.
+      expect(agent.cells.find(cell => cell.id === "L2")!.red, `${agent.agent} L2`).toBe(agent.agent !== "publisher");
       // U5: the scope and slot loops reach every agent through its own skill, so W1 keeps no scope or slot rows.
       expect(agent.cells.find(cell => cell.id === "W1")!.rows.filter(row => /^loop\.(scope|slot)\b|^(scope|slot):/.test(row)), agent.agent).toEqual([]);
       // The cascade rows (U6): a repin re-verdicts its dependants, every edge resolves, no input reads a candidate
@@ -511,16 +512,16 @@ describe("conformance over the repo and its fixture", () => {
     const l1 = (agent: string) => report.agents.find(item => item.agent === agent)!.cells.find(cell => cell.id === "L1")!;
     for (const agent of CONFORM_AGENTS) expect(l1(agent).rows, agent).toEqual([]);
     // C1 (family): every Director, Designer and Writer slot carries the family the contracts migration seeded from the
-    // option table (the re-keyed table classes every Director and Writer group); Publisher's slot/1 slots carry none.
+    // option table (the re-keyed table classes every Director and Writer group); every placed Publisher slot carries
+    // its package record's one-assembly family (R6).
     const c1 = (agent: string) => report.agents.find(item => item.agent === agent)!.cells.find(cell => cell.id === "C1")!;
-    for (const agent of ["director", "designer", "writer"]) expect(c1(agent).red, agent).toBe(false);
-    expect(c1("publisher").red).toBe(true);
+    for (const agent of ["director", "designer", "writer", "publisher"]) expect(c1(agent).red, agent).toBe(false);
+    expect(c1("publisher").evidence).toBe(60);
     // S6 (U9): every Director, Designer and Writer L3 is placed once, its record names its agent and folder, and it
-    // declares an inputs list; Publisher's slot/1 slots carry their inputs as frame, chrome and roles, not a list.
+    // declares an inputs list; so does every placed Publisher slot, its inputs the slots its package record cites (R6).
     const s6 = (agent: string) => report.agents.find(item => item.agent === agent)!.cells.find(cell => cell.id === "S6")!;
-    for (const agent of ["director", "designer", "writer"]) expect(s6(agent).rows, agent).toEqual([]);
-    expect(s6("publisher").rows.length).toBeGreaterThan(0);
-    expect(s6("publisher").rows.every(row => row.endsWith(": declares no inputs list"))).toBe(true);
+    for (const agent of ["director", "designer", "writer", "publisher"]) expect(s6(agent).rows, agent).toEqual([]);
+    expect(s6("publisher").evidence).toBe(60);
     // S3 (U9 fix r1, blind2 B3): an empty group is a report-only finding, so S3 is green. U33: Designer's retired
     // specimens group retires with its leaves, so no placed tree holds an empty group (R01.16).
     const s3 = (agent: string) => report.agents.find(item => item.agent === agent)!.cells.find(cell => cell.id === "S3")!;
@@ -547,9 +548,9 @@ describe("pin gate probe (the real pin verb on a temporary copy)", () => {
   });
   it("pins no hand-placed or uncertified candidate for any agent through any verb: each refusal is the CHOOSE gate's", async () => {
     const results = await probePinGate(FIXTURE, model.agents);
-    // R05.2 CHOOSE (foundry-build-0048): Publisher places no clossys.slot/2 slot of its own here, so the probe places one
-    // through the real `clossys ia` on the copy (its first held kind with a standard) and runs the same verbs on it.
-    expect((results.publisher as PinGateResult).target, String(results.publisher)).toMatch(/^publisher\/page\.conform-probe(?:#|$)/);
+    // R05.2 CHOOSE (foundry-build-0048): the fixture places the Publisher's package leaves (R6), its Directory tab first,
+    // so the probe runs the same verbs on its first live clossys.slot/2 slot, the page publisher/page.home.
+    expect((results.publisher as PinGateResult).target, String(results.publisher)).toMatch(/^publisher\/page\.home(?:#|$)/);
     for (const agent of ["director", "designer", "writer", "publisher"]) {
       const result = results[agent];
       expect(typeof result, `${agent}: ${String(result)}`).toBe("object");

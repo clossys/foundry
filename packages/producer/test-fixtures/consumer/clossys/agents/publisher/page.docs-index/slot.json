@@ -1,0 +1,73 @@
+{
+  "schema": "clossys.slot/2",
+  "id": "page.docs-index",
+  "agent": "publisher",
+  "kind": "page",
+  "status": "starter",
+  "ia": {
+    "l0": "page",
+    "l1": "page/docs",
+    "l2": "page/docs/docs",
+    "order": 9
+  },
+  "createdBy": {
+    "actor": "code",
+    "cli": "clossys ia",
+    "version": "0.1.0"
+  },
+  "createdAt": "2026-11-19T00:00:00Z",
+  "updatedAt": "2026-11-19T00:00:00Z",
+  "refs": [
+    {
+      "to": "publisher/layout.docs-index",
+      "rel": "input"
+    },
+    {
+      "to": "writer/page.docs-index.meta",
+      "rel": "input"
+    }
+  ],
+  "base": null,
+  "standard": "page",
+  "brief": {
+    "purpose": "Fill publisher/page.docs-index to the page standard.",
+    "mustDo": [],
+    "inputs": [
+      {
+        "to": "publisher/layout.docs-index",
+        "rel": "input"
+      },
+      {
+        "to": "writer/page.docs-index.meta",
+        "rel": "input"
+      }
+    ],
+    "acceptance": []
+  },
+  "contract": {
+    "kind": "page",
+    "publication": "docs",
+    "path": "/docs",
+    "layouts": [
+      "publisher/layout.docs-index"
+    ],
+    "records": {
+      "pattern": "docs-index.<role>",
+      "meta": "writer/page.docs-index.meta#docs-index.meta"
+    },
+    "requirements": [
+      {
+        "check": "page.assembled"
+      },
+      {
+        "check": "page.no-inline-copy"
+      }
+    ]
+  },
+  "tighten": [],
+  "family": {
+    "options": 1,
+    "varyOn": null,
+    "values": []
+  }
+}

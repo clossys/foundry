@@ -1,0 +1,101 @@
+{
+  "schema": "clossys.slot/2",
+  "id": "layout.auth",
+  "agent": "publisher",
+  "kind": "layout",
+  "status": "starter",
+  "ia": {
+    "l0": "layout",
+    "l1": "layout/layouts",
+    "l2": "layout/layouts/app",
+    "order": 38
+  },
+  "createdBy": {
+    "actor": "code",
+    "cli": "clossys ia",
+    "version": "0.1.0"
+  },
+  "createdAt": "2026-11-19T00:00:00Z",
+  "updatedAt": "2026-11-19T00:00:00Z",
+  "refs": [
+    {
+      "to": "designer/frames.auth-shell",
+      "rel": "input"
+    },
+    {
+      "to": "designer/sections.sign-in-form",
+      "rel": "input"
+    },
+    {
+      "to": "designer/sections.empty-state",
+      "rel": "input"
+    },
+    {
+      "to": "designer/sections.error-state",
+      "rel": "input"
+    }
+  ],
+  "base": null,
+  "standard": "layout",
+  "brief": {
+    "purpose": "A single account step outside the app.",
+    "mustDo": [],
+    "inputs": [
+      {
+        "to": "designer/frames.auth-shell",
+        "rel": "input"
+      },
+      {
+        "to": "designer/sections.sign-in-form",
+        "rel": "input"
+      },
+      {
+        "to": "designer/sections.empty-state",
+        "rel": "input"
+      },
+      {
+        "to": "designer/sections.error-state",
+        "rel": "input"
+      }
+    ],
+    "acceptance": []
+  },
+  "contract": {
+    "kind": "layout",
+    "purpose": "A single account step outside the app.",
+    "frame": "designer/frames.auth-shell",
+    "chrome": [],
+    "roles": {
+      "main": {
+        "kinds": [
+          "designer/sections.sign-in-form",
+          "designer/sections.empty-state",
+          "designer/sections.error-state"
+        ],
+        "required": true
+      }
+    },
+    "requirements": [
+      {
+        "check": "citation.grammar"
+      },
+      {
+        "check": "composes.allowed",
+        "params": {
+          "allowed": [
+            "designer/frames.auth-shell",
+            "designer/sections.sign-in-form",
+            "designer/sections.empty-state",
+            "designer/sections.error-state"
+          ]
+        }
+      }
+    ]
+  },
+  "tighten": [],
+  "family": {
+    "options": 1,
+    "varyOn": null,
+    "values": []
+  }
+}

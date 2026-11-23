@@ -46,6 +46,21 @@ describe("clossys migrate contracts", () => {
     expect(plan.gaps.filter(gap => gap.agent === "writer" && gap.field === "fixture" && /copy fields/.test(gap.reason)).map(gap => gap.slot)).not.toContain("sections.hero.copy");
   });
 
+  it("seeds every Publisher slot one assembly (the option table maps nothing for the Publisher), and reseeds a stripped family (R6)", () => {
+    const consumer = copy();
+    const one = { options: 1, varyOn: null, values: [] };
+    const publisher = planContracts(consumer, REPO).seeds.filter(seed => seed.agent === "publisher");
+    expect(publisher).toHaveLength(60);
+    expect(publisher.every(seed => JSON.stringify(seed.family) === JSON.stringify(one))).toBe(true);
+    for (const slot of ["layout.marketing-home", "chrome.site-header", "page.home", "release.site"]) expect(readDoc(consumer, "publisher", slot).family, slot).toEqual(one);
+    const { family: _family, ...bare } = readDoc(consumer, "publisher", "layout.marketing-home");
+    writeFileSync(slotFile(consumer, "publisher", "layout.marketing-home"), `${JSON.stringify(bare, null, 2)}\n`);
+    const plan = planContracts(consumer, REPO);
+    expect(plan.seeds.filter(seed => seed.changes.length).map(seed => [`${seed.agent}/${seed.slot}`, seed.changes])).toEqual([["publisher/layout.marketing-home", ["family"]]]);
+    expect(applyContracts(consumer, plan, AT)).toEqual(["publisher/layout.marketing-home"]);
+    expect(readDoc(consumer, "publisher", "layout.marketing-home").family).toEqual(one);
+  });
+
   it("reseeds a slot whose requirements were stripped (one ledgered slot event), and a second run changes nothing", () => {
     const consumer = copy();
     const before = readDoc(consumer, "writer", "sections.hero.copy");

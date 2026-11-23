@@ -1,0 +1,127 @@
+{
+  "schema": "clossys.slot/2",
+  "id": "layout.docs-index",
+  "agent": "publisher",
+  "kind": "layout",
+  "status": "starter",
+  "ia": {
+    "l0": "layout",
+    "l1": "layout/layouts",
+    "l2": "layout/layouts/docs",
+    "order": 34
+  },
+  "createdBy": {
+    "actor": "code",
+    "cli": "clossys ia",
+    "version": "0.1.0"
+  },
+  "createdAt": "2026-11-19T00:00:00Z",
+  "updatedAt": "2026-11-19T00:00:00Z",
+  "refs": [
+    {
+      "to": "designer/frames.site-shell",
+      "rel": "input"
+    },
+    {
+      "to": "publisher/chrome.site-header",
+      "rel": "input"
+    },
+    {
+      "to": "publisher/chrome.site-footer",
+      "rel": "input"
+    },
+    {
+      "to": "publisher/chrome.docs-sidebar",
+      "rel": "input"
+    },
+    {
+      "to": "designer/sections.page-header",
+      "rel": "input"
+    },
+    {
+      "to": "designer/sections.link-index",
+      "rel": "input"
+    }
+  ],
+  "base": null,
+  "standard": "layout",
+  "brief": {
+    "purpose": "The way into the docs: every entry in one index.",
+    "mustDo": [],
+    "inputs": [
+      {
+        "to": "designer/frames.site-shell",
+        "rel": "input"
+      },
+      {
+        "to": "publisher/chrome.site-header",
+        "rel": "input"
+      },
+      {
+        "to": "publisher/chrome.site-footer",
+        "rel": "input"
+      },
+      {
+        "to": "publisher/chrome.docs-sidebar",
+        "rel": "input"
+      },
+      {
+        "to": "designer/sections.page-header",
+        "rel": "input"
+      },
+      {
+        "to": "designer/sections.link-index",
+        "rel": "input"
+      }
+    ],
+    "acceptance": []
+  },
+  "contract": {
+    "kind": "layout",
+    "purpose": "The way into the docs: every entry in one index.",
+    "frame": "designer/frames.site-shell",
+    "chrome": [
+      "publisher/chrome.site-header",
+      "publisher/chrome.site-footer",
+      "publisher/chrome.docs-sidebar"
+    ],
+    "roles": {
+      "header": {
+        "kinds": [
+          "designer/sections.page-header"
+        ],
+        "required": true
+      },
+      "entries": {
+        "kinds": [
+          "designer/sections.link-index"
+        ],
+        "required": true
+      }
+    },
+    "requirements": [
+      {
+        "check": "citation.grammar"
+      },
+      {
+        "check": "composes.allowed",
+        "params": {
+          "allowed": [
+            "designer/frames.site-shell",
+            "publisher/chrome.site-header",
+            "publisher/chrome.site-footer",
+            "publisher/chrome.docs-sidebar",
+            "designer/sections.page-header",
+            "designer/sections.link-index"
+          ]
+        }
+      }
+    ]
+  },
+  "tighten": [],
+  "family": {
+    "options": 1,
+    "varyOn": null,
+    "values": []
+  }
+}

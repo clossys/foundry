@@ -1,10 +1,10 @@
 /**
  * `clossys migrate contracts` (foundry-build-0048 U3, the CREATE and CHOOSE contract): seeds every live
- * slot/2 slot.json of Director, Designer and Writer with the slot data CREATE and CHOOSE read, from
+ * slot/2 slot.json of Director, Designer, Writer and Publisher with the slot data CREATE and CHOOSE read, from
  * package data only, never by hand:
  * - `family {options, varyOn, values, class}`: the slot's option class from the committed option table
  *   (records/slot-model/option-classes.ts, classify by the slot's `<l1>/<l2>` group). An agent the table
- *   maps nothing for (Designer) offers one candidate. A Director or Writer slot whose group the table does
+ *   maps nothing for (Designer, Publisher) offers one candidate. A Director or Writer slot whose group the table does
  *   not class gets no family and is named (an unclassified slot is the table's gap, not a guess).
  * - `contract.requirements [{check}]`: every requirement check of the slot's standard (the params stay in
  *   the standard; certify merges them by check id, records/standards resolveRequirements).
@@ -20,8 +20,34 @@ import { classify } from "../records/slot-options.js";
 import { readStandard, type StandardDoc } from "../records/standards.js";
 import { writeSlotSeed } from "../records/slot-write.js";
 import type { SlotAgent } from "../records/slot-model/index.js";
+import { existsSync, readFileSync } from "node:fs";
+import { packagePath } from "../package-path.js";
+
+/** The Publisher package records by slot id (the three tree files' `slots`), read once per plan. */
+function publisherRecords(root: string): Map<string, Record<string, unknown>> {
+  const out = new Map<string, Record<string, unknown>>();
+  for (const name of ["composition", "directory", "release"]) {
+    const file = packagePath(root, `packages/publisher/src/catalog/ia/${name}.json`);
+    if (!existsSync(file)) continue;
+    const doc = JSON.parse(readFileSync(file, "utf8")) as { slots?: Record<string, unknown> };
+    for (const [id, record] of Object.entries(doc.slots ?? {})) if (object(record)) out.set(id, record);
+  }
+  return out;
+}
+/** A Publisher slot's family from its package record, `null` when the record holds none. */
+function publisherFamily(records: Map<string, Record<string, unknown>>, id: string): SlotFamily | null {
+  const family = records.get(id)?.family;
+  return object(family) ? family as unknown as SlotFamily : null;
+}
 
 export const CONTRACT_AGENTS: readonly SlotAgent[] = ["director", "designer", "writer"];
+/**
+ * The agents `clossys migrate contracts` seeds: the contract agents and the Publisher, whose workspace IA `ia sync`
+ * never refreshes. A Publisher slot's family is its package record's own `family` (packages/publisher/src/catalog/ia):
+ * Publisher assembles only, so each record offers one assembly (`{options: 1, varyOn: null, values: []}`). A slot
+ * whose package record holds no family gets none and is named.
+ */
+export const SEEDED_AGENTS: readonly SlotAgent[] = [...CONTRACT_AGENTS, "publisher"];
 export const CONTRACTS_MIGRATION = "contracts";
 
 export interface ContractSeed {
@@ -87,7 +113,8 @@ export function seededContract(agent: string, contract: Readonly<Record<string, 
 export function planContracts(consumer: string, root: string, table: OptionTable = OPTION_TABLE): ContractsPlan {
   const seeds: ContractSeed[] = [];
   const gaps: ContractsPlan["gaps"][number][] = [];
-  for (const agent of CONTRACT_AGENTS) {
+  let records: Map<string, Record<string, unknown>> | undefined;
+  for (const agent of SEEDED_AGENTS) {
     for (const entry of listSlots(consumer, agent)) {
       const text = readSlotRecordText(entry.dir, "slot.json");
       if (text === undefined) continue;
@@ -96,8 +123,8 @@ export function planContracts(consumer: string, root: string, table: OptionTable
       const contract = object(doc.contract) ? doc.contract : {};
       const gap = (field: "family" | "requirements" | "fixture", reason: string) => gaps.push({ agent, slot: entry.id, field, reason });
       const changes: ContractSeed["changes"][number][] = [];
-      const family = familyFor(agent, entry.id, `${entry.position.l1}/${entry.position.l2}`, table);
-      if (family === null) gap("family", `the option table classes no ${entry.position.l1}/${entry.position.l2} group`);
+      const family = agent === "publisher" ? publisherFamily(records ??= publisherRecords(root), entry.id) : familyFor(agent, entry.id, `${entry.position.l1}/${entry.position.l2}`, table);
+      if (family === null) gap("family", agent === "publisher" ? `the Publisher package record of ${entry.id} holds no family` : `the option table classes no ${entry.position.l1}/${entry.position.l2} group`);
       else if (!same(doc.family, family)) changes.push("family");
       const standardId = typeof doc.standard === "string" ? doc.standard : undefined;
       const standard = standardId ? readStandard(root, agent, standardId) : undefined;

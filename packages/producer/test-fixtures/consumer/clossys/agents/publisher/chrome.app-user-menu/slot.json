@@ -1,0 +1,108 @@
+{
+  "schema": "clossys.slot/2",
+  "id": "chrome.app-user-menu",
+  "agent": "publisher",
+  "kind": "chrome",
+  "status": "starter",
+  "ia": {
+    "l0": "chrome",
+    "l1": "chrome/chrome",
+    "l2": "chrome/chrome/sidebars-menus",
+    "order": 53
+  },
+  "createdBy": {
+    "actor": "code",
+    "cli": "clossys ia",
+    "version": "0.1.0"
+  },
+  "createdAt": "2026-11-19T00:00:00Z",
+  "updatedAt": "2026-11-19T00:00:00Z",
+  "refs": [
+    {
+      "to": "designer/frames.app-shell",
+      "rel": "input"
+    },
+    {
+      "to": "designer/components.menu",
+      "rel": "input"
+    },
+    {
+      "to": "designer/components.avatar",
+      "rel": "input"
+    },
+    {
+      "to": "designer/frames.app-header",
+      "rel": "input"
+    },
+    {
+      "to": "writer/frames.app-header.copy",
+      "rel": "input"
+    }
+  ],
+  "base": null,
+  "standard": "chrome",
+  "brief": {
+    "purpose": "The signed-in person's menu: settings and sign out.",
+    "mustDo": [],
+    "inputs": [
+      {
+        "to": "designer/frames.app-shell",
+        "rel": "input"
+      },
+      {
+        "to": "designer/components.menu",
+        "rel": "input"
+      },
+      {
+        "to": "designer/components.avatar",
+        "rel": "input"
+      },
+      {
+        "to": "designer/frames.app-header",
+        "rel": "input"
+      },
+      {
+        "to": "writer/frames.app-header.copy",
+        "rel": "input"
+      }
+    ],
+    "acceptance": []
+  },
+  "contract": {
+    "kind": "chrome",
+    "purpose": "The signed-in person's menu: settings and sign out.",
+    "frame": "designer/frames.app-shell",
+    "unit": "designer/components.menu",
+    "parts": [
+      "designer/components.avatar"
+    ],
+    "within": "designer/frames.app-header",
+    "copy": "writer/frames.app-header.copy#app.user-menu",
+    "publications": [
+      "app"
+    ],
+    "requirements": [
+      {
+        "check": "citation.grammar"
+      },
+      {
+        "check": "composes.allowed",
+        "params": {
+          "allowed": [
+            "designer/frames.app-shell",
+            "designer/components.menu",
+            "designer/components.avatar",
+            "designer/frames.app-header",
+            "writer/frames.app-header.copy#app.user-menu"
+          ]
+        }
+      }
+    ]
+  },
+  "tighten": [],
+  "family": {
+    "options": 1,
+    "varyOn": null,
+    "values": []
+  }
+}

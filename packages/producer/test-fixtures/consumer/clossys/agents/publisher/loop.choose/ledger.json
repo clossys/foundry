@@ -1,0 +1,65 @@
+{
+  "schema": "clossys.ledger/1",
+  "events": [
+    {
+      "op": "slot",
+      "at": "2026-11-19T00:00:00Z",
+      "by": "planner",
+      "verb": "ia",
+      "skill": {
+        "path": "packages/producer/actions/ia/skill.md",
+        "sha256": "147a7eaf66267728953e0c8111a9c20b93475f95f8063745d9d1d1087658fe73"
+      },
+      "model": "none",
+      "tier": "none",
+      "kind": "ia",
+      "decision": "create",
+      "overlaps": [],
+      "records": [
+        {
+          "file": "slot.json",
+          "sha256": "0e5009be551a9f826e34bb0ef8ea551ca469a2aed279934390ce30183a5b308a"
+        }
+      ]
+    },
+    {
+      "op": "submit",
+      "at": "2026-11-19T00:00:00Z",
+      "by": "planner",
+      "verb": "submit",
+      "skill": {
+        "path": "packages/publisher/actions/publisher.candidates/skill.md",
+        "sha256": "5c72becf74bd0b03ccad9a99074ffe8d1070aa99f734df4e42ae111aaee544b0"
+      },
+      "model": "none",
+      "tier": "none",
+      "rung": "adapt",
+      "seed": "@clossys/publisher:loops/loop.choose/choose-v1.json",
+      "reason": "publisher's package loop.choose candidate, its header re-addressed to this consumer slot; content unchanged",
+      "name": "choose-v1.json",
+      "sha256": "54ad0c513805f7357c44fa6a6bffa107b2cf2ced1d3b269757e586aab38421ce"
+    },
+    {
+      "op": "pin",
+      "at": "2026-11-19T00:00:00Z",
+      "by": "planner:package-default",
+      "verb": "pin",
+      "skill": {
+        "path": "packages/producer/actions/pin.publisher/skill.md",
+        "sha256": "33cd1658345c92487f91680b664148b1ace9a2d314b845f4e4c2d139f2dc2c51"
+      },
+      "model": "none",
+      "tier": "none",
+      "candidate": "choose-v1.json",
+      "sha256": "54ad0c513805f7357c44fa6a6bffa107b2cf2ced1d3b269757e586aab38421ce",
+      "decidedBy": "planner:package-default",
+      "basis": "planner",
+      "records": [
+        {
+          "file": "pin.json",
+          "sha256": "23c968b2fac563d324ced2306cbca84199cc74411d7f1afc103feda0e119c179"
+        }
+      ]
+    }
+  ]
+}

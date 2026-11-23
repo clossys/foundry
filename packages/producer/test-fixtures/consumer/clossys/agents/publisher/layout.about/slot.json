@@ -1,0 +1,147 @@
+{
+  "schema": "clossys.slot/2",
+  "id": "layout.about",
+  "agent": "publisher",
+  "kind": "layout",
+  "status": "starter",
+  "ia": {
+    "l0": "layout",
+    "l1": "layout/layouts",
+    "l2": "layout/layouts/site",
+    "order": 28
+  },
+  "createdBy": {
+    "actor": "code",
+    "cli": "clossys ia",
+    "version": "0.1.0"
+  },
+  "createdAt": "2026-11-19T00:00:00Z",
+  "updatedAt": "2026-11-19T00:00:00Z",
+  "refs": [
+    {
+      "to": "designer/frames.site-shell",
+      "rel": "input"
+    },
+    {
+      "to": "publisher/chrome.site-header",
+      "rel": "input"
+    },
+    {
+      "to": "publisher/chrome.site-footer",
+      "rel": "input"
+    },
+    {
+      "to": "designer/sections.page-header",
+      "rel": "input"
+    },
+    {
+      "to": "designer/sections.content",
+      "rel": "input"
+    },
+    {
+      "to": "designer/sections.people",
+      "rel": "input"
+    },
+    {
+      "to": "designer/sections.call-to-action",
+      "rel": "input"
+    }
+  ],
+  "base": null,
+  "standard": "layout",
+  "brief": {
+    "purpose": "Who the company is: its story and its people.",
+    "mustDo": [],
+    "inputs": [
+      {
+        "to": "designer/frames.site-shell",
+        "rel": "input"
+      },
+      {
+        "to": "publisher/chrome.site-header",
+        "rel": "input"
+      },
+      {
+        "to": "publisher/chrome.site-footer",
+        "rel": "input"
+      },
+      {
+        "to": "designer/sections.page-header",
+        "rel": "input"
+      },
+      {
+        "to": "designer/sections.content",
+        "rel": "input"
+      },
+      {
+        "to": "designer/sections.people",
+        "rel": "input"
+      },
+      {
+        "to": "designer/sections.call-to-action",
+        "rel": "input"
+      }
+    ],
+    "acceptance": []
+  },
+  "contract": {
+    "kind": "layout",
+    "purpose": "Who the company is: its story and its people.",
+    "frame": "designer/frames.site-shell",
+    "chrome": [
+      "publisher/chrome.site-header",
+      "publisher/chrome.site-footer"
+    ],
+    "roles": {
+      "header": {
+        "kinds": [
+          "designer/sections.page-header"
+        ],
+        "required": true
+      },
+      "story": {
+        "kinds": [
+          "designer/sections.content"
+        ],
+        "required": true
+      },
+      "team": {
+        "kinds": [
+          "designer/sections.people"
+        ],
+        "required": true
+      },
+      "closing": {
+        "kinds": [
+          "designer/sections.call-to-action"
+        ],
+        "required": true
+      }
+    },
+    "requirements": [
+      {
+        "check": "citation.grammar"
+      },
+      {
+        "check": "composes.allowed",
+        "params": {
+          "allowed": [
+            "designer/frames.site-shell",
+            "publisher/chrome.site-header",
+            "publisher/chrome.site-footer",
+            "designer/sections.page-header",
+            "designer/sections.content",
+            "designer/sections.people",
+            "designer/sections.call-to-action"
+          ]
+        }
+      }
+    ]
+  },
+  "tighten": [],
+  "family": {
+    "options": 1,
+    "varyOn": null,
+    "values": []
+  }
+}

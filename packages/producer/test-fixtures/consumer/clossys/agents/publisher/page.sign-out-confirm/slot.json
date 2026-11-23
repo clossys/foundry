@@ -1,0 +1,73 @@
+{
+  "schema": "clossys.slot/2",
+  "id": "page.sign-out-confirm",
+  "agent": "publisher",
+  "kind": "page",
+  "status": "starter",
+  "ia": {
+    "l0": "page",
+    "l1": "page/apps",
+    "l2": "page/apps/app",
+    "order": 14
+  },
+  "createdBy": {
+    "actor": "code",
+    "cli": "clossys ia",
+    "version": "0.1.0"
+  },
+  "createdAt": "2026-11-19T00:00:00Z",
+  "updatedAt": "2026-11-19T00:00:00Z",
+  "refs": [
+    {
+      "to": "publisher/layout.auth",
+      "rel": "input"
+    },
+    {
+      "to": "writer/page.sign-out-confirm.meta",
+      "rel": "input"
+    }
+  ],
+  "base": null,
+  "standard": "page",
+  "brief": {
+    "purpose": "Fill publisher/page.sign-out-confirm to the page standard.",
+    "mustDo": [],
+    "inputs": [
+      {
+        "to": "publisher/layout.auth",
+        "rel": "input"
+      },
+      {
+        "to": "writer/page.sign-out-confirm.meta",
+        "rel": "input"
+      }
+    ],
+    "acceptance": []
+  },
+  "contract": {
+    "kind": "page",
+    "publication": "app",
+    "path": "/sign-out/confirm",
+    "layouts": [
+      "publisher/layout.auth"
+    ],
+    "records": {
+      "pattern": "sign-out-confirm.<role>",
+      "meta": "writer/page.sign-out-confirm.meta#sign-out-confirm.meta"
+    },
+    "requirements": [
+      {
+        "check": "page.assembled"
+      },
+      {
+        "check": "page.no-inline-copy"
+      }
+    ]
+  },
+  "tighten": [],
+  "family": {
+    "options": 1,
+    "varyOn": null,
+    "values": []
+  }
+}

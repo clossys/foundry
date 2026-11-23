@@ -63,12 +63,12 @@ import { currentView, slotReadIssues } from "../records/slot-current.js";
 import { buildPin, cliActor, ownerAnswerRef, pinIssues, toIsoZ } from "../records/pin.js";
 import { seatSlot } from "../records/seat-slot.js";
 import { recutCandidateBytes } from "../migrate/recut.js";
-import { listedPublications, publicationOf, RELEASE_SLOT, releaseSlotId } from "../release/paths.js";
+import { listedPublications, PUBLICATION_ID, publicationOf, RELEASE_SLOT, releaseSlotId } from "../release/paths.js";
 import { actorRefusal } from "../records/seat-owner.js";
 import { ownerDecisionRefusal } from "../records/owner-answer.js";
 import { slotFromV1, targetKind, type SlotV1 } from "../migrate/slot-1-to-2.js";
 import { markCurrentStore } from "../migrate/slots.js";
-import type { AgentId, Iso, Ref, Slot, TargetSlotKind } from "../records/types.js";
+import type { AgentId, IaPublication, Iso, Ref, Slot, TargetSlotKind } from "../records/types.js";
 import { CliUsageError } from "./args.js";
 import { addGroup, assignGroup, dropGroup, followPositions, mergeGroups, moveSlot, packageStructureChange, planIaWrite, renameGroup, reorderGroup, setAxes, setExtension, setLayers, type Edit, type IaFile, type PositionFollow } from "./ia-regroup.js";
 import type { CliResult } from "./main.js";
@@ -84,6 +84,7 @@ export const IA_USAGE = "Usage: clossys ia <agent>/<slot> --contract <file> [--s
   + "       clossys ia <agent>/<slot> --remove [--owner-ref <ref>] [--dry] [--root <dir>]\n"
   + "       clossys ia <agent>/<slot> --request <id> --approved queue.approve#<id> [--at <iso>] [--dry] [--root <dir>]  (places the leaf a create decision proposes; clossys request <id> --close runs it)\n"
   + "       clossys ia <agent> --adopt | --start [--dry] [--root <dir>]\n"
+  + "       clossys ia publisher --publication <pub> [--dry] [--root <dir>]\n"
   + "       clossys ia sync [--check] [--agent <agent>] [--at <iso>] [--dry] [--root <dir>]\n"
   + "  places a slot in its agent's ia.json (--under, when it is not placed yet) and writes its slot.json with the contract (a JSON object file).\n"
   + "  A content agent's contract (new or rewritten) must be valid for its kind family and name registered requirements. A new leaf\n"
@@ -95,6 +96,8 @@ export const IA_USAGE = "Usage: clossys ia <agent>/<slot> --contract <file> [--s
   + "  publisher/publication.<pub> slot or a publisher ia.json publication), once; its candidates are the manifests clossys publisher release <pub> --manifest writes.\n"
   + "  --adopt writes the agent's Foundry IA (ia.json and every slot.json, inputs and uses derived) where it has no ia.json (Director, Designer, Writer; the Director's first).\n"
   + "  --start writes an empty workspace IA instead; --under then adds its L1/L2 groups as it places each slot.\n"
+  + "  --publication writes one publications entry of the Publisher workspace IA, from the package directory L2 that names <pub>\n"
+  + "  (its node and pages) and the package starter of <pub> (root, chrome, release, redirects); a release slot then places for it.\n"
   + "  sync refreshes ia.json and every slot.json structure field from the package IA the consumer resolves (declared extensions kept; candidates, pins and ledgers untouched); --check lists the drift and exits 1 on any.\n"
   + "Regroup (owner-authorized; leaf ids never change, only placement; every slot.json position follows in the same guarded write):\n"
   + "       clossys ia <agent>/<slot> --move --under <l1>/<l2>|<l0>/<l1>/<l2> [--extension true|false] --owner-ref <ref>\n"
@@ -209,7 +212,7 @@ const readModelJson = (path: string): unknown => JSON.parse(readModelText(path))
 // ---------------------------------------------------------------- clossys ia
 const parseIa = parser(IA_USAGE, [
   "--contract", "--standard", "--under", "--kind", "--inputs", "--uses", "--root", "--owner-ref", "--at", "--extension", "--request", "--approved", "--overlap-reason",
-  "--add", "--rename", "--merge", "--into", "--drop", "--reorder", "--order", "--assign", "--layer", "--label", "--id", "--layers", "--axes", "--agent",
+  "--add", "--rename", "--merge", "--into", "--drop", "--reorder", "--order", "--assign", "--layer", "--label", "--id", "--layers", "--axes", "--agent", "--publication",
 ], ["--remove", "--adopt", "--start", "--move", "--dry", "--check"]);
 const FOUNDRY_IA: Readonly<Record<keyof typeof FOUNDRY_IA_AFTER, () => FoundryIa>> = { director: directorIa, designer: designerIa, writer: writerIa };
 /** The source of a workspace-owned IA (`--start`): `--under` may add L1/L2 groups to it, never to a Foundry IA. */
@@ -298,6 +301,48 @@ function applyEdit(consumer: string, root: string, agent: ModelAgent, ia: IaFile
   if ("error" in plan) return refuse("ia", plan.error);
   if ("unchanged" in plan) return { exitCode: 0, root, message: `ia: ${plan.unchanged}; nothing written` };
   return commitIa(consumer, root, plan.writes, dry, `${agent} ${edit.detail}`, plan.lines, undefined, iaWho(ownerRef, at));
+}
+
+/**
+ * The `publications` entry of publication `pub` from the installed Publisher package: the directory L2 whose
+ * `publication` is `pub` gives the node and its pages (in tree order); the package starter of `pub` gives the root,
+ * chrome, release slot and redirects. An error names the package data that is missing or disagrees.
+ */
+export function packagePublication(root: string, pub: string): IaPublication | { error: string } {
+  const directoryFile = packagePath(root, "packages/publisher/src/catalog/ia/directory.json");
+  let directory: { nodes?: { parked?: boolean; children?: { id?: string; parked?: boolean; publication?: string; leaves?: string[] }[] }[] };
+  try { directory = readJsonFile(directoryFile) as typeof directory; } catch (error) { return { error: `the Publisher package directory tree does not read (${errorMessage(error)})` }; }
+  const groups = (directory.nodes ?? []).filter(l1 => !l1.parked).flatMap(l1 => (l1.children ?? []).filter(l2 => !l2.parked && l2.publication === pub));
+  if (groups.length !== 1) return { error: `the Publisher package directory has ${groups.length ? `${groups.length} live L2 groups` : "no live L2 group"} with publication ${pub}` };
+  const group = groups[0]!;
+  const pages = [...(group.leaves ?? [])];
+  let starter: { id?: unknown; node?: unknown; root?: unknown; pages?: unknown; chrome?: unknown; release?: unknown; redirects?: unknown };
+  try { starter = readJsonFile(packagePath(root, `packages/publisher/starters/${pub}/publication.json`)) as typeof starter; } catch (error) { return { error: `the Publisher package has no readable starter for ${pub} (${errorMessage(error)})` }; }
+  const listed = Array.isArray(starter.pages) ? starter.pages : [];
+  if (starter.id !== pub || starter.node !== group.id || listed.length !== pages.length || !pages.every(page => listed.includes(page))) return { error: `the Publisher starter ${pub} does not match directory ${group.id} (its id, node or pages differ)` };
+  if (typeof starter.root !== "string" || !Array.isArray(starter.chrome) || typeof starter.release !== "string" || !Array.isArray(starter.redirects)) return { error: `the Publisher starter ${pub} names no root, chrome, release or redirects` };
+  return { node: group.id!, starter: pub, root: starter.root, pages: pages as IaPublication["pages"], chrome: starter.chrome as IaPublication["chrome"], release: starter.release as IaPublication["release"], redirects: starter.redirects as IaPublication["redirects"] };
+}
+
+/** `clossys ia publisher --publication <pub>`: one `publications` entry of the Publisher workspace IA, from package data. */
+function publicationIa(pub: string, root: string, dry: boolean): CliResult {
+  if (!PUBLICATION_ID.test(pub)) throw new CliUsageError(`--publication must be a publication id such as site, got ${pub}\n${IA_USAGE}`);
+  const consumer = join(root, "clossys"), iaFile = iaPath(consumer, "publisher");
+  if (!modelExists(iaFile)) return refuse("ia", "publisher has no ia.json: start an empty one (clossys ia publisher --start)");
+  const ia = readModelJson(iaFile) as AgentIaFile & { publications?: Record<string, IaPublication> };
+  if (ia.source !== WORKSPACE_IA_SOURCE) return refuse("ia", `publisher ia.json is not the workspace's own IA (source ${JSON.stringify(ia.source)})`);
+  const entry = packagePublication(root, pub);
+  if ("error" in entry) return refuse("ia", entry.error);
+  const held = ia.publications?.[pub];
+  if (held !== undefined) {
+    if (JSON.stringify(held) === JSON.stringify(entry)) return { exitCode: 0, root, message: `ia: publisher publication ${pub} is already recorded; nothing written` };
+    return refuse("ia", `publisher ia.json already records publication ${pub}, and it differs from the package`);
+  }
+  const next = { ...ia, publications: { ...(ia.publications ?? {}), [pub]: entry } };
+  const issues = validateIa(next, iaFile);
+  if (issues.length) return refuse("ia", issues.map(issue => issue.message).join("; "));
+  return commitIa(consumer, root, [[iaFile, jsonBytes(next)]], dry, `recorded publication ${pub} in publisher ia.json`, [],
+    `ia: recorded publication ${pub} (${entry.node}, ${entry.pages.length} pages, release ${entry.release}) in clossys/agents/publisher/ia.json`);
 }
 
 /** `clossys ia <agent> --start`: an empty workspace-owned ia.json, where the agent has none. */
@@ -644,6 +689,10 @@ async function runIa(argv: readonly string[], cwd: string): Promise<CliResult> {
   if (whole.length) {
     if (whole.length > 1 || !target || extra.length || target.includes("/") || flags.bare.has("--remove") || flags.bare.has("--move") || flags.values.size > (flags.values.has("--root") ? 1 : 0)) throw new CliUsageError(`ia ${whole.join(" ")} takes one agent and no other flag but --dry and --root\n${IA_USAGE}`);
     return whole[0] === "--adopt" ? adoptIa(target, rootOf(cwd, flags), dry) : startIa(target, rootOf(cwd, flags), dry);
+  }
+  if (flags.values.has("--publication")) {
+    if (target !== "publisher" || extra.length || flags.bare.has("--remove") || flags.bare.has("--move") || [...flags.values.keys()].some(key => key !== "--publication" && key !== "--root")) throw new CliUsageError(`ia publisher --publication <pub> takes no other flag but --dry and --root\n${IA_USAGE}`);
+    return publicationIa(one(flags, "--publication")!, rootOf(cwd, flags), dry);
   }
   const ops = Object.keys(REGROUP_OPS).filter(op => flags.values.has(op));
   if (ops.length > 1) throw new CliUsageError(`ia takes one regroup operation at a time, got ${ops.join(", ")}\n${IA_USAGE}`);

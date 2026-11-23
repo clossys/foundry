@@ -97,7 +97,22 @@
         "by": "owner",
         "raise": "queue.approve"
       },
-      "readyMeans": "pinned; not live (Distribution parked)"
+      "readyMeans": "pinned; not live (Distribution parked)",
+      "inputs": [
+        "director/focus.reach.geography",
+        "publisher/page.terms",
+        "publisher/page.privacy"
+      ],
+      "requirements": [
+        {
+          "check": "release.manifest"
+        }
+      ],
+      "family": {
+        "options": 1,
+        "varyOn": null,
+        "values": []
+      }
     },
     "release.docs": {
       "kind": "release",
@@ -121,7 +136,20 @@
         "by": "owner",
         "raise": "queue.approve"
       },
-      "readyMeans": "pinned; not live (Distribution parked)"
+      "readyMeans": "pinned; not live (Distribution parked)",
+      "inputs": [
+        "director/focus.reach.geography"
+      ],
+      "requirements": [
+        {
+          "check": "release.manifest"
+        }
+      ],
+      "family": {
+        "options": 1,
+        "varyOn": null,
+        "values": []
+      }
     },
     "release.app": {
       "kind": "release",
@@ -145,7 +173,20 @@
         "by": "owner",
         "raise": "queue.approve"
       },
-      "readyMeans": "pinned; not live (Distribution parked)"
+      "readyMeans": "pinned; not live (Distribution parked)",
+      "inputs": [
+        "director/focus.reach.geography"
+      ],
+      "requirements": [
+        {
+          "check": "release.manifest"
+        }
+      ],
+      "family": {
+        "options": 1,
+        "varyOn": null,
+        "values": []
+      }
     },
     "release.slides": {
       "kind": "release",
@@ -173,7 +214,20 @@
         "by": "owner",
         "raise": "queue.approve"
       },
-      "readyMeans": "pinned; not live (Distribution parked)"
+      "readyMeans": "pinned; not live (Distribution parked)",
+      "inputs": [
+        "director/focus.reach.geography"
+      ],
+      "requirements": [
+        {
+          "check": "release.manifest"
+        }
+      ],
+      "family": {
+        "options": 1,
+        "varyOn": null,
+        "values": []
+      }
     },
     "release.company-one-pager": {
       "kind": "release",
@@ -203,7 +257,20 @@
         "by": "owner",
         "raise": "queue.approve"
       },
-      "readyMeans": "pinned; not live (Distribution parked)"
+      "readyMeans": "pinned; not live (Distribution parked)",
+      "inputs": [
+        "director/focus.reach.geography"
+      ],
+      "requirements": [
+        {
+          "check": "release.manifest"
+        }
+      ],
+      "family": {
+        "options": 1,
+        "varyOn": null,
+        "values": []
+      }
     }
   }
 }

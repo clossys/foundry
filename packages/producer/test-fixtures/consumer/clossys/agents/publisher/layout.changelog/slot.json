@@ -1,0 +1,127 @@
+{
+  "schema": "clossys.slot/2",
+  "id": "layout.changelog",
+  "agent": "publisher",
+  "kind": "layout",
+  "status": "starter",
+  "ia": {
+    "l0": "layout",
+    "l1": "layout/layouts",
+    "l2": "layout/layouts/docs",
+    "order": 37
+  },
+  "createdBy": {
+    "actor": "code",
+    "cli": "clossys ia",
+    "version": "0.1.0"
+  },
+  "createdAt": "2026-11-19T00:00:00Z",
+  "updatedAt": "2026-11-19T00:00:00Z",
+  "refs": [
+    {
+      "to": "designer/frames.site-shell",
+      "rel": "input"
+    },
+    {
+      "to": "publisher/chrome.site-header",
+      "rel": "input"
+    },
+    {
+      "to": "publisher/chrome.site-footer",
+      "rel": "input"
+    },
+    {
+      "to": "publisher/chrome.docs-sidebar",
+      "rel": "input"
+    },
+    {
+      "to": "designer/sections.page-header",
+      "rel": "input"
+    },
+    {
+      "to": "designer/sections.timeline",
+      "rel": "input"
+    }
+  ],
+  "base": null,
+  "standard": "layout",
+  "brief": {
+    "purpose": "What changed, newest first.",
+    "mustDo": [],
+    "inputs": [
+      {
+        "to": "designer/frames.site-shell",
+        "rel": "input"
+      },
+      {
+        "to": "publisher/chrome.site-header",
+        "rel": "input"
+      },
+      {
+        "to": "publisher/chrome.site-footer",
+        "rel": "input"
+      },
+      {
+        "to": "publisher/chrome.docs-sidebar",
+        "rel": "input"
+      },
+      {
+        "to": "designer/sections.page-header",
+        "rel": "input"
+      },
+      {
+        "to": "designer/sections.timeline",
+        "rel": "input"
+      }
+    ],
+    "acceptance": []
+  },
+  "contract": {
+    "kind": "layout",
+    "purpose": "What changed, newest first.",
+    "frame": "designer/frames.site-shell",
+    "chrome": [
+      "publisher/chrome.site-header",
+      "publisher/chrome.site-footer",
+      "publisher/chrome.docs-sidebar"
+    ],
+    "roles": {
+      "header": {
+        "kinds": [
+          "designer/sections.page-header"
+        ],
+        "required": true
+      },
+      "releases": {
+        "kinds": [
+          "designer/sections.timeline"
+        ],
+        "required": true
+      }
+    },
+    "requirements": [
+      {
+        "check": "citation.grammar"
+      },
+      {
+        "check": "composes.allowed",
+        "params": {
+          "allowed": [
+            "designer/frames.site-shell",
+            "publisher/chrome.site-header",
+            "publisher/chrome.site-footer",
+            "publisher/chrome.docs-sidebar",
+            "designer/sections.page-header",
+            "designer/sections.timeline"
+          ]
+        }
+      }
+    ]
+  },
+  "tighten": [],
+  "family": {
+    "options": 1,
+    "varyOn": null,
+    "values": []
+  }
+}

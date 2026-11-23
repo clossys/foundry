@@ -1,0 +1,65 @@
+{
+  "schema": "clossys.ledger/1",
+  "events": [
+    {
+      "op": "slot",
+      "at": "2026-11-19T00:00:00Z",
+      "by": "planner",
+      "verb": "ia",
+      "skill": {
+        "path": "packages/producer/actions/ia/skill.md",
+        "sha256": "147a7eaf66267728953e0c8111a9c20b93475f95f8063745d9d1d1087658fe73"
+      },
+      "model": "none",
+      "tier": "none",
+      "kind": "ia",
+      "decision": "create",
+      "overlaps": [],
+      "records": [
+        {
+          "file": "slot.json",
+          "sha256": "b905dce06cc985aa7e6921a348e3e39815f3184f45b1f225016a8fb9d5b62ff4"
+        }
+      ]
+    },
+    {
+      "op": "submit",
+      "at": "2026-11-19T00:00:00Z",
+      "by": "planner",
+      "verb": "submit",
+      "skill": {
+        "path": "packages/publisher/actions/publisher.candidates/skill.md",
+        "sha256": "5c72becf74bd0b03ccad9a99074ffe8d1070aa99f734df4e42ae111aaee544b0"
+      },
+      "model": "none",
+      "tier": "none",
+      "rung": "adapt",
+      "seed": "@clossys/publisher:loops/loop.cascade/cascade-v1.json",
+      "reason": "publisher's package loop.cascade candidate, its header re-addressed to this consumer slot; content unchanged",
+      "name": "cascade-v1.json",
+      "sha256": "42480a113a299fbdeb66632b87997513a7b0ee951537aafd0374712a910949d4"
+    },
+    {
+      "op": "pin",
+      "at": "2026-11-19T00:00:00Z",
+      "by": "planner:package-default",
+      "verb": "pin",
+      "skill": {
+        "path": "packages/producer/actions/pin.publisher/skill.md",
+        "sha256": "33cd1658345c92487f91680b664148b1ace9a2d314b845f4e4c2d139f2dc2c51"
+      },
+      "model": "none",
+      "tier": "none",
+      "candidate": "cascade-v1.json",
+      "sha256": "42480a113a299fbdeb66632b87997513a7b0ee951537aafd0374712a910949d4",
+      "decidedBy": "planner:package-default",
+      "basis": "planner",
+      "records": [
+        {
+          "file": "pin.json",
+          "sha256": "60a48f130705af8f32ebda5f172b39d8d2641511c8dfe09850c02d65eb70deed"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,117 @@
+{
+  "schema": "clossys.slot/2",
+  "id": "layout.app-list",
+  "agent": "publisher",
+  "kind": "layout",
+  "status": "starter",
+  "ia": {
+    "l0": "layout",
+    "l1": "layout/layouts",
+    "l2": "layout/layouts/app",
+    "order": 40
+  },
+  "createdBy": {
+    "actor": "code",
+    "cli": "clossys ia",
+    "version": "0.1.0"
+  },
+  "createdAt": "2026-11-19T00:00:00Z",
+  "updatedAt": "2026-11-19T00:00:00Z",
+  "refs": [
+    {
+      "to": "designer/frames.app-shell",
+      "rel": "input"
+    },
+    {
+      "to": "publisher/chrome.app-sidebar",
+      "rel": "input"
+    },
+    {
+      "to": "publisher/chrome.app-user-menu",
+      "rel": "input"
+    },
+    {
+      "to": "designer/sections.page-header",
+      "rel": "input"
+    },
+    {
+      "to": "designer/sections.data-table",
+      "rel": "input"
+    }
+  ],
+  "base": null,
+  "standard": "layout",
+  "brief": {
+    "purpose": "One collection of records as a table.",
+    "mustDo": [],
+    "inputs": [
+      {
+        "to": "designer/frames.app-shell",
+        "rel": "input"
+      },
+      {
+        "to": "publisher/chrome.app-sidebar",
+        "rel": "input"
+      },
+      {
+        "to": "publisher/chrome.app-user-menu",
+        "rel": "input"
+      },
+      {
+        "to": "designer/sections.page-header",
+        "rel": "input"
+      },
+      {
+        "to": "designer/sections.data-table",
+        "rel": "input"
+      }
+    ],
+    "acceptance": []
+  },
+  "contract": {
+    "kind": "layout",
+    "purpose": "One collection of records as a table.",
+    "frame": "designer/frames.app-shell",
+    "chrome": [
+      "publisher/chrome.app-sidebar",
+      "publisher/chrome.app-user-menu"
+    ],
+    "roles": {
+      "header": {
+        "kinds": [
+          "designer/sections.page-header"
+        ],
+        "required": true
+      },
+      "records": {
+        "kinds": [
+          "designer/sections.data-table"
+        ],
+        "required": true
+      }
+    },
+    "requirements": [
+      {
+        "check": "citation.grammar"
+      },
+      {
+        "check": "composes.allowed",
+        "params": {
+          "allowed": [
+            "designer/frames.app-shell",
+            "publisher/chrome.app-sidebar",
+            "publisher/chrome.app-user-menu",
+            "designer/sections.page-header",
+            "designer/sections.data-table"
+          ]
+        }
+      }
+    ]
+  },
+  "tighten": [],
+  "family": {
+    "options": 1,
+    "varyOn": null,
+    "values": []
+  }
+}

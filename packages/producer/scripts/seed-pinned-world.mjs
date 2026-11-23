@@ -17,7 +17,8 @@
  * BLOCKED lists the closure slots the run cannot fill (a refused shape, or a craft standard with no generator), with
  * why; the run leaves them (and their downstream) unpinned and prints them. Any other refusal stops the run (exit 1).
  * Before the seeding, the run does what a real consumer does to its store: `clossys migrate slots --apply` (the
- * Producer seats are clossys.slot/1 in the base).
+ * Producer seats are clossys.slot/1 in the base). After it, the run places every Publisher package leaf
+ * (scripts/place-fixture-publisher.mjs) on the same clock.
  */
 import { execFileSync } from "node:child_process";
 import { createHash } from "node:crypto";
@@ -26,6 +27,7 @@ import { tmpdir } from "node:os";
 import { dirname, join, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { normalizedSeedFile } from "@clossys/designer/ref-verbatim";
+import { placePublisher } from "./place-fixture-publisher.mjs";
 
 /** The recipe axes the slot's last craft:brief recorded (`assembled.recipe.axes`): the axes its diverge directions vary. */
 function briefAxes(ledger) {
@@ -833,6 +835,8 @@ export async function seed({ from, out, only, keep = false, resume } = {}) {
     const blocked = blockedIn(w.consumer, all);
     const order = all.filter(ref => !blocked.has(ref) && (!only || only.some(prefix => ref.startsWith(prefix))));
     for (const ref of order) if (!pinned(w.consumer, ref)) await seedSlot(w, ref);
+    // The Publisher leaves, placed from the package trees (R6): the Publisher IA is the workspace's own.
+    await placePublisher(w, AT);
     // Only the repository this run made goes; a resumed root's own .git stays.
     if (ownGit) rmSync(join(root, ".git"), { recursive: true, force: true });
     if (out) {

@@ -2,5 +2,542 @@
   "schema": "clossys.ia/1",
   "source": "workspace#owner",
   "extensions": [],
-  "nodes": []
+  "nodes": [
+    {
+      "id": "sites",
+      "label": "Sites",
+      "children": [
+        {
+          "id": "site",
+          "label": "site",
+          "slots": [
+            "page.home",
+            "page.about",
+            "page.pricing",
+            "page.contact",
+            "page.site-page",
+            "page.terms",
+            "page.privacy",
+            "page.not-found",
+            "page.error"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "docs",
+      "label": "Docs",
+      "children": [
+        {
+          "id": "docs",
+          "label": "docs",
+          "slots": [
+            "page.docs-index",
+            "page.guide",
+            "page.article",
+            "page.changelog"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "apps",
+      "label": "Apps",
+      "children": [
+        {
+          "id": "app",
+          "label": "app",
+          "slots": [
+            "page.sign-in",
+            "page.sign-out-confirm",
+            "page.not-authorized",
+            "page.service-unavailable",
+            "page.app-home",
+            "page.list",
+            "page.settings",
+            "page.app-not-found"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "admin",
+      "label": "Admin",
+      "children": [
+        {
+          "id": "admin",
+          "label": "admin",
+          "slots": [
+            "page.admin-home",
+            "page.admin-gallery",
+            "page.admin-slot",
+            "page.admin-requests",
+            "page.admin-questions"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "decks",
+      "label": "Slides",
+      "children": [
+        {
+          "id": "slides",
+          "label": "slides",
+          "slots": [
+            "page.deck"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "layouts",
+      "label": "Layouts",
+      "children": [
+        {
+          "id": "site",
+          "label": "Site layouts",
+          "slots": [
+            "layout.marketing-home",
+            "layout.about",
+            "layout.pricing",
+            "layout.contact",
+            "layout.legal",
+            "layout.site-state",
+            "layout.site-page"
+          ]
+        },
+        {
+          "id": "docs",
+          "label": "Docs layouts",
+          "slots": [
+            "layout.docs-index",
+            "layout.docs-guide",
+            "layout.docs-article",
+            "layout.changelog"
+          ]
+        },
+        {
+          "id": "app",
+          "label": "App layouts",
+          "slots": [
+            "layout.auth",
+            "layout.app-home",
+            "layout.app-list",
+            "layout.app-settings",
+            "layout.app-state"
+          ]
+        },
+        {
+          "id": "admin",
+          "label": "Admin layouts",
+          "slots": [
+            "layout.admin-home",
+            "layout.admin-gallery",
+            "layout.admin-slot",
+            "layout.admin-requests",
+            "layout.admin-questions"
+          ]
+        },
+        {
+          "id": "deck",
+          "label": "Slides layouts",
+          "slots": [
+            "layout.deck"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "chrome",
+      "label": "Chrome",
+      "children": [
+        {
+          "id": "header-footer",
+          "label": "Header and footer",
+          "slots": [
+            "chrome.site-header",
+            "chrome.site-footer"
+          ]
+        },
+        {
+          "id": "sidebars-menus",
+          "label": "Sidebars and menus",
+          "slots": [
+            "chrome.docs-sidebar",
+            "chrome.app-sidebar",
+            "chrome.app-user-menu",
+            "chrome.admin-sidebar"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "web",
+      "label": "Web",
+      "children": [
+        {
+          "id": "site",
+          "label": "Site releases",
+          "slots": [
+            "release.site"
+          ]
+        },
+        {
+          "id": "docs",
+          "label": "Docs releases",
+          "slots": [
+            "release.docs"
+          ]
+        },
+        {
+          "id": "app",
+          "label": "App releases",
+          "slots": [
+            "release.app"
+          ]
+        },
+        {
+          "id": "admin",
+          "label": "Admin releases",
+          "slots": [
+            "release.admin"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "slides",
+      "label": "Slides",
+      "children": [
+        {
+          "id": "slides",
+          "label": "Slides releases",
+          "slots": [
+            "release.slides"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "loops.publishing-loops",
+      "label": "Publishing loops",
+      "children": [
+        {
+          "id": "agent",
+          "label": "Agent loops",
+          "slots": [
+            "loop.scope",
+            "loop.slot",
+            "loop.create",
+            "loop.choose",
+            "loop.cascade"
+          ]
+        }
+      ]
+    }
+  ],
+  "changes": [
+    {
+      "op": "add",
+      "ownerRef": "clossys/fixture-consumer#1 issuecomment-1000000001 (OWNER WORDS 2026-11-19 fixture Publisher placement)",
+      "at": "2026-11-19T00:00:00Z",
+      "detail": "added L1 sites \"Sites\"",
+      "slotFiles": 0
+    },
+    {
+      "op": "add",
+      "ownerRef": "clossys/fixture-consumer#1 issuecomment-1000000001 (OWNER WORDS 2026-11-19 fixture Publisher placement)",
+      "at": "2026-11-19T00:00:00Z",
+      "detail": "added L2 sites/site \"site\"",
+      "slotFiles": 0
+    },
+    {
+      "op": "add",
+      "ownerRef": "clossys/fixture-consumer#1 issuecomment-1000000001 (OWNER WORDS 2026-11-19 fixture Publisher placement)",
+      "at": "2026-11-19T00:00:00Z",
+      "detail": "added L1 docs \"Docs\"",
+      "slotFiles": 0
+    },
+    {
+      "op": "add",
+      "ownerRef": "clossys/fixture-consumer#1 issuecomment-1000000001 (OWNER WORDS 2026-11-19 fixture Publisher placement)",
+      "at": "2026-11-19T00:00:00Z",
+      "detail": "added L2 docs/docs \"docs\"",
+      "slotFiles": 0
+    },
+    {
+      "op": "add",
+      "ownerRef": "clossys/fixture-consumer#1 issuecomment-1000000001 (OWNER WORDS 2026-11-19 fixture Publisher placement)",
+      "at": "2026-11-19T00:00:00Z",
+      "detail": "added L1 apps \"Apps\"",
+      "slotFiles": 0
+    },
+    {
+      "op": "add",
+      "ownerRef": "clossys/fixture-consumer#1 issuecomment-1000000001 (OWNER WORDS 2026-11-19 fixture Publisher placement)",
+      "at": "2026-11-19T00:00:00Z",
+      "detail": "added L2 apps/app \"app\"",
+      "slotFiles": 0
+    },
+    {
+      "op": "add",
+      "ownerRef": "clossys/fixture-consumer#1 issuecomment-1000000001 (OWNER WORDS 2026-11-19 fixture Publisher placement)",
+      "at": "2026-11-19T00:00:00Z",
+      "detail": "added L1 admin \"Admin\"",
+      "slotFiles": 0
+    },
+    {
+      "op": "add",
+      "ownerRef": "clossys/fixture-consumer#1 issuecomment-1000000001 (OWNER WORDS 2026-11-19 fixture Publisher placement)",
+      "at": "2026-11-19T00:00:00Z",
+      "detail": "added L2 admin/admin \"admin\"",
+      "slotFiles": 0
+    },
+    {
+      "op": "add",
+      "ownerRef": "clossys/fixture-consumer#1 issuecomment-1000000001 (OWNER WORDS 2026-11-19 fixture Publisher placement)",
+      "at": "2026-11-19T00:00:00Z",
+      "detail": "added L1 decks \"Slides\"",
+      "slotFiles": 0
+    },
+    {
+      "op": "add",
+      "ownerRef": "clossys/fixture-consumer#1 issuecomment-1000000001 (OWNER WORDS 2026-11-19 fixture Publisher placement)",
+      "at": "2026-11-19T00:00:00Z",
+      "detail": "added L2 decks/slides \"slides\"",
+      "slotFiles": 0
+    },
+    {
+      "op": "add",
+      "ownerRef": "clossys/fixture-consumer#1 issuecomment-1000000001 (OWNER WORDS 2026-11-19 fixture Publisher placement)",
+      "at": "2026-11-19T00:00:00Z",
+      "detail": "added L1 layouts \"Layouts\"",
+      "slotFiles": 0
+    },
+    {
+      "op": "add",
+      "ownerRef": "clossys/fixture-consumer#1 issuecomment-1000000001 (OWNER WORDS 2026-11-19 fixture Publisher placement)",
+      "at": "2026-11-19T00:00:00Z",
+      "detail": "added L2 layouts/site \"Site layouts\"",
+      "slotFiles": 0
+    },
+    {
+      "op": "add",
+      "ownerRef": "clossys/fixture-consumer#1 issuecomment-1000000001 (OWNER WORDS 2026-11-19 fixture Publisher placement)",
+      "at": "2026-11-19T00:00:00Z",
+      "detail": "added L2 layouts/docs \"Docs layouts\"",
+      "slotFiles": 0
+    },
+    {
+      "op": "add",
+      "ownerRef": "clossys/fixture-consumer#1 issuecomment-1000000001 (OWNER WORDS 2026-11-19 fixture Publisher placement)",
+      "at": "2026-11-19T00:00:00Z",
+      "detail": "added L2 layouts/app \"App layouts\"",
+      "slotFiles": 0
+    },
+    {
+      "op": "add",
+      "ownerRef": "clossys/fixture-consumer#1 issuecomment-1000000001 (OWNER WORDS 2026-11-19 fixture Publisher placement)",
+      "at": "2026-11-19T00:00:00Z",
+      "detail": "added L2 layouts/admin \"Admin layouts\"",
+      "slotFiles": 0
+    },
+    {
+      "op": "add",
+      "ownerRef": "clossys/fixture-consumer#1 issuecomment-1000000001 (OWNER WORDS 2026-11-19 fixture Publisher placement)",
+      "at": "2026-11-19T00:00:00Z",
+      "detail": "added L2 layouts/deck \"Slides layouts\"",
+      "slotFiles": 0
+    },
+    {
+      "op": "add",
+      "ownerRef": "clossys/fixture-consumer#1 issuecomment-1000000001 (OWNER WORDS 2026-11-19 fixture Publisher placement)",
+      "at": "2026-11-19T00:00:00Z",
+      "detail": "added L1 chrome \"Chrome\"",
+      "slotFiles": 0
+    },
+    {
+      "op": "add",
+      "ownerRef": "clossys/fixture-consumer#1 issuecomment-1000000001 (OWNER WORDS 2026-11-19 fixture Publisher placement)",
+      "at": "2026-11-19T00:00:00Z",
+      "detail": "added L2 chrome/header-footer \"Header and footer\"",
+      "slotFiles": 0
+    },
+    {
+      "op": "add",
+      "ownerRef": "clossys/fixture-consumer#1 issuecomment-1000000001 (OWNER WORDS 2026-11-19 fixture Publisher placement)",
+      "at": "2026-11-19T00:00:00Z",
+      "detail": "added L2 chrome/sidebars-menus \"Sidebars and menus\"",
+      "slotFiles": 0
+    },
+    {
+      "op": "add",
+      "ownerRef": "clossys/fixture-consumer#1 issuecomment-1000000001 (OWNER WORDS 2026-11-19 fixture Publisher placement)",
+      "at": "2026-11-19T00:00:00Z",
+      "detail": "added L1 web \"Web\"",
+      "slotFiles": 0
+    },
+    {
+      "op": "add",
+      "ownerRef": "clossys/fixture-consumer#1 issuecomment-1000000001 (OWNER WORDS 2026-11-19 fixture Publisher placement)",
+      "at": "2026-11-19T00:00:00Z",
+      "detail": "added L2 web/site \"Site releases\"",
+      "slotFiles": 0
+    },
+    {
+      "op": "add",
+      "ownerRef": "clossys/fixture-consumer#1 issuecomment-1000000001 (OWNER WORDS 2026-11-19 fixture Publisher placement)",
+      "at": "2026-11-19T00:00:00Z",
+      "detail": "added L2 web/docs \"Docs releases\"",
+      "slotFiles": 0
+    },
+    {
+      "op": "add",
+      "ownerRef": "clossys/fixture-consumer#1 issuecomment-1000000001 (OWNER WORDS 2026-11-19 fixture Publisher placement)",
+      "at": "2026-11-19T00:00:00Z",
+      "detail": "added L2 web/app \"App releases\"",
+      "slotFiles": 0
+    },
+    {
+      "op": "add",
+      "ownerRef": "clossys/fixture-consumer#1 issuecomment-1000000001 (OWNER WORDS 2026-11-19 fixture Publisher placement)",
+      "at": "2026-11-19T00:00:00Z",
+      "detail": "added L2 web/admin \"Admin releases\"",
+      "slotFiles": 0
+    },
+    {
+      "op": "add",
+      "ownerRef": "clossys/fixture-consumer#1 issuecomment-1000000001 (OWNER WORDS 2026-11-19 fixture Publisher placement)",
+      "at": "2026-11-19T00:00:00Z",
+      "detail": "added L1 slides \"Slides\"",
+      "slotFiles": 0
+    },
+    {
+      "op": "add",
+      "ownerRef": "clossys/fixture-consumer#1 issuecomment-1000000001 (OWNER WORDS 2026-11-19 fixture Publisher placement)",
+      "at": "2026-11-19T00:00:00Z",
+      "detail": "added L2 slides/slides \"Slides releases\"",
+      "slotFiles": 0
+    },
+    {
+      "op": "place",
+      "ownerRef": "clossys/fixture-consumer#1 issuecomment-1000000001 (OWNER WORDS 2026-11-19 fixture Publisher placement)",
+      "at": "2026-11-19T00:00:00Z",
+      "detail": "placed chrome.admin-sidebar under chrome/sidebars-menus",
+      "slotFiles": 1
+    },
+    {
+      "op": "place",
+      "ownerRef": "clossys/fixture-consumer#1 issuecomment-1000000001 (OWNER WORDS 2026-11-19 fixture Publisher placement)",
+      "at": "2026-11-19T00:00:00Z",
+      "detail": "placed layout.site-page under layouts/site; 6 later slot.json renumbered (order only)",
+      "slotFiles": 7
+    },
+    {
+      "op": "place",
+      "ownerRef": "clossys/fixture-consumer#1 issuecomment-1000000001 (OWNER WORDS 2026-11-19 fixture Publisher placement)",
+      "at": "2026-11-19T00:00:00Z",
+      "detail": "placed layout.docs-article under layouts/docs; 6 later slot.json renumbered (order only)",
+      "slotFiles": 7
+    },
+    {
+      "op": "place",
+      "ownerRef": "clossys/fixture-consumer#1 issuecomment-1000000001 (OWNER WORDS 2026-11-19 fixture Publisher placement)",
+      "at": "2026-11-19T00:00:00Z",
+      "detail": "placed layout.admin-requests under layouts/admin; 6 later slot.json renumbered (order only)",
+      "slotFiles": 7
+    }
+  ],
+  "publications": {
+    "site": {
+      "node": "directory/sites/site",
+      "starter": "site",
+      "root": "/",
+      "pages": [
+        "page.home",
+        "page.about",
+        "page.pricing",
+        "page.contact",
+        "page.site-page",
+        "page.terms",
+        "page.privacy",
+        "page.not-found",
+        "page.error"
+      ],
+      "chrome": [
+        "chrome.site-header",
+        "chrome.site-footer"
+      ],
+      "release": "release.site",
+      "redirects": []
+    },
+    "docs": {
+      "node": "directory/docs/docs",
+      "starter": "docs",
+      "root": "/",
+      "pages": [
+        "page.docs-index",
+        "page.guide",
+        "page.article",
+        "page.changelog"
+      ],
+      "chrome": [
+        "chrome.site-header",
+        "chrome.site-footer",
+        "chrome.docs-sidebar"
+      ],
+      "release": "release.docs",
+      "redirects": []
+    },
+    "app": {
+      "node": "directory/apps/app",
+      "starter": "app",
+      "root": "/",
+      "pages": [
+        "page.sign-in",
+        "page.sign-out-confirm",
+        "page.not-authorized",
+        "page.service-unavailable",
+        "page.app-home",
+        "page.list",
+        "page.settings",
+        "page.app-not-found"
+      ],
+      "chrome": [
+        "chrome.app-sidebar",
+        "chrome.app-user-menu"
+      ],
+      "release": "release.app",
+      "redirects": []
+    },
+    "admin": {
+      "node": "directory/admin/admin",
+      "starter": "admin",
+      "root": "/admin",
+      "pages": [
+        "page.admin-home",
+        "page.admin-gallery",
+        "page.admin-slot",
+        "page.admin-requests",
+        "page.admin-questions"
+      ],
+      "chrome": [
+        "chrome.admin-sidebar"
+      ],
+      "release": "release.admin",
+      "redirects": []
+    },
+    "slides": {
+      "node": "directory/decks/slides",
+      "starter": "slides",
+      "root": "/slides",
+      "pages": [
+        "page.deck"
+      ],
+      "chrome": [],
+      "release": "release.slides",
+      "redirects": []
+    }
+  }
 }

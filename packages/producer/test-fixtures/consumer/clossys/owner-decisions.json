@@ -1,0 +1,14 @@
+{
+  "schema": "clossys.owner-decisions/1",
+  "decisions": [
+    {
+      "id": "1000000001",
+      "ref": "clossys/fixture-consumer#1 issuecomment-1000000001 (OWNER WORDS 2026-11-19 fixture Publisher placement)",
+      "date": "2026-11-19",
+      "scope": [
+        "ia"
+      ],
+      "summary": "Made-up fixture decision: place the Publisher package leaves; each overlapping leaf below is its own slot."
+    }
+  ]
+}

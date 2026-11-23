@@ -1,0 +1,102 @@
+{
+  "schema": "clossys.slot/2",
+  "id": "layout.app-state",
+  "agent": "publisher",
+  "kind": "layout",
+  "status": "starter",
+  "ia": {
+    "l0": "layout",
+    "l1": "layout/layouts",
+    "l2": "layout/layouts/app",
+    "order": 42
+  },
+  "createdBy": {
+    "actor": "code",
+    "cli": "clossys ia",
+    "version": "0.1.0"
+  },
+  "createdAt": "2026-11-19T00:00:00Z",
+  "updatedAt": "2026-11-19T00:00:00Z",
+  "refs": [
+    {
+      "to": "designer/frames.app-shell",
+      "rel": "input"
+    },
+    {
+      "to": "publisher/chrome.app-sidebar",
+      "rel": "input"
+    },
+    {
+      "to": "publisher/chrome.app-user-menu",
+      "rel": "input"
+    },
+    {
+      "to": "designer/sections.error-state",
+      "rel": "input"
+    }
+  ],
+  "base": null,
+  "standard": "layout",
+  "brief": {
+    "purpose": "An app page that could not be served, and the way back.",
+    "mustDo": [],
+    "inputs": [
+      {
+        "to": "designer/frames.app-shell",
+        "rel": "input"
+      },
+      {
+        "to": "publisher/chrome.app-sidebar",
+        "rel": "input"
+      },
+      {
+        "to": "publisher/chrome.app-user-menu",
+        "rel": "input"
+      },
+      {
+        "to": "designer/sections.error-state",
+        "rel": "input"
+      }
+    ],
+    "acceptance": []
+  },
+  "contract": {
+    "kind": "layout",
+    "purpose": "An app page that could not be served, and the way back.",
+    "frame": "designer/frames.app-shell",
+    "chrome": [
+      "publisher/chrome.app-sidebar",
+      "publisher/chrome.app-user-menu"
+    ],
+    "roles": {
+      "state": {
+        "kinds": [
+          "designer/sections.error-state"
+        ],
+        "required": true
+      }
+    },
+    "requirements": [
+      {
+        "check": "citation.grammar"
+      },
+      {
+        "check": "composes.allowed",
+        "params": {
+          "allowed": [
+            "designer/frames.app-shell",
+            "publisher/chrome.app-sidebar",
+            "publisher/chrome.app-user-menu",
+            "designer/sections.error-state"
+          ]
+        }
+      }
+    ]
+  },
+  "tighten": [],
+  "family": {
+    "options": 1,
+    "varyOn": null,
+    "values": []
+  }
+}

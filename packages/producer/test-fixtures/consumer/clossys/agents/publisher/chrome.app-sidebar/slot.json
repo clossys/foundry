@@ -1,0 +1,86 @@
+{
+  "schema": "clossys.slot/2",
+  "id": "chrome.app-sidebar",
+  "agent": "publisher",
+  "kind": "chrome",
+  "status": "starter",
+  "ia": {
+    "l0": "chrome",
+    "l1": "chrome/chrome",
+    "l2": "chrome/chrome/sidebars-menus",
+    "order": 52
+  },
+  "createdBy": {
+    "actor": "code",
+    "cli": "clossys ia",
+    "version": "0.1.0"
+  },
+  "createdAt": "2026-11-19T00:00:00Z",
+  "updatedAt": "2026-11-19T00:00:00Z",
+  "refs": [
+    {
+      "to": "designer/frames.app-shell",
+      "rel": "input"
+    },
+    {
+      "to": "designer/frames.app-sidebar",
+      "rel": "input"
+    },
+    {
+      "to": "writer/frames.app-sidebar.copy",
+      "rel": "input"
+    }
+  ],
+  "base": null,
+  "standard": "chrome",
+  "brief": {
+    "purpose": "App navigation: page ids, grouped and ordered.",
+    "mustDo": [],
+    "inputs": [
+      {
+        "to": "designer/frames.app-shell",
+        "rel": "input"
+      },
+      {
+        "to": "designer/frames.app-sidebar",
+        "rel": "input"
+      },
+      {
+        "to": "writer/frames.app-sidebar.copy",
+        "rel": "input"
+      }
+    ],
+    "acceptance": []
+  },
+  "contract": {
+    "kind": "chrome",
+    "purpose": "App navigation: page ids, grouped and ordered.",
+    "frame": "designer/frames.app-shell",
+    "unit": "designer/frames.app-sidebar",
+    "copy": "writer/frames.app-sidebar.copy#app.sidebar",
+    "publications": [
+      "app"
+    ],
+    "requirements": [
+      {
+        "check": "citation.grammar"
+      },
+      {
+        "check": "composes.allowed",
+        "params": {
+          "allowed": [
+            "designer/frames.app-shell",
+            "designer/frames.app-sidebar",
+            "writer/frames.app-sidebar.copy#app.sidebar"
+          ]
+        }
+      }
+    ]
+  },
+  "tighten": [],
+  "family": {
+    "options": 1,
+    "varyOn": null,
+    "values": []
+  }
+}

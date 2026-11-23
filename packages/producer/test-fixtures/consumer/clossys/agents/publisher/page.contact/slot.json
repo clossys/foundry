@@ -1,0 +1,73 @@
+{
+  "schema": "clossys.slot/2",
+  "id": "page.contact",
+  "agent": "publisher",
+  "kind": "page",
+  "status": "starter",
+  "ia": {
+    "l0": "page",
+    "l1": "page/sites",
+    "l2": "page/sites/site",
+    "order": 3
+  },
+  "createdBy": {
+    "actor": "code",
+    "cli": "clossys ia",
+    "version": "0.1.0"
+  },
+  "createdAt": "2026-11-19T00:00:00Z",
+  "updatedAt": "2026-11-19T00:00:00Z",
+  "refs": [
+    {
+      "to": "publisher/layout.contact",
+      "rel": "input"
+    },
+    {
+      "to": "writer/page.contact.meta",
+      "rel": "input"
+    }
+  ],
+  "base": null,
+  "standard": "page",
+  "brief": {
+    "purpose": "Fill publisher/page.contact to the page standard.",
+    "mustDo": [],
+    "inputs": [
+      {
+        "to": "publisher/layout.contact",
+        "rel": "input"
+      },
+      {
+        "to": "writer/page.contact.meta",
+        "rel": "input"
+      }
+    ],
+    "acceptance": []
+  },
+  "contract": {
+    "kind": "page",
+    "publication": "site",
+    "path": "/contact",
+    "layouts": [
+      "publisher/layout.contact"
+    ],
+    "records": {
+      "pattern": "contact.<role>",
+      "meta": "writer/page.contact.meta#contact.meta"
+    },
+    "requirements": [
+      {
+        "check": "page.assembled"
+      },
+      {
+        "check": "page.no-inline-copy"
+      }
+    ]
+  },
+  "tighten": [],
+  "family": {
+    "options": 1,
+    "varyOn": null,
+    "values": []
+  }
+}

@@ -19,6 +19,1755 @@
           "sha256": "ac337c0f79f94107863202ba41765797f508506de58d45ee83c3acfbaff0e06f"
         }
       ]
+    },
+    {
+      "op": "ia",
+      "at": "2026-11-19T00:00:00Z",
+      "by": "owner",
+      "verb": "ia",
+      "skill": {
+        "path": "packages/producer/actions/ia/skill.md",
+        "sha256": "147a7eaf66267728953e0c8111a9c20b93475f95f8063745d9d1d1087658fe73"
+      },
+      "model": "none",
+      "tier": "none",
+      "kind": "ia",
+      "records": [
+        {
+          "file": "ia.json",
+          "sha256": "8322a4fbee43773f78d41b1d8f8d889f001695173cdc91a9d106ad6dd250570c"
+        }
+      ]
+    },
+    {
+      "op": "ia",
+      "at": "2026-11-19T00:00:00Z",
+      "by": "owner",
+      "verb": "ia",
+      "skill": {
+        "path": "packages/producer/actions/ia/skill.md",
+        "sha256": "147a7eaf66267728953e0c8111a9c20b93475f95f8063745d9d1d1087658fe73"
+      },
+      "model": "none",
+      "tier": "none",
+      "kind": "ia",
+      "records": [
+        {
+          "file": "ia.json",
+          "sha256": "fe2d34a97c32a3be0ba742dba697896ae6c81917fbe6732eefd75fdbf396a554"
+        }
+      ]
+    },
+    {
+      "op": "ia",
+      "at": "2026-11-19T00:00:00Z",
+      "by": "owner",
+      "verb": "ia",
+      "skill": {
+        "path": "packages/producer/actions/ia/skill.md",
+        "sha256": "147a7eaf66267728953e0c8111a9c20b93475f95f8063745d9d1d1087658fe73"
+      },
+      "model": "none",
+      "tier": "none",
+      "kind": "ia",
+      "records": [
+        {
+          "file": "ia.json",
+          "sha256": "1e9395d1b10c0fbb0298c75a7203f226b9be86b1730b977e5534162ae934f95c"
+        }
+      ]
+    },
+    {
+      "op": "ia",
+      "at": "2026-11-19T00:00:00Z",
+      "by": "owner",
+      "verb": "ia",
+      "skill": {
+        "path": "packages/producer/actions/ia/skill.md",
+        "sha256": "147a7eaf66267728953e0c8111a9c20b93475f95f8063745d9d1d1087658fe73"
+      },
+      "model": "none",
+      "tier": "none",
+      "kind": "ia",
+      "records": [
+        {
+          "file": "ia.json",
+          "sha256": "ac41eaa7ef5c4172cd899f5b68d9586445a57de8cbb3562c222aea1cb3590a79"
+        }
+      ]
+    },
+    {
+      "op": "ia",
+      "at": "2026-11-19T00:00:00Z",
+      "by": "owner",
+      "verb": "ia",
+      "skill": {
+        "path": "packages/producer/actions/ia/skill.md",
+        "sha256": "147a7eaf66267728953e0c8111a9c20b93475f95f8063745d9d1d1087658fe73"
+      },
+      "model": "none",
+      "tier": "none",
+      "kind": "ia",
+      "records": [
+        {
+          "file": "ia.json",
+          "sha256": "b994575759dcf3df643f22c19507789ced4b5de84f301298b8ba3b00ca4ebc44"
+        }
+      ]
+    },
+    {
+      "op": "ia",
+      "at": "2026-11-19T00:00:00Z",
+      "by": "owner",
+      "verb": "ia",
+      "skill": {
+        "path": "packages/producer/actions/ia/skill.md",
+        "sha256": "147a7eaf66267728953e0c8111a9c20b93475f95f8063745d9d1d1087658fe73"
+      },
+      "model": "none",
+      "tier": "none",
+      "kind": "ia",
+      "records": [
+        {
+          "file": "ia.json",
+          "sha256": "e561c6db8b596b8e9c04488db72d869a36aa58196efa99b7856cf9cd79b61f27"
+        }
+      ]
+    },
+    {
+      "op": "ia",
+      "at": "2026-11-19T00:00:00Z",
+      "by": "owner",
+      "verb": "ia",
+      "skill": {
+        "path": "packages/producer/actions/ia/skill.md",
+        "sha256": "147a7eaf66267728953e0c8111a9c20b93475f95f8063745d9d1d1087658fe73"
+      },
+      "model": "none",
+      "tier": "none",
+      "kind": "ia",
+      "records": [
+        {
+          "file": "ia.json",
+          "sha256": "f0342fe42bcf7f37155d5a5cd32590d61284b00760cefdf70a2409ebdcb8ffdd"
+        }
+      ]
+    },
+    {
+      "op": "ia",
+      "at": "2026-11-19T00:00:00Z",
+      "by": "owner",
+      "verb": "ia",
+      "skill": {
+        "path": "packages/producer/actions/ia/skill.md",
+        "sha256": "147a7eaf66267728953e0c8111a9c20b93475f95f8063745d9d1d1087658fe73"
+      },
+      "model": "none",
+      "tier": "none",
+      "kind": "ia",
+      "records": [
+        {
+          "file": "ia.json",
+          "sha256": "08006168572f31b7bb061e89d9f5608810eff42349969c2759c6e0fe86883b65"
+        }
+      ]
+    },
+    {
+      "op": "ia",
+      "at": "2026-11-19T00:00:00Z",
+      "by": "owner",
+      "verb": "ia",
+      "skill": {
+        "path": "packages/producer/actions/ia/skill.md",
+        "sha256": "147a7eaf66267728953e0c8111a9c20b93475f95f8063745d9d1d1087658fe73"
+      },
+      "model": "none",
+      "tier": "none",
+      "kind": "ia",
+      "records": [
+        {
+          "file": "ia.json",
+          "sha256": "34fdbf366e1f5861b6b6c331755e72d1d93d3daba78e61ba998da8d80a1350c3"
+        }
+      ]
+    },
+    {
+      "op": "ia",
+      "at": "2026-11-19T00:00:00Z",
+      "by": "owner",
+      "verb": "ia",
+      "skill": {
+        "path": "packages/producer/actions/ia/skill.md",
+        "sha256": "147a7eaf66267728953e0c8111a9c20b93475f95f8063745d9d1d1087658fe73"
+      },
+      "model": "none",
+      "tier": "none",
+      "kind": "ia",
+      "records": [
+        {
+          "file": "ia.json",
+          "sha256": "20fb69f7a2aa7debf06f1731c6d809252c5c7c8ec216666ec51a042182337d7f"
+        }
+      ]
+    },
+    {
+      "op": "ia",
+      "at": "2026-11-19T00:00:00Z",
+      "by": "owner",
+      "verb": "ia",
+      "skill": {
+        "path": "packages/producer/actions/ia/skill.md",
+        "sha256": "147a7eaf66267728953e0c8111a9c20b93475f95f8063745d9d1d1087658fe73"
+      },
+      "model": "none",
+      "tier": "none",
+      "kind": "ia",
+      "records": [
+        {
+          "file": "ia.json",
+          "sha256": "d2bfe592692b3800608124c63735b1b1136d63ae84c6d55508739478474c9ecf"
+        }
+      ]
+    },
+    {
+      "op": "ia",
+      "at": "2026-11-19T00:00:00Z",
+      "by": "owner",
+      "verb": "ia",
+      "skill": {
+        "path": "packages/producer/actions/ia/skill.md",
+        "sha256": "147a7eaf66267728953e0c8111a9c20b93475f95f8063745d9d1d1087658fe73"
+      },
+      "model": "none",
+      "tier": "none",
+      "kind": "ia",
+      "records": [
+        {
+          "file": "ia.json",
+          "sha256": "9687d79d7cb300fd5876e091d10b4f8d6c4f363f92eee7a5896569e3b7287484"
+        }
+      ]
+    },
+    {
+      "op": "ia",
+      "at": "2026-11-19T00:00:00Z",
+      "by": "owner",
+      "verb": "ia",
+      "skill": {
+        "path": "packages/producer/actions/ia/skill.md",
+        "sha256": "147a7eaf66267728953e0c8111a9c20b93475f95f8063745d9d1d1087658fe73"
+      },
+      "model": "none",
+      "tier": "none",
+      "kind": "ia",
+      "records": [
+        {
+          "file": "ia.json",
+          "sha256": "acb44b94f17c30b076e870fb23e9dbf5707419756c847bd7f3bf0b5adf660ad4"
+        }
+      ]
+    },
+    {
+      "op": "ia",
+      "at": "2026-11-19T00:00:00Z",
+      "by": "owner",
+      "verb": "ia",
+      "skill": {
+        "path": "packages/producer/actions/ia/skill.md",
+        "sha256": "147a7eaf66267728953e0c8111a9c20b93475f95f8063745d9d1d1087658fe73"
+      },
+      "model": "none",
+      "tier": "none",
+      "kind": "ia",
+      "records": [
+        {
+          "file": "ia.json",
+          "sha256": "47be1e6bd91ca8f34c76d00c5374834d9704372cae30074ad01b7184e602f815"
+        }
+      ]
+    },
+    {
+      "op": "ia",
+      "at": "2026-11-19T00:00:00Z",
+      "by": "owner",
+      "verb": "ia",
+      "skill": {
+        "path": "packages/producer/actions/ia/skill.md",
+        "sha256": "147a7eaf66267728953e0c8111a9c20b93475f95f8063745d9d1d1087658fe73"
+      },
+      "model": "none",
+      "tier": "none",
+      "kind": "ia",
+      "records": [
+        {
+          "file": "ia.json",
+          "sha256": "f5895d7328c77295d10e0b78b0e24f2528be74c647c2201db2625084086b73ad"
+        }
+      ]
+    },
+    {
+      "op": "ia",
+      "at": "2026-11-19T00:00:00Z",
+      "by": "owner",
+      "verb": "ia",
+      "skill": {
+        "path": "packages/producer/actions/ia/skill.md",
+        "sha256": "147a7eaf66267728953e0c8111a9c20b93475f95f8063745d9d1d1087658fe73"
+      },
+      "model": "none",
+      "tier": "none",
+      "kind": "ia",
+      "records": [
+        {
+          "file": "ia.json",
+          "sha256": "68ba32a4165ba2e6dfa9103fd95093143724228b4a2ac6358de55687375b5112"
+        }
+      ]
+    },
+    {
+      "op": "ia",
+      "at": "2026-11-19T00:00:00Z",
+      "by": "owner",
+      "verb": "ia",
+      "skill": {
+        "path": "packages/producer/actions/ia/skill.md",
+        "sha256": "147a7eaf66267728953e0c8111a9c20b93475f95f8063745d9d1d1087658fe73"
+      },
+      "model": "none",
+      "tier": "none",
+      "kind": "ia",
+      "records": [
+        {
+          "file": "ia.json",
+          "sha256": "91d2cbc9e94dcfee6876db477481666b0be6f77bc5d944daaa40e66539a17aef"
+        }
+      ]
+    },
+    {
+      "op": "ia",
+      "at": "2026-11-19T00:00:00Z",
+      "by": "owner",
+      "verb": "ia",
+      "skill": {
+        "path": "packages/producer/actions/ia/skill.md",
+        "sha256": "147a7eaf66267728953e0c8111a9c20b93475f95f8063745d9d1d1087658fe73"
+      },
+      "model": "none",
+      "tier": "none",
+      "kind": "ia",
+      "records": [
+        {
+          "file": "ia.json",
+          "sha256": "9b5050234023f1f6e0ab030482b1da7432af95ad3a5b3c4dbe49f4700cdc52a4"
+        }
+      ]
+    },
+    {
+      "op": "ia",
+      "at": "2026-11-19T00:00:00Z",
+      "by": "owner",
+      "verb": "ia",
+      "skill": {
+        "path": "packages/producer/actions/ia/skill.md",
+        "sha256": "147a7eaf66267728953e0c8111a9c20b93475f95f8063745d9d1d1087658fe73"
+      },
+      "model": "none",
+      "tier": "none",
+      "kind": "ia",
+      "records": [
+        {
+          "file": "ia.json",
+          "sha256": "bb6a474ce8231db01a8cb7dbec1138b83e1767aaa731f043860b016ea0cf5f1a"
+        }
+      ]
+    },
+    {
+      "op": "ia",
+      "at": "2026-11-19T00:00:00Z",
+      "by": "owner",
+      "verb": "ia",
+      "skill": {
+        "path": "packages/producer/actions/ia/skill.md",
+        "sha256": "147a7eaf66267728953e0c8111a9c20b93475f95f8063745d9d1d1087658fe73"
+      },
+      "model": "none",
+      "tier": "none",
+      "kind": "ia",
+      "records": [
+        {
+          "file": "ia.json",
+          "sha256": "376879be9ac66a830d0abaa35e439e3d73d557d8c9a2b905d8fb4b66d9ce9203"
+        }
+      ]
+    },
+    {
+      "op": "ia",
+      "at": "2026-11-19T00:00:00Z",
+      "by": "owner",
+      "verb": "ia",
+      "skill": {
+        "path": "packages/producer/actions/ia/skill.md",
+        "sha256": "147a7eaf66267728953e0c8111a9c20b93475f95f8063745d9d1d1087658fe73"
+      },
+      "model": "none",
+      "tier": "none",
+      "kind": "ia",
+      "records": [
+        {
+          "file": "ia.json",
+          "sha256": "85c5a2bc6b0d7d45b7519b950704df2d29db7a399f1031fd6db9afe06dec57a5"
+        }
+      ]
+    },
+    {
+      "op": "ia",
+      "at": "2026-11-19T00:00:00Z",
+      "by": "owner",
+      "verb": "ia",
+      "skill": {
+        "path": "packages/producer/actions/ia/skill.md",
+        "sha256": "147a7eaf66267728953e0c8111a9c20b93475f95f8063745d9d1d1087658fe73"
+      },
+      "model": "none",
+      "tier": "none",
+      "kind": "ia",
+      "records": [
+        {
+          "file": "ia.json",
+          "sha256": "04708f68efcb992082203249942b12c9f4509bbbef793b33154980875575a7c3"
+        }
+      ]
+    },
+    {
+      "op": "ia",
+      "at": "2026-11-19T00:00:00Z",
+      "by": "owner",
+      "verb": "ia",
+      "skill": {
+        "path": "packages/producer/actions/ia/skill.md",
+        "sha256": "147a7eaf66267728953e0c8111a9c20b93475f95f8063745d9d1d1087658fe73"
+      },
+      "model": "none",
+      "tier": "none",
+      "kind": "ia",
+      "records": [
+        {
+          "file": "ia.json",
+          "sha256": "b3d528790d18ce2933566c0808d63b5e7e483e72275aad0b7c03a0724b7ca848"
+        }
+      ]
+    },
+    {
+      "op": "ia",
+      "at": "2026-11-19T00:00:00Z",
+      "by": "owner",
+      "verb": "ia",
+      "skill": {
+        "path": "packages/producer/actions/ia/skill.md",
+        "sha256": "147a7eaf66267728953e0c8111a9c20b93475f95f8063745d9d1d1087658fe73"
+      },
+      "model": "none",
+      "tier": "none",
+      "kind": "ia",
+      "records": [
+        {
+          "file": "ia.json",
+          "sha256": "7b9e7c2be7e847e09f22fec04a16b9c36e3d091f49f7839bc2abf6c8f607be19"
+        }
+      ]
+    },
+    {
+      "op": "ia",
+      "at": "2026-11-19T00:00:00Z",
+      "by": "owner",
+      "verb": "ia",
+      "skill": {
+        "path": "packages/producer/actions/ia/skill.md",
+        "sha256": "147a7eaf66267728953e0c8111a9c20b93475f95f8063745d9d1d1087658fe73"
+      },
+      "model": "none",
+      "tier": "none",
+      "kind": "ia",
+      "records": [
+        {
+          "file": "ia.json",
+          "sha256": "619ede17877e6c0ebb16c8965036ca2791d65cc9234b1d6cab36ae3f20978141"
+        }
+      ]
+    },
+    {
+      "op": "ia",
+      "at": "2026-11-19T00:00:00Z",
+      "by": "owner",
+      "verb": "ia",
+      "skill": {
+        "path": "packages/producer/actions/ia/skill.md",
+        "sha256": "147a7eaf66267728953e0c8111a9c20b93475f95f8063745d9d1d1087658fe73"
+      },
+      "model": "none",
+      "tier": "none",
+      "kind": "ia",
+      "records": [
+        {
+          "file": "ia.json",
+          "sha256": "13397b2fb7ee0c93d232de6d274b5322a0d31f86fe9e9d618ba84c8a6f537b18"
+        }
+      ]
+    },
+    {
+      "op": "ia",
+      "at": "2026-11-19T00:00:00Z",
+      "by": "planner",
+      "verb": "ia",
+      "skill": {
+        "path": "packages/producer/actions/ia/skill.md",
+        "sha256": "147a7eaf66267728953e0c8111a9c20b93475f95f8063745d9d1d1087658fe73"
+      },
+      "model": "none",
+      "tier": "none",
+      "kind": "ia",
+      "records": [
+        {
+          "file": "ia.json",
+          "sha256": "9b577118c9009388cd02a150e3fb0a114876fffab1f251b01f643a43dfee0d71"
+        }
+      ]
+    },
+    {
+      "op": "ia",
+      "at": "2026-11-19T00:00:00Z",
+      "by": "planner",
+      "verb": "ia",
+      "skill": {
+        "path": "packages/producer/actions/ia/skill.md",
+        "sha256": "147a7eaf66267728953e0c8111a9c20b93475f95f8063745d9d1d1087658fe73"
+      },
+      "model": "none",
+      "tier": "none",
+      "kind": "ia",
+      "records": [
+        {
+          "file": "ia.json",
+          "sha256": "656e2a198fc224a47ae1826ad352e49e9d92551b122b927496cc247676ab3e13"
+        }
+      ]
+    },
+    {
+      "op": "ia",
+      "at": "2026-11-19T00:00:00Z",
+      "by": "planner",
+      "verb": "ia",
+      "skill": {
+        "path": "packages/producer/actions/ia/skill.md",
+        "sha256": "147a7eaf66267728953e0c8111a9c20b93475f95f8063745d9d1d1087658fe73"
+      },
+      "model": "none",
+      "tier": "none",
+      "kind": "ia",
+      "records": [
+        {
+          "file": "ia.json",
+          "sha256": "9704ac10578ff568b30bd50216f90b0358b9d03e4814bb1e10b9ca44592a9afe"
+        }
+      ]
+    },
+    {
+      "op": "ia",
+      "at": "2026-11-19T00:00:00Z",
+      "by": "planner",
+      "verb": "ia",
+      "skill": {
+        "path": "packages/producer/actions/ia/skill.md",
+        "sha256": "147a7eaf66267728953e0c8111a9c20b93475f95f8063745d9d1d1087658fe73"
+      },
+      "model": "none",
+      "tier": "none",
+      "kind": "ia",
+      "records": [
+        {
+          "file": "ia.json",
+          "sha256": "731674ebb86c7286130e763f3e751c23aef74aacdc0d153fa19b68964bd77612"
+        }
+      ]
+    },
+    {
+      "op": "ia",
+      "at": "2026-11-19T00:00:00Z",
+      "by": "planner",
+      "verb": "ia",
+      "skill": {
+        "path": "packages/producer/actions/ia/skill.md",
+        "sha256": "147a7eaf66267728953e0c8111a9c20b93475f95f8063745d9d1d1087658fe73"
+      },
+      "model": "none",
+      "tier": "none",
+      "kind": "ia",
+      "records": [
+        {
+          "file": "ia.json",
+          "sha256": "93d03f80148c8dc62f735ea1720e10d2a5f280ca60b44c691f4d1e04ac41b7c4"
+        }
+      ]
+    },
+    {
+      "op": "ia",
+      "at": "2026-11-19T00:00:00Z",
+      "by": "owner",
+      "verb": "ia",
+      "skill": {
+        "path": "packages/producer/actions/ia/skill.md",
+        "sha256": "147a7eaf66267728953e0c8111a9c20b93475f95f8063745d9d1d1087658fe73"
+      },
+      "model": "none",
+      "tier": "none",
+      "kind": "ia",
+      "records": [
+        {
+          "file": "ia.json",
+          "sha256": "8d1476f11968880f756e0ea06034fd10b41d03b504bf5a7c1bc331b393751ecd"
+        }
+      ]
+    },
+    {
+      "op": "ia",
+      "at": "2026-11-19T00:00:00Z",
+      "by": "planner",
+      "verb": "ia",
+      "skill": {
+        "path": "packages/producer/actions/ia/skill.md",
+        "sha256": "147a7eaf66267728953e0c8111a9c20b93475f95f8063745d9d1d1087658fe73"
+      },
+      "model": "none",
+      "tier": "none",
+      "kind": "ia",
+      "records": [
+        {
+          "file": "ia.json",
+          "sha256": "1ef494d4c0856dac9d27625fde755cf2d01268908640d41792ec950cfef42f84"
+        }
+      ]
+    },
+    {
+      "op": "ia",
+      "at": "2026-11-19T00:00:00Z",
+      "by": "planner",
+      "verb": "ia",
+      "skill": {
+        "path": "packages/producer/actions/ia/skill.md",
+        "sha256": "147a7eaf66267728953e0c8111a9c20b93475f95f8063745d9d1d1087658fe73"
+      },
+      "model": "none",
+      "tier": "none",
+      "kind": "ia",
+      "records": [
+        {
+          "file": "ia.json",
+          "sha256": "6523b32ef9c84408c739fa8434ed4655ea64084cd3e58cb6a10a9b7bc36e776f"
+        }
+      ]
+    },
+    {
+      "op": "ia",
+      "at": "2026-11-19T00:00:00Z",
+      "by": "planner",
+      "verb": "ia",
+      "skill": {
+        "path": "packages/producer/actions/ia/skill.md",
+        "sha256": "147a7eaf66267728953e0c8111a9c20b93475f95f8063745d9d1d1087658fe73"
+      },
+      "model": "none",
+      "tier": "none",
+      "kind": "ia",
+      "records": [
+        {
+          "file": "ia.json",
+          "sha256": "a51e4415e11118d7f64a008c2b78065f88a6dfb2dcba80c19f3ad8180a5df458"
+        }
+      ]
+    },
+    {
+      "op": "ia",
+      "at": "2026-11-19T00:00:00Z",
+      "by": "planner",
+      "verb": "ia",
+      "skill": {
+        "path": "packages/producer/actions/ia/skill.md",
+        "sha256": "147a7eaf66267728953e0c8111a9c20b93475f95f8063745d9d1d1087658fe73"
+      },
+      "model": "none",
+      "tier": "none",
+      "kind": "ia",
+      "records": [
+        {
+          "file": "ia.json",
+          "sha256": "702529165950a352eda5f26f072f6207d0bdcf2cf0676591273b4144d5501690"
+        }
+      ]
+    },
+    {
+      "op": "ia",
+      "at": "2026-11-19T00:00:00Z",
+      "by": "planner",
+      "verb": "ia",
+      "skill": {
+        "path": "packages/producer/actions/ia/skill.md",
+        "sha256": "147a7eaf66267728953e0c8111a9c20b93475f95f8063745d9d1d1087658fe73"
+      },
+      "model": "none",
+      "tier": "none",
+      "kind": "ia",
+      "records": [
+        {
+          "file": "ia.json",
+          "sha256": "5cc6de723e311313a249fc28461d1ed3f29b8e06a391096bb6395ee47d7b2d31"
+        }
+      ]
+    },
+    {
+      "op": "ia",
+      "at": "2026-11-19T00:00:00Z",
+      "by": "planner",
+      "verb": "ia",
+      "skill": {
+        "path": "packages/producer/actions/ia/skill.md",
+        "sha256": "147a7eaf66267728953e0c8111a9c20b93475f95f8063745d9d1d1087658fe73"
+      },
+      "model": "none",
+      "tier": "none",
+      "kind": "ia",
+      "records": [
+        {
+          "file": "ia.json",
+          "sha256": "7095c3b8770db0ae85618e1442035b7294bd79b598acca0c1177a35182d1af90"
+        }
+      ]
+    },
+    {
+      "op": "ia",
+      "at": "2026-11-19T00:00:00Z",
+      "by": "owner",
+      "verb": "ia",
+      "skill": {
+        "path": "packages/producer/actions/ia/skill.md",
+        "sha256": "147a7eaf66267728953e0c8111a9c20b93475f95f8063745d9d1d1087658fe73"
+      },
+      "model": "none",
+      "tier": "none",
+      "kind": "ia",
+      "records": [
+        {
+          "file": "ia.json",
+          "sha256": "587eaa966a36a36ddfa558f7b1cefc5b13817aea376c427cedf3f03a6de9157f"
+        }
+      ]
+    },
+    {
+      "op": "ia",
+      "at": "2026-11-19T00:00:00Z",
+      "by": "planner",
+      "verb": "ia",
+      "skill": {
+        "path": "packages/producer/actions/ia/skill.md",
+        "sha256": "147a7eaf66267728953e0c8111a9c20b93475f95f8063745d9d1d1087658fe73"
+      },
+      "model": "none",
+      "tier": "none",
+      "kind": "ia",
+      "records": [
+        {
+          "file": "ia.json",
+          "sha256": "d0213f5b88bae47a667cc274246005602b8aae590205910c3c504292f9604850"
+        }
+      ]
+    },
+    {
+      "op": "ia",
+      "at": "2026-11-19T00:00:00Z",
+      "by": "planner",
+      "verb": "ia",
+      "skill": {
+        "path": "packages/producer/actions/ia/skill.md",
+        "sha256": "147a7eaf66267728953e0c8111a9c20b93475f95f8063745d9d1d1087658fe73"
+      },
+      "model": "none",
+      "tier": "none",
+      "kind": "ia",
+      "records": [
+        {
+          "file": "ia.json",
+          "sha256": "8e964cba8ffa7d270f938519a73629be3244aaa50ab76484b90fb30ff9a34381"
+        }
+      ]
+    },
+    {
+      "op": "ia",
+      "at": "2026-11-19T00:00:00Z",
+      "by": "owner",
+      "verb": "ia",
+      "skill": {
+        "path": "packages/producer/actions/ia/skill.md",
+        "sha256": "147a7eaf66267728953e0c8111a9c20b93475f95f8063745d9d1d1087658fe73"
+      },
+      "model": "none",
+      "tier": "none",
+      "kind": "ia",
+      "records": [
+        {
+          "file": "ia.json",
+          "sha256": "98a9a4e6069bb49d802ada64c57eb4f0de4c973d11df0da6018c0aa46f068d90"
+        }
+      ]
+    },
+    {
+      "op": "ia",
+      "at": "2026-11-19T00:00:00Z",
+      "by": "planner",
+      "verb": "ia",
+      "skill": {
+        "path": "packages/producer/actions/ia/skill.md",
+        "sha256": "147a7eaf66267728953e0c8111a9c20b93475f95f8063745d9d1d1087658fe73"
+      },
+      "model": "none",
+      "tier": "none",
+      "kind": "ia",
+      "records": [
+        {
+          "file": "ia.json",
+          "sha256": "a8a428115d10089609ece041518d0b2eb32e7d9ff87f8f4eb0a4448f36d17b44"
+        }
+      ]
+    },
+    {
+      "op": "ia",
+      "at": "2026-11-19T00:00:00Z",
+      "by": "planner",
+      "verb": "ia",
+      "skill": {
+        "path": "packages/producer/actions/ia/skill.md",
+        "sha256": "147a7eaf66267728953e0c8111a9c20b93475f95f8063745d9d1d1087658fe73"
+      },
+      "model": "none",
+      "tier": "none",
+      "kind": "ia",
+      "records": [
+        {
+          "file": "ia.json",
+          "sha256": "870485b51ee9ef7a376092c4ccdc44377dba214e8b0b5bf32299d9fdd01013b3"
+        }
+      ]
+    },
+    {
+      "op": "ia",
+      "at": "2026-11-19T00:00:00Z",
+      "by": "planner",
+      "verb": "ia",
+      "skill": {
+        "path": "packages/producer/actions/ia/skill.md",
+        "sha256": "147a7eaf66267728953e0c8111a9c20b93475f95f8063745d9d1d1087658fe73"
+      },
+      "model": "none",
+      "tier": "none",
+      "kind": "ia",
+      "records": [
+        {
+          "file": "ia.json",
+          "sha256": "28d71d2e6cbe921371187fc7461d9a94a4daccf5528c6657b394773436cb981a"
+        }
+      ]
+    },
+    {
+      "op": "ia",
+      "at": "2026-11-19T00:00:00Z",
+      "by": "planner",
+      "verb": "ia",
+      "skill": {
+        "path": "packages/producer/actions/ia/skill.md",
+        "sha256": "147a7eaf66267728953e0c8111a9c20b93475f95f8063745d9d1d1087658fe73"
+      },
+      "model": "none",
+      "tier": "none",
+      "kind": "ia",
+      "records": [
+        {
+          "file": "ia.json",
+          "sha256": "7a60fb5b156c2d331fca0ad3584ff559e4336a5b5165f5257d141bc073c9e4c6"
+        }
+      ]
+    },
+    {
+      "op": "ia",
+      "at": "2026-11-19T00:00:00Z",
+      "by": "planner",
+      "verb": "ia",
+      "skill": {
+        "path": "packages/producer/actions/ia/skill.md",
+        "sha256": "147a7eaf66267728953e0c8111a9c20b93475f95f8063745d9d1d1087658fe73"
+      },
+      "model": "none",
+      "tier": "none",
+      "kind": "ia",
+      "records": [
+        {
+          "file": "ia.json",
+          "sha256": "567097901c7cc8b9b31f16e816a525dfd9069cb8a10d20f1dfd60ba7c23dae4b"
+        }
+      ]
+    },
+    {
+      "op": "ia",
+      "at": "2026-11-19T00:00:00Z",
+      "by": "planner",
+      "verb": "ia",
+      "skill": {
+        "path": "packages/producer/actions/ia/skill.md",
+        "sha256": "147a7eaf66267728953e0c8111a9c20b93475f95f8063745d9d1d1087658fe73"
+      },
+      "model": "none",
+      "tier": "none",
+      "kind": "ia",
+      "records": [
+        {
+          "file": "ia.json",
+          "sha256": "50e898c8eb9d684890b53a426625d89c5d05998f5b5f105b753bd28d77a0795a"
+        }
+      ]
+    },
+    {
+      "op": "ia",
+      "at": "2026-11-19T00:00:00Z",
+      "by": "planner",
+      "verb": "ia",
+      "skill": {
+        "path": "packages/producer/actions/ia/skill.md",
+        "sha256": "147a7eaf66267728953e0c8111a9c20b93475f95f8063745d9d1d1087658fe73"
+      },
+      "model": "none",
+      "tier": "none",
+      "kind": "ia",
+      "records": [
+        {
+          "file": "ia.json",
+          "sha256": "d056fbbfff3293c345f7f78ee4fc3e83415f59b702fee1ab631f63b2bfa48ca5"
+        }
+      ]
+    },
+    {
+      "op": "ia",
+      "at": "2026-11-19T00:00:00Z",
+      "by": "planner",
+      "verb": "ia",
+      "skill": {
+        "path": "packages/producer/actions/ia/skill.md",
+        "sha256": "147a7eaf66267728953e0c8111a9c20b93475f95f8063745d9d1d1087658fe73"
+      },
+      "model": "none",
+      "tier": "none",
+      "kind": "ia",
+      "records": [
+        {
+          "file": "ia.json",
+          "sha256": "084cc8fa17f665c78b86109e6407cf3ddfbaf68b6e7d0f5a541bb7e4fe2ad670"
+        }
+      ]
+    },
+    {
+      "op": "ia",
+      "at": "2026-11-19T00:00:00Z",
+      "by": "planner",
+      "verb": "ia",
+      "skill": {
+        "path": "packages/producer/actions/ia/skill.md",
+        "sha256": "147a7eaf66267728953e0c8111a9c20b93475f95f8063745d9d1d1087658fe73"
+      },
+      "model": "none",
+      "tier": "none",
+      "kind": "ia",
+      "records": [
+        {
+          "file": "ia.json",
+          "sha256": "f972c9d01a53e8e328ec03965e0c4d9584c6917fa2a7ebd775db0a13c46b541f"
+        }
+      ]
+    },
+    {
+      "op": "ia",
+      "at": "2026-11-19T00:00:00Z",
+      "by": "owner",
+      "verb": "ia",
+      "skill": {
+        "path": "packages/producer/actions/ia/skill.md",
+        "sha256": "147a7eaf66267728953e0c8111a9c20b93475f95f8063745d9d1d1087658fe73"
+      },
+      "model": "none",
+      "tier": "none",
+      "kind": "ia",
+      "records": [
+        {
+          "file": "ia.json",
+          "sha256": "92190a2cb163fd7c9e07d6f22be060bfe52f78e781bcb4f57ed44ad940c08c3a"
+        }
+      ]
+    },
+    {
+      "op": "ia",
+      "at": "2026-11-19T00:00:00Z",
+      "by": "planner",
+      "verb": "ia",
+      "skill": {
+        "path": "packages/producer/actions/ia/skill.md",
+        "sha256": "147a7eaf66267728953e0c8111a9c20b93475f95f8063745d9d1d1087658fe73"
+      },
+      "model": "none",
+      "tier": "none",
+      "kind": "ia",
+      "records": [
+        {
+          "file": "ia.json",
+          "sha256": "8da8cc84790cb37d5e1fffa6c8d73348bfff8395376e83f685da9f6fc71be7ad"
+        }
+      ]
+    },
+    {
+      "op": "ia",
+      "at": "2026-11-19T00:00:00Z",
+      "by": "planner",
+      "verb": "ia",
+      "skill": {
+        "path": "packages/producer/actions/ia/skill.md",
+        "sha256": "147a7eaf66267728953e0c8111a9c20b93475f95f8063745d9d1d1087658fe73"
+      },
+      "model": "none",
+      "tier": "none",
+      "kind": "ia",
+      "records": [
+        {
+          "file": "ia.json",
+          "sha256": "3ddbf01374910c28420a669d662354ad0b9c9ad82dc0e40038140a2b9338033e"
+        }
+      ]
+    },
+    {
+      "op": "ia",
+      "at": "2026-11-19T00:00:00Z",
+      "by": "planner",
+      "verb": "ia",
+      "skill": {
+        "path": "packages/producer/actions/ia/skill.md",
+        "sha256": "147a7eaf66267728953e0c8111a9c20b93475f95f8063745d9d1d1087658fe73"
+      },
+      "model": "none",
+      "tier": "none",
+      "kind": "ia",
+      "records": [
+        {
+          "file": "ia.json",
+          "sha256": "67bcdfc4d9a0f8b4c65e09b2064099630f0fb234e16de48da6b9c6edd9f9cc34"
+        }
+      ]
+    },
+    {
+      "op": "ia",
+      "at": "2026-11-19T00:00:00Z",
+      "by": "planner",
+      "verb": "ia",
+      "skill": {
+        "path": "packages/producer/actions/ia/skill.md",
+        "sha256": "147a7eaf66267728953e0c8111a9c20b93475f95f8063745d9d1d1087658fe73"
+      },
+      "model": "none",
+      "tier": "none",
+      "kind": "ia",
+      "records": [
+        {
+          "file": "ia.json",
+          "sha256": "568d2be44098f1039ce6f7cc27ea1f21fec73fa225f6bd45278d1b770b81fca3"
+        }
+      ]
+    },
+    {
+      "op": "ia",
+      "at": "2026-11-19T00:00:00Z",
+      "by": "planner",
+      "verb": "ia",
+      "skill": {
+        "path": "packages/producer/actions/ia/skill.md",
+        "sha256": "147a7eaf66267728953e0c8111a9c20b93475f95f8063745d9d1d1087658fe73"
+      },
+      "model": "none",
+      "tier": "none",
+      "kind": "ia",
+      "records": [
+        {
+          "file": "ia.json",
+          "sha256": "c96251880367adb2220f81f3d83d1c8c9d4b9401497ebebeaa3daece7198ba0a"
+        }
+      ]
+    },
+    {
+      "op": "ia",
+      "at": "2026-11-19T00:00:00Z",
+      "by": "planner",
+      "verb": "ia",
+      "skill": {
+        "path": "packages/producer/actions/ia/skill.md",
+        "sha256": "147a7eaf66267728953e0c8111a9c20b93475f95f8063745d9d1d1087658fe73"
+      },
+      "model": "none",
+      "tier": "none",
+      "kind": "ia",
+      "records": [
+        {
+          "file": "ia.json",
+          "sha256": "f62e3b16eb7225910d2633448bab82e7f5109a305ef1402ab312696e1ed5eec5"
+        }
+      ]
+    },
+    {
+      "op": "ia",
+      "at": "2026-11-19T00:00:00Z",
+      "by": "planner",
+      "verb": "ia",
+      "skill": {
+        "path": "packages/producer/actions/ia/skill.md",
+        "sha256": "147a7eaf66267728953e0c8111a9c20b93475f95f8063745d9d1d1087658fe73"
+      },
+      "model": "none",
+      "tier": "none",
+      "kind": "ia",
+      "records": [
+        {
+          "file": "ia.json",
+          "sha256": "54b4d7725c05468e1fc74d8743acd22495b71b89addebdc0100cb01be3a96655"
+        }
+      ]
+    },
+    {
+      "op": "ia",
+      "at": "2026-11-19T00:00:00Z",
+      "by": "planner",
+      "verb": "ia",
+      "skill": {
+        "path": "packages/producer/actions/ia/skill.md",
+        "sha256": "147a7eaf66267728953e0c8111a9c20b93475f95f8063745d9d1d1087658fe73"
+      },
+      "model": "none",
+      "tier": "none",
+      "kind": "ia",
+      "records": [
+        {
+          "file": "ia.json",
+          "sha256": "bac1d488003780a44621b2f6b56b0ac8aed41dbaef14ea67f9503815b9f33950"
+        }
+      ]
+    },
+    {
+      "op": "ia",
+      "at": "2026-11-19T00:00:00Z",
+      "by": "planner",
+      "verb": "ia",
+      "skill": {
+        "path": "packages/producer/actions/ia/skill.md",
+        "sha256": "147a7eaf66267728953e0c8111a9c20b93475f95f8063745d9d1d1087658fe73"
+      },
+      "model": "none",
+      "tier": "none",
+      "kind": "ia",
+      "records": [
+        {
+          "file": "ia.json",
+          "sha256": "3a0f313ccfdcf781823fe6bcaf9d798965a8b003eab5feb7b6a287f4bee74c7f"
+        }
+      ]
+    },
+    {
+      "op": "ia",
+      "at": "2026-11-19T00:00:00Z",
+      "by": "planner",
+      "verb": "ia",
+      "skill": {
+        "path": "packages/producer/actions/ia/skill.md",
+        "sha256": "147a7eaf66267728953e0c8111a9c20b93475f95f8063745d9d1d1087658fe73"
+      },
+      "model": "none",
+      "tier": "none",
+      "kind": "ia",
+      "records": [
+        {
+          "file": "ia.json",
+          "sha256": "78d3e160b327d055efdeaa0d04ba59dbdd7a783fcda395ae7f3a47b3ae0c5309"
+        }
+      ]
+    },
+    {
+      "op": "ia",
+      "at": "2026-11-19T00:00:00Z",
+      "by": "planner",
+      "verb": "ia",
+      "skill": {
+        "path": "packages/producer/actions/ia/skill.md",
+        "sha256": "147a7eaf66267728953e0c8111a9c20b93475f95f8063745d9d1d1087658fe73"
+      },
+      "model": "none",
+      "tier": "none",
+      "kind": "ia",
+      "records": [
+        {
+          "file": "ia.json",
+          "sha256": "e37550f975b437d33f2edbed2556a5d8fa41a74d517ac07e33e9e0b72c7c6bbf"
+        }
+      ]
+    },
+    {
+      "op": "ia",
+      "at": "2026-11-19T00:00:00Z",
+      "by": "planner",
+      "verb": "ia",
+      "skill": {
+        "path": "packages/producer/actions/ia/skill.md",
+        "sha256": "147a7eaf66267728953e0c8111a9c20b93475f95f8063745d9d1d1087658fe73"
+      },
+      "model": "none",
+      "tier": "none",
+      "kind": "ia",
+      "records": [
+        {
+          "file": "ia.json",
+          "sha256": "948d6ece50107abd369434757f495732157dd36578564ac7b2c30548584b1a5a"
+        }
+      ]
+    },
+    {
+      "op": "ia",
+      "at": "2026-11-19T00:00:00Z",
+      "by": "planner",
+      "verb": "ia",
+      "skill": {
+        "path": "packages/producer/actions/ia/skill.md",
+        "sha256": "147a7eaf66267728953e0c8111a9c20b93475f95f8063745d9d1d1087658fe73"
+      },
+      "model": "none",
+      "tier": "none",
+      "kind": "ia",
+      "records": [
+        {
+          "file": "ia.json",
+          "sha256": "41e5ba91b7576ccab96fe178ecb2efc68ccbacf39d5696ce90c1f0b27d944222"
+        }
+      ]
+    },
+    {
+      "op": "ia",
+      "at": "2026-11-19T00:00:00Z",
+      "by": "planner",
+      "verb": "ia",
+      "skill": {
+        "path": "packages/producer/actions/ia/skill.md",
+        "sha256": "147a7eaf66267728953e0c8111a9c20b93475f95f8063745d9d1d1087658fe73"
+      },
+      "model": "none",
+      "tier": "none",
+      "kind": "ia",
+      "records": [
+        {
+          "file": "ia.json",
+          "sha256": "bce8ef4c89287cdc50e55b7e35a836b539350fe42e615b7a6a04018be5ad86fa"
+        }
+      ]
+    },
+    {
+      "op": "ia",
+      "at": "2026-11-19T00:00:00Z",
+      "by": "planner",
+      "verb": "ia",
+      "skill": {
+        "path": "packages/producer/actions/ia/skill.md",
+        "sha256": "147a7eaf66267728953e0c8111a9c20b93475f95f8063745d9d1d1087658fe73"
+      },
+      "model": "none",
+      "tier": "none",
+      "kind": "ia",
+      "records": [
+        {
+          "file": "ia.json",
+          "sha256": "64dc2df280e0c61e86e9c0f8fa1af968e95f116f282b8ff6ebd1ddbe0979146a"
+        }
+      ]
+    },
+    {
+      "op": "ia",
+      "at": "2026-11-19T00:00:00Z",
+      "by": "planner",
+      "verb": "ia",
+      "skill": {
+        "path": "packages/producer/actions/ia/skill.md",
+        "sha256": "147a7eaf66267728953e0c8111a9c20b93475f95f8063745d9d1d1087658fe73"
+      },
+      "model": "none",
+      "tier": "none",
+      "kind": "ia",
+      "records": [
+        {
+          "file": "ia.json",
+          "sha256": "b65fe59bd68126d61c736ded200ca877c2bfe11c4be034a267cbb9411cce8560"
+        }
+      ]
+    },
+    {
+      "op": "ia",
+      "at": "2026-11-19T00:00:00Z",
+      "by": "planner",
+      "verb": "ia",
+      "skill": {
+        "path": "packages/producer/actions/ia/skill.md",
+        "sha256": "147a7eaf66267728953e0c8111a9c20b93475f95f8063745d9d1d1087658fe73"
+      },
+      "model": "none",
+      "tier": "none",
+      "kind": "ia",
+      "records": [
+        {
+          "file": "ia.json",
+          "sha256": "b3225e79e5412b1c145e30cf6445cc3d8b8f6ca3d29627e215a9657fb22832ed"
+        }
+      ]
+    },
+    {
+      "op": "ia",
+      "at": "2026-11-19T00:00:00Z",
+      "by": "planner",
+      "verb": "ia",
+      "skill": {
+        "path": "packages/producer/actions/ia/skill.md",
+        "sha256": "147a7eaf66267728953e0c8111a9c20b93475f95f8063745d9d1d1087658fe73"
+      },
+      "model": "none",
+      "tier": "none",
+      "kind": "ia",
+      "records": [
+        {
+          "file": "ia.json",
+          "sha256": "e6599410b7f661395e2835370b97dde64784f322c2bd9699e36412352daed605"
+        }
+      ]
+    },
+    {
+      "op": "ia",
+      "at": "2026-11-19T00:00:00Z",
+      "by": "planner",
+      "verb": "ia",
+      "skill": {
+        "path": "packages/producer/actions/ia/skill.md",
+        "sha256": "147a7eaf66267728953e0c8111a9c20b93475f95f8063745d9d1d1087658fe73"
+      },
+      "model": "none",
+      "tier": "none",
+      "kind": "ia",
+      "records": [
+        {
+          "file": "ia.json",
+          "sha256": "78715d7671f46f94fb45549ea4a685d345f9971504d74081c79f85c880ae6842"
+        }
+      ]
+    },
+    {
+      "op": "ia",
+      "at": "2026-11-19T00:00:00Z",
+      "by": "planner",
+      "verb": "ia",
+      "skill": {
+        "path": "packages/producer/actions/ia/skill.md",
+        "sha256": "147a7eaf66267728953e0c8111a9c20b93475f95f8063745d9d1d1087658fe73"
+      },
+      "model": "none",
+      "tier": "none",
+      "kind": "ia",
+      "records": [
+        {
+          "file": "ia.json",
+          "sha256": "4d921c0a1d2d3a03aa69c83e09e0dc5418e01be98124cd9f80d031d03878d63a"
+        }
+      ]
+    },
+    {
+      "op": "ia",
+      "at": "2026-11-19T00:00:00Z",
+      "by": "planner",
+      "verb": "ia",
+      "skill": {
+        "path": "packages/producer/actions/ia/skill.md",
+        "sha256": "147a7eaf66267728953e0c8111a9c20b93475f95f8063745d9d1d1087658fe73"
+      },
+      "model": "none",
+      "tier": "none",
+      "kind": "ia",
+      "records": [
+        {
+          "file": "ia.json",
+          "sha256": "92bde83d443192b8fd5a6b38f9d531f4d97708036059a946c8bf0059478d11fb"
+        }
+      ]
+    },
+    {
+      "op": "ia",
+      "at": "2026-11-19T00:00:00Z",
+      "by": "planner",
+      "verb": "ia",
+      "skill": {
+        "path": "packages/producer/actions/ia/skill.md",
+        "sha256": "147a7eaf66267728953e0c8111a9c20b93475f95f8063745d9d1d1087658fe73"
+      },
+      "model": "none",
+      "tier": "none",
+      "kind": "ia",
+      "records": [
+        {
+          "file": "ia.json",
+          "sha256": "f8dc57313ccae416c99a4fd40f6819d5d810ceac6f3124ff25461bf2469d6ac4"
+        }
+      ]
+    },
+    {
+      "op": "ia",
+      "at": "2026-11-19T00:00:00Z",
+      "by": "planner",
+      "verb": "ia",
+      "skill": {
+        "path": "packages/producer/actions/ia/skill.md",
+        "sha256": "147a7eaf66267728953e0c8111a9c20b93475f95f8063745d9d1d1087658fe73"
+      },
+      "model": "none",
+      "tier": "none",
+      "kind": "ia",
+      "records": [
+        {
+          "file": "ia.json",
+          "sha256": "498c98abc31d145298b71c8cfcf6eb492e281a74105f5aff426daa2d734640ed"
+        }
+      ]
+    },
+    {
+      "op": "ia",
+      "at": "2026-11-19T00:00:00Z",
+      "by": "planner",
+      "verb": "ia",
+      "skill": {
+        "path": "packages/producer/actions/ia/skill.md",
+        "sha256": "147a7eaf66267728953e0c8111a9c20b93475f95f8063745d9d1d1087658fe73"
+      },
+      "model": "none",
+      "tier": "none",
+      "kind": "ia",
+      "records": [
+        {
+          "file": "ia.json",
+          "sha256": "c924a5dfef2acfa871a8cc5a6010b7c150717768ca79d0c6af3efb6568d0e27c"
+        }
+      ]
+    },
+    {
+      "op": "ia",
+      "at": "2026-11-19T00:00:00Z",
+      "by": "planner",
+      "verb": "ia",
+      "skill": {
+        "path": "packages/producer/actions/ia/skill.md",
+        "sha256": "147a7eaf66267728953e0c8111a9c20b93475f95f8063745d9d1d1087658fe73"
+      },
+      "model": "none",
+      "tier": "none",
+      "kind": "ia",
+      "records": [
+        {
+          "file": "ia.json",
+          "sha256": "810be9b11d5aa785708a69ade4cc602438d4aacbd1c9e801fdd1d036e97e84cd"
+        }
+      ]
+    },
+    {
+      "op": "ia",
+      "at": "2026-11-19T00:00:00Z",
+      "by": "planner",
+      "verb": "ia",
+      "skill": {
+        "path": "packages/producer/actions/ia/skill.md",
+        "sha256": "147a7eaf66267728953e0c8111a9c20b93475f95f8063745d9d1d1087658fe73"
+      },
+      "model": "none",
+      "tier": "none",
+      "kind": "ia",
+      "records": [
+        {
+          "file": "ia.json",
+          "sha256": "a46c25b1894196f0d1b0a175c6ee85641140332ead7d45082f8d99651f04ff5c"
+        }
+      ]
+    },
+    {
+      "op": "ia",
+      "at": "2026-11-19T00:00:00Z",
+      "by": "planner",
+      "verb": "ia",
+      "skill": {
+        "path": "packages/producer/actions/ia/skill.md",
+        "sha256": "147a7eaf66267728953e0c8111a9c20b93475f95f8063745d9d1d1087658fe73"
+      },
+      "model": "none",
+      "tier": "none",
+      "kind": "ia",
+      "records": [
+        {
+          "file": "ia.json",
+          "sha256": "c3028905807151aa3bb5815e79733537c091497afffc07550227149e08cc95f5"
+        }
+      ]
+    },
+    {
+      "op": "ia",
+      "at": "2026-11-19T00:00:00Z",
+      "by": "planner",
+      "verb": "ia",
+      "skill": {
+        "path": "packages/producer/actions/ia/skill.md",
+        "sha256": "147a7eaf66267728953e0c8111a9c20b93475f95f8063745d9d1d1087658fe73"
+      },
+      "model": "none",
+      "tier": "none",
+      "kind": "ia",
+      "records": [
+        {
+          "file": "ia.json",
+          "sha256": "f1532d6627bd3668cfec57991f5de20238703416b2d13e9f7d97c88b7737dbb6"
+        }
+      ]
+    },
+    {
+      "op": "ia",
+      "at": "2026-11-19T00:00:00Z",
+      "by": "planner",
+      "verb": "ia",
+      "skill": {
+        "path": "packages/producer/actions/ia/skill.md",
+        "sha256": "147a7eaf66267728953e0c8111a9c20b93475f95f8063745d9d1d1087658fe73"
+      },
+      "model": "none",
+      "tier": "none",
+      "kind": "ia",
+      "records": [
+        {
+          "file": "ia.json",
+          "sha256": "b0a859a94ad6a659c6e43ad981a54b1014d4d3c16fd77aa8910ba16cfc63aa13"
+        }
+      ]
+    },
+    {
+      "op": "ia",
+      "at": "2026-11-19T00:00:00.000Z",
+      "by": "planner",
+      "verb": "ia",
+      "skill": {
+        "path": "packages/producer/actions/ia/skill.md",
+        "sha256": "147a7eaf66267728953e0c8111a9c20b93475f95f8063745d9d1d1087658fe73"
+      },
+      "model": "none",
+      "tier": "none",
+      "kind": "ia",
+      "records": [
+        {
+          "file": "ia.json",
+          "sha256": "300ffe74bda00843e145ad946ea2f1ebb74d2c82944b9282725cca9921cea358"
+        }
+      ]
+    },
+    {
+      "op": "ia",
+      "at": "2026-11-19T00:00:00Z",
+      "by": "planner",
+      "verb": "ia",
+      "skill": {
+        "path": "packages/producer/actions/ia/skill.md",
+        "sha256": "147a7eaf66267728953e0c8111a9c20b93475f95f8063745d9d1d1087658fe73"
+      },
+      "model": "none",
+      "tier": "none",
+      "kind": "ia",
+      "records": [
+        {
+          "file": "ia.json",
+          "sha256": "7c6af9eee1d06e85d3df41d748f263630db29215e5f30cb0aad20531cd4772c5"
+        }
+      ]
+    },
+    {
+      "op": "ia",
+      "at": "2026-11-19T00:00:00.000Z",
+      "by": "planner",
+      "verb": "ia",
+      "skill": {
+        "path": "packages/producer/actions/ia/skill.md",
+        "sha256": "147a7eaf66267728953e0c8111a9c20b93475f95f8063745d9d1d1087658fe73"
+      },
+      "model": "none",
+      "tier": "none",
+      "kind": "ia",
+      "records": [
+        {
+          "file": "ia.json",
+          "sha256": "0b6756f735be5a6517efa39c2aac772f3187d613dc8d00cae3a230c35c378f85"
+        }
+      ]
+    },
+    {
+      "op": "ia",
+      "at": "2026-11-19T00:00:00Z",
+      "by": "planner",
+      "verb": "ia",
+      "skill": {
+        "path": "packages/producer/actions/ia/skill.md",
+        "sha256": "147a7eaf66267728953e0c8111a9c20b93475f95f8063745d9d1d1087658fe73"
+      },
+      "model": "none",
+      "tier": "none",
+      "kind": "ia",
+      "records": [
+        {
+          "file": "ia.json",
+          "sha256": "452841e3a86f6099b162df049123eb36af406f7e23bbee83b40fe2e9efd0cb13"
+        }
+      ]
+    },
+    {
+      "op": "ia",
+      "at": "2026-11-19T00:00:00.000Z",
+      "by": "planner",
+      "verb": "ia",
+      "skill": {
+        "path": "packages/producer/actions/ia/skill.md",
+        "sha256": "147a7eaf66267728953e0c8111a9c20b93475f95f8063745d9d1d1087658fe73"
+      },
+      "model": "none",
+      "tier": "none",
+      "kind": "ia",
+      "records": [
+        {
+          "file": "ia.json",
+          "sha256": "d53f884886f6ecd905906efeb42155df6fcfe2e8d5d2609289a4622d074c42eb"
+        }
+      ]
+    },
+    {
+      "op": "ia",
+      "at": "2026-11-19T00:00:00Z",
+      "by": "planner",
+      "verb": "ia",
+      "skill": {
+        "path": "packages/producer/actions/ia/skill.md",
+        "sha256": "147a7eaf66267728953e0c8111a9c20b93475f95f8063745d9d1d1087658fe73"
+      },
+      "model": "none",
+      "tier": "none",
+      "kind": "ia",
+      "records": [
+        {
+          "file": "ia.json",
+          "sha256": "cd4d9e550ae20939b957007681e6877d9100f16409880c668349f9f34da48090"
+        }
+      ]
+    },
+    {
+      "op": "ia",
+      "at": "2026-11-19T00:00:00.000Z",
+      "by": "planner",
+      "verb": "ia",
+      "skill": {
+        "path": "packages/producer/actions/ia/skill.md",
+        "sha256": "147a7eaf66267728953e0c8111a9c20b93475f95f8063745d9d1d1087658fe73"
+      },
+      "model": "none",
+      "tier": "none",
+      "kind": "ia",
+      "records": [
+        {
+          "file": "ia.json",
+          "sha256": "95832485f0371eac0c8df7ae2728ce67fe03f602d5e5078bc9fb2d4699ccb7d1"
+        }
+      ]
+    },
+    {
+      "op": "ia",
+      "at": "2026-11-19T00:00:00Z",
+      "by": "planner",
+      "verb": "ia",
+      "skill": {
+        "path": "packages/producer/actions/ia/skill.md",
+        "sha256": "147a7eaf66267728953e0c8111a9c20b93475f95f8063745d9d1d1087658fe73"
+      },
+      "model": "none",
+      "tier": "none",
+      "kind": "ia",
+      "records": [
+        {
+          "file": "ia.json",
+          "sha256": "02b0ceafbb6138c70ae455e3d68042953cc325503a21f72683032c53cdec0556"
+        }
+      ]
+    },
+    {
+      "op": "ia",
+      "at": "2026-11-19T00:00:00.000Z",
+      "by": "planner",
+      "verb": "ia",
+      "skill": {
+        "path": "packages/producer/actions/ia/skill.md",
+        "sha256": "147a7eaf66267728953e0c8111a9c20b93475f95f8063745d9d1d1087658fe73"
+      },
+      "model": "none",
+      "tier": "none",
+      "kind": "ia",
+      "records": [
+        {
+          "file": "ia.json",
+          "sha256": "d2f2963e1ae04f256c14d1e1439308374698e59d31a489cfbf551f1321f3262c"
+        }
+      ]
+    },
+    {
+      "op": "ia",
+      "at": "2026-11-19T00:00:00Z",
+      "by": "planner",
+      "verb": "ia",
+      "skill": {
+        "path": "packages/producer/actions/ia/skill.md",
+        "sha256": "147a7eaf66267728953e0c8111a9c20b93475f95f8063745d9d1d1087658fe73"
+      },
+      "model": "none",
+      "tier": "none",
+      "kind": "ia",
+      "records": [
+        {
+          "file": "ia.json",
+          "sha256": "6f741d710d153885a80f7be1b7aecb51dfcbaf3b294f79bf44fbbf531ddba553"
+        }
+      ]
+    },
+    {
+      "op": "ia",
+      "at": "2026-11-19T00:00:00Z",
+      "by": "planner",
+      "verb": "ia",
+      "skill": {
+        "path": "packages/producer/actions/ia/skill.md",
+        "sha256": "147a7eaf66267728953e0c8111a9c20b93475f95f8063745d9d1d1087658fe73"
+      },
+      "model": "none",
+      "tier": "none",
+      "kind": "ia",
+      "decision": "adopt-loops",
+      "records": [
+        {
+          "file": "ia.json",
+          "sha256": "4e1737bab76178d7762153aa00fdacf138a0e74328806b13f9ce90ae90bf084a"
+        }
+      ]
     }
   ]
 }

@@ -1,0 +1,74 @@
+{
+  "schema": "clossys.slot/2",
+  "id": "page.admin-slot",
+  "agent": "publisher",
+  "kind": "page",
+  "status": "starter",
+  "ia": {
+    "l0": "page",
+    "l1": "page/admin",
+    "l2": "page/admin/admin",
+    "order": 23
+  },
+  "createdBy": {
+    "actor": "code",
+    "cli": "clossys ia",
+    "version": "0.1.0"
+  },
+  "createdAt": "2026-11-19T00:00:00Z",
+  "updatedAt": "2026-11-19T00:00:00Z",
+  "refs": [
+    {
+      "to": "publisher/layout.admin-slot",
+      "rel": "input"
+    },
+    {
+      "to": "writer/page.admin-slot.meta",
+      "rel": "input"
+    }
+  ],
+  "base": null,
+  "standard": "page",
+  "brief": {
+    "purpose": "Fill publisher/page.admin-slot to the page standard.",
+    "mustDo": [],
+    "inputs": [
+      {
+        "to": "publisher/layout.admin-slot",
+        "rel": "input"
+      },
+      {
+        "to": "writer/page.admin-slot.meta",
+        "rel": "input"
+      }
+    ],
+    "acceptance": []
+  },
+  "contract": {
+    "kind": "page",
+    "publication": "admin",
+    "path": "/admin/<agent>/<slot>",
+    "collection": "slots",
+    "layouts": [
+      "publisher/layout.admin-slot"
+    ],
+    "records": {
+      "pattern": "admin-slot.<role>",
+      "meta": "writer/page.admin-slot.meta#admin-slot.meta"
+    },
+    "requirements": [
+      {
+        "check": "page.assembled"
+      },
+      {
+        "check": "page.no-inline-copy"
+      }
+    ]
+  },
+  "tighten": [],
+  "family": {
+    "options": 1,
+    "varyOn": null,
+    "values": []
+  }
+}

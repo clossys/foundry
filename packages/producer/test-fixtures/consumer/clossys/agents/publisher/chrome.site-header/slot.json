@@ -1,0 +1,87 @@
+{
+  "schema": "clossys.slot/2",
+  "id": "chrome.site-header",
+  "agent": "publisher",
+  "kind": "chrome",
+  "status": "starter",
+  "ia": {
+    "l0": "chrome",
+    "l1": "chrome/chrome",
+    "l2": "chrome/chrome/header-footer",
+    "order": 49
+  },
+  "createdBy": {
+    "actor": "code",
+    "cli": "clossys ia",
+    "version": "0.1.0"
+  },
+  "createdAt": "2026-11-19T00:00:00Z",
+  "updatedAt": "2026-11-19T00:00:00Z",
+  "refs": [
+    {
+      "to": "designer/frames.site-shell",
+      "rel": "input"
+    },
+    {
+      "to": "designer/frames.site-header",
+      "rel": "input"
+    },
+    {
+      "to": "writer/frames.site-header.copy",
+      "rel": "input"
+    }
+  ],
+  "base": null,
+  "standard": "chrome",
+  "brief": {
+    "purpose": "Header links to page ids, one call to action and its target.",
+    "mustDo": [],
+    "inputs": [
+      {
+        "to": "designer/frames.site-shell",
+        "rel": "input"
+      },
+      {
+        "to": "designer/frames.site-header",
+        "rel": "input"
+      },
+      {
+        "to": "writer/frames.site-header.copy",
+        "rel": "input"
+      }
+    ],
+    "acceptance": []
+  },
+  "contract": {
+    "kind": "chrome",
+    "purpose": "Header links to page ids, one call to action and its target.",
+    "frame": "designer/frames.site-shell",
+    "unit": "designer/frames.site-header",
+    "copy": "writer/frames.site-header.copy#site.header",
+    "publications": [
+      "site",
+      "docs"
+    ],
+    "requirements": [
+      {
+        "check": "citation.grammar"
+      },
+      {
+        "check": "composes.allowed",
+        "params": {
+          "allowed": [
+            "designer/frames.site-shell",
+            "designer/frames.site-header",
+            "writer/frames.site-header.copy#site.header"
+          ]
+        }
+      }
+    ]
+  },
+  "tighten": [],
+  "family": {
+    "options": 1,
+    "varyOn": null,
+    "values": []
+  }
+}

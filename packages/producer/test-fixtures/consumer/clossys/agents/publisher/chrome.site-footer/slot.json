@@ -1,0 +1,87 @@
+{
+  "schema": "clossys.slot/2",
+  "id": "chrome.site-footer",
+  "agent": "publisher",
+  "kind": "chrome",
+  "status": "starter",
+  "ia": {
+    "l0": "chrome",
+    "l1": "chrome/chrome",
+    "l2": "chrome/chrome/header-footer",
+    "order": 50
+  },
+  "createdBy": {
+    "actor": "code",
+    "cli": "clossys ia",
+    "version": "0.1.0"
+  },
+  "createdAt": "2026-11-19T00:00:00Z",
+  "updatedAt": "2026-11-19T00:00:00Z",
+  "refs": [
+    {
+      "to": "designer/frames.site-shell",
+      "rel": "input"
+    },
+    {
+      "to": "designer/frames.site-footer",
+      "rel": "input"
+    },
+    {
+      "to": "writer/frames.site-footer.copy",
+      "rel": "input"
+    }
+  ],
+  "base": null,
+  "standard": "chrome",
+  "brief": {
+    "purpose": "Footer links to page ids, grouped.",
+    "mustDo": [],
+    "inputs": [
+      {
+        "to": "designer/frames.site-shell",
+        "rel": "input"
+      },
+      {
+        "to": "designer/frames.site-footer",
+        "rel": "input"
+      },
+      {
+        "to": "writer/frames.site-footer.copy",
+        "rel": "input"
+      }
+    ],
+    "acceptance": []
+  },
+  "contract": {
+    "kind": "chrome",
+    "purpose": "Footer links to page ids, grouped.",
+    "frame": "designer/frames.site-shell",
+    "unit": "designer/frames.site-footer",
+    "copy": "writer/frames.site-footer.copy#site.footer",
+    "publications": [
+      "site",
+      "docs"
+    ],
+    "requirements": [
+      {
+        "check": "citation.grammar"
+      },
+      {
+        "check": "composes.allowed",
+        "params": {
+          "allowed": [
+            "designer/frames.site-shell",
+            "designer/frames.site-footer",
+            "writer/frames.site-footer.copy#site.footer"
+          ]
+        }
+      }
+    ]
+  },
+  "tighten": [],
+  "family": {
+    "options": 1,
+    "varyOn": null,
+    "values": []
+  }
+}

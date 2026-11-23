@@ -1,0 +1,202 @@
+{
+  "schema": "clossys.slot/2",
+  "id": "layout.marketing-home",
+  "agent": "publisher",
+  "kind": "layout",
+  "status": "starter",
+  "ia": {
+    "l0": "layout",
+    "l1": "layout/layouts",
+    "l2": "layout/layouts/site",
+    "order": 27
+  },
+  "createdBy": {
+    "actor": "code",
+    "cli": "clossys ia",
+    "version": "0.1.0"
+  },
+  "createdAt": "2026-11-19T00:00:00Z",
+  "updatedAt": "2026-11-19T00:00:00Z",
+  "refs": [
+    {
+      "to": "designer/frames.site-shell",
+      "rel": "input"
+    },
+    {
+      "to": "publisher/chrome.site-header",
+      "rel": "input"
+    },
+    {
+      "to": "publisher/chrome.site-footer",
+      "rel": "input"
+    },
+    {
+      "to": "designer/sections.hero",
+      "rel": "input"
+    },
+    {
+      "to": "designer/sections.logo-cloud",
+      "rel": "input"
+    },
+    {
+      "to": "designer/sections.stats",
+      "rel": "input"
+    },
+    {
+      "to": "designer/sections.features",
+      "rel": "input"
+    },
+    {
+      "to": "designer/sections.steps",
+      "rel": "input"
+    },
+    {
+      "to": "designer/sections.testimonials",
+      "rel": "input"
+    },
+    {
+      "to": "designer/sections.faq",
+      "rel": "input"
+    },
+    {
+      "to": "designer/sections.call-to-action",
+      "rel": "input"
+    }
+  ],
+  "base": null,
+  "standard": "layout",
+  "brief": {
+    "purpose": "First page a visitor sees: who, why, how, proof, next step.",
+    "mustDo": [],
+    "inputs": [
+      {
+        "to": "designer/frames.site-shell",
+        "rel": "input"
+      },
+      {
+        "to": "publisher/chrome.site-header",
+        "rel": "input"
+      },
+      {
+        "to": "publisher/chrome.site-footer",
+        "rel": "input"
+      },
+      {
+        "to": "designer/sections.hero",
+        "rel": "input"
+      },
+      {
+        "to": "designer/sections.logo-cloud",
+        "rel": "input"
+      },
+      {
+        "to": "designer/sections.stats",
+        "rel": "input"
+      },
+      {
+        "to": "designer/sections.features",
+        "rel": "input"
+      },
+      {
+        "to": "designer/sections.steps",
+        "rel": "input"
+      },
+      {
+        "to": "designer/sections.testimonials",
+        "rel": "input"
+      },
+      {
+        "to": "designer/sections.faq",
+        "rel": "input"
+      },
+      {
+        "to": "designer/sections.call-to-action",
+        "rel": "input"
+      }
+    ],
+    "acceptance": []
+  },
+  "contract": {
+    "kind": "layout",
+    "purpose": "First page a visitor sees: who, why, how, proof, next step.",
+    "frame": "designer/frames.site-shell",
+    "chrome": [
+      "publisher/chrome.site-header",
+      "publisher/chrome.site-footer"
+    ],
+    "roles": {
+      "hero": {
+        "kinds": [
+          "designer/sections.hero"
+        ],
+        "required": true
+      },
+      "proof": {
+        "kinds": [
+          "designer/sections.logo-cloud",
+          "designer/sections.stats"
+        ],
+        "required": false
+      },
+      "value": {
+        "kinds": [
+          "designer/sections.features"
+        ],
+        "required": false
+      },
+      "how": {
+        "kinds": [
+          "designer/sections.steps"
+        ],
+        "required": false
+      },
+      "voices": {
+        "kinds": [
+          "designer/sections.testimonials"
+        ],
+        "required": false
+      },
+      "questions": {
+        "kinds": [
+          "designer/sections.faq"
+        ],
+        "required": false
+      },
+      "closing": {
+        "kinds": [
+          "designer/sections.call-to-action"
+        ],
+        "required": false
+      }
+    },
+    "requirements": [
+      {
+        "check": "citation.grammar"
+      },
+      {
+        "check": "composes.allowed",
+        "params": {
+          "allowed": [
+            "designer/frames.site-shell",
+            "publisher/chrome.site-header",
+            "publisher/chrome.site-footer",
+            "designer/sections.hero",
+            "designer/sections.logo-cloud",
+            "designer/sections.stats",
+            "designer/sections.features",
+            "designer/sections.steps",
+            "designer/sections.testimonials",
+            "designer/sections.faq",
+            "designer/sections.call-to-action"
+          ]
+        }
+      }
+    ]
+  },
+  "tighten": [],
+  "family": {
+    "options": 1,
+    "varyOn": null,
+    "values": []
+  }
+}

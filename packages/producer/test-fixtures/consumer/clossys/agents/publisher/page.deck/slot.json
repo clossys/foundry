@@ -1,0 +1,74 @@
+{
+  "schema": "clossys.slot/2",
+  "id": "page.deck",
+  "agent": "publisher",
+  "kind": "page",
+  "status": "starter",
+  "ia": {
+    "l0": "page",
+    "l1": "page/decks",
+    "l2": "page/decks/slides",
+    "order": 26
+  },
+  "createdBy": {
+    "actor": "code",
+    "cli": "clossys ia",
+    "version": "0.1.0"
+  },
+  "createdAt": "2026-11-19T00:00:00Z",
+  "updatedAt": "2026-11-19T00:00:00Z",
+  "refs": [
+    {
+      "to": "publisher/layout.deck",
+      "rel": "input"
+    },
+    {
+      "to": "writer/page.deck.meta",
+      "rel": "input"
+    }
+  ],
+  "base": null,
+  "standard": "page",
+  "brief": {
+    "purpose": "Fill publisher/page.deck to the page standard.",
+    "mustDo": [],
+    "inputs": [
+      {
+        "to": "publisher/layout.deck",
+        "rel": "input"
+      },
+      {
+        "to": "writer/page.deck.meta",
+        "rel": "input"
+      }
+    ],
+    "acceptance": []
+  },
+  "contract": {
+    "kind": "page",
+    "publication": "slides",
+    "path": "/slides/<deck>/<n>",
+    "collection": "deck",
+    "layouts": [
+      "publisher/layout.deck"
+    ],
+    "records": {
+      "pattern": "deck.<role>",
+      "meta": "writer/page.deck.meta#deck.meta"
+    },
+    "requirements": [
+      {
+        "check": "page.assembled"
+      },
+      {
+        "check": "page.no-inline-copy"
+      }
+    ]
+  },
+  "tighten": [],
+  "family": {
+    "options": 1,
+    "varyOn": null,
+    "values": []
+  }
+}

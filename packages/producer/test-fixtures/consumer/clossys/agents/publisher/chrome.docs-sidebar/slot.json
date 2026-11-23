@@ -1,0 +1,86 @@
+{
+  "schema": "clossys.slot/2",
+  "id": "chrome.docs-sidebar",
+  "agent": "publisher",
+  "kind": "chrome",
+  "status": "starter",
+  "ia": {
+    "l0": "chrome",
+    "l1": "chrome/chrome",
+    "l2": "chrome/chrome/sidebars-menus",
+    "order": 51
+  },
+  "createdBy": {
+    "actor": "code",
+    "cli": "clossys ia",
+    "version": "0.1.0"
+  },
+  "createdAt": "2026-11-19T00:00:00Z",
+  "updatedAt": "2026-11-19T00:00:00Z",
+  "refs": [
+    {
+      "to": "designer/frames.site-shell",
+      "rel": "input"
+    },
+    {
+      "to": "designer/components.sidebar",
+      "rel": "input"
+    },
+    {
+      "to": "writer/components.sidebar.copy",
+      "rel": "input"
+    }
+  ],
+  "base": null,
+  "standard": "chrome",
+  "brief": {
+    "purpose": "Docs navigation: entries as page ids, grouped and ordered.",
+    "mustDo": [],
+    "inputs": [
+      {
+        "to": "designer/frames.site-shell",
+        "rel": "input"
+      },
+      {
+        "to": "designer/components.sidebar",
+        "rel": "input"
+      },
+      {
+        "to": "writer/components.sidebar.copy",
+        "rel": "input"
+      }
+    ],
+    "acceptance": []
+  },
+  "contract": {
+    "kind": "chrome",
+    "purpose": "Docs navigation: entries as page ids, grouped and ordered.",
+    "frame": "designer/frames.site-shell",
+    "unit": "designer/components.sidebar",
+    "copy": "writer/components.sidebar.copy#docs.sidebar",
+    "publications": [
+      "docs"
+    ],
+    "requirements": [
+      {
+        "check": "citation.grammar"
+      },
+      {
+        "check": "composes.allowed",
+        "params": {
+          "allowed": [
+            "designer/frames.site-shell",
+            "designer/components.sidebar",
+            "writer/components.sidebar.copy#docs.sidebar"
+          ]
+        }
+      }
+    ]
+  },
+  "tighten": [],
+  "family": {
+    "options": 1,
+    "varyOn": null,
+    "values": []
+  }
+}

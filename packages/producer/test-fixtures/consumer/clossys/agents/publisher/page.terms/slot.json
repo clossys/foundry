@@ -1,0 +1,73 @@
+{
+  "schema": "clossys.slot/2",
+  "id": "page.terms",
+  "agent": "publisher",
+  "kind": "page",
+  "status": "starter",
+  "ia": {
+    "l0": "page",
+    "l1": "page/sites",
+    "l2": "page/sites/site",
+    "order": 5
+  },
+  "createdBy": {
+    "actor": "code",
+    "cli": "clossys ia",
+    "version": "0.1.0"
+  },
+  "createdAt": "2026-11-19T00:00:00Z",
+  "updatedAt": "2026-11-19T00:00:00Z",
+  "refs": [
+    {
+      "to": "publisher/layout.legal",
+      "rel": "input"
+    },
+    {
+      "to": "writer/page.terms.meta",
+      "rel": "input"
+    }
+  ],
+  "base": null,
+  "standard": "page",
+  "brief": {
+    "purpose": "Fill publisher/page.terms to the page standard.",
+    "mustDo": [],
+    "inputs": [
+      {
+        "to": "publisher/layout.legal",
+        "rel": "input"
+      },
+      {
+        "to": "writer/page.terms.meta",
+        "rel": "input"
+      }
+    ],
+    "acceptance": []
+  },
+  "contract": {
+    "kind": "page",
+    "publication": "site",
+    "path": "/terms",
+    "layouts": [
+      "publisher/layout.legal"
+    ],
+    "records": {
+      "pattern": "terms.<role>",
+      "meta": "writer/page.terms.meta#terms.meta"
+    },
+    "requirements": [
+      {
+        "check": "page.assembled"
+      },
+      {
+        "check": "page.no-inline-copy"
+      }
+    ]
+  },
+  "tighten": [],
+  "family": {
+    "options": 1,
+    "varyOn": null,
+    "values": []
+  }
+}

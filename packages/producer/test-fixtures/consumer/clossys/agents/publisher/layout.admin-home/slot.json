@@ -1,0 +1,137 @@
+{
+  "schema": "clossys.slot/2",
+  "id": "layout.admin-home",
+  "agent": "publisher",
+  "kind": "layout",
+  "status": "starter",
+  "ia": {
+    "l0": "layout",
+    "l1": "layout/layouts",
+    "l2": "layout/layouts/admin",
+    "order": 43
+  },
+  "createdBy": {
+    "actor": "code",
+    "cli": "clossys ia",
+    "version": "0.1.0"
+  },
+  "createdAt": "2026-11-19T00:00:00Z",
+  "updatedAt": "2026-11-19T00:00:00Z",
+  "refs": [
+    {
+      "to": "designer/frames.app-shell",
+      "rel": "input"
+    },
+    {
+      "to": "publisher/chrome.admin-sidebar",
+      "rel": "input"
+    },
+    {
+      "to": "designer/sections.page-header",
+      "rel": "input"
+    },
+    {
+      "to": "designer/sections.notices",
+      "rel": "input"
+    },
+    {
+      "to": "designer/sections.queue-list",
+      "rel": "input"
+    },
+    {
+      "to": "designer/sections.empty-state",
+      "rel": "input"
+    }
+  ],
+  "base": null,
+  "standard": "layout",
+  "brief": {
+    "purpose": "The admin workspace's first screen: the open requests and what to do first.",
+    "mustDo": [],
+    "inputs": [
+      {
+        "to": "designer/frames.app-shell",
+        "rel": "input"
+      },
+      {
+        "to": "publisher/chrome.admin-sidebar",
+        "rel": "input"
+      },
+      {
+        "to": "designer/sections.page-header",
+        "rel": "input"
+      },
+      {
+        "to": "designer/sections.notices",
+        "rel": "input"
+      },
+      {
+        "to": "designer/sections.queue-list",
+        "rel": "input"
+      },
+      {
+        "to": "designer/sections.empty-state",
+        "rel": "input"
+      }
+    ],
+    "acceptance": []
+  },
+  "contract": {
+    "kind": "layout",
+    "purpose": "The admin workspace's first screen: the open requests and what to do first.",
+    "frame": "designer/frames.app-shell",
+    "chrome": [
+      "publisher/chrome.admin-sidebar"
+    ],
+    "roles": {
+      "header": {
+        "kinds": [
+          "designer/sections.page-header"
+        ],
+        "required": true
+      },
+      "notices": {
+        "kinds": [
+          "designer/sections.notices"
+        ],
+        "required": false
+      },
+      "requests": {
+        "kinds": [
+          "designer/sections.queue-list"
+        ],
+        "required": false
+      },
+      "first-run": {
+        "kinds": [
+          "designer/sections.empty-state"
+        ],
+        "required": true
+      }
+    },
+    "requirements": [
+      {
+        "check": "citation.grammar"
+      },
+      {
+        "check": "composes.allowed",
+        "params": {
+          "allowed": [
+            "designer/frames.app-shell",
+            "publisher/chrome.admin-sidebar",
+            "designer/sections.page-header",
+            "designer/sections.notices",
+            "designer/sections.queue-list",
+            "designer/sections.empty-state"
+          ]
+        }
+      }
+    ]
+  },
+  "tighten": [],
+  "family": {
+    "options": 1,
+    "varyOn": null,
+    "values": []
+  }
+}

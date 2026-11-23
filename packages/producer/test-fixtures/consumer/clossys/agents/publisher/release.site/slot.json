@@ -1,0 +1,97 @@
+{
+  "schema": "clossys.slot/2",
+  "id": "release.site",
+  "agent": "publisher",
+  "kind": "release",
+  "status": "starter",
+  "ia": {
+    "l0": "release",
+    "l1": "release/web",
+    "l2": "release/web/site",
+    "order": 55
+  },
+  "createdBy": {
+    "actor": "code",
+    "cli": "clossys ia",
+    "version": "0.1.0"
+  },
+  "createdAt": "2026-11-19T00:00:00Z",
+  "updatedAt": "2026-11-19T00:00:00Z",
+  "refs": [
+    {
+      "to": "director/focus.reach.geography",
+      "rel": "input"
+    },
+    {
+      "to": "publisher/page.terms",
+      "rel": "input"
+    },
+    {
+      "to": "publisher/page.privacy",
+      "rel": "input"
+    }
+  ],
+  "base": null,
+  "standard": "release",
+  "brief": {
+    "purpose": "Fill publisher/release.site to the release standard.",
+    "mustDo": [],
+    "inputs": [
+      {
+        "to": "director/focus.reach.geography",
+        "rel": "input"
+      },
+      {
+        "to": "publisher/page.terms",
+        "rel": "input"
+      },
+      {
+        "to": "publisher/page.privacy",
+        "rel": "input"
+      }
+    ],
+    "acceptance": []
+  },
+  "contract": {
+    "kind": "release",
+    "publication": "site",
+    "exports": [
+      {
+        "kind": "react-static"
+      },
+      {
+        "kind": "pdf",
+        "pages": [
+          "publisher/page.terms",
+          "publisher/page.privacy"
+        ]
+      }
+    ],
+    "locales": {
+      "from": "director/focus.reach.geography:Language"
+    },
+    "gates": [
+      "copy.sample-remaining",
+      "pins.resolve",
+      "constitution.strict",
+      "copy.locales",
+      "release.locales"
+    ],
+    "signoff": {
+      "by": "owner",
+      "raise": "queue.approve"
+    },
+    "readyMeans": "pinned; not live (Distribution parked)",
+    "requirements": [
+      {
+        "check": "release.manifest"
+      }
+    ]
+  },
+  "tighten": [],
+  "family": {
+    "options": 1,
+    "varyOn": null,
+    "values": []
+  }
+}
