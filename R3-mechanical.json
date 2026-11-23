@@ -1,0 +1,94 @@
+{
+ "tool": "cloud-gate-run.py",
+ "ran_on": "cloud",
+ "unit": "R3",
+ "branch": "claude/r2f-0048-r3",
+ "head": "a20382be5ccf067ce344c0ce180dc68766720692",
+ "tree": "ce4693d512668318b9bc9321c4eab72d98ab4810",
+ "int2": "claude/r2f-int2",
+ "int2_sha": "5a2e197ea42dde155f0882fef533f7f4bf414605",
+ "generated_at": "2026-11-23T20:49:14Z",
+ "spec_sha256": "513fe156caa1bc9c87a87a60e74a20d7667d835892a852d9b1a0f2421bd504dc",
+ "runner_sha256": "d8bb5e204990d40dfb33553a1750acd5e73c10d0ca4ee98ca3f1065683820383",
+ "prep": [
+  {
+   "command": "npm run build -w @clossys/advisor",
+   "exit": 0,
+   "seconds": 2.0,
+   "tail": "\n> @clossys/advisor@0.7.0 build\n> node scripts/pack-capability-catalogue.mjs && tsc -p tsconfig.json\n\npack-capability-catalogue: wrote 19 role(s), 5 preset(s), and 19 client problem(s) to src/generated/offering.generated.ts, and the plan, brief, repository-inventory and registry snapshot contracts to src/generated/plan-contracts.generated.ts, and the publishing scope and registry to src/generated/package-scope.generated.ts"
+  },
+  {
+   "command": "npm run build -w @clossys/controller",
+   "exit": 0,
+   "seconds": 3.4,
+   "tail": "\n> @clossys/controller@0.10.0 build\n> tsc -p tsconfig.json\n"
+  },
+  {
+   "command": "npm run build -w @clossys/director",
+   "exit": 0,
+   "seconds": 2.3,
+   "tail": "\n> @clossys/director@0.6.0 build\n> node scripts/pack-brief-contract.mjs && tsc -p tsconfig.json\n\npack-brief-contract: wrote the brief and engagement-context contracts and the contract checker copy into src/generated/"
+  },
+  {
+   "command": "npm run build -w @clossys/designer",
+   "exit": 0,
+   "seconds": 28.2,
+   "tail": "\n> @clossys/designer@0.12.0 build\n> tsc -p tsconfig.json\n"
+  },
+  {
+   "command": "npm run build -w @clossys/writer",
+   "exit": 0,
+   "seconds": 5.4,
+   "tail": "\n> @clossys/writer@0.6.0 build\n> node scripts/pack-plan-contract.mjs && tsc -p tsconfig.json && node scripts/check-record-drift.mjs\n\npack-plan-contract: wrote the plan contract and the contract checker copy into src/generated/\nWriter record drift: 1492 records, 12 sources, 0 findings; approval not evaluated."
+  },
+  {
+   "command": "npm run build -w @clossys/publisher",
+   "exit": 0,
+   "seconds": 639.2,
+   "tail": "> @clossys/publisher@0.13.0 check:client-boundary\n> node ../../scripts/check-client-boundary.mjs . --report ../../node_modules/.cache/client-boundary/publisher.json\n\nPASS ./content-map (production): 412 inputs\nPASS ./content-map (development): 412 inputs\nPASS ./web/preview (production): 4385 inputs\nPASS ./web/preview (development): 4385 inputs\nPASS ./web (production): 4557 inputs\nPASS ./web (development): 4557 inputs\nPASS ./web/host (production): 4323 inputs\nPASS ./web/host (development): 4323 inputs\nPASS ./web/content-route (production): 4381 inputs\nPASS ./web/content-route (development): 4381 inputs\nPASS ./web/publisher-v2 (production): 4045 inputs\nPASS ./web/publisher-v2 (development): 4045 inputs\nPASS ./web/client (production): 4404 inputs\nPASS ./web/client (development): 4404 inputs\nPASS ./web/consent (production): 4038 inputs\nPASS ./web/consent (development): 4038 inputs\nPASS ./web/consent/preview (production): 1 inputs\nPASS ./web/consent/preview (development): 3 inputs\nPASS ./web/registered-route-check (production): 1 inputs\nPASS ./web/registered-route-check (development): 1 inputs\nPASS ./web/registered-route-wiring (production): 1 inputs\nPASS ./web/registered-route-wiring (development): 1 inputs\nPASS ./web/admin-pages (production): 4399 inputs\nPASS ./web/admin-pages (development): 4399 inputs\nPASS ./web/registered-route (production): 4399 inputs\nPASS ./web/registered-route (development): 4399 inputs\nclient-boundary: PASS; report ./node_modules/.cache/client-boundary/publisher.json"
+  },
+  {
+   "command": "npm run build -w @clossys/producer",
+   "exit": 0,
+   "seconds": 19.2,
+   "tail": "\n> @clossys/producer@0.1.0 build\n> tsc -p tsconfig.json && node scripts/check-generated-derived.mjs --write && npm run -s generate:specimen-evidence && node scripts/generate-page-check-receipt.mjs\n\ncheck-generated-derived: no $CLOSSYS_ROOT consumer; wrote nothing\nWrote: 0 real native compiler certificates\nPROC-5 source receipt: a20382be5ccf067ce344c0ce180dc68766720692"
+  }
+ ],
+ "commands": [
+  {
+   "command": "npm run typecheck -w @clossys/producer",
+   "expect": 0,
+   "exit": 0,
+   "ok": true,
+   "seconds": 9.1,
+   "tail": "\n> @clossys/producer@0.1.0 typecheck\n> tsc -p tsconfig.json --noEmit\n"
+  },
+  {
+   "command": "npm exec -w @clossys/producer -- vitest run src/loop src/cli/init src/conform",
+   "expect": 0,
+   "exit": 1,
+   "ok": false,
+   "seconds": 136.6,
+   "tail": "\n\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af[15/16]\u23af\n\n FAIL  src/loop/repin-cascade.test.ts > a legacy pin fails closed (U8) > a legacy pin given the real certifier's passing verdict on the pinSet now, written as loop.cascade writes one (reverdictOf, a clossys.reverdict/1), passes slots.stale\nAssertionError: clossys pin designer/frames.site-shell site-shell-v1.json --by planner:foundry-build-0048-u6 --at 2026-11-17T12:00:00Z: pin refused: pin refused by the constitution guard: R02.2 dependency set not pinned upstream: frames.site-footer unpinned, frames.site-header unpinned (clossys/agents/designer/frames.site-shell/slot.json); fix: meet R02: Pins and order. Pins carry a closed basis and decidedBy (code decides only basis scorecard, decidedBy code:scorecard: the scorecard's single top row on a slot with no owner-pick or confirm step), upstream is pinned before downstream, and each pin equals its last ledger pin event.; R03.2 frames.site-shell/site-shell-v1.json: original item in frames.site-shell, which is not a consumer-asset slot; adopt or customize a trusted reference, or raise a NEED (clossys/agents/designer/frames.site-shell/candidates/site-shell-v1.json); fix: adopt verbatim: copy the seed or the vendored registry item byte for byte, or submit at the adapt or create rung; R14.1 slot.json bytes (4e44fdec5112) differ from its last ledger event (bb468a4f164d) (clossys/agents/designer/frames.site-shell/slot.json); fix: meet R14: Provenance. Every record byte state matches a ledger event naming its verb, action skill, model and tier.: expected 1 to be +0 // Object.is equality\n\n- Expected\n+ Received\n\n- 0\n+ 1\n\n \u276f ok src/loop/repin-cascade.test.ts:98:160\n     96| async function seated() {\n     97|   const w = world();\n     98|   const ok = (result: { exitCode: number; message: string; args: strin\u2026\n       |                                                                                                                                                                ^\n     99|   ok(await w.pin(\"designer/frames.site-shell\", w.submit(\"designer\", \"f\u2026\n    100|   ok(await w.pin(\"designer/sections.hero\", w.submit(\"designer\", \"secti\u2026\n \u276f seated src/loop/repin-cascade.test.ts:99:3\n \u276f src/loop/repin-cascade.test.ts:260:19\n\n\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af[16/16]\u23af\n\n\n Test Files  3 failed | 18 passed (21)\n      Tests  16 failed | 387 passed (403)\n   Start at  20:46:58\n   Duration  135.89s (tests 90%, import 6%, transform 4%)\n"
+  },
+  {
+   "command": "git merge-tree --write-tree claude/r2f-int2 HEAD",
+   "expect": 0,
+   "exit": 0,
+   "ok": true,
+   "seconds": 0.0,
+   "tail": "ce4693d512668318b9bc9321c4eab72d98ab4810"
+  }
+ ],
+ "merge_tree": {
+  "command": "git merge-tree --write-tree claude/r2f-int2 a20382be5ccf067ce344c0ce180dc68766720692",
+  "exit": 0,
+  "tree": "ce4693d512668318b9bc9321c4eab72d98ab4810",
+  "conflicts": []
+ },
+ "tree_clean": true,
+ "failures": [
+  "`npm exec -w @clossys/producer -- vitest run src/loop src/cli/init src/conform` exit 1, expected 0"
+ ],
+ "verdict": "FAIL"
+}
