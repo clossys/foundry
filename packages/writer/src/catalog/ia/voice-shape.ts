@@ -165,17 +165,30 @@ export function loadVoiceDefaults(): VoiceDefault[] {
   return out;
 }
 
+/** Page id to its publication, from the Publisher directory (`@clossys/publisher`; same URL from src/ and dist/). */
+export function loadPagePublications(
+  publisher: URL = new URL("../../../../publisher/src/catalog/ia/directory.json", import.meta.url),
+): ReadonlyMap<string, string> {
+  const directory = JSON.parse(readFileSync(publisher, "utf8")) as { slots: Record<string, { publication?: string }> };
+  return new Map(Object.entries(directory.slots).flatMap(([id, page]) => typeof page.publication === "string" ? [[id, page.publication] as [string, string]] : []));
+}
+
 /**
  * Inputs rule (foundry-audit-0016): every Director input names a key the Director cell declares; Prose and Copy read
- * style only through the 12 Voice slots and never list identity.verbal.voice directly.
+ * style only through the 12 Voice slots and never list identity.verbal.voice directly. One exception: a
+ * `page.<id>.meta` slot may read exactly one other Writer slot, `writer/publication.<p>.meta`, where `<p>` is that
+ * page's publication in the Publisher directory (its title and share fall back to the publication's).
  */
-export function checkWriterInputs(trees: readonly GroupTree[]): WriterTreeFinding[] {
+export function checkWriterInputs(trees: readonly GroupTree[], pagePublications: ReadonlyMap<string, string> = loadPagePublications()): WriterTreeFinding[] {
   const findings: WriterTreeFinding[] = [];
   const cells = new Map(loadCatalog().cells.map(cell => [cell.id, new Set(cell.mustContain.map(entry => entry.key))]));
   const voiceIds = trees.find(tree => tree.group === "voice")?.slots.map(slot => slot.id) ?? [];
   for (const tree of trees) {
     for (const slot of tree.slots) {
       const fail = (message: string) => { findings.push({ code: "INPUTS", group: tree.group, message: `INPUTS: ${slot.id} ${message}` }); };
+      const page = /^(page\.[a-z0-9]+(?:-[a-z0-9]+)*)\.meta$/.exec(slot.id)?.[1];
+      const publication = page === undefined ? undefined : pagePublications.get(page);
+      let publicationMeta = publication === undefined ? undefined : `writer/publication.${publication}.meta`;
       for (const ref of slot.inputs ?? []) {
         if (ref.to.startsWith("director/")) {
           const cell = ref.to.slice("director/".length);
@@ -186,6 +199,7 @@ export function checkWriterInputs(trees: readonly GroupTree[]): WriterTreeFindin
           if (tree.group !== "voice" && cell === "identity.verbal.voice") fail("lists director/identity.verbal.voice directly; style goes through the Voice slots");
         } else if (ref.to.startsWith("writer/")) {
           if (tree.group === "voice") fail(`is a Voice slot and may not read ${ref.to}`);
+          else if (ref.to === publicationMeta) publicationMeta = undefined;
           else if (!voiceIds.includes(ref.to.slice("writer/".length))) fail(`reads ${ref.to}, which is not a Voice slot`);
         } else fail(`has an input with an unknown agent: ${ref.to}`);
       }

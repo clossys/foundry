@@ -85,6 +85,25 @@
     },
     {
       "op": "slot",
+      "at": "2026-11-19T00:00:00Z",
+      "by": "planner",
+      "verb": "ia",
+      "skill": {
+        "path": "packages/producer/actions/ia/skill.md",
+        "sha256": "147a7eaf66267728953e0c8111a9c20b93475f95f8063745d9d1d1087658fe73"
+      },
+      "model": "none",
+      "tier": "none",
+      "kind": "ia",
+      "records": [
+        {
+          "file": "slot.json",
+          "sha256": "b26807cac5928cf0f723253fe0b1dc00d701cc361d80363f129db6d60ca52f4b"
+        }
+      ]
+    },
+    {
+      "op": "slot",
       "at": "2026-11-23T00:00:00Z",
       "by": "producer",
       "verb": "migrate",
@@ -132,16 +151,12 @@
         {
           "slot": "writer/page.error.meta",
           "why": "one L2 (copy.page-metadata/site) and kind family, inputs equal"
-        },
-        {
-          "slot": "writer/page.app-not-found.meta",
-          "why": "same kind family and inputs, similar purpose (0.75)"
         }
       ],
       "records": [
         {
           "file": "slot.json",
-          "sha256": "9c9b5345ebbcca0dde091a6cc4795ffeee1aef108bf7092eb721e11e63a11716"
+          "sha256": "b26807cac5928cf0f723253fe0b1dc00d701cc361d80363f129db6d60ca52f4b"
         }
       ]
     }

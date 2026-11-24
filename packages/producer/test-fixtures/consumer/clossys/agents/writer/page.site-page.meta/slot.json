@@ -84,6 +84,10 @@
       "to": "director/identity.naming.name",
       "rel": "input",
       "key": "Name"
+    },
+    {
+      "to": "writer/publication.site.meta",
+      "rel": "input"
     }
   ],
   "base": null,
@@ -159,6 +163,10 @@
         "to": "director/identity.naming.name",
         "rel": "input",
         "key": "Name"
+      },
+      {
+        "to": "writer/publication.site.meta",
+        "rel": "input"
       }
     ],
     "acceptance": []

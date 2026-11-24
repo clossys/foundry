@@ -87,6 +87,10 @@
       "key": "Name"
     },
     {
+      "to": "writer/publication.slides.meta",
+      "rel": "input"
+    },
+    {
       "to": "director/aspiration.purpose.mission",
       "rel": "input"
     },
@@ -172,6 +176,10 @@
         "to": "director/identity.naming.name",
         "rel": "input",
         "key": "Name"
+      },
+      {
+        "to": "writer/publication.slides.meta",
+        "rel": "input"
       },
       {
         "to": "director/aspiration.purpose.mission",

@@ -1,0 +1,13 @@
+{
+  "page": [
+    { "key": "title", "kind": "plain", "role": "heading", "required": true, "maxLength": { "en": 60 }, "dir": "auto" },
+    { "key": "description", "kind": "plain", "role": "body", "required": true, "maxLength": { "en": 160 }, "dir": "auto" },
+    { "key": "share.title", "kind": "plain", "role": "heading", "required": false, "maxLength": { "en": 70 }, "dir": "auto" },
+    { "key": "share.description", "kind": "plain", "role": "body", "required": false, "maxLength": { "en": 200 }, "dir": "auto" }
+  ],
+  "publication": [
+    { "key": "siteName", "kind": "plain", "role": "label", "required": true, "maxLength": { "en": 40 }, "dir": "auto" },
+    { "key": "share.title", "kind": "plain", "role": "heading", "required": true, "maxLength": { "en": 70 }, "dir": "auto" },
+    { "key": "share.description", "kind": "plain", "role": "body", "required": true, "maxLength": { "en": 200 }, "dir": "auto" }
+  ]
+}
