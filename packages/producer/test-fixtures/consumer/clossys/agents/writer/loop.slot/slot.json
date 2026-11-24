@@ -1,0 +1,49 @@
+{
+  "schema": "clossys.slot/2",
+  "id": "loop.slot",
+  "agent": "writer",
+  "kind": "loop",
+  "status": "starter",
+  "ia": {
+    "l0": "loops",
+    "l1": "loops/writing-loops",
+    "l2": "loops/writing-loops/agent",
+    "order": 106
+  },
+  "createdBy": {
+    "actor": "code",
+    "cli": "clossys loop",
+    "version": "0.1.0"
+  },
+  "createdAt": "2026-11-19T00:00:00Z",
+  "refs": [
+    {
+      "to": "producer/loop.slot/package:slot-v1.json",
+      "rel": "consumedBy"
+    }
+  ],
+  "base": {
+    "package": "@clossys/writer",
+    "version": "0.6.0",
+    "path": "loops/loop.slot/slot-v1.json",
+    "sha256": "1b852e12116c400c5da5e9999c3358431288ccae38ae8f501ef3f83bc698331e"
+  },
+  "standard": "loop",
+  "brief": {
+    "purpose": "writer's own loop.slot: Producer's standard loop.slot with writer's own steps, skills and tiers.",
+    "mustDo": [],
+    "inputs": [],
+    "acceptance": []
+  },
+  "contract": {
+    "loop": "loop.slot",
+    "extends": "producer/loop.slot",
+    "requirements": []
+  },
+  "tighten": [],
+  "family": {
+    "options": 1,
+    "varyOn": null,
+    "values": []
+  }
+}

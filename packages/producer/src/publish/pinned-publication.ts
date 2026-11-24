@@ -47,12 +47,19 @@ export function resolvePublicationTitles(consumer: string, pinned: PinnedPublica
   const copy = writerCopy(consumer);
   const publicationId = pinned.map.publicationId;
   const refuse = (what: string, value: unknown): never => {
-    if (typeof value === "string" && WRITER_KEY.test(value)) throw new Error(`Publication ${publicationId}: ${what} names ${JSON.stringify(value)}, which no pinned Writer string registers`);
+    if (typeof value === "string" && (WRITER_KEY.test(value) || value.includes("#"))) throw new Error(`Publication ${publicationId}: ${what} names ${JSON.stringify(value)}, which no pinned Writer string registers`);
     throw new Error(`Publication ${publicationId}: ${what} is a literal ${JSON.stringify(value)}; it must be a Writer key`);
   };
+  // A `<writer slot>#<key>` ref binds its key as install.ts writerKeyOf reads it: the key, else `<ref>` or `<slot>.<key>`.
+  const keyOf = (value: unknown): unknown => {
+    if (typeof value !== "string" || !value.includes("#")) return value;
+    const hash = value.indexOf("#"), key = value.slice(hash + 1);
+    return copy.has(key) ? key : [value, `${value.slice(0, hash)}.${key}`].find(id => copy.has(id)) ?? key;
+  };
   const title = (owner: string, value: unknown): string => {
-    if (typeof value !== "string" || !copy.has(value)) return refuse(`${owner} title`, value);
-    return copy.text(value);
+    const key = keyOf(value);
+    if (typeof key !== "string" || !copy.has(key)) return refuse(`${owner} title`, value);
+    return copy.text(key);
   };
   for (const node of pinnedTreeNodes(consumer, publicationId)) if (typeof node.name !== "string" || !copy.has(node.name)) refuse(`tree node ${node.id} name`, node.name);
   const entries = pinned.map.entries.map(entry => ({ ...entry, title: title(entry.id, entry.title) }));

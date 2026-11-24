@@ -373,8 +373,9 @@ function allGaps(root: string, options: InterviewOptions): { gaps: Gap[]; notes:
   catch (error) { gaps.push({ kind: "wiring", code: "writer.copy-unreadable", agent: "writer", item: "agents/writer", step: "pin.writer", decider: "agent", message: `the pinned Writer copy does not load: ${error instanceof Error ? error.message : String(error)}` }); }
   let keysChecked = 0;
   if (copy) {
-    const namespaces = new Set(copy.ids.map(id => id.slice(0, id.indexOf("."))));
     const pinnedWriter = [...writerKeyHolders(consumer)].map(([id, keys]) => ({ entry: { id }, keys }));
+    // Namespaces of the authored dotted row ids only: a contract row registered as `<slot>.<row>` (writer-copy.ts) names no namespace.
+    const namespaces = new Set(pinnedWriter.flatMap(row => row.keys).filter(id => id.includes(".")).map(id => id.slice(0, id.indexOf("."))));
     const unapproved = writerKeysUnapproved(root);
     const missing = new Map<string, { keys: Set<string>; need: Set<string> }>();
     for (const entry of entries.get("publisher") ?? []) {

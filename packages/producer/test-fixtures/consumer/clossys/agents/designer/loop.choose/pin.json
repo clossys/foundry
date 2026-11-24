@@ -1,0 +1,32 @@
+{
+  "schema": "clossys.pin/2",
+  "id": "designer/loop.choose/pin",
+  "agent": "designer",
+  "kind": "pin",
+  "status": "confirm",
+  "createdBy": {
+    "actor": "code",
+    "cli": "clossys pin",
+    "version": "0.1.0"
+  },
+  "createdAt": "2026-11-19T00:00:00Z",
+  "updatedAt": "2026-11-19T00:00:00Z",
+  "refs": [
+    {
+      "to": "producer/checks.scorecard",
+      "rel": "cites",
+      "record": "designer/loop.choose",
+      "sha256": "1dd6210b4a20179e6669572f87175e0bb65423ab0a069b2d0801782b582bba04"
+    },
+    {
+      "to": "producer/loop.choose/package:choose-v1.json",
+      "rel": "uses",
+      "sha256": "5135b0d77437796c54e4ff26b405d17389ab8f874723f28c0d6db69c2d64da79"
+    }
+  ],
+  "candidate": "choose-v1.json",
+  "sha256": "c382b128acc582069a01a4e034b2f97bd514c217cb6df6033f2b96f62a354461",
+  "decidedBy": "planner:package-default",
+  "basis": "planner",
+  "at": "2026-11-19T00:00:00Z"
+}

@@ -804,6 +804,18 @@ export const MARK = ".seed-pinned-world";
 const MARK_TEXT = "written by scripts/seed-pinned-world.mjs\n";
 const marked = dir => existsSync(join(dir, MARK));
 
+/** The agents whose IA places slots in the fixture; Publisher's IA places none. */
+export const LOOP_PLACED = ["director", "designer", "writer"];
+
+/**
+ * The placed agents' own loops, last (R3): `clossys loop <agent>/loop.scope` adopts each agent's five loop slots and
+ * pins them to its package candidates on the package-default planner basis, the adoption `clossys init` runs
+ * (init-loops.ts). A loop already pinned is kept, so a rerun writes nothing.
+ */
+async function adoptLoops(w) {
+  for (const agent of LOOP_PLACED) await w.run(`${agent}/loop.scope`, "loop", `${agent}/loop.scope`, "--by", "planner:package-default", "--at", AT);
+}
+
 /**
  * Seeds the unpinned base of `from` in a temporary root and returns the pinned tree there (`keep`) or copies it to
  * `out` (which must not hold a tree already) and removes it. The root holds the seeder's mark; `out` never does.
@@ -833,6 +845,7 @@ export async function seed({ from, out, only, keep = false, resume } = {}) {
     const blocked = blockedIn(w.consumer, all);
     const order = all.filter(ref => !blocked.has(ref) && (!only || only.some(prefix => ref.startsWith(prefix))));
     for (const ref of order) if (!pinned(w.consumer, ref)) await seedSlot(w, ref);
+    if (!only) await adoptLoops(w);
     // Only the repository this run made goes; a resumed root's own .git stays.
     if (ownGit) rmSync(join(root, ".git"), { recursive: true, force: true });
     if (out) {
