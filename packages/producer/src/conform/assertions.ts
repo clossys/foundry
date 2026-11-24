@@ -17,7 +17,7 @@ import { REQUEST_ASSERTIONS } from "./requests-assertions.js";
 import { agentLoopIssues, isLoopAgent } from "../loop/agent-loops.js";
 import { dirname } from "node:path";
 // S1 (S1-PLACED): the expected set is what `ia sync` places, computed by the functions sync itself uses.
-import { consumedIds, consumedLeaves, scopedToConsumed } from "../records/slot-model/consumed.js";
+import { consumedIds, consumedLeaves, isConsumedAgent, scopedToConsumed } from "../records/slot-model/consumed.js";
 import { studioDesignerSlots } from "../records/slot-model/foundry-ia.js";
 
 /**
@@ -143,17 +143,18 @@ export const ASSERTIONS: Readonly<Record<string, Assertion>> = {
     const loops = new Set(agent.loops.filter(loop => loop.declared).map(loop => loop.loop as string));
     const pkg = new Set(agent.trees.flatMap(tree => slotLeaves(tree))), placed = new Set(placedIds(agent).filter(id => !loops.has(id)));
     // Owner, 2026-11-23 (S1-PLACED): S1 judges the leaves `ia sync` places. For an agent sync scopes to consumed leaves
-    // that is its consumed package leaves plus the Producer-contributed slots; for any other agent, the whole package tree.
-    // A placed package leaf outside the expected set is allowed; a placed leaf that is neither a package leaf nor a Producer slot is red.
+    // that is exactly its consumed leaves (a Producer Studio slot among them only when a publication reaches it, fix1);
+    // for any other agent, the whole package tree. A placed package leaf or Producer slot outside the expected set is
+    // allowed; a placed leaf that is neither a package leaf nor a Producer slot is red.
     const producer = agent.agent === "designer" ? studioDesignerSlots().map(slot => slot.id) : [];
-    const expected = scopedToConsumed(agent.agent)
-      ? new Set([...consumedIds(consumedLeaves(dirname(model.consumer)), agent.agent), ...producer])
-      : pkg;
+    const expected = scopedToConsumed(agent.agent) ? consumedIds(consumedLeaves(dirname(model.consumer)), agent.agent) : pkg;
     const known = new Set([...pkg, ...producer]);
     const rows = [...expected].filter(id => !placed.has(id)).map(id => `${id}: sync places it, not placed`)
       .concat([...placed].filter(id => !known.has(id)).map(id => `${id}: placed, neither a package leaf nor a Producer slot`));
     if (!expected.size) rows.push("nothing to judge: sync places no leaves");
-    if (rows.length) rows.unshift(`sync places ${expected.size} leaves, the placed tree has ${[...expected].filter(id => placed.has(id)).length} of them`);
+    // Sync manages no Publisher IA (`ia publisher --start` is workspace-owned), so its summary names the package tree.
+    const source = isConsumedAgent(agent.agent) ? `sync places ${expected.size} leaves` : `package tree has ${expected.size} leaves`;
+    if (rows.length) rows.unshift(`${source}, the placed tree has ${[...expected].filter(id => placed.has(id)).length} of them`);
     return { rows, evidence: expected.size };
   },
   // Report-only (owner, 2026-11-17): a group splits by its own rule into any number of parts, so a one-part split is
