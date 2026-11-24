@@ -18,6 +18,24 @@
         "requirements.json": "0a31d4fef63be425fefec945b0e0225b6e5b799c5c54edf371a5cf4e196e2dbb",
         "taste.md": "88ced975fdc9a190e5c3dde83ac7e4b4cf869e4b87618fce47704ed20abe0e14"
       }
+    },
+    {
+      "op": "standard",
+      "at": "2026-11-23T19:46:39.958Z",
+      "by": "planner",
+      "verb": "standard",
+      "model": "none",
+      "tier": "none",
+      "standard": {
+        "agent": "publisher",
+        "id": "release",
+        "sha256": "ed16476b5c1a6244c82ef20dfcfd86998cd25dac8ece5dc794724f73741edd19"
+      },
+      "files": {
+        "exemplars/exemplars.json": "08472b9e1cae1147d056c03188db9a16d9363e6d8957578c2a246ca6495ed2fa",
+        "requirements.json": "47621e9e337cadd97da556ea53553109d97f0fd822bd21019f267f8283827d16",
+        "taste.md": "88ced975fdc9a190e5c3dde83ac7e4b4cf869e4b87618fce47704ed20abe0e14"
+      }
     }
   ]
 }

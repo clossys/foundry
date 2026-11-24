@@ -7,6 +7,8 @@
   "mode": "craft",
   "craftTier": "mid",
   "seeds": [],
+  "createOnly": true,
+  "createOnlyReason": "A release manifest records one consumer build, its exact inputs, gate results and pins, so no seed or package default can stand in for it and every release is created per consumer by the Publisher.",
   "requirements": [
     {
       "check": "release.manifest",

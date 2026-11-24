@@ -1,0 +1,18 @@
+{
+  "schema": "clossys.scorecard/1",
+  "slot": "designer/loop.cascade",
+  "at": "2026-11-19T00:00:00Z",
+  "pick": "cascade-v1.json",
+  "candidates": [
+    {
+      "rank": 1,
+      "candidate": "cascade-v1.json",
+      "sha256": "bd140b4d498c359293ecc87f0eb35f1f0ff31be5e587bfeb9f652b0be23710ff",
+      "submitted": true,
+      "certified": true,
+      "verdict": "certify",
+      "reasons": [],
+      "pinSet": "3706e1e431c13124eaa2050ec0df81d529dd9cbf4428028d81cf10f95f649750"
+    }
+  ]
+}
