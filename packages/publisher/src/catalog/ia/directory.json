@@ -124,6 +124,23 @@
       "records": {
         "pattern": "home.<role>",
         "meta": "writer/page.home.meta#home.meta"
+      },
+      "inputs": [
+        "publisher/layout.marketing-home",
+        "writer/page.home.meta"
+      ],
+      "requirements": [
+        {
+          "check": "page.assembled"
+        },
+        {
+          "check": "page.no-inline-copy"
+        }
+      ],
+      "family": {
+        "options": 1,
+        "varyOn": null,
+        "values": []
       }
     },
     "page.about": {
@@ -136,6 +153,23 @@
       "records": {
         "pattern": "about.<role>",
         "meta": "writer/page.about.meta#about.meta"
+      },
+      "inputs": [
+        "publisher/layout.about",
+        "writer/page.about.meta"
+      ],
+      "requirements": [
+        {
+          "check": "page.assembled"
+        },
+        {
+          "check": "page.no-inline-copy"
+        }
+      ],
+      "family": {
+        "options": 1,
+        "varyOn": null,
+        "values": []
       }
     },
     "page.pricing": {
@@ -148,6 +182,23 @@
       "records": {
         "pattern": "pricing.<role>",
         "meta": "writer/page.pricing.meta#pricing.meta"
+      },
+      "inputs": [
+        "publisher/layout.pricing",
+        "writer/page.pricing.meta"
+      ],
+      "requirements": [
+        {
+          "check": "page.assembled"
+        },
+        {
+          "check": "page.no-inline-copy"
+        }
+      ],
+      "family": {
+        "options": 1,
+        "varyOn": null,
+        "values": []
       }
     },
     "page.contact": {
@@ -160,6 +211,23 @@
       "records": {
         "pattern": "contact.<role>",
         "meta": "writer/page.contact.meta#contact.meta"
+      },
+      "inputs": [
+        "publisher/layout.contact",
+        "writer/page.contact.meta"
+      ],
+      "requirements": [
+        {
+          "check": "page.assembled"
+        },
+        {
+          "check": "page.no-inline-copy"
+        }
+      ],
+      "family": {
+        "options": 1,
+        "varyOn": null,
+        "values": []
       }
     },
     "page.site-page": {
@@ -173,6 +241,23 @@
       "records": {
         "pattern": "site-page.<role>",
         "meta": "writer/page.site-page.meta#site-page.meta"
+      },
+      "inputs": [
+        "publisher/layout.site-page",
+        "writer/page.site-page.meta"
+      ],
+      "requirements": [
+        {
+          "check": "page.assembled"
+        },
+        {
+          "check": "page.no-inline-copy"
+        }
+      ],
+      "family": {
+        "options": 1,
+        "varyOn": null,
+        "values": []
       }
     },
     "page.terms": {
@@ -185,6 +270,23 @@
       "records": {
         "pattern": "terms.<role>",
         "meta": "writer/page.terms.meta#terms.meta"
+      },
+      "inputs": [
+        "publisher/layout.legal",
+        "writer/page.terms.meta"
+      ],
+      "requirements": [
+        {
+          "check": "page.assembled"
+        },
+        {
+          "check": "page.no-inline-copy"
+        }
+      ],
+      "family": {
+        "options": 1,
+        "varyOn": null,
+        "values": []
       }
     },
     "page.privacy": {
@@ -197,6 +299,23 @@
       "records": {
         "pattern": "privacy.<role>",
         "meta": "writer/page.privacy.meta#privacy.meta"
+      },
+      "inputs": [
+        "publisher/layout.legal",
+        "writer/page.privacy.meta"
+      ],
+      "requirements": [
+        {
+          "check": "page.assembled"
+        },
+        {
+          "check": "page.no-inline-copy"
+        }
+      ],
+      "family": {
+        "options": 1,
+        "varyOn": null,
+        "values": []
       }
     },
     "page.not-found": {
@@ -209,6 +328,23 @@
       "records": {
         "pattern": "not-found.<role>",
         "meta": "writer/page.not-found.meta#not-found.meta"
+      },
+      "inputs": [
+        "publisher/layout.site-state",
+        "writer/page.not-found.meta"
+      ],
+      "requirements": [
+        {
+          "check": "page.assembled"
+        },
+        {
+          "check": "page.no-inline-copy"
+        }
+      ],
+      "family": {
+        "options": 1,
+        "varyOn": null,
+        "values": []
       }
     },
     "page.error": {
@@ -221,6 +357,23 @@
       "records": {
         "pattern": "error.<role>",
         "meta": "writer/page.error.meta#error.meta"
+      },
+      "inputs": [
+        "publisher/layout.site-state",
+        "writer/page.error.meta"
+      ],
+      "requirements": [
+        {
+          "check": "page.assembled"
+        },
+        {
+          "check": "page.no-inline-copy"
+        }
+      ],
+      "family": {
+        "options": 1,
+        "varyOn": null,
+        "values": []
       }
     },
     "page.docs-index": {
@@ -233,6 +386,23 @@
       "records": {
         "pattern": "docs-index.<role>",
         "meta": "writer/page.docs-index.meta#docs-index.meta"
+      },
+      "inputs": [
+        "publisher/layout.docs-index",
+        "writer/page.docs-index.meta"
+      ],
+      "requirements": [
+        {
+          "check": "page.assembled"
+        },
+        {
+          "check": "page.no-inline-copy"
+        }
+      ],
+      "family": {
+        "options": 1,
+        "varyOn": null,
+        "values": []
       }
     },
     "page.guide": {
@@ -246,6 +416,23 @@
       "records": {
         "pattern": "guide.<role>",
         "meta": "writer/page.guide.meta#guide.meta"
+      },
+      "inputs": [
+        "publisher/layout.docs-guide",
+        "writer/page.guide.meta"
+      ],
+      "requirements": [
+        {
+          "check": "page.assembled"
+        },
+        {
+          "check": "page.no-inline-copy"
+        }
+      ],
+      "family": {
+        "options": 1,
+        "varyOn": null,
+        "values": []
       }
     },
     "page.article": {
@@ -259,6 +446,23 @@
       "records": {
         "pattern": "article.<role>",
         "meta": "writer/page.article.meta#article.meta"
+      },
+      "inputs": [
+        "publisher/layout.docs-article",
+        "writer/page.article.meta"
+      ],
+      "requirements": [
+        {
+          "check": "page.assembled"
+        },
+        {
+          "check": "page.no-inline-copy"
+        }
+      ],
+      "family": {
+        "options": 1,
+        "varyOn": null,
+        "values": []
       }
     },
     "page.changelog": {
@@ -271,6 +475,23 @@
       "records": {
         "pattern": "changelog.<role>",
         "meta": "writer/page.changelog.meta#changelog.meta"
+      },
+      "inputs": [
+        "publisher/layout.changelog",
+        "writer/page.changelog.meta"
+      ],
+      "requirements": [
+        {
+          "check": "page.assembled"
+        },
+        {
+          "check": "page.no-inline-copy"
+        }
+      ],
+      "family": {
+        "options": 1,
+        "varyOn": null,
+        "values": []
       }
     },
     "page.sign-in": {
@@ -283,6 +504,23 @@
       "records": {
         "pattern": "sign-in.<role>",
         "meta": "writer/page.sign-in.meta#sign-in.meta"
+      },
+      "inputs": [
+        "publisher/layout.auth",
+        "writer/page.sign-in.meta"
+      ],
+      "requirements": [
+        {
+          "check": "page.assembled"
+        },
+        {
+          "check": "page.no-inline-copy"
+        }
+      ],
+      "family": {
+        "options": 1,
+        "varyOn": null,
+        "values": []
       }
     },
     "page.sign-out-confirm": {
@@ -295,6 +533,23 @@
       "records": {
         "pattern": "sign-out-confirm.<role>",
         "meta": "writer/page.sign-out-confirm.meta#sign-out-confirm.meta"
+      },
+      "inputs": [
+        "publisher/layout.auth",
+        "writer/page.sign-out-confirm.meta"
+      ],
+      "requirements": [
+        {
+          "check": "page.assembled"
+        },
+        {
+          "check": "page.no-inline-copy"
+        }
+      ],
+      "family": {
+        "options": 1,
+        "varyOn": null,
+        "values": []
       }
     },
     "page.not-authorized": {
@@ -307,6 +562,23 @@
       "records": {
         "pattern": "not-authorized.<role>",
         "meta": "writer/page.not-authorized.meta#not-authorized.meta"
+      },
+      "inputs": [
+        "publisher/layout.auth",
+        "writer/page.not-authorized.meta"
+      ],
+      "requirements": [
+        {
+          "check": "page.assembled"
+        },
+        {
+          "check": "page.no-inline-copy"
+        }
+      ],
+      "family": {
+        "options": 1,
+        "varyOn": null,
+        "values": []
       }
     },
     "page.service-unavailable": {
@@ -319,6 +591,23 @@
       "records": {
         "pattern": "service-unavailable.<role>",
         "meta": "writer/page.service-unavailable.meta#service-unavailable.meta"
+      },
+      "inputs": [
+        "publisher/layout.auth",
+        "writer/page.service-unavailable.meta"
+      ],
+      "requirements": [
+        {
+          "check": "page.assembled"
+        },
+        {
+          "check": "page.no-inline-copy"
+        }
+      ],
+      "family": {
+        "options": 1,
+        "varyOn": null,
+        "values": []
       }
     },
     "page.app-home": {
@@ -331,6 +620,23 @@
       "records": {
         "pattern": "app-home.<role>",
         "meta": "writer/page.app-home.meta#app-home.meta"
+      },
+      "inputs": [
+        "publisher/layout.app-home",
+        "writer/page.app-home.meta"
+      ],
+      "requirements": [
+        {
+          "check": "page.assembled"
+        },
+        {
+          "check": "page.no-inline-copy"
+        }
+      ],
+      "family": {
+        "options": 1,
+        "varyOn": null,
+        "values": []
       }
     },
     "page.list": {
@@ -344,6 +650,23 @@
       "records": {
         "pattern": "list.<role>",
         "meta": "writer/page.list.meta#list.meta"
+      },
+      "inputs": [
+        "publisher/layout.app-list",
+        "writer/page.list.meta"
+      ],
+      "requirements": [
+        {
+          "check": "page.assembled"
+        },
+        {
+          "check": "page.no-inline-copy"
+        }
+      ],
+      "family": {
+        "options": 1,
+        "varyOn": null,
+        "values": []
       }
     },
     "page.settings": {
@@ -356,6 +679,23 @@
       "records": {
         "pattern": "settings.<role>",
         "meta": "writer/page.settings.meta#settings.meta"
+      },
+      "inputs": [
+        "publisher/layout.app-settings",
+        "writer/page.settings.meta"
+      ],
+      "requirements": [
+        {
+          "check": "page.assembled"
+        },
+        {
+          "check": "page.no-inline-copy"
+        }
+      ],
+      "family": {
+        "options": 1,
+        "varyOn": null,
+        "values": []
       }
     },
     "page.app-not-found": {
@@ -368,6 +708,23 @@
       "records": {
         "pattern": "app-not-found.<role>",
         "meta": "writer/page.app-not-found.meta#app-not-found.meta"
+      },
+      "inputs": [
+        "publisher/layout.app-state",
+        "writer/page.app-not-found.meta"
+      ],
+      "requirements": [
+        {
+          "check": "page.assembled"
+        },
+        {
+          "check": "page.no-inline-copy"
+        }
+      ],
+      "family": {
+        "options": 1,
+        "varyOn": null,
+        "values": []
       }
     },
     "page.admin-home": {
@@ -380,6 +737,23 @@
       "records": {
         "pattern": "admin-home.<role>",
         "meta": "writer/page.admin-home.meta#admin-home.meta"
+      },
+      "inputs": [
+        "publisher/layout.admin-home",
+        "writer/page.admin-home.meta"
+      ],
+      "requirements": [
+        {
+          "check": "page.assembled"
+        },
+        {
+          "check": "page.no-inline-copy"
+        }
+      ],
+      "family": {
+        "options": 1,
+        "varyOn": null,
+        "values": []
       }
     },
     "page.admin-gallery": {
@@ -393,6 +767,23 @@
       "records": {
         "pattern": "admin-gallery.<role>",
         "meta": "writer/page.admin-gallery.meta#admin-gallery.meta"
+      },
+      "inputs": [
+        "publisher/layout.admin-gallery",
+        "writer/page.admin-gallery.meta"
+      ],
+      "requirements": [
+        {
+          "check": "page.assembled"
+        },
+        {
+          "check": "page.no-inline-copy"
+        }
+      ],
+      "family": {
+        "options": 1,
+        "varyOn": null,
+        "values": []
       }
     },
     "page.admin-slot": {
@@ -406,6 +797,23 @@
       "records": {
         "pattern": "admin-slot.<role>",
         "meta": "writer/page.admin-slot.meta#admin-slot.meta"
+      },
+      "inputs": [
+        "publisher/layout.admin-slot",
+        "writer/page.admin-slot.meta"
+      ],
+      "requirements": [
+        {
+          "check": "page.assembled"
+        },
+        {
+          "check": "page.no-inline-copy"
+        }
+      ],
+      "family": {
+        "options": 1,
+        "varyOn": null,
+        "values": []
       }
     },
     "page.admin-requests": {
@@ -418,6 +826,23 @@
       "records": {
         "pattern": "admin-requests.<role>",
         "meta": "writer/page.admin-requests.meta#admin-requests.meta"
+      },
+      "inputs": [
+        "publisher/layout.admin-requests",
+        "writer/page.admin-requests.meta"
+      ],
+      "requirements": [
+        {
+          "check": "page.assembled"
+        },
+        {
+          "check": "page.no-inline-copy"
+        }
+      ],
+      "family": {
+        "options": 1,
+        "varyOn": null,
+        "values": []
       }
     },
     "page.admin-questions": {
@@ -430,6 +855,23 @@
       "records": {
         "pattern": "admin-questions.<role>",
         "meta": "writer/page.admin-questions.meta#admin-questions.meta"
+      },
+      "inputs": [
+        "publisher/layout.admin-questions",
+        "writer/page.admin-questions.meta"
+      ],
+      "requirements": [
+        {
+          "check": "page.assembled"
+        },
+        {
+          "check": "page.no-inline-copy"
+        }
+      ],
+      "family": {
+        "options": 1,
+        "varyOn": null,
+        "values": []
       }
     },
     "page.deck": {
@@ -443,6 +885,23 @@
       "records": {
         "pattern": "deck.<role>",
         "meta": "writer/page.deck.meta#deck.meta"
+      },
+      "inputs": [
+        "publisher/layout.deck",
+        "writer/page.deck.meta"
+      ],
+      "requirements": [
+        {
+          "check": "page.assembled"
+        },
+        {
+          "check": "page.no-inline-copy"
+        }
+      ],
+      "family": {
+        "options": 1,
+        "varyOn": null,
+        "values": []
       }
     },
     "page.company-one-pager": {
