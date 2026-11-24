@@ -39,10 +39,13 @@ const draw = (leaf: string, options?: Parameters<typeof input>[1]) => render(<Sh
 describe("designer Frame runtime renderers", () => {
   it("cover every designer-owned Frames leaf, including site-shell", () => {
     const designerLeaves = (slots as readonly { id: string }[]).map(slot => slot.id).filter(id => FOUNDRY_FRAME_MAP[id.slice("frames.".length)]?.package === "@clossys/designer");
-    // foundry-build-0032 (audit P3): frames.deck is the one Frames leaf with no Designer export; Publisher's static
-    // slides build renders it, and the importer records it as a named gap. Every other leaf is Designer-owned.
+    // foundry-build-0032 (audit P3): frames.deck has no Designer export; Publisher's static slides build renders it, and
+    // the importer records it as a named gap. foundry-build-0048 BR-SEED3: the retired frames.document
+    // (src/catalog/retired.json) is render plumbing, not a slot, so it left the map and is the other named gap; Publisher
+    // imports DocumentFrame directly. Every other leaf is Designer-owned.
     const gaps = (slots as readonly { id: string }[]).map(slot => slot.id).filter(id => !FOUNDRY_FRAME_MAP[id.slice("frames.".length)]);
-    expect(gaps).toEqual(["frames.deck"]);
+    expect(gaps).toEqual(["frames.document", "frames.deck"]);
+    expect(frameRenderers["frames.document"]).toBeUndefined();
     expect(Object.keys(FOUNDRY_FRAME_GAPS).map(leaf => `frames.${leaf}`)).toEqual(gaps);
     expect(Object.keys(frameRenderers).sort()).toEqual(designerLeaves.sort());
     expect(designerLeaves.length + gaps.length).toBe(slots.length);
@@ -85,7 +88,7 @@ describe("designer Frame runtime renderers", () => {
     };
     const dataset = new Set(strings(specimenDataset));
     const records: Record<string, keyof typeof F> = {
-      "frames.document": "document", "frames.auth-shell": "app",
+      "frames.auth-shell": "app",
       "frames.app-shell": "app", "frames.app-header": "appHeader", "frames.app-sidebar": "appSidebar", "frames.inspector": "inspector",
       "frames.sheet": "sheet", "frames.site-header": "siteHeader", "frames.site-footer": "siteFooter", "frames.command": "command",
     };

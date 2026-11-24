@@ -298,11 +298,26 @@ function validateBrief(fields: Record<string, unknown>, body: string, slot: stri
   return issues;
 }
 
+/**
+ * A Writer candidate's `provenance` (U-VOICE-PROV): what the copy derives from without reading it as an input, so
+ * neither the Writer inputs rule nor R07.1 counts it. Its one key, `voice`, cites a Director slot
+ * (`director:<slot-id>`); copy.voice-derived holds it to the pinned voice.
+ */
+function writerProvenanceIssues(value: unknown, path: string): SlotModelIssue[] {
+  const fail = (message: string): SlotModelIssue[] => [{ code: "candidate-invalid", path, message }];
+  if (!object(value)) return fail("provenance must be {voice}");
+  for (const key of Object.keys(value)) if (key !== "voice") return fail(`provenance has unknown key ${key}`);
+  const voice = value.voice;
+  if (typeof voice !== "string" || !voice.startsWith("director:") || !SLOT_ID.test(voice.slice("director:".length))) return fail("provenance.voice must cite a Director slot as director:<slot-id>");
+  return [];
+}
+
 function validateStrings(fields: Record<string, unknown>, body: string, slot: string, path: string): SlotModelIssue[] {
   const issues: SlotModelIssue[] = [];
   const fail = (message: string) => issues.push({ code: "candidate-invalid", path, message });
-  for (const key of Object.keys(fields)) if (!["slot", "locales", "source", "vary", "reason"].includes(key) && !(CANDIDATE_STATUS_KEYS as readonly string[]).includes(key) && !(LEGACY_PROVENANCE_KEYS as readonly string[]).includes(key)) fail(`unknown frontmatter key ${key}`);
+  for (const key of Object.keys(fields)) if (!["slot", "locales", "source", "provenance", "vary", "reason"].includes(key) && !(CANDIDATE_STATUS_KEYS as readonly string[]).includes(key) && !(LEGACY_PROVENANCE_KEYS as readonly string[]).includes(key)) fail(`unknown frontmatter key ${key}`);
   if (fields.slot !== slot) fail(`slot must be ${slot}`);
+  if (fields.provenance !== undefined) issues.push(...writerProvenanceIssues(fields.provenance, path));
   // The Writer equivalent of meta.element.reason: the pinned Director slot the copy realises (R20, records/director-trace.ts).
   if (fields.reason !== undefined && (typeof fields.reason !== "string" || !fields.reason.trim())) fail("reason must be a non-empty string");
   if (!strings(fields.locales) || !fields.locales.length) { fail("locales must be a non-empty list"); return issues; }

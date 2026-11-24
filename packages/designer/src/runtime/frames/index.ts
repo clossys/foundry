@@ -1,11 +1,11 @@
-/** Frame renderer registry: one package-owned runtime renderer per designer Frames leaf. */
+/** Frame renderer registry: one package-owned runtime renderer per designer Frames leaf. The retired frames.document
+ * (src/catalog/retired.json) is render plumbing, not a slot: DocumentFrame stays exported from ../../frames for Publisher. */
 import { mergeRendererGroups, type SurfaceRendererGroup } from "../contract.js";
 import { authShellRenderer } from "./auth-shell.js";
 import { appHeaderRenderer } from "./app-header.js";
 import { appShellRenderer } from "./app-shell.js";
 import { appSidebarRenderer } from "./app-sidebar.js";
 import { commandRenderer } from "./command.js";
-import { documentRenderer } from "./document.js";
 import { inspectorRenderer } from "./inspector.js";
 import { sheetRenderer } from "./sheet.js";
 import { siteFooterRenderer } from "./site-footer.js";
@@ -13,7 +13,6 @@ import { siteShellRuntimeRenderer } from "./site-shell.js";
 import { siteHeaderRenderer } from "./site-header.js";
 
 export const frameRenderers: SurfaceRendererGroup = mergeRendererGroups({
-  "frames.document": documentRenderer,
   "frames.site-shell": siteShellRuntimeRenderer,
   "frames.auth-shell": authShellRenderer,
   "frames.app-shell": appShellRenderer,

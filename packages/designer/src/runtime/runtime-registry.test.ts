@@ -74,9 +74,10 @@ describe("surface runtime registry", () => {
     expect(packaged.length + otherPackage.length + nativeSpecimens.length + dropped.length).toBe(sectionSlots.length);
     for (const id of [...otherPackage, ...nativeSpecimens]) expect(ids(sectionSlots as readonly { id: string }[])).toContain(id);
     // foundry-build-0032 (audit P3): frames.deck is rendered by another package (Publisher's static slides build), the
-    // same way the sectioned document is; it is the importer's one named Frames gap and has no renderer here.
+    // same way the sectioned document is; it is a named Frames gap and has no renderer here. frames.document, retired
+    // 2026-11-15, is the other gap: its plumbing renderer left the runtime registries (Publisher imports DocumentFrame).
     const frameGaps = Object.keys(FOUNDRY_FRAME_GAPS).map(leaf => `frames.${leaf}`).sort();
-    expect(frameGaps).toEqual(["frames.deck"]);
+    expect(frameGaps).toEqual(["frames.deck", "frames.document"]);
     expect(Object.keys(frameRenderers).sort()).toEqual(ids(frameSlots as readonly { id: string }[]).filter(id => !frameGaps.includes(id)));
     expect(Object.keys(frameRenderers).length + frameGaps.length).toBe(frameSlots.length);
   });

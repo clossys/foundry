@@ -342,6 +342,23 @@ describe("advisor intake", () => {
     tampered.slots["intake.business.name"]!.feeds = ["identity.naming.nope"];
     expect(runIntake(tampered, root, { answers: answersFile({ "intake.business.name": "x" }) }, host).lines.join("\n")).toContain("identity.naming.nope");
   });
+  it("gates on the installed Director, not on install.json: npm-installed packages with no install record still record", () => {
+    const root = temp(); const host = fakeHost();
+    host.run("npm", ["install"], { cwd: root });
+    host.calls.length = 0;
+    expect(existsSync(join(root, INSTALL_RECORD))).toBe(false);
+    const result = runIntake(tree, root, { answers: answersFile(ALL) }, host);
+    expect(result.exitCode).toBe(0);
+    expect(evidenceCalls(host)).toHaveLength(5);
+    expect(readIntakeRecord(root)).toMatchObject({ status: "complete" });
+  });
+  it("refuses with no installed @clossys/director, running nothing", () => {
+    const root = temp(); const host = fakeHost();
+    const result = runIntake(tree, root, { answers: answersFile(ALL) }, host);
+    expect(result.exitCode).toBe(1);
+    expect(result.lines[0]).toContain("no installed @clossys/director");
+    expect(host.calls).toEqual([]);
+  });
   it("the plan guard refuses any clossys verb but evidence, and Advisor writes outside clossys/advisor/", () => {
     const root = "/work";
     expect(intakePlanIssues({ root, writes: [], commands: [{ target: "clossys/agents/director/x/slot.json", args: ["pin", "director/x", "v1", "--root", root] }] }).join("\n")).toContain("intake runs only clossys evidence");

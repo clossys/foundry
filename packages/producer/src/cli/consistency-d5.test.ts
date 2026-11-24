@@ -66,6 +66,8 @@ describe("ia --adopt places only consumed package leaves (D5 option 1)", () => {
     }
     // Not vacuous: the package holds leaves no publication reaches, and the adopt left them in the package.
     expect(skipped).toBeGreaterThan(0);
+    // The Director places its whole catalog (CHAT-DIR, ruling B1): each leaf carries the Director reader's edge.
+    expect(packagePlaced(root, "director")).toEqual([...directorIa().slots.keys()].sort());
     expect(agentFindings(root, leafSubject)).toEqual([]);
     for (const agent of CONSUMED_AGENTS) expect(syncDrift(join(root, "clossys"), agent).filter(failsSync), agent).toEqual([]);
   }, 120_000);

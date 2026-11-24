@@ -107,7 +107,7 @@ function MediaPlayerSession({ video, poster, passage, captions = video.captions,
     return () => { query.removeEventListener("change", motionChanged); observer?.disconnect(); pauseForPolicy(element); };
   }, [autoplay, video.src]);
 
-  return <div ref={root} data-slot="media-player" className={cx("relative overflow-hidden rounded-surface bg-surface-sunken text-ink-primary", className)}>
+  return <div ref={root} data-slot="media-player" className={cx("relative overflow-hidden rounded-lg bg-muted text-foreground", className)}>
     <VideoPlayer role="group" aria-label={passage.title} aria-keyshortcuts="Space K ArrowLeft ArrowRight M C" tabIndex={0}
       {...SEEK_ATTRIBUTES}
       hidden={error} className="block w-full focus-ring">
@@ -132,7 +132,7 @@ function MediaPlayerSession({ video, poster, passage, captions = video.captions,
     {!started && !error ? <div className="absolute inset-0 flex items-center justify-center">
       <Button onPress={start}><Icon glyph={ChevronRight} decorative size="sm" />{passage.play}</Button>
     </div> : null}
-    {error ? <SemanticContent as="div" role="alert" className="flex flex-col gap-xs p-md">
+    {error ? <SemanticContent as="div" role="alert" className="flex flex-col gap-1 p-3">
       <SemanticContent as="strong">{passage.error.title}</SemanticContent>
       <SemanticContent as="p">{passage.error.description}</SemanticContent>
     </SemanticContent> : null}

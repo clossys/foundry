@@ -25,6 +25,7 @@ import { buildPin, cliActor, pinPath, writePinDoc } from "../records/pin.js";
 import { jsonBytes } from "../records/slot-model/layout.js";
 import { writeCandidate, writeCandidateBytes } from "../records/slot-write.js";
 import { readPackageLoop } from "../loop/files.js";
+import { LOOPS_L0, LOOPS_L0_LABEL, loopsL1Id } from "../loop/agent-loops-ia.js";
 import { agentRaiseIssues, raiseRequest, requestIssues } from "../records/request.js";
 import { runCli } from "./main.js";
 import { FIXTURE_CONSUMER_ROOT } from "../records/slot-model/fixture-consumer.test.js";
@@ -47,6 +48,30 @@ function copy(): string {
   // candidate's npm dependencies from the nearest package-lock.json inside the consumer's repository.
   cpSync(join(FIXTURE_CONSUMER_ROOT, "package-lock.json"), join(root, "package-lock.json"));
   execFileSync("git", ["init", "-q"], { cwd: root });
+  return root;
+}
+/**
+ * A copy of the fixture as it was before the seeder adopted the placed agents' loops (R3): the loop slots, the loops L1
+ * (its layer and axis values) and the ia ledger's adopt-loops event go, which leaves each ia.json and ledger.json the
+ * bytes they were before adoption. The adoption tests start here.
+ */
+function unadopted(): string {
+  const root = copy();
+  for (const agent of ["director", "designer", "writer"] as const) {
+    const dir = join(root, "clossys", "agents", agent);
+    for (const each of AGENT_LOOPS) rmSync(join(dir, each), { recursive: true, force: true });
+    const ia = readJson(join(dir, "ia.json"));
+    ia.nodes = ia.nodes.filter((node: { id: string }) => node.id !== loopsL1Id(agent));
+    if (ia.layers) ia.layers = ia.layers.filter((layer: { id: string }) => layer.id !== LOOPS_L0);
+    if (ia.axes) {
+      if (ia.axes.L0.values) ia.axes.L0.values = ia.axes.L0.values.filter((value: string) => value !== LOOPS_L0_LABEL);
+      delete ia.axes.L1[LOOPS_L0];
+    }
+    writeFileSync(join(dir, "ia.json"), jsonBytes(ia));
+    const ledger = readJson(join(dir, "ledger.json"));
+    ledger.events = ledger.events.filter((event: { decision?: string }) => event.decision !== "adopt-loops");
+    writeFileSync(join(dir, "ledger.json"), jsonBytes(ledger));
+  }
   return root;
 }
 function tree(dir: string, base = dir, out: Record<string, string> = {}): Record<string, string> {
@@ -89,7 +114,7 @@ const verbEntry = (root: string, slot: string, target: string, at = AT) =>
 
 describe("clossys loop", () => {
   it("adopts the agent's five loop slots, pins each through the gate, and the runner runs the agent's pin", async () => {
-    const root = copy();
+    const root = unadopted();
     const result = await loop(root, "director/loop.create");
     expect(result.exitCode, result.message).toBe(0);
     // The verdict is the runner's own plan for one of director's slots, not a load the verb steers.
@@ -122,7 +147,7 @@ describe("clossys loop", () => {
   }, LONG);
 
   it("--check writes nothing and fails on a consumer that holds no agent loops", async () => {
-    const root = copy();
+    const root = unadopted();
     const before = tree(join(root, "clossys"));
     const result = await loop(root, "publisher/loop.create", "--check");
     expect(result.exitCode).toBe(1);
@@ -175,7 +200,7 @@ describe("clossys loop", () => {
   }, LONG);
 
   it("judges the actor before adoption writes a byte (Q9, U7 r5): bare owner, a seat, free text and an unresolved owner ref are refused", async () => {
-    const root = copy();
+    const root = unadopted();
     const before = tree(join(root, "clossys"));
     for (const by of ["owner", "agent:writer", "agent:judge", "migration", "owner:queue.approve#20261117T1200Z-nothing"]) {
       expect(() => adoptAgentLoops(root, "director", { by, at: AT }), by).toThrow(SeatRefusal);
@@ -310,7 +335,7 @@ const waitAll: RunHooks = { agent: () => "wait", code: () => ({ exit: 0, wrote: 
 
 describe("the runner runs the owning agent's pin for all five loops (planRun / startRun / resumeRun)", () => {
   it("plans every loop on the agent's pin once adopted, and Producer's standard before", async () => {
-    const root = copy();
+    const root = unadopted();
     const request = await withRequest(root, "director/narratives.origin");
     const slot = `director/${firstSlot(root, "director")}`;
     const inputs = {
@@ -918,7 +943,7 @@ describe("U9a fix round 4: agent steps are judged by what they changed, against 
     expect((await loop(root, "writer/loop.create")).exitCode).toBe(0);
     const slotId = "sections.hero.copy";
     const slot = `writer/${slotId}`;
-    const draft = (heading: string) => `---\nslot: "${slotId}"\nlocales: ["en"]\nreason: "realises director:advantage.proposition.promise for the hero"\nsource: {"kind":"derived","ref":["director:identity.verbal.voice","director:advantage.proposition.promise","director:identity.naming.name"]}\n---\n\n## en\n### header.heading\n<!-- {"id":"header.heading","bindings":[]} -->\n${heading}\n### actions.primary.label\n<!-- {"id":"actions.primary.label","bindings":[]} -->\nGet started\n`;
+    const draft = (heading: string) => `---\nslot: "${slotId}"\nlocales: ["en"]\nreason: "realises director:advantage.proposition.promise for the hero"\nsource: {"kind":"derived","ref":["director:identity.verbal.voice","director:advantage.proposition.promise","director:identity.naming.name"]}\nprovenance: {"voice":"director:identity.verbal.voice"}\n---\n\n## en\n### header.heading\n<!-- {"id":"header.heading","bindings":[]} -->\n${heading}\n### actions.primary.label\n<!-- {"id":"actions.primary.label","bindings":[]} -->\nGet started\n`;
     const candidates = () => { const dir = join(root, "clossys", "agents", slot, "candidates"); return existsSync(dir) ? readdirSync(dir).sort() : []; };
     // loop.create: refine-brief answers with nothing written, then the create step runs the real submit verb.
     const created = await startRun(root, { loop: "loop.create", slot }, answering("refine-brief", []), { now: minute(1) });

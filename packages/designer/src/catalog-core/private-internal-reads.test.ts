@@ -12,9 +12,10 @@ const document = () => structuredClone(importFoundryFrames().fills.find(doc => d
 const consumption = (doc: any) => doc.frames["site-shell"].consumption;
 
 // BR-RETIRE3: the seven retired section surfaces (boundary-message, cards, legal-prose, logo-hero, logo-mark,
-// newsletter, record-detail) left the measurement with their fills, 63 -> 56.
-it("reads no module path as an asset in the 56-entry inventory and records no private witness", () => {
-  expect(Object.keys(measurements)).toHaveLength(56);
+// newsletter, record-detail) left the measurement with their fills, 63 -> 56. BR-SEED3: the retired frames.document
+// (src/catalog/retired.json:152) left the foundry frames importer map with its fill, 56 -> 55.
+it("reads no module path as an asset in the 55-entry inventory and records no private witness", () => {
+  expect(Object.keys(measurements)).toHaveLength(55);
   for (const [slot, row] of Object.entries(measurements as Record<string, any>)) {
     expect(row.consumption.scannedReads.assets, slot).not.toContain("assets.js");
     expect(Object.keys(row.consumption), slot).not.toContain("rawScannedReads");

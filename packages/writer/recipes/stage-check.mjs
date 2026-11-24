@@ -12,8 +12,9 @@
  * pinned voice, so the brief lists identity.verbal.voice at its pin and every direction cites it;
  * every input is a Director or Writer slot or a recorded finding.
  * draft: the copy candidate meets the mechanical requirements its standard names (the 3S-ND
- * worklist classes): the source (the clossys.candidate/1 envelope's, as the judge reads it) cites
- * director:identity.verbal.voice and derives from pinned director:/writer: slots and findings only, one
+ * worklist classes): the frontmatter provenance.voice names director:identity.verbal.voice (provenance,
+ * never an input), the source (the clossys.candidate/1 envelope's, as the judge reads it) derives from
+ * pinned director:/writer: slots and findings only, one
  * entry per key whose meta id is the key, plain values (no Markdown or HTML, no placeholder, no doubled
  * spaces, valid ICU), within the contract's limits (copy.fields[].maxLength), sentence case for headlines, and each lexicon, claim, narrative and pattern shape.
  *
@@ -251,16 +252,19 @@ const partList = value => Array.isArray(value) ? value.filter(isRecord).filter(i
 /** The draft checks by requirement id: the maker's preflight of what each requirement asks. */
 export const DRAFT_CHECKS = Object.freeze({
   "copy.voice-derived": draft => {
-    const source = sourceOf(draft);
-    if (typeof source === "string") return [{ what: source, fix: `write source: {"kind": "derived", "ref": ["${VOICE}", ...]}` }];
-    return source.ref.includes(VOICE) ? [] : [{ what: `source does not cite ${VOICE}`, fix: `add "${VOICE}" to source.ref: Writer copy derives from the pinned brand voice` }];
+    const fix = `write provenance: {"voice": "${VOICE}"}: Writer copy derives from the pinned brand voice, as provenance, never as an input`;
+    const read = jsonField(frontmatter(draft.text).fields, "provenance");
+    if (read.error) return [{ what: read.error, fix }];
+    if (!isRecord(read.value)) return [{ what: "the frontmatter provenance is not an object", fix }];
+    if (read.value.voice === undefined) return [{ what: "provenance has no voice", fix }];
+    return read.value.voice === VOICE ? [] : [{ what: `provenance.voice is ${JSON.stringify(read.value.voice)}, not ${VOICE}`, fix }];
   },
   "copy.derived-upstream": (draft, params, world, root) => {
     const source = sourceOf(draft);
     if (typeof source === "string") return [{ what: source, fix: 'write source: {"kind": "derived", "ref": [...]}' }];
     const out = [];
     if (source.kind !== "derived") out.push({ what: `source kind is ${JSON.stringify(source.kind)}`, fix: 'set "kind": "derived"; Writer copy derives from upstream pins' });
-    if (!source.ref.length) out.push({ what: "source cites nothing", fix: `cite ${VOICE} and the slot's pinned inputs` });
+    if (!source.ref.length) out.push({ what: "source cites nothing", fix: "cite the slot's pinned inputs" });
     for (const ref of source.ref) {
       if (!UPSTREAM_REF.test(ref)) { out.push({ what: `source ref "${ref}" is not director:<slot>, writer:<slot> or a finding`, fix: "cite upstream as director:<slot>, writer:<slot>[#key] or finding:<id>; never a bare id or a URL" }); continue; }
       if (FINDING_REF.test(ref)) { if (!findingOf(root, ref)) out.push({ what: `source ref ${ref} is not a recorded finding`, fix: "record it with clossys evidence first" }); continue; }

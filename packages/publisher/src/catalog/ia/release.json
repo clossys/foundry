@@ -70,6 +70,7 @@
   "slots": {
     "release.site": {
       "kind": "release",
+      "standard": "release",
       "publication": "site",
       "exports": [
         {
@@ -101,6 +102,7 @@
     },
     "release.docs": {
       "kind": "release",
+      "standard": "release",
       "publication": "docs",
       "exports": [
         {
@@ -125,6 +127,7 @@
     },
     "release.app": {
       "kind": "release",
+      "standard": "release",
       "publication": "app",
       "exports": [
         {
@@ -149,6 +152,7 @@
     },
     "release.slides": {
       "kind": "release",
+      "standard": "release",
       "publication": "slides",
       "exports": [
         {
@@ -183,6 +187,7 @@
     },
     "release.admin": {
       "kind": "release",
+      "standard": "release",
       "publication": "admin",
       "exports": [
         {

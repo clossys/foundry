@@ -9,8 +9,10 @@ import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 import { ADMIN_SEATED, adminSeatedSummary, runAdminSeated } from "../check/admin-seated.js";
+import { AGENT_LOOPS } from "../loop/agent-loops-ia.js";
 import { listRequests } from "../records/request.js";
 import { resolveSlot } from "../records/resolve.js";
+import { directorIa } from "../records/slot-model/foundry-ia.js";
 import { listSlots } from "../records/slots.js";
 import { currentView } from "../records/slot-current.js";
 import { ADMIN_PUBLICATION_SLOT, adminContract, adminPlan, adminUnder, readAdminSlot } from "./admin-plan.js";
@@ -66,7 +68,8 @@ describe("the admin plan is the Publisher admin starter", () => {
   });
 });
 
-describe("clossys init seats the admin workspace", () => {
+// A fresh init also adopts the installed Director's whole IA (CHAT-DIR gap 8), so each init here writes its 55 cells too.
+describe("clossys init seats the admin workspace", { timeout: 60_000 }, () => {
   it("places the five admin pages and publication.admin in the admin tab of a new Publisher IA, one group each", async () => {
     const root = workspace();
     const result = await runInitCli(["--at", AT], root);
@@ -159,7 +162,7 @@ describe("clossys init seats the admin workspace", () => {
     expect((check as unknown as { checks?: Record<string, unknown> }).checks?.[ADMIN_SEATED]).toBeUndefined();
   });
 
-  it("pins the expected-red state of clossys check on a fresh init (unmocked): exit 1 on 6 no-pin rows only (5 pages, the publication), inputs-undeclared 5", async () => {
+  it("pins the expected-red state of clossys check on a fresh init (unmocked): exit 1 on 6 Publisher no-pin rows (5 pages, the publication), inputs-undeclared 5, and the Director's empty cells", async () => {
     const root = workspace();
     expect((await runInitCli(["--at", AT], root)).exitCode).toBe(0);
     const check = await runCli(["check", "--root", root]);
@@ -172,10 +175,15 @@ describe("clossys init seats the admin workspace", () => {
     expect(check.message).toContain(`${ADMIN_SEATED}: pass`);
     expect(check.message).toContain("loop.agent-standard: pass");
     expect(check.message).toContain("loop.connected: pass");
-    expect(check.message).toContain("Slot integrity found 6 findings across 11 slots.");
+    // CHAT-DIR gap 8: the init adopted the Director's whole IA (each cell empty until the interview) and pinned its five
+    // loops, so each Director cell adds a no-candidate and a no-pin row.
+    const cells = [...directorIa().slots.keys()];
+    expect(check.message).toContain(`Slot integrity found ${6 + 2 * cells.length} findings across ${11 + cells.length + AGENT_LOOPS.length} slots.`);
+    expect(check.message).toContain(`director: ${cells.length + AGENT_LOOPS.length} slots / ${AGENT_LOOPS.length} with candidate / ${AGENT_LOOPS.length} pinned; inputs-undeclared 0`);
     expect(check.message).toContain("publisher: 11 slots / 11 with candidate / 5 pinned; inputs-undeclared 5");
     const rows = check.message.split("\n").filter(line => /^  [a-z]+:[a-z0-9.-]+ \[/.test(line));
-    expect(rows).toEqual([...PAGES, ADMIN_PUBLICATION_SLOT].map(slot => `  publisher:${slot} [no-pin] No candidate is pinned.`));
+    expect(rows.filter(row => row.startsWith("  publisher:"))).toEqual([...PAGES, ADMIN_PUBLICATION_SLOT].map(slot => `  publisher:${slot} [no-pin] No candidate is pinned.`));
+    expect(rows.filter(row => !row.startsWith("  publisher:")).sort()).toEqual(cells.flatMap(cell => [`  director:${cell} [no-candidate] No candidate file exists.`, `  director:${cell} [no-pin] No candidate is pinned.`]).sort());
   }, 120_000);
 
   it("is idempotent: a second run places nothing and raises nothing new", async () => {
@@ -216,7 +224,7 @@ describe("clossys init seats the admin workspace", () => {
   });
 });
 
-describe("publisher.admin-seated", () => {
+describe("publisher.admin-seated", { timeout: 60_000 }, () => {
   it("skips, and prints the skip, only a workspace with no slot model and no clossys init", () => {
     const result = runAdminSeated(workspace());
     expect(result.status).toBe("skip");

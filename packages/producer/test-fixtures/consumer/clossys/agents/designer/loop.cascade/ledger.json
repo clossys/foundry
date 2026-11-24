@@ -1,0 +1,65 @@
+{
+  "schema": "clossys.ledger/1",
+  "events": [
+    {
+      "op": "slot",
+      "at": "2026-11-19T00:00:00Z",
+      "by": "planner",
+      "verb": "ia",
+      "skill": {
+        "path": "packages/producer/actions/ia/skill.md",
+        "sha256": "147a7eaf66267728953e0c8111a9c20b93475f95f8063745d9d1d1087658fe73"
+      },
+      "model": "none",
+      "tier": "none",
+      "kind": "ia",
+      "decision": "create",
+      "overlaps": [],
+      "records": [
+        {
+          "file": "slot.json",
+          "sha256": "481836a1c3045159091bffa1629f0661826836f99f2e8654e4a9be66eb67db93"
+        }
+      ]
+    },
+    {
+      "op": "submit",
+      "at": "2026-11-19T00:00:00Z",
+      "by": "planner",
+      "verb": "submit",
+      "skill": {
+        "path": "packages/designer/actions/designer.candidates/skill.md",
+        "sha256": "8632e4fb40c3974a5c81a578b7be27606713121b027f120a346e5fba09e31930"
+      },
+      "model": "none",
+      "tier": "none",
+      "rung": "L3",
+      "seed": "@clossys/designer:loops/loop.cascade/cascade-v1.json",
+      "reason": "designer's package loop.cascade candidate, its header re-addressed to this consumer slot; content unchanged",
+      "name": "cascade-v1.json",
+      "sha256": "bd140b4d498c359293ecc87f0eb35f1f0ff31be5e587bfeb9f652b0be23710ff"
+    },
+    {
+      "op": "pin",
+      "at": "2026-11-19T00:00:00Z",
+      "by": "planner:package-default",
+      "verb": "pin",
+      "skill": {
+        "path": "packages/producer/actions/pin.designer/skill.md",
+        "sha256": "6f838d31c7d3832d5051a19ad2ec23d58872e6c97c7f7fca0045456e1301580b"
+      },
+      "model": "none",
+      "tier": "none",
+      "candidate": "cascade-v1.json",
+      "sha256": "bd140b4d498c359293ecc87f0eb35f1f0ff31be5e587bfeb9f652b0be23710ff",
+      "decidedBy": "planner:package-default",
+      "basis": "planner",
+      "records": [
+        {
+          "file": "pin.json",
+          "sha256": "84df9ec3be8cc318b271448e84aa322d4234dc52bc1f4f50d7fc00ed7a9f52e8"
+        }
+      ]
+    }
+  ]
+}

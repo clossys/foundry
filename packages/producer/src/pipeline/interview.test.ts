@@ -1,4 +1,5 @@
 import { cpSync, existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, realpathSync, rmSync, writeFileSync } from "node:fs";
+import { createHash } from "node:crypto";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
@@ -14,6 +15,7 @@ import { runPipeline } from "./runner.js";
 import { readSeatPolicy, SEAT_POLICY_FILE } from "./seat-policy.js";
 import { appendRecord, buildRecord } from "./trace.js";
 import { consumerPath } from "../consumer-root.js";
+import { PRODUCER_ROOT } from "../package-path.js";
 
 /** The foundry consumer this package ships beside: a real slot model to copy (never the real records). */
 const FOUNDRY = consumerPath();
@@ -155,6 +157,24 @@ describe("interview (next --owner) and gaps", { timeout: 120_000 }, () => {
     expect(interviewIssues({ rounds: [[{ ...perSlot, id: "writer.policy", reason: undefined }]] }, gaps)).toEqual([]);
   });
 
+  it("a pinned page meta slot's contract rows name no Writer namespace: a pinned publication's page.home cell is no request.writer-keys gap (BR-E2E5)", async () => {
+    const root = workspace();
+    // The fixture pins writer/page.home.meta (rows title, description, registered as page.home.meta.<row>); place and pin
+    // the e2e scenario's publication, whose tree cells name page.home.
+    const e2e = join(PRODUCER_ROOT, "e2e");
+    const placed = await runCli(["ia", "publisher/publication.site", "--contract", join(e2e, "publication.contract.json"), "--standard", "publication", "--under", "site/site-pages", "--kind", "publication", "--root", root]);
+    expect(placed.exitCode, placed.message).toBe(0);
+    const candidates = join(root, "clossys", "agents", "publisher", "publication.site", "candidates");
+    mkdirSync(candidates, { recursive: true });
+    const bytes = readFileSync(join(e2e, "publication.json"));
+    writeFileSync(join(candidates, "site-v1.json"), bytes);
+    writeFileSync(join(candidates, "..", "pin.json"), JSON.stringify({ schema: "clossys.pin/2", id: "publisher/publication.site/pin", agent: "publisher", kind: "pin", status: "pinned",
+      createdBy: { actor: "code", cli: "clossys pin", version: "0.1.0" }, createdAt: "2026-01-01T00:00:00Z", updatedAt: "2026-01-01T00:00:00Z", refs: [],
+      candidate: "site-v1.json", sha256: createHash("sha256").update(bytes).digest("hex"), decidedBy: "planner:synthetic-test-only", basis: "planner", at: "2026-01-01T00:00:00Z" }));
+    const writerKeys = gapsOf(root).gaps.filter(gap => gap.code === "request.writer-keys");
+    expect(writerKeys.flatMap(gap => gap.keys ?? [])).not.toContain("page.home");
+  });
+
   it("a recorded created candidate with no reason no seed fit is a ladder gap", () => {
     const root = workspace();
     const output = "clossys/agents/writer/strings.statuses/candidates/statuses-v9.json";
@@ -216,7 +236,7 @@ describe("Director content questions (next --owner --agent director)", { timeout
     const interview = interviewOf(root, { agent: "director" });
     const all = interview.rounds.flat().filter(question => question.step !== "seats");
     expect(all[0]!.id).toBe("director.archetype");
-    expect(all[0]!.options[0]!.calls[0]).toEqual(["clossys", "director", "check", "archetype", "default", "--by", "owner"]);
+    expect(all[0]!.options[0]!.calls[0]).toEqual(["clossys", "director", "check", "archetype", "default", "--by", "owner", "--via", "chat", "--quote", all[0]!.options[0]!.label]);
     const content = contentOf(all);
     expect(content.length).toBe(24);
     expect(all.slice(1, 1 + content.length).map(question => question.id)).toEqual(content.map(question => question.id));

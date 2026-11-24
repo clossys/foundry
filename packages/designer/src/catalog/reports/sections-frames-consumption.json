@@ -1805,7 +1805,8 @@
         "--primary",
         "--primary-foreground",
         "--ring",
-        "--sidebar"
+        "--sidebar",
+        "--spacing"
       ],
       "scannedReads": {
         "assets": [
@@ -1835,7 +1836,8 @@
           "themes.primary",
           "themes.primary-foreground",
           "themes.ring",
-          "themes.sidebar"
+          "themes.sidebar",
+          "themes.spacing"
         ]
       },
       "scannedTokenMembers": [
@@ -1847,7 +1849,8 @@
         "themes.primary-foreground.default",
         "themes.primary.default",
         "themes.ring.default",
-        "themes.sidebar.default"
+        "themes.sidebar.default",
+        "themes.spacing.default"
       ],
       "slot": "frames.app-shell",
       "source": "foundry",
@@ -3040,71 +3043,6 @@
           "line": 4
         }
       ]
-    },
-    {
-      "declaredComposes": [
-        "frames.app-shell",
-        "frames.auth-shell",
-        "frames.site-shell"
-      ],
-      "declaredReads": {
-        "assets": [],
-        "components": [],
-        "themes": [
-          "themes.primary"
-        ]
-      },
-      "effectiveComposes": [
-        "frames.app-shell",
-        "frames.auth-shell",
-        "frames.site-shell"
-      ],
-      "effectiveReads": {
-        "assets": [],
-        "components": [],
-        "themes": [
-          "themes.primary"
-        ]
-      },
-      "expandedUtilities": [],
-      "id": "foundry/frames.document",
-      "ignored": [],
-      "missingDeclaredComposes": [],
-      "missingDeclaredReads": {
-        "assets": [],
-        "components": [],
-        "themes": []
-      },
-      "observedComposes": [],
-      "pin": {
-        "export": "./frames#DocumentFrame",
-        "package": "@clossys/designer",
-        "version": "0.12.0"
-      },
-      "scanStatus": "lower-bound",
-      "scannedComposes": [],
-      "scannedProperties": [
-        "--primary"
-      ],
-      "scannedReads": {
-        "assets": [],
-        "components": [],
-        "themes": [
-          "themes.primary"
-        ]
-      },
-      "scannedTokenMembers": [
-        "themes.primary.default"
-      ],
-      "slot": "frames.document",
-      "source": "foundry",
-      "sourceFiles": [
-        "packages/designer/src/catalog-core/provenance-attrs.ts",
-        "packages/designer/src/frames/site-frame/types.ts",
-        "packages/designer/src/runtime/frames/document.tsx"
-      ],
-      "structural": {},
-      "unresolved": []
     },
     {
       "declaredComposes": [
@@ -15002,7 +14940,9 @@
         "components.icon",
         "components.semantic-content"
       ],
-      "scannedProperties": [],
+      "scannedProperties": [
+        "--spacing"
+      ],
       "scannedReads": {
         "assets": [
           "assets.icon-close"
@@ -15013,9 +14953,13 @@
           "components.icon",
           "components.semantic-content"
         ],
-        "themes": []
+        "themes": [
+          "themes.spacing"
+        ]
       },
-      "scannedTokenMembers": [],
+      "scannedTokenMembers": [
+        "themes.spacing.default"
+      ],
       "slot": "sections.notices",
       "source": "foundry",
       "sourceFiles": [
@@ -17075,6 +17019,8 @@
           "themes.accent",
           "themes.background",
           "themes.font-mono",
+          "themes.muted",
+          "themes.muted-foreground",
           "themes.primary",
           "themes.primary-foreground"
         ]
@@ -17216,7 +17162,10 @@
       "missingDeclaredReads": {
         "assets": [],
         "components": [],
-        "themes": []
+        "themes": [
+          "themes.muted",
+          "themes.muted-foreground"
+        ]
       },
       "observedComposes": [
         {
@@ -18427,6 +18376,8 @@
       "scannedProperties": [
         "--accent",
         "--font-mono",
+        "--muted",
+        "--muted-foreground",
         "--primary"
       ],
       "scannedReads": {
@@ -18444,12 +18395,16 @@
         "themes": [
           "themes.accent",
           "themes.font-mono",
+          "themes.muted",
+          "themes.muted-foreground",
           "themes.primary"
         ]
       },
       "scannedTokenMembers": [
         "themes.accent.default",
         "themes.font-mono.default",
+        "themes.muted-foreground.default",
+        "themes.muted.default",
         "themes.primary.default"
       ],
       "slot": "sections.sectioned-document",
@@ -22579,6 +22534,20 @@
     },
     {
       "code": "DF2",
+      "evidence": "Hard-coded tw-arbitrary: end-[calc(var(--spacing,0.25rem)*2)]",
+      "file": "packages/designer/src/components/preview-runtime/components/banner/alert.tsx",
+      "fill": "foundry/frames.app-shell",
+      "line": 2
+    },
+    {
+      "code": "DF2",
+      "evidence": "Hard-coded tw-arbitrary: top-[calc(var(--spacing,0.25rem)*2)]",
+      "file": "packages/designer/src/components/preview-runtime/components/banner/alert.tsx",
+      "fill": "foundry/frames.app-shell",
+      "line": 2
+    },
+    {
+      "code": "DF2",
       "evidence": "unresolved ...: dynamic source cannot establish token-only styling.",
       "file": "packages/designer/src/components/preview-runtime/components/banner/alert.tsx",
       "fill": "foundry/frames.app-shell",
@@ -23801,104 +23770,6 @@
       "file": "packages/designer/src/runtime/component-leaf.tsx",
       "fill": "foundry/frames.command",
       "line": 4
-    },
-    {
-      "code": "DF1",
-      "evidence": "Raw <html> has no library component.",
-      "file": "packages/designer/src/runtime/frames/document.tsx",
-      "fill": "foundry/frames.document",
-      "line": 67
-    },
-    {
-      "code": "DF2",
-      "evidence": "unresolved ...: dynamic source cannot establish token-only styling.",
-      "file": "packages/designer/src/runtime/frames/document.tsx",
-      "fill": "foundry/frames.document",
-      "line": 67
-    },
-    {
-      "code": "DF2",
-      "evidence": "unresolved ...: dynamic source cannot establish token-only styling.",
-      "file": "packages/designer/src/runtime/frames/document.tsx",
-      "fill": "foundry/frames.document",
-      "line": 67
-    },
-    {
-      "code": "DF2",
-      "evidence": "unresolved className: dynamic source cannot establish token-only styling.",
-      "file": "packages/designer/src/runtime/frames/document.tsx",
-      "fill": "foundry/frames.document",
-      "line": 67
-    },
-    {
-      "code": "DF1",
-      "evidence": "Raw <head> has no library component.",
-      "file": "packages/designer/src/runtime/frames/document.tsx",
-      "fill": "foundry/frames.document",
-      "line": 68
-    },
-    {
-      "code": "DF1",
-      "evidence": "Raw <title> has no library component.",
-      "file": "packages/designer/src/runtime/frames/document.tsx",
-      "fill": "foundry/frames.document",
-      "line": 69
-    },
-    {
-      "code": "DF1",
-      "evidence": "Raw <meta> has no library component.",
-      "file": "packages/designer/src/runtime/frames/document.tsx",
-      "fill": "foundry/frames.document",
-      "line": 70
-    },
-    {
-      "code": "DF1",
-      "evidence": "Raw <link> has no library component.",
-      "file": "packages/designer/src/runtime/frames/document.tsx",
-      "fill": "foundry/frames.document",
-      "line": 71
-    },
-    {
-      "code": "DF1",
-      "evidence": "Raw <meta> has no library component.",
-      "file": "packages/designer/src/runtime/frames/document.tsx",
-      "fill": "foundry/frames.document",
-      "line": 72
-    },
-    {
-      "code": "DF1",
-      "evidence": "Raw <link> has no library component.",
-      "file": "packages/designer/src/runtime/frames/document.tsx",
-      "fill": "foundry/frames.document",
-      "line": 73
-    },
-    {
-      "code": "DF1",
-      "evidence": "Raw <style> has no library component.",
-      "file": "packages/designer/src/runtime/frames/document.tsx",
-      "fill": "foundry/frames.document",
-      "line": 74
-    },
-    {
-      "code": "DF1",
-      "evidence": "Raw <style> has no library component.",
-      "file": "packages/designer/src/runtime/frames/document.tsx",
-      "fill": "foundry/frames.document",
-      "line": 75
-    },
-    {
-      "code": "DF1",
-      "evidence": "Raw <link> has no library component.",
-      "file": "packages/designer/src/runtime/frames/document.tsx",
-      "fill": "foundry/frames.document",
-      "line": 76
-    },
-    {
-      "code": "DF1",
-      "evidence": "Raw <body> has no library component.",
-      "file": "packages/designer/src/runtime/frames/document.tsx",
-      "fill": "foundry/frames.document",
-      "line": 78
     },
     {
       "code": "DF2",
@@ -30664,6 +30535,20 @@
     },
     {
       "code": "DF2",
+      "evidence": "Hard-coded tw-arbitrary: end-[calc(var(--spacing,0.25rem)*2)]",
+      "file": "packages/designer/src/components/preview-runtime/components/banner/alert.tsx",
+      "fill": "foundry/sections.notices",
+      "line": 2
+    },
+    {
+      "code": "DF2",
+      "evidence": "Hard-coded tw-arbitrary: top-[calc(var(--spacing,0.25rem)*2)]",
+      "file": "packages/designer/src/components/preview-runtime/components/banner/alert.tsx",
+      "fill": "foundry/sections.notices",
+      "line": 2
+    },
+    {
+      "code": "DF2",
       "evidence": "unresolved ...: dynamic source cannot establish token-only styling.",
       "file": "packages/designer/src/components/preview-runtime/components/banner/alert.tsx",
       "fill": "foundry/sections.notices",
@@ -35479,6 +35364,13 @@
       "line": 39
     },
     {
+      "code": "DF4",
+      "evidence": "missing-declared-reads: themes.muted, themes.muted-foreground",
+      "file": "packages/designer/src/components/preview-runtime/components/avatar/avatar.tsx",
+      "fill": "foundry/sections.sectioned-document",
+      "line": 1
+    },
+    {
       "code": "DF1",
       "evidence": "Raw <div> has visual classes; bind a library surface.",
       "file": "packages/designer/src/components/preview-runtime/components/avatar/avatar.tsx",
@@ -35516,6 +35408,13 @@
     {
       "code": "DF2",
       "evidence": "unresolved className: dynamic source cannot establish token-only styling.",
+      "file": "packages/designer/src/components/preview-runtime/components/avatar/avatar.tsx",
+      "fill": "foundry/sections.sectioned-document",
+      "line": 2
+    },
+    {
+      "code": "DF4",
+      "evidence": "missing-declared-reads: themes.muted, themes.muted-foreground",
       "file": "packages/designer/src/components/preview-runtime/components/avatar/avatar.tsx",
       "fill": "foundry/sections.sectioned-document",
       "line": 2
@@ -39011,12 +38910,8 @@
       ]
     },
     "frames.app-shell": {
-      "declared": [
-        "foundry/frames.document"
-      ],
-      "effective": [
-        "foundry/frames.document"
-      ],
+      "declared": [],
+      "effective": [],
       "scanned": []
     },
     "frames.app-sidebar": {
@@ -39031,12 +38926,8 @@
       ]
     },
     "frames.auth-shell": {
-      "declared": [
-        "foundry/frames.document"
-      ],
-      "effective": [
-        "foundry/frames.document"
-      ],
+      "declared": [],
+      "effective": [],
       "scanned": []
     },
     "frames.command": {
@@ -39109,12 +39000,8 @@
       ]
     },
     "frames.site-shell": {
-      "declared": [
-        "foundry/frames.document"
-      ],
-      "effective": [
-        "foundry/frames.document"
-      ],
+      "declared": [],
+      "effective": [],
       "scanned": []
     },
     "sections.access-matrix": {
@@ -41617,6 +41504,7 @@
         "foundry/sections.pricing",
         "foundry/sections.resource-list",
         "foundry/sections.section-header",
+        "foundry/sections.sectioned-document",
         "foundry/sections.settings",
         "foundry/sections.sign-in-form",
         "foundry/sections.stats",
@@ -41629,7 +41517,9 @@
         "foundry/sections.usage",
         "foundry/sections.wizard"
       ],
-      "scanned": []
+      "scanned": [
+        "foundry/sections.sectioned-document"
+      ]
     },
     "themes.muted-foreground": {
       "declared": [
@@ -41724,6 +41614,7 @@
         "foundry/sections.pricing",
         "foundry/sections.resource-list",
         "foundry/sections.section-header",
+        "foundry/sections.sectioned-document",
         "foundry/sections.settings",
         "foundry/sections.sign-in-form",
         "foundry/sections.stats",
@@ -41741,7 +41632,8 @@
         "foundry/frames.auth-shell",
         "foundry/frames.inspector",
         "foundry/frames.site-footer",
-        "foundry/frames.site-header"
+        "foundry/frames.site-header",
+        "foundry/sections.sectioned-document"
       ]
     },
     "themes.popover": {
@@ -41971,7 +41863,6 @@
         "foundry/frames.app-sidebar",
         "foundry/frames.auth-shell",
         "foundry/frames.command",
-        "foundry/frames.document",
         "foundry/frames.inspector",
         "foundry/frames.sheet",
         "foundry/frames.site-footer",
@@ -42004,7 +41895,6 @@
         "foundry/frames.app-sidebar",
         "foundry/frames.auth-shell",
         "foundry/frames.command",
-        "foundry/frames.document",
         "foundry/frames.inspector",
         "foundry/frames.sheet",
         "foundry/frames.site-footer",
@@ -42036,7 +41926,6 @@
         "foundry/frames.app-shell",
         "foundry/frames.app-sidebar",
         "foundry/frames.auth-shell",
-        "foundry/frames.document",
         "foundry/frames.site-shell",
         "foundry/sections.activity-feed",
         "foundry/sections.comparison",
@@ -43290,7 +43179,10 @@
         "foundry/sections.usage",
         "foundry/sections.wizard"
       ],
-      "scanned": []
+      "scanned": [
+        "foundry/frames.app-shell",
+        "foundry/sections.notices"
+      ]
     },
     "themes.tracking-tight": {
       "declared": [
@@ -43378,11 +43270,9 @@
       "measurement": "unmeasured"
     },
     {
-      "fills": [
-        "foundry/frames.document"
-      ],
+      "fills": [],
       "id": "frames.document",
-      "measurement": "lower-bound"
+      "measurement": "unmeasured"
     },
     {
       "fills": [
@@ -43866,10 +43756,10 @@
     }
   ],
   "summary": {
-    "descriptors": 56,
-    "findings": 2219,
-    "scanned": 56,
+    "descriptors": 55,
+    "findings": 2211,
+    "scanned": 55,
     "undeclaredComposes": 0,
-    "undeclaredReads": 0
+    "undeclaredReads": 1
   }
 }

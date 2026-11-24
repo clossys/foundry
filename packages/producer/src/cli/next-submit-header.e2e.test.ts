@@ -109,6 +109,7 @@ slot: "${META}"
 locales: ${JSON.stringify(opts.locales ?? ["en"])}
 reason: "realises director:identity.verbal.voice for the deck metadata"
 source: ${JSON.stringify(opts.source ?? COPY_SOURCE)}
+provenance: {"voice":"director:identity.verbal.voice"}
 ---
 ${(opts.locales ?? ["en"]).map(locale => section(locale, opts.title ?? "Your site, handled")).join("")}`;
 const COPY = copy();

@@ -296,7 +296,7 @@ async function registryStub(): Promise<{ url: string; server: Server }> {
 
 /** The child environment: no `CLOSSYS_*` variable (no root redirect, no skip), the loopback registry, no colour codes. */
 export function childEnv(registry: string, base: NodeJS.ProcessEnv = process.env): NodeJS.ProcessEnv {
-  const env: NodeJS.ProcessEnv = {};
+  const env = {} as NodeJS.ProcessEnv;
   for (const [key, value] of Object.entries(base)) if (!key.startsWith("CLOSSYS_") && !key.startsWith("npm_") && key !== "INIT_CWD") env[key] = value;
   return { ...env, REGISTRY_URL: registry, NO_COLOR: "1", FORCE_COLOR: "0" };
 }

@@ -35,15 +35,17 @@ describe("Foundry frame descriptors", () => {
 
   // foundry-build-0032 (audit P3): frames.deck is the twelfth leaf; it has coverage (status unavailable, the named gap) but
   // no fill, since no Designer package export exists for it yet.
-  it("accounts for exactly twelve leaves, eleven fills and the deck gap, and regenerates committed bytes", () => {
+  // BR-SEED3: the retired frames.document (src/catalog/retired.json:152) left FOUNDRY_FRAME_MAP with its fill, so its
+  // slot row joins deck as unavailable and the fills go 11 -> 10, as the importer regenerates them.
+  it("accounts for exactly twelve leaves, ten fills, the deck gap and the retired document, and regenerates committed bytes", () => {
     const files = generatedFoundryFrameFiles({ exports });
     if (process.env.UPDATE_FOUNDRY_FRAME_FILLS === "1") for (const [name, bytes] of Object.entries(files)) writeFileSync(resolve(directory, name), bytes);
     expect(readdirSync(directory).filter(name => /^frames\..*\.json$/.test(name)).sort()).toEqual(Object.keys(files).sort());
     for (const [name, bytes] of Object.entries(files)) expect(readFileSync(resolve(directory, name), "utf8"), name).toBe(bytes);
     expect(result().coverage.map(row => row.slot)).toEqual(slots.map(slot => slot.id).sort());
     expect(result().coverage).toHaveLength(12);
-    expect(result().coverage.filter(row => row.status === "unavailable").map(row => row.slot)).toEqual(["frames.deck"]);
-    expect(result().fills).toHaveLength(11);
+    expect(result().coverage.filter(row => row.status === "unavailable").map(row => row.slot)).toEqual(["frames.deck", "frames.document"]);
+    expect(result().fills).toHaveLength(10);
     expect(generatedFoundryFrameFiles({ slots: [...slots].reverse() as unknown as readonly FrameSlot[], exports })).toEqual(files);
   });
   it("pins independently available public exports at actual manifest versions", () => {

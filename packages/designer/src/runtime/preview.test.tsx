@@ -42,8 +42,10 @@ describe("surfaceRuntimePreview", () => {
       expect(view.container.innerHTML.length, leaf).toBeGreaterThan(0);
       cleanup();
     }
-    // A document root is the one genuine board gap: drawing html/head/body inside a cell is invalid DOM.
-    expect(reasons).toEqual({ "frames.document": "frames.document preview requires an isolated document renderer" });
+    // Every registered leaf previews on the board. The retired frames.document (src/catalog/retired.json), whose
+    // html/head/body root was the one board gap, left the registry (foundry-build-0048 BR-SEED3).
+    expect(Object.hasOwn(surfaceRuntimeRenderers, "frames.document")).toBe(false);
+    expect(reasons).toEqual({});
   });
   it("previews Frames chrome from the shared dataset's frames records", () => {
     const F = specimenDataset.frames;

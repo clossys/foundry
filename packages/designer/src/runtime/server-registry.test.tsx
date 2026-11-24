@@ -4,6 +4,7 @@ import { afterEach, expect, it } from "vitest";
 import type { RuntimeRenderInput } from "../catalog-core/runtime-ports.js";
 import { surfaceRuntimeRenderers as clientRenderers, surfaceRuntimeCallbacks as clientCallbacks, surfaceRuntimePointers as clientPointers } from "./index.js";
 import { surfaceRuntimeRenderers, surfaceRuntimeCallbacks, surfaceRuntimePointers, surfaceRendererId, SURFACE_RUNTIME_POINTER } from "./server-registry.js";
+import { documentRenderer } from "./frames/document.js";
 import { specimenDataset } from "../specimen/specimen-dataset.js";
 import { ConsumerComponentProvider } from "./component-leaf.client.js";
 import { fixtureConsumerComponents } from "../catalog-core/__fixtures__/surface-consumer-components.js";
@@ -23,9 +24,17 @@ it("preserves the complete client renderer, pointer and callback key sets", () =
   expect(() => surfaceRuntimeCallbacks(["sections.missing"])).toThrow(/no package renderer/);
 });
 
-it("keeps server document, site and auth frames on their original renderers", () => {
-  for (const leaf of ["frames.document", "frames.site-shell", "frames.auth-shell"])
+it("keeps server site and auth frames on their original renderers", () => {
+  for (const leaf of ["frames.site-shell", "frames.auth-shell"])
     expect(surfaceRuntimeRenderers[leaf]).toBe(clientRenderers[leaf]);
+});
+
+// foundry-build-0048 BR-SEED3: the retired frames.document (src/catalog/retired.json) is render plumbing, not a slot,
+// so its document renderer left both registries; Publisher imports DocumentFrame from ../frames directly.
+it("serves the retired frames.document from neither registry's document renderer", () => {
+  expect(Object.hasOwn(clientRenderers, "frames.document")).toBe(false);
+  expect(surfaceRuntimeRenderers["frames.document"]).not.toBe(documentRenderer);
+  expect(surfaceRuntimeRenderers["frames.document"]?.render).not.toBe(documentRenderer.render);
 });
 
 it("passes the full host input through the client reference without dropping callbacks", () => {

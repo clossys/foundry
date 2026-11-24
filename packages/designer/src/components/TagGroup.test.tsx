@@ -1,7 +1,6 @@
 import { act, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
-import { Button } from "./preview-runtime/components/button/button.js";
 import { TagGroup } from "./TagGroup.js";
 describe("TagGroup candidate", () => {
   it("refuses a removable tag without host-authored removal text", () => {
@@ -33,28 +32,22 @@ describe("TagGroup craft (vf30, K5 craft)", () => {
     render(tags);
     for (const name of [/Design/, /Code/]) expect(screen.getByRole("row", { name })).toHaveClass("control-h-md");
   });
-  it("gives the remove button the benchmark target floor, square, and the Button focus outline (which forced colours keep) instead of an underline", async () => {
+  it("gives the remove button the benchmark target floor, square, and a solid ring-coloured focus outline (which forced colours keep) instead of an underline", async () => {
     const user = userEvent.setup();
-    const { unmount } = render(<Button>Benchmark</Button>);
-    await user.keyboard("{Tab}");
-    const benchmark = screen.getByRole("button", { name: "Benchmark" });
-    const outline = benchmark.style.outline, offset = benchmark.style.outlineOffset;
-    expect(outline).toMatch(/\bsolid\b/);
-    unmount();
     render(tags);
     const remove = screen.getByRole("button", { name: "Remove Design" });
     expect(remove).toHaveClass("control-h-md", "aspect-square");
     expect(remove).not.toHaveClass("focus-visible:underline");
-    expect(remove.style.outline).toBe("");
+    expect(remove).not.toHaveClass("outline-solid");
     await user.keyboard("{Tab}{Tab}");
     expect(remove).toHaveFocus();
-    expect(remove.style.outline).toBe(outline);
-    expect(remove.style.outlineOffset).toBe(offset);
+    expect(remove).toHaveClass("outline-solid", "outline-2", "outline-offset-2", "outline-ring");
+    expect(remove).not.toHaveClass("outline-none");
   });
-  it("sets its group label in the same body-s field label type as the other fields", () => {
+  it("sets its group label in the stock small field label type", () => {
     render(<TagGroup label="Filters"><TagGroup.List><TagGroup.Item id="one" textValue="Design">Design</TagGroup.Item></TagGroup.List></TagGroup>);
     const label = screen.getByText("Filters");
-    expect(label.className.split(/\s+/)).toEqual(expect.arrayContaining(["text-body-s", "font-body"]));
-    expect(label.className).not.toMatch(/\btext-caption\b/);
+    expect(label.className.split(/\s+/)).toEqual(expect.arrayContaining(["text-sm", "font-sans"]));
+    expect(label.className).not.toMatch(/\btext-xs\b/);
   });
 });

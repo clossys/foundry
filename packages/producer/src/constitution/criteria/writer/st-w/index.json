@@ -6,7 +6,7 @@
       "module": "copy",
       "export": "voiceDerived",
       "fixtures": "__fixtures__/copy.voice-derived.json",
-      "summary": "The source cites director:identity.verbal.voice: Writer copy derives from the pinned voice."
+      "summary": "provenance.voice names director:identity.verbal.voice: Writer copy derives from the pinned voice, which is provenance, never an input."
     },
     {
       "id": "copy.derived-upstream",

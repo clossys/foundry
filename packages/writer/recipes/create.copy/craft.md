@@ -5,7 +5,7 @@ Creates one passage, pattern, string or narrative copy slot when the slot's verd
 - Produces: `passage`, `pattern`, `string`, `narrative` (rung `create`).
 - Tier: mid. Axes: `angle`, `register`, `structure`.
 - Base reference: the slot contract (kind, fields, parts, `maxChars`/`maxWords`, `icu`); the pinned Director voice and the other pinned upstream the slot lists. A narrative sets its story in a Designer frame by id.
-- Director (and Writer) derivation: all Writer copy derives from the pinned voice: the source cites `director:identity.verbal.voice` (`copy.voice-derived`) and every ref is `director:<slot>`, `writer:<slot>[#key]` or a finding (`copy.derived-upstream`).
+- Director (and Writer) derivation: all Writer copy derives from the pinned voice: the frontmatter `provenance: {"voice": "director:identity.verbal.voice"}` names it (`copy.voice-derived`; provenance, never an input, so the slot's inputs need not list it) and every source ref is `director:<slot>`, `writer:<slot>[#key]` or a finding (`copy.derived-upstream`).
 - Judge: the standard and its certifier, which import nothing from this folder (R16.1). This recipe
   carries no rubric; the standard's requirements and taste are the only measure (R15.5).
 
@@ -81,10 +81,10 @@ clossys next writer/<slot> --stage diverge --file directions.json --recipe creat
 
 ### 3. render (deterministic)
 
-Write each direction's draft candidate in the contract's shape: a Markdown copy file: frontmatter `slot`, `locales: ["en"]`, `source: {"kind": "derived", "ref": ["director:identity.verbal.voice", ...]}`; then `## en`, and per key `### <key>`, the meta comment `<!-- {"id": "<key>", "bindings": []} -->` and a plain value (no Markdown or HTML, no placeholder, no doubled spaces, valid ICU) within the contract's limits; a narrative value is one ```json record (`frame.frameId` a `frames.*` id, passages as `<slot>#<key>`).
+Write each direction's draft candidate in the contract's shape: a Markdown copy file: frontmatter `slot`, `locales: ["en"]`, `source: {"kind": "derived", "ref": [<the slot's pinned inputs>]}`, `provenance: {"voice": "director:identity.verbal.voice"}`; then `## en`, and per key `### <key>`, the meta comment `<!-- {"id": "<key>", "bindings": []} -->` and a plain value (no Markdown or HTML, no placeholder, no doubled spaces, valid ICU) within the contract's limits; a narrative value is one ```json record (`frame.frameId` a `frames.*` id, passages as `<slot>#<key>`).
 Nothing is generated; the checks read it mechanically.
 
-For each direction's draft candidate, check the draft first (the voice cited, a derived source of `director:`/`writer:` pins and findings, one entry per key with its meta id equal to the key, plain values (no markup or placeholder, no doubled spaces, valid ICU), within the contract's limits, pattern parts where the contract has them; a requirement it does not
+For each direction's draft candidate, check the draft first (the voice named in provenance, a derived source of `director:`/`writer:` pins and findings, one entry per key with its meta id equal to the key, plain values (no markup or placeholder, no doubled spaces, valid ICU), within the contract's limits, pattern parts where the contract has them; a requirement it does not
 check is named in its clean line as left to `clossys check --constitution --slot`), then render and preflight:
 
 ```sh

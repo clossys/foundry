@@ -128,7 +128,7 @@ function copyDoc(fields: Fields): MarkdownDoc {
   const locales = [...new Set(Object.values(fields).flatMap(value => Object.keys(value)))];
   const body = locales.map(locale => `## ${locale}\n${Object.entries(fields).filter(([, value]) => value[locale] !== undefined)
     .map(([key, value]) => `### ${key}\n<!-- ${JSON.stringify({ id: key, bindings: [] })} -->\n${value[locale]}\n`).join("")}`).join("\n");
-  return { front: { slot: "sections.hero.copy", locales, reason: "realises the geography brief's locales for the hero", source: { kind: "derived", ref: ["director:identity.verbal.voice", "director:focus.reach.geography"] } }, body };
+  return { front: { slot: "sections.hero.copy", locales, reason: "realises the geography brief's locales for the hero", source: { kind: "derived", ref: ["director:identity.verbal.voice", "director:focus.reach.geography"] }, provenance: { voice: "director:identity.verbal.voice" } }, body };
 }
 
 /**

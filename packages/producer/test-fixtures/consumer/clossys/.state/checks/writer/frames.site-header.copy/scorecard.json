@@ -7,12 +7,12 @@
     {
       "rank": 1,
       "candidate": "copy-v1.md",
-      "sha256": "6bea0910a4d17e9608c6d853056d68dd12ac2c544b2cf3fc2da4b060e99ef92a",
+      "sha256": "b8f253ced303b4cc5e62d84d26451a377d0dc16f61f6e2f8ccccb405803d0fab",
       "submitted": true,
       "certified": true,
       "verdict": "certify",
       "reasons": [],
-      "pinSet": "9fea212b93bbfa0f6e2041dc53ed9fd5e5a454021c5476105470ce6f3e229d67"
+      "pinSet": "993e87727c70ea622225e9294291d87f0aa65c00bb2ca3cdddf96d181c4ff05c"
     }
   ]
 }

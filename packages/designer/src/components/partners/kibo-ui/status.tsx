@@ -2,7 +2,8 @@
 // shadcnblocks/kibo packages/status/index.tsx at commit
 // 3d63cdb15b79d972e3dc38a10997987672f9b263. Local adaptations, imports and tokens only:
 // the `@/` imports point at the vendored stock badge and `cn`; the palette colours
-// (emerald/red/blue/amber-500, muted-foreground) are the Designer status and ink tokens;
+// (emerald/red/blue/amber-500) are the Designer status tokens, and the label keeps
+// upstream's stock `text-muted-foreground`;
 // and the status union gains `neutral`, which carries no indicator colour.
 import type { ComponentProps, HTMLAttributes } from "react";
 import { Badge } from "../../preview-runtime/components/badge/badge.js";
@@ -31,7 +32,7 @@ export const StatusIndicator = ({
       className={cn(
         "absolute inline-flex h-full w-full animate-ping rounded-full opacity-75",
         "group-[.online]:bg-(--color-status-success)",
-        "group-[.offline]:bg-(--color-status-danger)",
+        "group-[.offline]:bg-destructive",
         "group-[.maintenance]:bg-(--color-status-info)",
         "group-[.degraded]:bg-(--color-status-warning)"
       )}
@@ -40,7 +41,7 @@ export const StatusIndicator = ({
       className={cn(
         "relative inline-flex h-2 w-2 rounded-full",
         "group-[.online]:bg-(--color-status-success)",
-        "group-[.offline]:bg-(--color-status-danger)",
+        "group-[.offline]:bg-destructive",
         "group-[.maintenance]:bg-(--color-status-info)",
         "group-[.degraded]:bg-(--color-status-warning)"
       )}
@@ -55,7 +56,7 @@ export const StatusLabel = ({
   children,
   ...props
 }: StatusLabelProps) => (
-  <span className={cn("text-(--color-ink-muted)", className)} {...props}>
+  <span className={cn("text-muted-foreground", className)} {...props}>
     {children ?? (
       <>
         <span className="hidden group-[.online]:block">Online</span>

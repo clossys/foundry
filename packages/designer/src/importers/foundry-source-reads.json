@@ -88,7 +88,9 @@
   "specimen-swatch": [],
   "specimen-viewport": [],
   "spinner": [],
-  "status-mark": [],
+  "status-mark": [
+    "themes.font-sans"
+  ],
   "switch": [
     "themes.spacing"
   ],
@@ -98,7 +100,9 @@
   "tabs": [
     "themes.spacing"
   ],
-  "tag-group": [],
+  "tag-group": [
+    "themes.font-sans"
+  ],
   "text-field": [],
   "toast": [],
   "toggle-button": [

@@ -31,6 +31,20 @@
       "pattern": "\\S",
       "description": "The pinned Director slot the copy realises (director:<slot-id>), or default:<ref> plus a director: citation: the Writer equivalent of meta.element.reason (R20.2, records/director-trace.ts). validateStrings accepts it."
     },
+    "provenance": {
+      "type": "object",
+      "required": [
+        "voice"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "voice": {
+          "type": "string",
+          "pattern": "^director:[a-z][a-z0-9-]*(\\.[a-z0-9][a-z0-9-]*){1,3}$",
+          "description": "The pinned Director voice the copy derives from (copy.voice-derived holds it to director:identity.verbal.voice). Provenance, never an input: R07.1 and checkWriterInputs do not read it. validateStrings accepts it."
+        }
+      }
+    },
     "vary": {
       "type": "object",
       "propertyNames": {

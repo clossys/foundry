@@ -118,14 +118,14 @@ async function main() {
   if (existsSync(outDir) && !statSync(outDir).isDirectory()) throw new Error("--out-dir must be a directory.");
   if (existsSync(outDir) && readdirSync(outDir).length > 0) throw new Error("--out-dir must be empty; choose a fresh directory for these seven tarballs.");
 
-  // Transform the single authority in memory, preserving its Node lookup base.
-  const { transform } = await import("esbuild");
+  // Bundle the single authority (and its relative imports) in memory, preserving its Node lookup base.
+  const { build } = await import("esbuild");
   const agentsPath = join(producerRoot, "src/agents.ts");
-  const transformed = await transform(readFileSync(agentsPath, "utf8"), {
-    loader: "ts", format: "esm", target: "node20",
+  const bundled = await build({
+    entryPoints: [agentsPath], bundle: true, write: false, platform: "node", format: "esm", target: "node20",
     define: { "import.meta.url": JSON.stringify(pathToFileURL(agentsPath).href) },
   });
-  const { AGENT_PACKAGES, resolveAgent } = await import(`data:text/javascript;base64,${Buffer.from(transformed.code).toString("base64")}`);
+  const { AGENT_PACKAGES, resolveAgent } = await import(`data:text/javascript;base64,${Buffer.from(bundled.outputFiles[0].contents).toString("base64")}`);
   const targets = packTargets(Object.keys(AGENT_PACKAGES).map((kind) => ({ role: kind, root: resolveAgent(kind).packageRoot })));
 
   const workspaces = new Map();

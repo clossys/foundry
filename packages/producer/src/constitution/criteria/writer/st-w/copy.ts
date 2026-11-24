@@ -1,22 +1,30 @@
 /**
  * Writer copy criteria (ST-W1, ST-W2, slot-constitution.md section 5a): the mechanical half of the
- * nine Writer standards. All copy derives from the pinned voice (`director:identity.verbal.voice`)
- * and other upstream pins only, is well-formed per locale and key, and holds plain, finished values
- * within the contract's limits; headlines are sentence case; lexicon records, claims, narratives and
- * pattern parts each have their own shape. Pure.
+ * nine Writer standards. All copy derives from the pinned voice (`director:identity.verbal.voice`,
+ * named by the candidate's `provenance.voice`, never as an input) and other upstream pins only, is
+ * well-formed per locale and key, and holds plain, finished values within the contract's limits;
+ * headlines are sentence case; lexicon records, claims, narratives and pattern parts each have their
+ * own shape. Pure.
  */
 import { excerpt, isRecord, pattern, strings, words } from "../../core/lib.js";
 import { icuIssues } from "../../core/markup.js";
 import type { Criterion, Params } from "../../core/types.js";
-import { COPY_REF, UPSTREAM_REF, localesOf, parseCopy, sourceOf, type CopyEntry } from "./lib.js";
+import { COPY_REF, UPSTREAM_REF, localesOf, parseCopy, provenanceOf, slotOf, sourceOf, type CopyEntry } from "./lib.js";
 
 export const VOICE = "director:identity.verbal.voice";
 
-/** copy.voice-derived: the source cites the pinned voice, `director:identity.verbal.voice` (Writer copy derives from it). */
+/**
+ * copy.voice-derived: the candidate's frontmatter `provenance.voice` names the pinned voice, `director:identity.verbal.voice`
+ * (Writer copy derives from it). Provenance is not an input: a copy or prose slot never lists the voice (the Writer inputs
+ * rule) and `source.ref` cites only the slot's inputs (R07.1), so a voice in `source.ref` alone does not pass.
+ */
 export const voiceDerived: Criterion = subject => {
-  const source = sourceOf(subject);
-  if (typeof source === "string") return [source];
-  return source.ref.includes(VOICE) ? [] : [`source does not cite ${VOICE}; Writer copy derives from the pinned voice`];
+  const at = slotOf(subject) ?? "the candidate";
+  const provenance = provenanceOf(subject);
+  if (typeof provenance === "string") return [`${at}: ${provenance}; provenance.voice must name ${VOICE}, the pinned voice Writer copy derives from`];
+  const voice = provenance.voice;
+  if (voice === undefined) return [`${at}: provenance has no voice; provenance.voice must name ${VOICE}, the pinned voice Writer copy derives from`];
+  return voice === VOICE ? [] : [`${at}: provenance.voice is ${JSON.stringify(voice)}, not ${VOICE}; Writer copy derives from the pinned voice`];
 };
 
 /** copy.derived-upstream: the source is derived, and every ref is a Director or Writer slot (`<agent>:<slot>[#key]`) or a finding; never a bare id, another agent or a URL. */

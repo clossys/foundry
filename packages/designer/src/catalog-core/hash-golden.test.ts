@@ -193,13 +193,27 @@ describe("real package-surface library golden", () => {
     // takes font-normal on non-current links (ruling R2), so its measured sha256 moves in the table-of-contents fill and
     // surface-consumption.data.json (generate-surface-consumption.mjs --write, then --check exit 0). Values and components
     // unchanged: composite c9fe2b5b -> 935fa6fa, surface 8bda9ad9 -> 619b0b22, whole 7ad52f48 -> 54b74d82.
-    expect(compositeLibraryHash(library)).toMatchInlineSnapshot(`"sha256:935fa6fae14c8f52adecfd1e811250d6b389ce481df65978ddb8a1a86cfbe8b3"`);
+    // Re-pinned by foundry-build-0048 BR-SEED3 (by hand from a green probe run computing these same five hashes, no `-u`).
+    // 1. Pre-existing, NOT BR-SEED3: at base fadcb3b94 this golden already fails; the component portion there is
+    //    f74c3c3c (composite dc6ae625, whole 1353d3cd), with values and surfaces equal to the BR-RETIRE3 pins.
+    // 2. BR-SEED3: the retired frames.document (src/catalog/retired.json) left the foundry frames importer map with its
+    //    fill, and generate-surface-consumption.mjs --write dropped its measured row and refreshed the stale app-shell,
+    //    gallery, notices and sectioned-document measurements, which moves the surface portion only.
+    // Values unchanged: composite 96d7e132 -> 771cc0a9, component 26453c45 -> f74c3c3c (step 1), surface 4c409424 -> b979dd89,
+    // whole d02289a1 -> ab711bb2.
+    // Re-pinned by foundry-build-0048 BR-SEED3 fix round on the merge of int2 335b0377d (no `-u`, not from a failing run):
+    // a scratch vitest probe computing this test's five hashes from the same packageSurfaceLibrary inputs ran green on the
+    // merged tree, after generate-surface-consumption.mjs --check and sections-frames-coverage.mjs --check both exit 0.
+    // Both sides combine: BR-SEED3 drops the retired frames.document fill and row; U-K4-CASCADE's stock shadcn reads and
+    // TableOfContents font-normal move the measured surfaces. Values and components unchanged (component f74c3c3c on both
+    // sides): composite 771cc0a9/935fa6fa -> fdfbf36e, surface b979dd89/619b0b22 -> 012ef6e4, whole ab711bb2/54b74d82 -> 60968c88.
+    expect(compositeLibraryHash(library)).toMatchInlineSnapshot(`"sha256:fdfbf36e9aee5adedb7544d9f20ded42aef00b9cd21c8e3e42ac2e98050089b9"`);
     const values = { ...library.values, source: library.source, adoptedAt: library.adoptedAt } as LibraryData;
     expect(libraryHash(values)).toMatchInlineSnapshot(`"fnv1a64:149d271dd68aea6f"`);
     expect(libraryHash(values)).toBe(referenceLibraryHash(values));
     expect(componentLibraryHash({ ...library.components, source: library.source, adoptedAt: library.adoptedAt })).toMatchInlineSnapshot(`"sha256:f74c3c3c8b50cdb4e2420bedd4224d772f4930c1ec4c7aadd927000ba91dc21d"`);
-    expect(surfacePortionHash(library.surfaces!)).toMatchInlineSnapshot(`"sha256:619b0b22a8437d0cbb7c8190e24932f2e568c8723208e266cf2e03a4054f9e31"`);
-    expect(nodeSha256(stableStringify(library))).toMatchInlineSnapshot(`"54b74d82fd5d67b8cfecf1f693b0738cfc0e2ca90b32ca3c7419e37e45351b1a"`);
+    expect(surfacePortionHash(library.surfaces!)).toMatchInlineSnapshot(`"sha256:012ef6e4b7081a18ec9973afb5035688ba126899be518b11fb82adabdd9cd013"`);
+    expect(nodeSha256(stableStringify(library))).toMatchInlineSnapshot(`"60968c88c4c14e11fa5a47a10f2e2fbd1f144651ed45670ad2966910024834d0"`);
     expect(stableStringify(library)).toBe(referenceStringify(library));
   });
 });

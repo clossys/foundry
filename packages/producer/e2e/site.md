@@ -3,6 +3,7 @@ slot: "strings.site"
 locales: ["en"]
 reason: "realises director:identity.verbal.voice for the site's own words"
 source: {"kind":"derived","ref":["director:identity.verbal.voice"]}
+provenance: {"voice":"director:identity.verbal.voice"}
 ---
 
 ## en

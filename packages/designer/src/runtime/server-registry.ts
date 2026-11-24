@@ -3,7 +3,6 @@ import { createElement, lazy } from "react";
 import frameSlots from "../catalog/slots/frames.json" with { type: "json" };
 import sectionSlots from "../catalog/slots/sections.json" with { type: "json" };
 import { surfaceRendererId, SURFACE_RUNTIME_POINTER, type SurfaceRendererEntry, type SurfaceRuntimeLeaf } from "./contract.js";
-import { documentRenderer } from "./frames/document.js";
 import { siteShellRuntimeRenderer } from "./frames/site-shell.js";
 import { authShellRenderer } from "./frames/auth-shell.js";
 
@@ -15,7 +14,6 @@ const ClientSurfaceRuntime = lazy(async () => ({ default: (await import("./Surfa
 /** Server rendering needs leaf/render, never Studio's dataset-bound sample callback. */
 export type ServerSurfaceRendererEntry = Pick<SurfaceRendererEntry, "leaf" | "render">;
 const serverFrames: Readonly<Record<string, ServerSurfaceRendererEntry>> = {
-  [documentRenderer.leaf]: documentRenderer,
   [siteShellRuntimeRenderer.leaf]: siteShellRuntimeRenderer,
   [authShellRenderer.leaf]: authShellRenderer,
 };

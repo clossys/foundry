@@ -719,39 +719,6 @@
       "version": "0.12.0"
     }
   },
-  "frames.document": {
-    "consumption": {
-      "scanStatus": "lower-bound",
-      "scannedComposes": [],
-      "scannedReads": {
-        "assets": [],
-        "components": [],
-        "themes": [
-          "themes.primary"
-        ]
-      },
-      "sourceFiles": [
-        {
-          "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
-          "sha256": "d7e9c7483ea34e420632b86cca6d50a5eded29e05b41f77a74cc1140e2f68b4f"
-        },
-        {
-          "path": "packages/designer/src/frames/site-frame/types.ts",
-          "sha256": "9cf9ac3d145713b6efd520fa92c2fee7729788ed11cfc45990a84feb3c61a32c"
-        },
-        {
-          "path": "packages/designer/src/runtime/frames/document.tsx",
-          "sha256": "63a658021c899d8a2336d5942e93e9ec7fe63449141b3df210d18fdd9f7c6c12"
-        }
-      ],
-      "unresolved": []
-    },
-    "pin": {
-      "export": "./frames#DocumentFrame",
-      "package": "@clossys/designer",
-      "version": "0.12.0"
-    }
-  },
   "frames.inspector": {
     "consumption": {
       "scanStatus": "lower-bound",
@@ -4255,10 +4222,15 @@
         ],
         "themes": [
           "themes.accent",
+          "themes.background",
+          "themes.border",
+          "themes.destructive",
           "themes.font-mono",
+          "themes.foreground",
           "themes.muted",
           "themes.muted-foreground",
-          "themes.primary"
+          "themes.primary",
+          "themes.spacing"
         ]
       },
       "sourceFiles": [
@@ -4436,7 +4408,7 @@
         },
         {
           "path": "packages/designer/src/components/Meter.server.tsx",
-          "sha256": "6722cde47d126ee4de73605604d041277089293991b1551be3f76a46e150234c"
+          "sha256": "413fa52474bf44e02ccf3cfc86c2cb789b16c6b8136cc417e36bc6b6ce7b1438"
         },
         {
           "path": "packages/designer/src/components/preview-runtime/components/_parts/utils/index.ts",
