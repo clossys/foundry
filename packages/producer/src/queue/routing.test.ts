@@ -127,7 +127,7 @@ describe("routeEntry", () => {
     expect(route(facts, "slot", "writer/narratives.faq")).toMatchObject({ row: "slot.home", assignee: "writer", handler: { loop: "loop.slot", skill: "packages/writer/actions/writer.slot/skill.md" } });
     // LOOP-STEPS (consumer-slot-request-route-handler-mismatch): a homeless slot need goes to loop.slot too, never to
     // loop.scope, which files needs and answers no entry.
-    expect(route(facts, "slot", "publisher/page.home")).toMatchObject({ row: "slot.agent", assignee: "publisher", handler: { loop: "loop.slot", skill: "packages/publisher/actions/publisher.slot/skill.md" } });
+    expect(route(facts, "slot", "publisher/nohome.new-need")).toMatchObject({ row: "slot.agent", assignee: "publisher", handler: { loop: "loop.slot", skill: "packages/publisher/actions/publisher.slot/skill.md" } });
   });
 
   it("keeps a decision kind with its decider", () => {

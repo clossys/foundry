@@ -51,13 +51,13 @@ function copy(): string {
   return root;
 }
 /**
- * A copy of the fixture as it was before the seeder adopted the placed agents' loops (R3): the loop slots, the loops L1
- * (its layer and axis values) and the ia ledger's adopt-loops event go, which leaves each ia.json and ledger.json the
- * bytes they were before adoption. The adoption tests start here.
+ * A copy of the fixture as it was before the seeder adopted the placed agents' loops (R3, and Publisher's since R6
+ * placed its leaves): the loop slots, the loops L1 (its layer and axis values) and the ia ledger's adopt-loops event go,
+ * which leaves each ia.json and ledger.json the bytes they were before adoption. The adoption tests start here.
  */
 function unadopted(): string {
   const root = copy();
-  for (const agent of ["director", "designer", "writer"] as const) {
+  for (const agent of ["director", "designer", "writer", "publisher"] as const) {
     const dir = join(root, "clossys", "agents", agent);
     for (const each of AGENT_LOOPS) rmSync(join(dir, each), { recursive: true, force: true });
     const ia = readJson(join(dir, "ia.json"));
@@ -128,11 +128,11 @@ describe("clossys loop", () => {
     }
     // An agent loop slot is a readiness root: it extends Producer's standard and no upstream pin feeds it.
     for (const each of AGENT_LOOPS) expect(readiness(join(root, "clossys"), "director", each), each).toEqual({ ready: true, blockedBy: [] });
-    // Director is clean; designer and writer, which the fixture's IA places, have not adopted theirs yet (no vacuous
-    // pass). The fixture's Publisher IA is empty: it places nothing, so publisher owes no loop slots.
+    // Director is clean; designer, writer and publisher, which the fixture's IA places (Publisher's leaves since R6),
+    // have not adopted theirs yet (no vacuous pass).
     const findings = runLoopAgentStandard(root).findings;
     expect(findings.filter(finding => finding.subject.startsWith("director/"))).toEqual([]);
-    expect(new Set(findings.map(finding => finding.subject.split("/")[0]))).toEqual(new Set(["designer", "writer"]));
+    expect(new Set(findings.map(finding => finding.subject.split("/")[0]))).toEqual(new Set(["designer", "writer", "publisher"]));
   }, LONG);
 
   it("is idempotent: a second run adopts and pins nothing and writes no byte", async () => {
@@ -154,13 +154,13 @@ describe("clossys loop", () => {
     expect(result.message).toMatch(/^VERDICT: FAIL publisher\/loop\.create/);
     expect(result.message).toContain("holds no publisher loop slots");
     expect(tree(join(root, "clossys"))).toEqual(before);
-    // No vacuous pass: the fixture's IA places director, designer and writer (Publisher's IA is empty) and holds none
-    // of their loop slots, so loop.agent-standard is red with every loop of those three missing. The loops that run
+    // No vacuous pass: the fixture's IA places director, designer, writer and publisher (R6) and holds none of their
+    // loop slots, so loop.agent-standard is red with every loop of those four missing. The loops that run
     // are Producer's standards; their create and choose read the pins upstream of the slot's owner (U26), so they
     // wire the Director handoffs and loop.connected finds none broken.
     const missing = runLoopAgentStandard(root).findings;
-    expect(missing).toHaveLength(3 * AGENT_LOOPS.length);
-    expect(missing.some(finding => finding.subject.startsWith("publisher/"))).toBe(false);
+    expect(missing).toHaveLength(4 * AGENT_LOOPS.length);
+    expect(missing.filter(finding => finding.subject.startsWith("publisher/"))).toHaveLength(AGENT_LOOPS.length);
     for (const finding of missing) expect(finding.detail, finding.subject).toMatch(/^missing: the consumer places [a-z]+ but holds none of its loop slots/);
     // No handoff is broken (the standards wire them all); that a handoff into an agent the consumer does not run is
     // skipped (set.runs) is pinned in agent-loops.test.ts.
