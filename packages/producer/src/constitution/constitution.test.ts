@@ -62,8 +62,10 @@ describe("constitution runner", () => {
     const { root, consumer } = writeWorkspace(cleanSpec());
     const report = runConstitution({ root, consumer, history: () => NO_HISTORY, skillShas: FIXTURE_SKILL_SHAS, now: () => 0 });
     expect(report.ok).toBe(false);
-    // Director R05 rows and every agent's R05.2 rows fail outright (enforcedFor); every other row is pending or building.
-    expect(report.total).toBe(report.pending + report.building + report.rows.filter(row => (row.agent === "director" && row.rule === "R05") || (row.check === "R05.2" && row.agent !== "producer")).length);
+    // Rows of a building check about an agent its enforcedFor lists fail outright (R05.1, R05.2, R15.x: foundry-build-0048 R4);
+    // every other row is pending or building.
+    const enforcedFor = new Map(readRules().flatMap(rule => rule.checks).map(check => [check.id, check.enforcedFor ?? []]));
+    expect(report.total).toBe(report.pending + report.building + report.rows.filter(row => enforcedFor.get(row.check)?.includes(row.agent)).length);
     expect(report.pending).toBeGreaterThan(0);
     expect(report.records).toEqual({ slots: 6, liveSlots: 6, pins: 6, candidates: 6 });
     const text = formatReport(report);
@@ -95,25 +97,33 @@ describe("constitution runner", () => {
 
   it("reports building rows without failing, and fails on them under strict (section 4)", () => {
     const { root, consumer } = writeWorkspace(cleanSpec());
-    const loose = runConstitution({ root, consumer, rule: "R15", history: () => NO_HISTORY, now: () => 0 });
+    // R15 is enforced for every content agent it passes for on the fixture (foundry-build-0048 R4); Publisher's R15.1 rows stay building.
+    const loose = runConstitution({ root, consumer, rule: "R15", agent: "publisher", history: () => NO_HISTORY, now: () => 0 });
     expect(loose).toMatchObject({ ok: true, strict: false, pending: 0 });
     expect(loose.building).toBe(loose.total);
     expect(loose.building).toBeGreaterThan(0);
     expect(loose.rules).toEqual([expect.objectContaining({ id: "R15", status: "building", building: loose.total })]);
     expect(formatReport(loose)).toMatch(/^R15 BUILDING {2}rows \d+/m);
     expect(formatReport(loose)).toMatch(/constitution: PASS .*findings 0\) {2}building \d+ \(report only; --strict fails them\)/);
-    const strict = runConstitution({ root, consumer, rule: "R15", strict: true, history: () => NO_HISTORY, now: () => 0 });
+    const strict = runConstitution({ root, consumer, rule: "R15", agent: "publisher", strict: true, history: () => NO_HISTORY, now: () => 0 });
     expect(strict).toMatchObject({ ok: false, strict: true, building: loose.building, total: loose.total });
     expect(formatReport(strict)).toMatch(/^R15 FAIL {2}rows \d+/m);
   });
 
-  it("a building check fails the run for the agents it lists in enforcedFor and stays building for the rest (R05.1, R15.5: director; R05.2: every pinning agent)", () => {
+  it("a building check fails the run for the agents it lists in enforcedFor and stays building for the rest (R05.1, R05.2, R15.2-R15.9: every content agent; R15.1: all but Publisher)", () => {
     const enforcedFor = Object.fromEntries(readRules().flatMap(rule => rule.checks).filter(check => check.enforcedFor).map(check => [check.id, check.enforcedFor]));
     // R05.2 CHOOSE (foundry-build-0048): a pin points only to a certified candidate, enforced for all four agents.
-    expect(enforcedFor).toEqual({ "R05.1": ["director"], "R05.2": ["director", "designer", "writer", "publisher"], "R15.5": ["director"] });
+    // R4 (foundry-build-0048): R05.1 and R15.x are enforced for every agent they pass for on the fixture consumer; Publisher's
+    // R15.1 (a layout slot names a standard that does not exist) is red there, so it stays building for Publisher.
+    const all = ["director", "designer", "writer", "publisher"];
+    expect(enforcedFor).toEqual({
+      "R05.1": all, "R05.2": all,
+      "R15.1": ["director", "designer", "writer"],
+      ...Object.fromEntries(["R15.2", "R15.3", "R15.4", "R15.5", "R15.6", "R15.7", "R15.8", "R15.9"].map(id => [id, all])),
+    });
     const { root, consumer } = writeWorkspace(cleanSpec());
     const report = runConstitution({ root, consumer, rule: "R05", history: () => NO_HISTORY, now: () => 0 });
-    const enforced = (row: { agent: string; check: string }) => row.agent === "director" || (row.check === "R05.2" && row.agent !== "producer");
+    const enforced = (row: { agent: string; check: string }) => (row.check === "R05.1" || row.check === "R05.2") && row.agent !== "producer";
     const failing = report.rows.filter(enforced);
     const others = report.rows.filter(row => !enforced(row));
     expect(failing.filter(row => row.agent === "director").length).toBeGreaterThan(0);
@@ -122,11 +132,13 @@ describe("constitution runner", () => {
     expect(others.every(row => row.level === "building")).toBe(true);
     expect(report.ok).toBe(false);
     expect(report.rules[0]).toMatchObject({ failing: failing.length, building: others.length });
-    // Writer's R05.1 rows stay building; an R05.2 row of Writer's (a pin of an uncertified candidate) would fail the run.
+    // Writer's R05.1 rows (an uncertified candidate) now fail the run; Producer's, which no enforcedFor lists, stay building.
     const writerOnly = runConstitution({ root, consumer, rule: "R05", agent: "writer", history: () => NO_HISTORY, now: () => 0 });
-    const writerPins = writerOnly.rows.filter(row => row.check === "R05.2");
-    expect(writerOnly).toMatchObject({ ok: writerPins.length === 0, building: writerOnly.total - writerPins.length });
+    expect(writerOnly).toMatchObject({ ok: false, building: 0 });
     expect(writerOnly.rows.filter(row => row.check === "R05.1").length).toBeGreaterThan(0);
+    const producerOnly = runConstitution({ root, consumer, rule: "R05", agent: "producer", history: () => NO_HISTORY, now: () => 0 });
+    expect(producerOnly).toMatchObject({ ok: true, building: producerOnly.total });
+    expect(producerOnly.total).toBeGreaterThan(0);
     const rules = readRules();
     const bad = rules.map(rule => rule.id !== "R04" ? rule : { ...rule, checks: rule.checks.map(check => ({ ...check, enforcedFor: ["director"] })) });
     expect(() => registeredRules(bad)).toThrow(/enforcedFor/);

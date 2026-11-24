@@ -261,7 +261,10 @@
         ],
         "fix": "meet the failing requirement named in brackets (the slot standard's requirements.json, or the contract fixture), then resubmit",
         "enforcedFor": [
-          "director"
+          "director",
+          "designer",
+          "writer",
+          "publisher"
         ]
       },
       {
@@ -705,6 +708,11 @@
           "submit",
           "pick",
           "reject"
+        ],
+        "enforcedFor": [
+          "director",
+          "designer",
+          "writer"
         ]
       },
       {
@@ -717,6 +725,12 @@
           "submit",
           "pick",
           "reject"
+        ],
+        "enforcedFor": [
+          "director",
+          "designer",
+          "writer",
+          "publisher"
         ]
       },
       {
@@ -729,6 +743,12 @@
           "submit",
           "pick",
           "reject"
+        ],
+        "enforcedFor": [
+          "director",
+          "designer",
+          "writer",
+          "publisher"
         ]
       },
       {
@@ -741,6 +761,12 @@
           "submit",
           "pick",
           "reject"
+        ],
+        "enforcedFor": [
+          "director",
+          "designer",
+          "writer",
+          "publisher"
         ]
       },
       {
@@ -755,7 +781,10 @@
           "reject"
         ],
         "enforcedFor": [
-          "director"
+          "director",
+          "designer",
+          "writer",
+          "publisher"
         ]
       },
       {
@@ -768,6 +797,12 @@
           "submit",
           "pick",
           "reject"
+        ],
+        "enforcedFor": [
+          "director",
+          "designer",
+          "writer",
+          "publisher"
         ]
       },
       {
@@ -780,6 +815,12 @@
           "submit",
           "pick",
           "reject"
+        ],
+        "enforcedFor": [
+          "director",
+          "designer",
+          "writer",
+          "publisher"
         ]
       },
       {
@@ -792,6 +833,12 @@
           "submit",
           "pick",
           "reject"
+        ],
+        "enforcedFor": [
+          "director",
+          "designer",
+          "writer",
+          "publisher"
         ]
       },
       {
@@ -804,6 +851,12 @@
           "submit",
           "pick",
           "reject"
+        ],
+        "enforcedFor": [
+          "director",
+          "designer",
+          "writer",
+          "publisher"
         ]
       }
     ]
