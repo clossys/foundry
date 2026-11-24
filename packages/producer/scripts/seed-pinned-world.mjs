@@ -826,6 +826,15 @@ async function placement(w) {
 }
 
 /**
+ * After the placement (foundry-build-0048 R2): `clossys next --owner`, the owner interview, files every request need
+ * it prints as a queue entry, as a real consumer's first interview does. It runs at the seed clock (AT); a rerun files
+ * nothing new.
+ */
+async function interview(w) {
+  await w.run("producer", "next", "--owner");
+}
+
+/**
  * Seeds the unpinned base of `from` in a temporary root and returns the pinned tree there (`keep`) or copies it to
  * `out` (which must not hold a tree already) and removes it. The root holds the seeder's mark; `out` never does.
  * `resume` continues a kept root in place, skipping the slots it pinned already (a development aid; the committed
@@ -856,6 +865,7 @@ export async function seed({ from, out, only, keep = false, resume } = {}) {
     for (const ref of order) if (!pinned(w.consumer, ref)) await seedSlot(w, ref);
     if (!only) await adoptLoops(w);
     if (!only) await placement(w);
+    if (!only) await interview(w);
     // Only the repository this run made goes; a resumed root's own .git stays.
     if (ownGit) rmSync(join(root, ".git"), { recursive: true, force: true });
     if (out) {

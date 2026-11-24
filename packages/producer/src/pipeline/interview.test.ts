@@ -15,10 +15,14 @@ import { runPipeline } from "./runner.js";
 import { readSeatPolicy, SEAT_POLICY_FILE } from "./seat-policy.js";
 import { appendRecord, buildRecord } from "./trace.js";
 import { consumerPath } from "../consumer-root.js";
+import { listWorkEntries } from "../records/request.js";
+import { fileURLToPath } from "node:url";
 import { PRODUCER_ROOT } from "../package-path.js";
 
 /** The foundry consumer this package ships beside: a real slot model to copy (never the real records). */
 const FOUNDRY = consumerPath();
+/** The conform fixture consumer (`clossys conform` reads its clossys/). */
+const FIXTURE = fileURLToPath(new URL("../../test-fixtures/consumer", import.meta.url));
 const dirs: string[] = [];
 function workspace(): string {
   const root = realpathSync(mkdtempSync(join(tmpdir(), "interview-")));
@@ -200,6 +204,23 @@ describe("interview (next --owner) and gaps", { timeout: 120_000 }, () => {
     expect(output.schema).toBe("clossys.next-owner/2");
     for (const round of output.rounds) expect(round.length).toBeLessThanOrEqual(ROUND_SIZE);
     expect(existsSync(join(root, "clossys", ".state", "runs"))).toBe(false);
+  });
+
+  it("next --owner files every request need it prints as a queue entry, once (Q2)", async () => {
+    // The conform fixture with its interview-filed entries removed: its pinned Director cells read unclear.
+    const root = realpathSync(mkdtempSync(join(tmpdir(), "interview-file-")));
+    dirs.push(root);
+    cpSync(join(FIXTURE, "clossys"), join(root, "clossys"), { recursive: true });
+    rmSync(join(root, "clossys", "agents", "producer", "queue.change"), { recursive: true, force: true });
+    const asked = gapsOf(root).gaps.filter(gap => gap.kind === "request" && gap.code.startsWith("request.input-"));
+    expect(asked.length).toBeGreaterThan(0);
+    const first = (await runNextCli(["--owner", "--json", "--root", root], root)).output as { filed: { created: string[]; refused: unknown[] } };
+    expect(first.filed.refused).toEqual([]);
+    expect(first.filed.created.length).toBeGreaterThan(0);
+    const open = new Set(listWorkEntries(join(root, "clossys")).flatMap(read => read.request?.status === "open" ? [read.request.target] : []));
+    for (const gap of gapsOf(root).gaps.filter(each => each.kind === "request")) expect(open.has(gap.item) || (gap.need ?? []).some(need => open.has(need)), `${gap.code} ${gap.item}`).toBe(true);
+    const again = (await runNextCli(["--owner", "--json", "--root", root], root)).output as { filed: { created: string[] } };
+    expect(again.filed.created).toEqual([]);
   });
 });
 

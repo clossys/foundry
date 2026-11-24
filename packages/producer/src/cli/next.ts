@@ -8,7 +8,8 @@
  *
  * --owner is the interview (pipeline/interview.ts): the owner questions the gaps hold, grouped and in
  * rounds of at most 4, each option the exact argv of every call it runs; --agent keeps one agent's.
- * The packet is not a step and records nothing. A submission is the `<agent>.candidates` step: its
+ * Every request need it prints is filed first as a queue entry (fileInterviewNeeds; a re-run files nothing new);
+ * otherwise the packet is not a step and records nothing. A submission is the `<agent>.candidates` step: its
  * declared skill must be the contract's skill, its seat's llm (when assigned) must match the model and
  * tier, its file must pass the output port's schema and the slot model check, and its canonical bytes
  * must differ from every candidate the slot holds, and its selection-ladder record (--rung, --seed,
@@ -37,7 +38,7 @@ import type { Packet } from "../pipeline/chain.js";
 import type { Step } from "../pipeline/define.js";
 import { ladderIssues, rungKind, rungsOf } from "../pipeline/candidate-ladder.js";
 import type { CandidateLadder } from "../pipeline/candidate-ladder.js";
-import { INTERVIEW_AGENTS, interviewOf } from "../pipeline/interview.js";
+import { fileInterviewNeeds, gapsOf, INTERVIEW_AGENTS, interviewOf } from "../pipeline/interview.js";
 import type { InterviewAgent, Question } from "../pipeline/interview.js";
 import { PACKAGE_ROOT } from "../pipeline/options.js";
 import { validateFile } from "../pipeline/schema.js";
@@ -145,7 +146,7 @@ function describeQuestion(question: Question, round: number): string {
   return lines.join("\n");
 }
 
-/** `clossys next [--owner]`: the open packet(s). Not a step: it reads, prints and records nothing. */
+/** `clossys next [--owner]`: the open packet(s). Not a step: it prints, and records only --owner's unfiled request needs. */
 export async function runNextCli(argv: readonly string[], cwd: string, steps: readonly Step[] = STEPS, packageRoot = PACKAGE_ROOT): Promise<CliResult> {
   const flags = parse(argv);
   if (flags.help) return { exitCode: 0, message: NEXT_USAGE };
@@ -156,14 +157,19 @@ export async function runNextCli(argv: readonly string[], cwd: string, steps: re
   if (flags.agent !== undefined && !(INTERVIEW_AGENTS as readonly string[]).includes(flags.agent)) throw new CliUsageError(`--agent must be ${INTERVIEW_AGENTS.join(", ")}, got ${flags.agent}\n${NEXT_USAGE}`);
   if (flags.owner) {
     const agent = flags.agent as InterviewAgent | undefined;
+    const filed = fileInterviewNeeds(root, gapsOf(root, { steps, packageRoot, ...(agent ? { agent } : {}) }).gaps, new Date().toISOString().replace(/\.\d+Z$/, "Z"));
     const interview = interviewOf(root, { steps, packageRoot, models: flags.models, ...(agent ? { agent } : {}) });
     // The v1 packets stay for readers of one owner packet per item (Studio); the rounds are the interview.
     const packets = openPackets(root, { steps, packageRoot, models: flags.models, owner: true })
       .filter(packet => !agent || interview.rounds.some(round => round.some(question => question.step === packet.step && question.items.includes(packet.item))));
-    const output = { ...interview, packets };
-    const message = interview.count
+    const output = { ...interview, packets, filed };
+    const notes = [
+      ...(filed.created.length ? [`filed ${filed.created.length} request need(s) as queue entries: ${filed.created.join(", ")}`] : []),
+      ...filed.refused.map(row => `the queue refused the need ${row.code} ${row.item}: ${row.reason}`),
+    ];
+    const message = [...notes, interview.count
       ? interview.rounds.flatMap((round, at) => round.map(question => describeQuestion(question, at))).join("\n\n")
-      : `next --owner${agent ? ` --agent ${agent}` : ""}: no owner question is open (${interview.gaps.total} gap(s); clossys gaps${agent ? ` --agent ${agent}` : ""} lists them)`;
+      : `next --owner${agent ? ` --agent ${agent}` : ""}: no owner question is open (${interview.gaps.total} gap(s); clossys gaps${agent ? ` --agent ${agent}` : ""} lists them)`].join("\n\n");
     return { exitCode: 0, root, output, message };
   }
   const packet = nextPacket(root, { steps, packageRoot, models: flags.models });

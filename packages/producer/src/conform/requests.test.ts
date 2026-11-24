@@ -204,10 +204,10 @@ describe("the request lens on disk", () => {
     expect(judge("Q6", "writer", { consumer: dir, repo: at }).rows).toContainEqual(expect.stringMatching(/raised change to designer with no declared issuing edge/));
   });
 
-  it("Q1 finds no agent request store of its own (U8 moved Director and Designer onto the queue); Q2 lists the interview gaps that only print", () => {
+  it("Q1 finds no agent request store of its own (U8 moved Director and Designer onto the queue); Q2 finds no interview gap that only prints (R2: next --owner files each one)", () => {
     for (const agent of ["director", "designer", "writer", "publisher"]) expect(localStores(join(REPO, "packages", agent)).rows, agent).toEqual([]);
     const printed = printedGapCodes(readFileSync(join(REPO, "packages/producer/src/pipeline/interview.ts"), "utf8"));
-    expect(printed).toContain("request.input-unpinned");
+    expect(printed).toEqual([]);
     // SLOT-CREATE files a slotless need as a kind slot entry: it is recorded, not only printed.
     expect(printed).not.toContain("request.slot-missing");
   });
