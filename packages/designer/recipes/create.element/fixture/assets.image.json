@@ -1,0 +1,8 @@
+{
+  "schema": "clossys.element-preview/1",
+  "fixtures": {
+    "file": "registry/aria-nova/ui/aspect-ratio.tsx",
+    "export": "AspectRatio",
+    "props": {}
+  }
+}

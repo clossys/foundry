@@ -15,10 +15,10 @@
   ],
   "recipes": [
     {
-      "dir": "recipes/create.statement"
+      "dir": "recipes/create.statement", "fixture": {"output": "recipes/create.statement/fixture/aspiration.purpose.mission.json", "slot": "aspiration.purpose.mission"}
     },
     {
-      "dir": "recipes/create.structured"
+      "dir": "recipes/create.structured", "fixture": {"output": "recipes/create.structured/fixture/context.market.size.json", "slot": "context.market.size"}
     }
   ],
   "derive": [],

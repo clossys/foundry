@@ -25,13 +25,13 @@
   ],
   "recipes": [
     {
-      "dir": "recipes/create.copy"
+      "dir": "recipes/create.copy", "fixture": {"output": "recipes/create.copy/fixture/components.command.copy.json", "slot": "components.command.copy"}
     },
     {
-      "dir": "recipes/create.headline"
+      "dir": "recipes/create.headline", "fixture": {"output": "recipes/create.headline/fixture/sections.hero.copy.json", "slot": "sections.hero.copy"}
     },
     {
-      "dir": "recipes/create.lexicon"
+      "dir": "recipes/create.lexicon", "fixture": {"output": "recipes/create.lexicon/fixture/lexicon.formality.json", "slot": "lexicon.formality"}
     }
   ],
   "derive": [
