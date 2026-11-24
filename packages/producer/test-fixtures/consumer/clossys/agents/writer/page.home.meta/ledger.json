@@ -65,6 +65,25 @@
       ]
     },
     {
+      "op": "slot",
+      "at": "2026-11-19T00:00:00Z",
+      "by": "planner",
+      "verb": "ia",
+      "skill": {
+        "path": "packages/producer/actions/ia/skill.md",
+        "sha256": "147a7eaf66267728953e0c8111a9c20b93475f95f8063745d9d1d1087658fe73"
+      },
+      "model": "none",
+      "tier": "none",
+      "kind": "ia",
+      "records": [
+        {
+          "file": "slot.json",
+          "sha256": "bcf206a6f92d4500dbc6e0f654e77af6beed4a640d248bd29e64cad7c156f13e"
+        }
+      ]
+    },
+    {
       "op": "verdict",
       "at": "2026-11-19T00:00:00Z",
       "by": "agent:writer.verdict",
@@ -187,6 +206,12 @@
             "slot": "identity.naming.name",
             "candidate": "name-v1.md",
             "sha256": "aa5e2e5d1b992271f3cd6441d7bdad9145d9b08d646658d40cc95ab8d270fe8d"
+          },
+          {
+            "agent": "writer",
+            "slot": "publication.site.meta",
+            "candidate": "meta-v1.md",
+            "sha256": "9b1139e1ca19450777711d5d08a366c998a95211979759ed33d8e18931a0ecb3"
           },
           {
             "agent": "director",
@@ -486,7 +511,7 @@
         "reason": "fixture world: a synthetic consumer, so its copy is written from its own pinned upstream"
       },
       "name": "meta-v1.md",
-      "sha256": "0e1325b974bfac91a50e125f8c5d9260c30858c5614f8cd07ab04878696331c7"
+      "sha256": "122e716678b3f4d8abacf285d19886da7aaf45434fdf8690b314045f797c7870"
     },
     {
       "op": "pin",
@@ -500,14 +525,14 @@
       "model": "none",
       "tier": "none",
       "candidate": "meta-v1.md",
-      "sha256": "0e1325b974bfac91a50e125f8c5d9260c30858c5614f8cd07ab04878696331c7",
+      "sha256": "122e716678b3f4d8abacf285d19886da7aaf45434fdf8690b314045f797c7870",
       "decidedBy": "planner:fixture-world",
       "basis": "planner",
       "record": "meta",
       "records": [
         {
           "file": "pin.json",
-          "sha256": "2ec3f9c9560b78679650d8221147fba1c85d9f83b921a563518fc15cb4e8c624"
+          "sha256": "a054a58017acbdd83dbb1a12cdafb247389bfd8b0f390d2bc4e5f67204e4de83"
         }
       ]
     },
@@ -565,7 +590,7 @@
       "records": [
         {
           "file": "slot.json",
-          "sha256": "f6244a9b7273c22cb82639f3742fb5c519570c265507986c3829cd71d49449a6"
+          "sha256": "bcf206a6f92d4500dbc6e0f654e77af6beed4a640d248bd29e64cad7c156f13e"
         }
       ]
     }

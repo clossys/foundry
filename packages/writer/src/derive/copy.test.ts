@@ -87,6 +87,17 @@ describe("Page metadata is generated from the Publisher directory (foundry-build
     expect(home.inputs.filter((ref: { to: string }) => ref.to.startsWith("writer/lexicon.")).length).toBe(12);
   });
 
+  it("each page.<id>.meta names its own publication's meta as an input, so site and app pages differ", () => {
+    const tree = deriveCopyTree(input);
+    const inputsOf = (id: string) => tree.slots.find(slot => slot.id === id)!.inputs.map(ref => ref.to);
+    expect(input.directory.slots["page.not-found"]!.publication).toBe("site");
+    expect(input.directory.slots["page.app-not-found"]!.publication).toBe("app");
+    expect(inputsOf("page.not-found.meta")).toContain("writer/publication.site.meta");
+    expect(inputsOf("page.app-not-found.meta")).toContain("writer/publication.app.meta");
+    expect(inputsOf("page.not-found.meta")).not.toEqual(inputsOf("page.app-not-found.meta"));
+    for (const [id, page] of livePages) expect(inputsOf(`${id}.meta`).filter(to => to.startsWith("writer/publication."))).toEqual([`writer/publication.${page.publication}.meta`]);
+  });
+
   it("mutation: a live Publisher page with no Page metadata slot fails", () => {
     const tree = clone(committed);
     tree.slots = tree.slots.filter((slot: { id: string }) => slot.id !== "page.pricing.meta");

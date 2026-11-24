@@ -5,7 +5,7 @@
  */
 import { describe, expect, it } from "vitest";
 import { COPY_ROLES } from "../../../../designer/src/check/copy-fields-role.js";
-import { ROLE_WORD_BUDGET, VOICE_ROLES, checkVoiceContent, checkWriterInputs, loadVoiceDefaults } from "./voice-shape.js";
+import { ROLE_WORD_BUDGET, VOICE_ROLES, checkVoiceContent, checkWriterInputs, loadPagePublications, loadVoiceDefaults } from "./voice-shape.js";
 import { loadWriterTrees, type GroupTree } from "./target.js";
 
 const defaults = loadVoiceDefaults();
@@ -114,5 +114,60 @@ describe("Director inputs are named keys; style goes through Voice (foundry-audi
     const prose = group("prose", next).slots[0]!;
     prose.inputs = prose.inputs.filter(ref => ref.to !== "writer/lexicon.formality");
     expect(text(checkWriterInputs(next))).toContain("lexicon.formality");
+  });
+});
+
+describe("Page metadata reads its own publication's meta, and nothing else outside Voice (R9b)", () => {
+  const publications = loadPagePublications();
+  const withMetaInputs = (slotId: string, to: readonly string[]) => {
+    const next = clone(trees);
+    const slot = group("copy", next).slots.find(entry => entry.id === slotId)!;
+    slot.inputs = [...slot.inputs.filter(ref => !ref.to.startsWith("writer/publication.")), ...to.map(ref => ({ to: ref, rel: "input" as const }))];
+    return next;
+  };
+  const findingsFor = (slotId: string, next: readonly GroupTree[]) => checkWriterInputs(next).filter(finding => finding.message.startsWith(`INPUTS: ${slotId} `));
+
+  it("the Publisher directory places page.not-found in site and page.app-not-found in app", () => {
+    expect(publications.get("page.not-found")).toBe("site");
+    expect(publications.get("page.app-not-found")).toBe("app");
+  });
+
+  it("a page meta slot reading its own publication's meta passes (site and app)", () => {
+    expect(findingsFor("page.not-found.meta", withMetaInputs("page.not-found.meta", ["writer/publication.site.meta"]))).toEqual([]);
+    expect(findingsFor("page.app-not-found.meta", withMetaInputs("page.app-not-found.meta", ["writer/publication.app.meta"]))).toEqual([]);
+  });
+
+  it("mutation: a page meta slot reading another publication's meta fails", () => {
+    expect(text(findingsFor("page.not-found.meta", withMetaInputs("page.not-found.meta", ["writer/publication.app.meta"])))).toContain("INPUTS: page.not-found.meta reads writer/publication.app.meta, which is not a Voice slot");
+    expect(text(findingsFor("page.app-not-found.meta", withMetaInputs("page.app-not-found.meta", ["writer/publication.site.meta"])))).toContain("INPUTS: page.app-not-found.meta reads writer/publication.site.meta, which is not a Voice slot");
+  });
+
+  it("mutation: a page meta slot reading its own publication's meta twice fails (exactly one)", () => {
+    expect(text(findingsFor("page.not-found.meta", withMetaInputs("page.not-found.meta", ["writer/publication.site.meta", "writer/publication.site.meta"])))).toContain("INPUTS: page.not-found.meta reads writer/publication.site.meta, which is not a Voice slot");
+  });
+
+  it("mutation: a page meta slot reading any other Writer slot fails", () => {
+    for (const to of ["writer/page.home.meta", "writer/sections.hero.copy"]) {
+      expect(text(findingsFor("page.not-found.meta", withMetaInputs("page.not-found.meta", ["writer/publication.site.meta", to]))), to).toContain(`INPUTS: page.not-found.meta reads ${to}, which is not a Voice slot`);
+    }
+  });
+
+  it("mutation: a slot that is not page metadata reading a publication meta fails", () => {
+    for (const id of ["copy", "prose"]) {
+      const next = clone(trees);
+      const slot = group(id, next).slots.find(entry => !/^page\..+\.meta$/.test(entry.id))!;
+      slot.inputs.push({ to: "writer/publication.site.meta", rel: "input" });
+      expect(text(checkWriterInputs(next)), `${id}/${slot.id}`).toContain(`INPUTS: ${slot.id} reads writer/publication.site.meta, which is not a Voice slot`);
+    }
+    const next = clone(trees);
+    const publication = group("copy", next).slots.find(entry => entry.id === "publication.site.meta")!;
+    publication.inputs.push({ to: "writer/publication.site.meta", rel: "input" });
+    expect(text(checkWriterInputs(next))).toContain("INPUTS: publication.site.meta reads writer/publication.site.meta, which is not a Voice slot");
+  });
+
+  it("mutation: a page absent from the Publisher directory gets no exception", () => {
+    const next = withMetaInputs("page.not-found.meta", ["writer/publication.site.meta"]);
+    const missing = new Map([...publications].filter(([page]) => page !== "page.not-found"));
+    expect(text(checkWriterInputs(next, missing))).toContain("INPUTS: page.not-found.meta reads writer/publication.site.meta, which is not a Voice slot");
   });
 });

@@ -573,167 +573,6 @@
       }
     },
     {
-      "id": "components.media-player.copy",
-      "kind": "copy",
-      "mark": "other-live",
-      "inputs": [
-        {
-          "to": "writer/lexicon.formality",
-          "rel": "input"
-        },
-        {
-          "to": "writer/lexicon.warmth",
-          "rel": "input"
-        },
-        {
-          "to": "writer/lexicon.energy",
-          "rel": "input"
-        },
-        {
-          "to": "writer/lexicon.person",
-          "rel": "input"
-        },
-        {
-          "to": "writer/lexicon.mood",
-          "rel": "input"
-        },
-        {
-          "to": "writer/lexicon.sentence-length",
-          "rel": "input"
-        },
-        {
-          "to": "writer/lexicon.reading-level",
-          "rel": "input"
-        },
-        {
-          "to": "writer/lexicon.capitalization",
-          "rel": "input"
-        },
-        {
-          "to": "writer/lexicon.punctuation",
-          "rel": "input"
-        },
-        {
-          "to": "writer/lexicon.preferred-terms",
-          "rel": "input"
-        },
-        {
-          "to": "writer/lexicon.avoid-terms",
-          "rel": "input"
-        },
-        {
-          "to": "writer/lexicon.avoid-patterns",
-          "rel": "input"
-        },
-        {
-          "to": "director/advantage.proposition.promise",
-          "key": "Promise"
-        },
-        {
-          "to": "director/advantage.proposition.proof",
-          "key": "Proof"
-        },
-        {
-          "to": "director/advantage.proposition.proof",
-          "key": "Never-claim"
-        },
-        {
-          "to": "director/identity.naming.name",
-          "key": "Name"
-        }
-      ],
-      "contract": {
-        "unit": "designer/components.media-player",
-        "copy": {
-          "sourceLocale": "en",
-          "fields": [
-            {
-              "key": "title",
-              "kind": "plain",
-              "role": "heading",
-              "required": true,
-              "maxLength": {
-                "en": 60
-              },
-              "dir": "auto"
-            },
-            {
-              "key": "play",
-              "kind": "plain",
-              "role": "action",
-              "required": true,
-              "maxLength": {
-                "en": 24
-              },
-              "dir": "auto"
-            },
-            {
-              "key": "pause",
-              "kind": "plain",
-              "role": "action",
-              "required": true,
-              "maxLength": {
-                "en": 24
-              },
-              "dir": "auto"
-            },
-            {
-              "key": "mute",
-              "kind": "plain",
-              "role": "action",
-              "required": true,
-              "maxLength": {
-                "en": 24
-              },
-              "dir": "auto"
-            },
-            {
-              "key": "seek",
-              "kind": "plain",
-              "role": "label",
-              "required": true,
-              "maxLength": {
-                "en": 60
-              },
-              "dir": "auto"
-            },
-            {
-              "key": "captions",
-              "kind": "plain",
-              "role": "action",
-              "required": true,
-              "maxLength": {
-                "en": 24
-              },
-              "dir": "auto"
-            },
-            {
-              "key": "error.title",
-              "kind": "plain",
-              "role": "heading",
-              "required": true,
-              "maxLength": {
-                "en": 60
-              },
-              "dir": "auto"
-            },
-            {
-              "key": "error.description",
-              "kind": "plain",
-              "role": "lead",
-              "required": true,
-              "maxLength": {
-                "en": 200
-              },
-              "dir": "auto"
-            }
-          ]
-        },
-        "fieldsSha256": "b23c29025ae42a1d1af0e5bddbad461596803c9f3eb761d5198cdf2256423aae",
-        "candidate": "clossys.copy-candidate/1"
-      }
-    },
-    {
       "id": "components.dialog.copy",
       "kind": "copy",
       "mark": "starter",
@@ -9940,6 +9779,10 @@
         {
           "to": "director/identity.naming.name",
           "key": "Name"
+        },
+        {
+          "to": "writer/publication.site.meta",
+          "rel": "input"
         }
       ],
       "contract": {
@@ -10066,6 +9909,10 @@
         {
           "to": "director/identity.naming.name",
           "key": "Name"
+        },
+        {
+          "to": "writer/publication.site.meta",
+          "rel": "input"
         }
       ],
       "contract": {
@@ -10192,6 +10039,10 @@
         {
           "to": "director/identity.naming.name",
           "key": "Name"
+        },
+        {
+          "to": "writer/publication.site.meta",
+          "rel": "input"
         }
       ],
       "contract": {
@@ -10318,6 +10169,10 @@
         {
           "to": "director/identity.naming.name",
           "key": "Name"
+        },
+        {
+          "to": "writer/publication.site.meta",
+          "rel": "input"
         }
       ],
       "contract": {
@@ -10444,6 +10299,10 @@
         {
           "to": "director/identity.naming.name",
           "key": "Name"
+        },
+        {
+          "to": "writer/publication.site.meta",
+          "rel": "input"
         }
       ],
       "contract": {
@@ -10570,6 +10429,10 @@
         {
           "to": "director/identity.naming.name",
           "key": "Name"
+        },
+        {
+          "to": "writer/publication.site.meta",
+          "rel": "input"
         }
       ],
       "contract": {
@@ -10696,6 +10559,10 @@
         {
           "to": "director/identity.naming.name",
           "key": "Name"
+        },
+        {
+          "to": "writer/publication.site.meta",
+          "rel": "input"
         }
       ],
       "contract": {
@@ -10822,6 +10689,10 @@
         {
           "to": "director/identity.naming.name",
           "key": "Name"
+        },
+        {
+          "to": "writer/publication.site.meta",
+          "rel": "input"
         }
       ],
       "contract": {
@@ -10948,6 +10819,10 @@
         {
           "to": "director/identity.naming.name",
           "key": "Name"
+        },
+        {
+          "to": "writer/publication.site.meta",
+          "rel": "input"
         }
       ],
       "contract": {
@@ -11190,6 +11065,10 @@
         {
           "to": "director/identity.naming.name",
           "key": "Name"
+        },
+        {
+          "to": "writer/publication.docs.meta",
+          "rel": "input"
         }
       ],
       "contract": {
@@ -11316,6 +11195,10 @@
         {
           "to": "director/identity.naming.name",
           "key": "Name"
+        },
+        {
+          "to": "writer/publication.docs.meta",
+          "rel": "input"
         }
       ],
       "contract": {
@@ -11442,6 +11325,10 @@
         {
           "to": "director/identity.naming.name",
           "key": "Name"
+        },
+        {
+          "to": "writer/publication.docs.meta",
+          "rel": "input"
         }
       ],
       "contract": {
@@ -11568,6 +11455,10 @@
         {
           "to": "director/identity.naming.name",
           "key": "Name"
+        },
+        {
+          "to": "writer/publication.docs.meta",
+          "rel": "input"
         }
       ],
       "contract": {
@@ -11810,6 +11701,10 @@
         {
           "to": "director/identity.naming.name",
           "key": "Name"
+        },
+        {
+          "to": "writer/publication.app.meta",
+          "rel": "input"
         }
       ],
       "contract": {
@@ -11936,6 +11831,10 @@
         {
           "to": "director/identity.naming.name",
           "key": "Name"
+        },
+        {
+          "to": "writer/publication.app.meta",
+          "rel": "input"
         }
       ],
       "contract": {
@@ -12062,6 +11961,10 @@
         {
           "to": "director/identity.naming.name",
           "key": "Name"
+        },
+        {
+          "to": "writer/publication.app.meta",
+          "rel": "input"
         }
       ],
       "contract": {
@@ -12188,6 +12091,10 @@
         {
           "to": "director/identity.naming.name",
           "key": "Name"
+        },
+        {
+          "to": "writer/publication.app.meta",
+          "rel": "input"
         }
       ],
       "contract": {
@@ -12314,6 +12221,10 @@
         {
           "to": "director/identity.naming.name",
           "key": "Name"
+        },
+        {
+          "to": "writer/publication.app.meta",
+          "rel": "input"
         }
       ],
       "contract": {
@@ -12440,6 +12351,10 @@
         {
           "to": "director/identity.naming.name",
           "key": "Name"
+        },
+        {
+          "to": "writer/publication.app.meta",
+          "rel": "input"
         }
       ],
       "contract": {
@@ -12566,6 +12481,10 @@
         {
           "to": "director/identity.naming.name",
           "key": "Name"
+        },
+        {
+          "to": "writer/publication.app.meta",
+          "rel": "input"
         }
       ],
       "contract": {
@@ -12692,6 +12611,10 @@
         {
           "to": "director/identity.naming.name",
           "key": "Name"
+        },
+        {
+          "to": "writer/publication.app.meta",
+          "rel": "input"
         }
       ],
       "contract": {
@@ -12934,6 +12857,10 @@
         {
           "to": "director/identity.naming.name",
           "key": "Name"
+        },
+        {
+          "to": "writer/publication.admin.meta",
+          "rel": "input"
         }
       ],
       "contract": {
@@ -13060,6 +12987,10 @@
         {
           "to": "director/identity.naming.name",
           "key": "Name"
+        },
+        {
+          "to": "writer/publication.admin.meta",
+          "rel": "input"
         }
       ],
       "contract": {
@@ -13186,6 +13117,10 @@
         {
           "to": "director/identity.naming.name",
           "key": "Name"
+        },
+        {
+          "to": "writer/publication.admin.meta",
+          "rel": "input"
         }
       ],
       "contract": {
@@ -13312,6 +13247,10 @@
         {
           "to": "director/identity.naming.name",
           "key": "Name"
+        },
+        {
+          "to": "writer/publication.admin.meta",
+          "rel": "input"
         }
       ],
       "contract": {
@@ -13438,6 +13377,10 @@
         {
           "to": "director/identity.naming.name",
           "key": "Name"
+        },
+        {
+          "to": "writer/publication.admin.meta",
+          "rel": "input"
         }
       ],
       "contract": {
@@ -13680,6 +13623,10 @@
         {
           "to": "director/identity.naming.name",
           "key": "Name"
+        },
+        {
+          "to": "writer/publication.slides.meta",
+          "rel": "input"
         }
       ],
       "contract": {
@@ -13740,6 +13687,12 @@
     }
   ],
   "awaiting": [
+    {
+      "id": "components.media-player.copy",
+      "unit": "designer/components.media-player",
+      "mark": "other-live",
+      "reason": "Designer unit is retired"
+    },
     {
       "id": "sections.sectioned-document.copy",
       "unit": "designer/sections.sectioned-document",

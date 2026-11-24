@@ -497,7 +497,7 @@
         },
         {
           "slot": "writer/page.site-page.meta",
-          "why": "one L2 (copy.page-metadata/site) and kind family, inputs equal"
+          "why": "one L2 (copy.page-metadata/site) and kind family, inputs a subset"
         },
         {
           "slot": "writer/page.terms.meta",

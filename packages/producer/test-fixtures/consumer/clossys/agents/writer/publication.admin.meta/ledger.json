@@ -78,23 +78,23 @@
       "overlaps": [
         {
           "slot": "writer/page.admin-home.meta",
-          "why": "one L2 (copy.page-metadata/admin) and kind family, inputs equal"
+          "why": "one L2 (copy.page-metadata/admin) and kind family, inputs a subset"
         },
         {
           "slot": "writer/page.admin-gallery.meta",
-          "why": "one L2 (copy.page-metadata/admin) and kind family, inputs equal"
+          "why": "one L2 (copy.page-metadata/admin) and kind family, inputs a subset"
         },
         {
           "slot": "writer/page.admin-slot.meta",
-          "why": "one L2 (copy.page-metadata/admin) and kind family, inputs equal"
+          "why": "one L2 (copy.page-metadata/admin) and kind family, inputs a subset"
         },
         {
           "slot": "writer/page.admin-requests.meta",
-          "why": "one L2 (copy.page-metadata/admin) and kind family, inputs equal"
+          "why": "one L2 (copy.page-metadata/admin) and kind family, inputs a subset"
         },
         {
           "slot": "writer/page.admin-questions.meta",
-          "why": "one L2 (copy.page-metadata/admin) and kind family, inputs equal"
+          "why": "one L2 (copy.page-metadata/admin) and kind family, inputs a subset"
         }
       ],
       "records": [

@@ -85,6 +85,25 @@
     },
     {
       "op": "slot",
+      "at": "2026-11-19T00:00:00Z",
+      "by": "planner",
+      "verb": "ia",
+      "skill": {
+        "path": "packages/producer/actions/ia/skill.md",
+        "sha256": "147a7eaf66267728953e0c8111a9c20b93475f95f8063745d9d1d1087658fe73"
+      },
+      "model": "none",
+      "tier": "none",
+      "kind": "ia",
+      "records": [
+        {
+          "file": "slot.json",
+          "sha256": "448afa26f269b37404447a93b9f662049c5ee49c70375d839169244f312a93f3"
+        }
+      ]
+    },
+    {
+      "op": "slot",
       "at": "2026-11-23T00:00:00Z",
       "by": "producer",
       "verb": "migrate",
@@ -97,10 +116,6 @@
       "migration": "placement",
       "decision": "create",
       "overlaps": [
-        {
-          "slot": "writer/page.not-found.meta",
-          "why": "same kind family and inputs, similar purpose (0.75)"
-        },
         {
           "slot": "writer/publication.app.meta",
           "why": "one L2 (copy.page-metadata/app) and kind family, inputs a superset"
@@ -137,7 +152,7 @@
       "records": [
         {
           "file": "slot.json",
-          "sha256": "7cd88f905c1d0fad9467a46773634a036e08f3634b7db926f3da66ee2de59b94"
+          "sha256": "448afa26f269b37404447a93b9f662049c5ee49c70375d839169244f312a93f3"
         }
       ]
     }
