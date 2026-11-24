@@ -3,6 +3,7 @@ slot: "page.home.meta"
 locales: ["en"]
 reason: "realises director:identity.verbal.voice for the home page's metadata"
 source: {"kind":"derived","ref":["director:identity.verbal.voice"]}
+provenance: {"voice":"director:identity.verbal.voice"}
 ---
 
 ## en
