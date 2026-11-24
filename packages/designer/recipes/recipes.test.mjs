@@ -74,8 +74,8 @@ describe("Designer recipes load clean and cover every standard (R15.5)", () => {
     assert.deepEqual(standardRecipe(widened, "designer", "frame"), { issue: "recipes create.element, create.frame all produce for frame; a standard has exactly one producing recipe" });
   });
 
-  it("holds no adopt recipe while every Designer standard has no seeds (R15.9 would flag it)", () => {
-    for (const standard of standards) assert.deepEqual(standard.doc.seeds, [], standard.id);
+  it("holds no adopt recipe while only the component standard has seeds, exactly shadcn and shadcn-aria (R15.9 would flag it)", () => {
+    for (const standard of standards) assert.deepEqual(standard.doc.seeds, standard.id === "component" ? ["shadcn", "shadcn-aria"] : [], standard.id);
     assert.equal(recipes.filter(recipe => recipe.doc.rung === "adopt").length, 0);
   });
 });

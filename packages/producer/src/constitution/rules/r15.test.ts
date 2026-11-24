@@ -294,6 +294,8 @@ describe("R15.9 seeds are the Designer's", () => {
     };
     expect(r15_9(ctxOf(designer(["shadcn/button"], ["shadcn"])))).toEqual([]);
     catches(r15_9, ctxOf(designer(["acme/button"], ["shadcn"])), /seed acme\/button is not from a policy\.json seed registry/);
-    catches(r15_9, ctxOf(designer(["shadcn/button"])), /lists no seedRegistries/);
+    // No policy.json: the default allowlist (stock shadcn and shadcn-aria) applies.
+    expect(r15_9(ctxOf(designer(["shadcn/button", "shadcn-aria/dialog"])))).toEqual([]);
+    catches(r15_9, ctxOf(designer(["acme/button"])), /seed acme\/button is not from a policy\.json seed registry \(shadcn, shadcn-aria\)/);
   });
 });
