@@ -1,0 +1,102 @@
+{
+ "tool": "cloud-gate-run.py",
+ "ran_on": "cloud",
+ "unit": "BR-E2E6",
+ "branch": "claude/r2f-0048-br-e2e6",
+ "head": "445623ec0f578aa78f6e12dbc4b55a9fb785e8de",
+ "tree": "e7cf413fea396d81534d6fad86eb8c581ab54d6e",
+ "int2": "claude/r2f-int2",
+ "int2_sha": "eea7baad358a2657aed2f6c0a781bc2f2ab47927",
+ "generated_at": "2026-11-24T04:28:56Z",
+ "spec_sha256": "a3dd63d041cc8596ee6676b24ba378043db4b583a8bb81c95f0f8c66db5619ee",
+ "runner_sha256": "d8bb5e204990d40dfb33553a1750acd5e73c10d0ca4ee98ca3f1065683820383",
+ "prep": [
+  {
+   "command": "npm run build -w @clossys/advisor",
+   "exit": 0,
+   "seconds": 1.2,
+   "tail": "\n> @clossys/advisor@0.7.0 build\n> node scripts/pack-capability-catalogue.mjs && tsc -p tsconfig.json\n\npack-capability-catalogue: wrote 19 role(s), 5 preset(s), and 19 client problem(s) to src/generated/offering.generated.ts, and the plan, brief, repository-inventory and registry snapshot contracts to src/generated/plan-contracts.generated.ts, and the publishing scope and registry to src/generated/package-scope.generated.ts"
+  },
+  {
+   "command": "npm run build -w @clossys/controller",
+   "exit": 0,
+   "seconds": 2.3,
+   "tail": "\n> @clossys/controller@0.10.0 build\n> tsc -p tsconfig.json\n"
+  },
+  {
+   "command": "npm run build -w @clossys/director",
+   "exit": 0,
+   "seconds": 1.4,
+   "tail": "\n> @clossys/director@0.6.0 build\n> node scripts/pack-brief-contract.mjs && tsc -p tsconfig.json\n\npack-brief-contract: wrote the brief and engagement-context contracts and the contract checker copy into src/generated/"
+  },
+  {
+   "command": "npm run build -w @clossys/designer",
+   "exit": 0,
+   "seconds": 19.1,
+   "tail": "\n> @clossys/designer@0.12.0 build\n> tsc -p tsconfig.json\n"
+  },
+  {
+   "command": "npm run build -w @clossys/writer",
+   "exit": 0,
+   "seconds": 3.6,
+   "tail": "\n> @clossys/writer@0.6.0 build\n> node scripts/pack-plan-contract.mjs && tsc -p tsconfig.json && node scripts/check-record-drift.mjs\n\npack-plan-contract: wrote the plan contract and the contract checker copy into src/generated/\nWriter record drift: 1492 records, 12 sources, 0 findings; approval not evaluated."
+  },
+  {
+   "command": "npm run build -w @clossys/publisher",
+   "exit": 0,
+   "seconds": 432.7,
+   "tail": "> @clossys/publisher@0.13.0 check:client-boundary\n> node ../../scripts/check-client-boundary.mjs . --report ../../node_modules/.cache/client-boundary/publisher.json\n\nPASS ./content-map (production): 412 inputs\nPASS ./content-map (development): 412 inputs\nPASS ./web/preview (production): 4385 inputs\nPASS ./web/preview (development): 4385 inputs\nPASS ./web (production): 4557 inputs\nPASS ./web (development): 4557 inputs\nPASS ./web/host (production): 4323 inputs\nPASS ./web/host (development): 4323 inputs\nPASS ./web/content-route (production): 4381 inputs\nPASS ./web/content-route (development): 4381 inputs\nPASS ./web/publisher-v2 (production): 4045 inputs\nPASS ./web/publisher-v2 (development): 4045 inputs\nPASS ./web/client (production): 4404 inputs\nPASS ./web/client (development): 4404 inputs\nPASS ./web/consent (production): 4038 inputs\nPASS ./web/consent (development): 4038 inputs\nPASS ./web/consent/preview (production): 1 inputs\nPASS ./web/consent/preview (development): 3 inputs\nPASS ./web/registered-route-check (production): 1 inputs\nPASS ./web/registered-route-check (development): 1 inputs\nPASS ./web/registered-route-wiring (production): 1 inputs\nPASS ./web/registered-route-wiring (development): 1 inputs\nPASS ./web/admin-pages (production): 4399 inputs\nPASS ./web/admin-pages (development): 4399 inputs\nPASS ./web/registered-route (production): 4399 inputs\nPASS ./web/registered-route (development): 4399 inputs\nclient-boundary: PASS; report ./node_modules/.cache/client-boundary/publisher.json"
+  },
+  {
+   "command": "npm run build -w @clossys/producer",
+   "exit": 0,
+   "seconds": 14.1,
+   "tail": "\n> @clossys/producer@0.1.0 build\n> tsc -p tsconfig.json && node scripts/check-generated-derived.mjs --write && npm run -s generate:specimen-evidence && node scripts/generate-page-check-receipt.mjs\n\ncheck-generated-derived: no $CLOSSYS_ROOT consumer; wrote nothing\nWrote: 0 real native compiler certificates\nPROC-5 source receipt: 445623ec0f578aa78f6e12dbc4b55a9fb785e8de"
+  }
+ ],
+ "commands": [
+  {
+   "command": "npm run typecheck -w @clossys/publisher",
+   "expect": 0,
+   "exit": 0,
+   "ok": true,
+   "seconds": 8.8,
+   "tail": "\n> @clossys/publisher@0.13.0 typecheck\n> tsc -p tsconfig.json --noEmit\n"
+  },
+  {
+   "command": "npm exec -w @clossys/publisher -- vitest run src/install",
+   "expect": 0,
+   "exit": 1,
+   "ok": false,
+   "seconds": 35.1,
+   "tail": "- /tmp/page-host-EMgKby/render-2-1795494432602.mjs\n \u276f ../../node_modules/css-tree/lib/data-patch.js ../../../../../tmp/page-host-EMgKby/render-2-1795494432602.mjs:59000:13\n \u276f __init ../../../../../tmp/page-host-EMgKby/render-2-1795494432602.mjs:16:57\n \u276f ../../node_modules/css-tree/lib/data.js ../../../../../tmp/page-host-EMgKby/render-2-1795494432602.mjs:59081:5\n\n\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af[1/2]\u23af\n\n FAIL  src/install/page-host.test.ts > installs a frame plus three section instances into a fixture Next app that builds\nAssertionError: {\"code\":1,\"stdout\":\"\u25b2 Next.js 16.4.5 (Turbopack)\\n\u2713 Running next.config took 9ms\\n\\n  Creating an optimized production build ...\\n\u2713 Compiled successfully in 9.3s\\n  Running TypeScript ...\\n\\n  We detected TypeScript in your project and reconfigured your tsconfig.json file for you. Strict-mode is set to false by default.\\n  The following suggested values were added to your tsconfig.json. These values can be changed to fit your project's needs:\\n\\n  \\t- target was set to ES2017 (For top-level `await`. Note: Next.js only polyfills for the esmodules target.)\\n  \\t- lib was set to dom,dom.iterable,esnext\\n  \\t- allowJs was set to true\\n  \\t- skipLibCheck was set to true\\n  \\t- strict was set to false\\n  \\t- noEmit was set to true\\n  \\t- incremental was set to true\\n  \\t- include was set to ['next-env.d.ts', '.next/types/**/*.ts', '.next/dev/types/**/*.ts', '**/*.mts', '**/*.ts', '**/*.tsx']\\n  \\t- plugins was updated to add { name: 'next' }\\n  \\t- exclude was set to ['node_modules']\\n\\n  The following mandatory changes were made to your tsconfig.json:\\n\\n  \\t- module was set to esnext (for dynamic import() support)\\n  \\t- esModuleInterop was set to true (requirement for SWC / babel)\\n  \\t- moduleResolution was set to bundler (to match modern bundler resolution)\\n  \\t- resolveJsonModule was set to true (to match webpack resolution)\\n  \\t- isolatedModules was set to true (requirement for SWC / Babel)\\n\\n  Finished TypeScript in 2.2s ...\\n  Collecting page data using 3 workers ...\\n  Generating static pages using 3 workers (0/3) ...\\n\",\"stderr\":\"Error occurred prerendering page \\\"/\\\". Read more: https://nextjs.org/docs/messages/prerender-error\\nError: NEED component selection: components.button\\n    at <unknown> (../../designer/src/runtime/component-leaf.client.tsx:29:30)\\n  27 | export function SelectedComponentLeaf({ leaf, parts, componentProps }: { readonly leaf: string; readonly parts: readonly string[]; readonly componentProps: Readonly<Record<string, unknown>> }): ReactNode {\\n  28 |   const selection = useContext(ComponentSelection), chosen = selection?.profile.components.components[leaf];\\n> 29 |   if (!selection || !chosen) throw new Error(`NEED component selection: ${leaf}`);\\n     |                              ^\\n  30 |   if (selection.selectionHash !== selection.profile.components.selectionHash || selection.descriptors[leaf] !== componentDescriptorHash(chosen.descriptor)) throw new Error(`NEED component selection: stale descriptor for ${leaf}`);\\n  31 |   if (stableStringify(chosen.impl) !== stableStringify(chosen.descriptor.impl) || stableStringify(chosen.propMap) !== stableStringify(chosen.descriptor.propMap)) throw new Error(`NEED component selection: resolved implementation d...\\n  32 |   if (chosen.impl.kind === \\\"source\\\") verifyComponentOutput(chosen.descriptor, selection.profile.components.files); {\\n  digest: '2026175410'\\n}\\nExport encountered an error on /page: /, exiting the build.\\n\u2a2f Next.js build worker exited with code: 1 and signal: null\\n\"}: expected { code: 1, \u2026(2) } to match object { code: +0 }\n(2 matching properties omitted from actual)\n\n- Expected\n+ Received\n\n  {\n-   \"code\": 0,\n+   \"code\": 1,\n  }\n\n \u276f src/install/page-host.test.ts:217:55\n\n\n\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af[2/2]\u23af\n\n\n Test Files  1 failed | 7 passed (8)\n      Tests  2 failed | 144 passed | 1 skipped (147)\n   Start at  04:26:55\n   Duration  34.65s (tests 78%, transform 13%, import 9%)\n"
+  },
+  {
+   "command": "npm run check:e2e -w @clossys/producer",
+   "expect": 1,
+   "exit": 1,
+   "ok": true,
+   "seconds": 85.6,
+   "tail": "ok   craft.hero.submit: clossys next designer/sections.hero --submit /tmp/clossys-e2e-R0kj8a/consumer/node_modules/@clossys/producer/e2e/hero.json --model e2e-fixture --tier low --basis planner --skill packages/designer/actions/designer.candidates/skill.md --rung L4 --reason no seed: a fresh consumer holds none (exit 0)\nok   craft.hero.pin: clossys pin designer/sections.hero hero-v1.json --by agent:designer (exit 0)\nok   ia.strings: clossys ia writer/strings.site --contract /tmp/clossys-e2e-R0kj8a/consumer/node_modules/@clossys/producer/e2e/strings.contract.json --standard string --under strings/strings.site --kind strings --inputs identity.verbal.voice (exit 0)\nok   craft.strings.options: clossys options writer/strings.site (exit 0)\nok   craft.strings.verdict: clossys verdict writer/strings.site --record /tmp/clossys-e2e-R0kj8a/consumer/e2e/strings.site/verdict.json --model e2e-fixture --tier low --by agent:writer.verdict (exit 0)\nok   craft.strings.brief: clossys next writer/strings.site --stage brief --model e2e-fixture --tier low --skill packages/writer/actions/writer.candidates/skill.md --json (exit 0)\nok   craft.strings.diverge: clossys next writer/strings.site --stage diverge --file /tmp/clossys-e2e-R0kj8a/consumer/e2e/strings.site/diverge.json --model e2e-fixture --tier low --skill packages/writer/actions/writer.candidates/skill.md (exit 0)\nok   craft.strings.render: clossys next writer/strings.site --stage render --model e2e-fixture --tier low --skill packages/writer/actions/writer.candidates/skill.md (exit 0)\nok   craft.strings.packet: clossys critique-packet writer/strings.site --standard string --render renders/strings.site.md --json (exit 0)\nok   craft.strings.critique: clossys critique writer/strings.site --record /tmp/clossys-e2e-R0kj8a/consumer/e2e/strings.site/critique.json --model e2e-fixture-critic --tier low (exit 0)\nok   craft.strings.submit: clossys next writer/strings.site --submit /tmp/clossys-e2e-R0kj8a/consumer/node_modules/@clossys/producer/e2e/site.md --model e2e-fixture --tier low --basis planner --skill packages/writer/actions/writer.candidates/skill.md --rung create --reason no seed: a fresh consumer holds none (exit 0)\nok   craft.strings.pin: clossys pin writer/strings.site#site site-v1.md --by agent:writer (exit 0)\nok   ia.hero-copy: clossys ia writer/sections.hero.copy --contract /tmp/clossys-e2e-R0kj8a/consumer/node_modules/@clossys/producer/e2e/hero-copy.contract.json --standard copy.headline --under section-copy/section-copy.story --kind strings --inputs identity.verbal.voice (exit 0)\nok   craft.hero-copy.options: clossys options writer/sections.hero.copy (exit 0)\nok   craft.hero-copy.verdict: clossys verdict writer/sections.hero.copy --record /tmp/clossys-e2e-R0kj8a/consumer/e2e/sections.hero.copy/verdict.json --model e2e-fixture --tier low --by agent:writer.verdict (exit 0)\nok   craft.hero-copy.brief: clossys next writer/sections.hero.copy --stage brief --model e2e-fixture --tier low --skill packages/writer/actions/writer.candidates/skill.md --json (exit 0)\nok   craft.hero-copy.diverge: clossys next writer/sections.hero.copy --stage diverge --file /tmp/clossys-e2e-R0kj8a/consumer/e2e/sections.hero.copy/diverge.json --model e2e-fixture --tier low --skill packages/writer/actions/writer.candidates/skill.md (exit 0)\nok   craft.hero-copy.render: clossys next writer/sections.hero.copy --stage render --model e2e-fixture --tier low --skill packages/writer/actions/writer.candidates/skill.md (exit 0)\nok   craft.hero-copy.packet: clossys critique-packet writer/sections.hero.copy --standard copy.headline --render renders/sections.hero.copy.md --json (exit 0)\nok   craft.hero-copy.critique: clossys critique writer/sections.hero.copy --record /tmp/clossys-e2e-R0kj8a/consumer/e2e/sections.hero.copy/critique.json --model e2e-fixture-critic --tier low (exit 0)\nFAIL craft.hero-copy.submit: clossys next writer/sections.hero.copy --submit /tmp/clossys-e2e-R0kj8a/consumer/node_modules/@clossys/producer/e2e/hero-copy.md --model e2e-fixture --tier low --basis planner --skill packages/writer/actions/writer.candidates/skill.md --rung create --reason no seed: a fresh consumer holds none (exit 1)\n  e2e.step  craft.hero-copy.submit  clossys next writer/sections.hero.copy --submit /tmp/clossys-e2e-R0kj8a/consumer/node_modules/@clossys/producer/e2e/hero-copy.md --model e2e-fixture --tier low --basis planner --skill packages/writer/actions/writer.candidates/skill.md --rung create --reason no seed: a fresh consumer holds none exited 1, expected 0: next --submit refused: submit refused by the constitution guard: R05.1 [requirement] copy.voice-derived: sections.hero.copy: the frontmatter has no provenance; provenance.voice must name director:identity.verbal.voice, the pinned voice Writer copy derives from (clossys/agents/writer/sections.hero.copy/candidates/copy-v1.md); fix: meet the failing requirement named in brackets (the slot standard's requirements.json, or the contract fixture), then resubmit\nconsumer.e2e: fail e2e.step craft.hero-copy.submit: clossys next writer/sections.hero.copy --submit /tmp/clossys-e2e-R0kj8a/consumer/node_modules/@clossys/producer/e2e/hero-copy.md --model e2e-fixture --tier low --basis planner --skill packages/writer/actions/writer.candidates/skill.md --rung create --reason no seed: a fresh consumer holds none exited 1, expected 0: next --submit refused: submit refused by the constitution guard: R05.1 [requirement] copy.voice-derived: sections.hero.copy: the frontmatter has no provenance; provenance.voice must name director:identity.verbal.voice, the pinned voice Writer copy derives from (clossys/agents/writer/sections.hero.copy/candidates/copy-v1.md); fix: meet the failing requirement named in brackets (the slot standard's requirements.json, or the contract fixture), then resubmit\nnpm error Lifecycle script `check:e2e` failed with error:\nnpm error code 1\nnpm error path ./packages/producer\nnpm error workspace @clossys/producer@0.1.0\nnpm error location ./packages/producer\nnpm error command failed\nnpm error command sh -c node dist/cli/index.js check --e2e"
+  },
+  {
+   "command": "git merge-tree --write-tree claude/r2f-int2 HEAD",
+   "expect": 0,
+   "exit": 0,
+   "ok": true,
+   "seconds": 0.0,
+   "tail": "e179946a86b6487c9dfa4b94fbf3995f1e668ab0"
+  }
+ ],
+ "merge_tree": {
+  "command": "git merge-tree --write-tree claude/r2f-int2 445623ec0f578aa78f6e12dbc4b55a9fb785e8de",
+  "exit": 0,
+  "tree": "e179946a86b6487c9dfa4b94fbf3995f1e668ab0",
+  "conflicts": []
+ },
+ "tree_clean": true,
+ "failures": [
+  "`npm exec -w @clossys/publisher -- vitest run src/install` exit 1, expected 0"
+ ],
+ "verdict": "FAIL"
+}
