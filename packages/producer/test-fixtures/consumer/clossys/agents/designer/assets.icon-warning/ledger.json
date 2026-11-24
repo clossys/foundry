@@ -369,6 +369,40 @@
           "sha256": "27d0d38fa3d6349cd5a6c2162d1c7116553895f28766927aa4957ec32e15e8b2"
         }
       ]
+    },
+    {
+      "op": "slot",
+      "at": "2026-11-23T00:00:00Z",
+      "by": "producer",
+      "verb": "migrate",
+      "skill": {
+        "path": "packages/producer/actions/migrate/action.json",
+        "sha256": "8b07b093fc4ab43ae85ccd8c821f1d2cc02970225d90a986b2521806d9024342"
+      },
+      "model": "none",
+      "tier": "none",
+      "migration": "placement",
+      "decision": "create",
+      "overlaps": [
+        {
+          "slot": "designer/assets.icon-success",
+          "why": "one L2 (assets.icons/icons-alerts) and kind family, inputs equal"
+        },
+        {
+          "slot": "designer/assets.icon-danger",
+          "why": "one L2 (assets.icons/icons-alerts) and kind family, inputs equal"
+        },
+        {
+          "slot": "designer/assets.icon-info",
+          "why": "one L2 (assets.icons/icons-alerts) and kind family, inputs equal"
+        }
+      ],
+      "records": [
+        {
+          "file": "slot.json",
+          "sha256": "2306524d02984c10279ce2decc81adc2d1479359c893b24f60bd4f47df5f064d"
+        }
+      ]
     }
   ]
 }

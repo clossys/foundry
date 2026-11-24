@@ -63,6 +63,64 @@
           "sha256": "5cd3d1d8f338e8332073f98c7e592169b0543c06ed21174bd6d3e7b597cf7c02"
         }
       ]
+    },
+    {
+      "op": "slot",
+      "at": "2026-11-23T00:00:00Z",
+      "by": "producer",
+      "verb": "migrate",
+      "skill": {
+        "path": "packages/producer/actions/migrate/action.json",
+        "sha256": "8b07b093fc4ab43ae85ccd8c821f1d2cc02970225d90a986b2521806d9024342"
+      },
+      "model": "none",
+      "tier": "none",
+      "migration": "placement",
+      "decision": "create",
+      "overlaps": [
+        {
+          "slot": "writer/publication.site.meta",
+          "why": "one L2 (copy.page-metadata/site) and kind family, inputs a superset"
+        },
+        {
+          "slot": "writer/page.home.meta",
+          "why": "one L2 (copy.page-metadata/site) and kind family, inputs equal"
+        },
+        {
+          "slot": "writer/page.about.meta",
+          "why": "one L2 (copy.page-metadata/site) and kind family, inputs equal"
+        },
+        {
+          "slot": "writer/page.pricing.meta",
+          "why": "one L2 (copy.page-metadata/site) and kind family, inputs equal"
+        },
+        {
+          "slot": "writer/page.site-page.meta",
+          "why": "one L2 (copy.page-metadata/site) and kind family, inputs a superset"
+        },
+        {
+          "slot": "writer/page.terms.meta",
+          "why": "one L2 (copy.page-metadata/site) and kind family, inputs equal"
+        },
+        {
+          "slot": "writer/page.privacy.meta",
+          "why": "one L2 (copy.page-metadata/site) and kind family, inputs equal"
+        },
+        {
+          "slot": "writer/page.not-found.meta",
+          "why": "one L2 (copy.page-metadata/site) and kind family, inputs equal"
+        },
+        {
+          "slot": "writer/page.error.meta",
+          "why": "one L2 (copy.page-metadata/site) and kind family, inputs equal"
+        }
+      ],
+      "records": [
+        {
+          "file": "slot.json",
+          "sha256": "5cd3d1d8f338e8332073f98c7e592169b0543c06ed21174bd6d3e7b597cf7c02"
+        }
+      ]
     }
   ]
 }

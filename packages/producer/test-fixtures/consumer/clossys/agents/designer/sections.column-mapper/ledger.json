@@ -137,6 +137,32 @@
           "sha256": "672827154eefd8ad69c6d7b33afc606fe375f6c23277bdca79b5639d41fbf040"
         }
       ]
+    },
+    {
+      "op": "slot",
+      "at": "2026-11-23T00:00:00Z",
+      "by": "producer",
+      "verb": "migrate",
+      "skill": {
+        "path": "packages/producer/actions/migrate/action.json",
+        "sha256": "8b07b093fc4ab43ae85ccd8c821f1d2cc02970225d90a986b2521806d9024342"
+      },
+      "model": "none",
+      "tier": "none",
+      "migration": "placement",
+      "decision": "create",
+      "overlaps": [
+        {
+          "slot": "designer/sections.settings",
+          "why": "one L2 (sections.sections/sections-forms) and kind family, inputs a superset"
+        }
+      ],
+      "records": [
+        {
+          "file": "slot.json",
+          "sha256": "672827154eefd8ad69c6d7b33afc606fe375f6c23277bdca79b5639d41fbf040"
+        }
+      ]
     }
   ]
 }

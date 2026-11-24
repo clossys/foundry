@@ -118,6 +118,44 @@
           "sha256": "9db926b9e9dc30d5ed64424f16b40e346c2871ce299751021fa513bdab768994"
         }
       ]
+    },
+    {
+      "op": "slot",
+      "at": "2026-11-23T00:00:00Z",
+      "by": "producer",
+      "verb": "migrate",
+      "skill": {
+        "path": "packages/producer/actions/migrate/action.json",
+        "sha256": "8b07b093fc4ab43ae85ccd8c821f1d2cc02970225d90a986b2521806d9024342"
+      },
+      "model": "none",
+      "tier": "none",
+      "migration": "placement",
+      "decision": "create",
+      "overlaps": [
+        {
+          "slot": "designer/components.form",
+          "why": "one L2 (components.components/components-inputs) and kind family, inputs a superset"
+        },
+        {
+          "slot": "designer/components.text-field",
+          "why": "one L2 (components.components/components-inputs) and kind family, inputs a superset"
+        },
+        {
+          "slot": "designer/components.select",
+          "why": "one L2 (components.components/components-inputs) and kind family, inputs Jaccard 0.88"
+        },
+        {
+          "slot": "designer/components.file-trigger",
+          "why": "one L2 (components.components/components-inputs) and kind family, inputs a superset"
+        }
+      ],
+      "records": [
+        {
+          "file": "slot.json",
+          "sha256": "9db926b9e9dc30d5ed64424f16b40e346c2871ce299751021fa513bdab768994"
+        }
+      ]
     }
   ]
 }

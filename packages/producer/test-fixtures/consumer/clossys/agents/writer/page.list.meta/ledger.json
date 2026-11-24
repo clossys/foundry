@@ -82,6 +82,60 @@
           "sha256": "58f4ffbb29163ea3a961f9febd54dc3748db3f09feb5e0369339d6ac097acbed"
         }
       ]
+    },
+    {
+      "op": "slot",
+      "at": "2026-11-23T00:00:00Z",
+      "by": "producer",
+      "verb": "migrate",
+      "skill": {
+        "path": "packages/producer/actions/migrate/action.json",
+        "sha256": "8b07b093fc4ab43ae85ccd8c821f1d2cc02970225d90a986b2521806d9024342"
+      },
+      "model": "none",
+      "tier": "none",
+      "migration": "placement",
+      "decision": "create",
+      "overlaps": [
+        {
+          "slot": "writer/publication.app.meta",
+          "why": "one L2 (copy.page-metadata/app) and kind family, inputs a superset"
+        },
+        {
+          "slot": "writer/page.sign-in.meta",
+          "why": "one L2 (copy.page-metadata/app) and kind family, inputs equal"
+        },
+        {
+          "slot": "writer/page.sign-out-confirm.meta",
+          "why": "one L2 (copy.page-metadata/app) and kind family, inputs equal"
+        },
+        {
+          "slot": "writer/page.not-authorized.meta",
+          "why": "one L2 (copy.page-metadata/app) and kind family, inputs equal"
+        },
+        {
+          "slot": "writer/page.service-unavailable.meta",
+          "why": "one L2 (copy.page-metadata/app) and kind family, inputs equal"
+        },
+        {
+          "slot": "writer/page.app-home.meta",
+          "why": "one L2 (copy.page-metadata/app) and kind family, inputs equal"
+        },
+        {
+          "slot": "writer/page.settings.meta",
+          "why": "one L2 (copy.page-metadata/app) and kind family, inputs equal"
+        },
+        {
+          "slot": "writer/page.app-not-found.meta",
+          "why": "one L2 (copy.page-metadata/app) and kind family, inputs equal"
+        }
+      ],
+      "records": [
+        {
+          "file": "slot.json",
+          "sha256": "58f4ffbb29163ea3a961f9febd54dc3748db3f09feb5e0369339d6ac097acbed"
+        }
+      ]
     }
   ]
 }

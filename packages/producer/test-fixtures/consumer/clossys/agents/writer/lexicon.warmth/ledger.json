@@ -318,6 +318,36 @@
           "sha256": "fda5f62747281c73d67440cf352a10a08b9be34da1c5d2432d2a7f2277fa5133"
         }
       ]
+    },
+    {
+      "op": "slot",
+      "at": "2026-11-23T00:00:00Z",
+      "by": "producer",
+      "verb": "migrate",
+      "skill": {
+        "path": "packages/producer/actions/migrate/action.json",
+        "sha256": "8b07b093fc4ab43ae85ccd8c821f1d2cc02970225d90a986b2521806d9024342"
+      },
+      "model": "none",
+      "tier": "none",
+      "migration": "placement",
+      "decision": "create",
+      "overlaps": [
+        {
+          "slot": "writer/lexicon.formality",
+          "why": "one L2 (voice.tone/attitude) and kind family, inputs a subset"
+        },
+        {
+          "slot": "writer/lexicon.energy",
+          "why": "one L2 (voice.tone/attitude) and kind family, inputs equal"
+        }
+      ],
+      "records": [
+        {
+          "file": "slot.json",
+          "sha256": "bdb4e13dabbe421b20552830fb371d76a8340137557af04d257be9232cc201e1"
+        }
+      ]
     }
   ]
 }

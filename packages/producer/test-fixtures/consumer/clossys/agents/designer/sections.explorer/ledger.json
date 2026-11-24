@@ -137,6 +137,60 @@
           "sha256": "9737f51ce116d75cebd6019f5baa3075eaa22713b581cdb083c1dea2c6e42aca"
         }
       ]
+    },
+    {
+      "op": "slot",
+      "at": "2026-11-23T00:00:00Z",
+      "by": "producer",
+      "verb": "migrate",
+      "skill": {
+        "path": "packages/producer/actions/migrate/action.json",
+        "sha256": "8b07b093fc4ab43ae85ccd8c821f1d2cc02970225d90a986b2521806d9024342"
+      },
+      "model": "none",
+      "tier": "none",
+      "migration": "placement",
+      "decision": "create",
+      "overlaps": [
+        {
+          "slot": "designer/sections.link-index",
+          "why": "one L2 (sections.sections/sections-records) and kind family, inputs a superset"
+        },
+        {
+          "slot": "designer/sections.resource-list",
+          "why": "one L2 (sections.sections/sections-records) and kind family, inputs a superset"
+        },
+        {
+          "slot": "designer/sections.stats",
+          "why": "one L2 (sections.sections/sections-records) and kind family, inputs a superset"
+        },
+        {
+          "slot": "designer/sections.usage",
+          "why": "one L2 (sections.sections/sections-records) and kind family, inputs a superset"
+        },
+        {
+          "slot": "designer/sections.account-summary",
+          "why": "one L2 (sections.sections/sections-records) and kind family, inputs a superset"
+        },
+        {
+          "slot": "designer/sections.status-list",
+          "why": "one L2 (sections.sections/sections-records) and kind family, inputs a superset"
+        },
+        {
+          "slot": "designer/sections.activity-feed",
+          "why": "one L2 (sections.sections/sections-records) and kind family, inputs a superset"
+        },
+        {
+          "slot": "designer/sections.audit-log",
+          "why": "one L2 (sections.sections/sections-records) and kind family, inputs a superset"
+        }
+      ],
+      "records": [
+        {
+          "file": "slot.json",
+          "sha256": "9737f51ce116d75cebd6019f5baa3075eaa22713b581cdb083c1dea2c6e42aca"
+        }
+      ]
     }
   ]
 }

@@ -369,6 +369,60 @@
           "sha256": "34a6655f011940a0630b14e2d20e9e9d04b52483d91030b02c942f6e2865b070"
         }
       ]
+    },
+    {
+      "op": "slot",
+      "at": "2026-11-23T00:00:00Z",
+      "by": "producer",
+      "verb": "migrate",
+      "skill": {
+        "path": "packages/producer/actions/migrate/action.json",
+        "sha256": "8b07b093fc4ab43ae85ccd8c821f1d2cc02970225d90a986b2521806d9024342"
+      },
+      "model": "none",
+      "tier": "none",
+      "migration": "placement",
+      "decision": "create",
+      "overlaps": [
+        {
+          "slot": "designer/assets.icon-close",
+          "why": "one L2 (assets.icons/icons-commands) and kind family, inputs equal"
+        },
+        {
+          "slot": "designer/assets.icon-check",
+          "why": "one L2 (assets.icons/icons-commands) and kind family, inputs equal"
+        },
+        {
+          "slot": "designer/assets.icon-settings",
+          "why": "one L2 (assets.icons/icons-commands) and kind family, inputs equal"
+        },
+        {
+          "slot": "designer/assets.icon-list-view",
+          "why": "one L2 (assets.icons/icons-commands) and kind family, inputs equal"
+        },
+        {
+          "slot": "designer/assets.icon-grid-view",
+          "why": "one L2 (assets.icons/icons-commands) and kind family, inputs equal"
+        },
+        {
+          "slot": "designer/assets.icon-theme-light",
+          "why": "one L2 (assets.icons/icons-commands) and kind family, inputs equal"
+        },
+        {
+          "slot": "designer/assets.icon-theme-dark",
+          "why": "one L2 (assets.icons/icons-commands) and kind family, inputs equal"
+        },
+        {
+          "slot": "designer/assets.icon-theme-system",
+          "why": "one L2 (assets.icons/icons-commands) and kind family, inputs equal"
+        }
+      ],
+      "records": [
+        {
+          "file": "slot.json",
+          "sha256": "22238bc734a5e86bcf8d430cab9e513b8bccae06a1d5f9e5734c4cb6237704f0"
+        }
+      ]
     }
   ]
 }

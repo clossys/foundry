@@ -63,6 +63,52 @@
           "sha256": "9339a9fd0b144cb8072dc0c51ad15c53663ef3fb743c9f7a62c5c0cada416aec"
         }
       ]
+    },
+    {
+      "op": "slot",
+      "at": "2026-11-23T00:00:00Z",
+      "by": "producer",
+      "verb": "migrate",
+      "skill": {
+        "path": "packages/producer/actions/migrate/action.json",
+        "sha256": "8b07b093fc4ab43ae85ccd8c821f1d2cc02970225d90a986b2521806d9024342"
+      },
+      "model": "none",
+      "tier": "none",
+      "migration": "placement",
+      "decision": "create",
+      "overlaps": [
+        {
+          "slot": "writer/sections.form.copy",
+          "why": "one L2 (copy.section-copy/forms) and kind family, inputs a subset"
+        },
+        {
+          "slot": "writer/sections.sign-in-form.copy",
+          "why": "one L2 (copy.section-copy/forms) and kind family, inputs equal"
+        },
+        {
+          "slot": "writer/sections.wizard.copy",
+          "why": "one L2 (copy.section-copy/forms) and kind family, inputs equal"
+        },
+        {
+          "slot": "writer/sections.chat.copy",
+          "why": "one L2 (copy.section-copy/forms) and kind family, inputs a subset"
+        },
+        {
+          "slot": "writer/sections.settings.copy",
+          "why": "one L2 (copy.section-copy/forms) and kind family, inputs equal"
+        },
+        {
+          "slot": "writer/sections.column-mapper.copy",
+          "why": "one L2 (copy.section-copy/forms) and kind family, inputs equal"
+        }
+      ],
+      "records": [
+        {
+          "file": "slot.json",
+          "sha256": "9339a9fd0b144cb8072dc0c51ad15c53663ef3fb743c9f7a62c5c0cada416aec"
+        }
+      ]
     }
   ]
 }
