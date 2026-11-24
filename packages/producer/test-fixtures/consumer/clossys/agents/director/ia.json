@@ -273,6 +273,23 @@
           ]
         }
       ]
+    },
+    {
+      "id": "direction-loops",
+      "label": "Direction loops",
+      "children": [
+        {
+          "id": "direction-loops.agent",
+          "label": "Agent loops",
+          "slots": [
+            "loop.scope",
+            "loop.slot",
+            "loop.create",
+            "loop.choose",
+            "loop.cascade"
+          ]
+        }
+      ]
     }
   ],
   "layers": [
@@ -302,6 +319,13 @@
         "task-force",
         "plan"
       ]
+    },
+    {
+      "id": "loops",
+      "label": "Loops",
+      "nodes": [
+        "direction-loops"
+      ]
     }
   ],
   "axes": {
@@ -310,7 +334,8 @@
       "values": [
         "Strategy",
         "Roadmap",
-        "Execution"
+        "Execution",
+        "Loops"
       ]
     },
     "L1": {
@@ -336,6 +361,12 @@
         "values": [
           "Task force",
           "Plan"
+        ]
+      },
+      "loops": {
+        "name": "Loop owner",
+        "values": [
+          "Direction loops"
         ]
       }
     },

@@ -18,9 +18,10 @@ import { buildCandidateHeader, candidatePath, serializeCandidate, writeCandidate
 import { skillPath } from "../records/ledger.js";
 import { buildPin, cliActor, CODE_SCORECARD, pinIssues, pinPath, writePinDoc } from "../records/pin.js";
 import { answerRequest, raiseWork } from "../records/request.js";
-import { appendSlotDocEvent, writeCandidate } from "../records/slot-write.js";
+import { appendSlotDocEvent, writeCandidate, writeCandidateBytes } from "../records/slot-write.js";
 import { gapsOf } from "../pipeline/interview.js";
 import { codeSlotRefusals, heldDecisionRefusal, ownerStepRefusal, scorecardTopRefusal } from "./code-pin.js";
+import { readAgentLoopPin, type AgentLoopName, type LoopAgent } from "./agent-loops.js";
 import { readPackageLoop } from "./files.js";
 import type { LoopName } from "./names.js";
 import { startRun, type AgentPacket, type CodeCall, type RunHooks } from "./runner.js";
@@ -76,6 +77,17 @@ function pinConsumerLoop(root: string, loop: LoopName, change: (content: { steps
   const sha256 = writeCandidateFile(candidatePath(root, "producer", loop, name), serializeCandidate(name, header, change(structuredClone(packaged.content) as never)));
   const id = `20261117T0700Z-${loop.replace(".", "-")}`;
   writePinDoc(pinPath(root, "producer", loop), buildPin({ agent: "producer", slotId: loop, record: { candidate: name, sha256, decidedBy: `owner:queue.pick#${id}`, basis: "picked", at: "2026-11-17T07:00:00Z" }, refs: [{ to: "producer/queue.pick" as never, record: id, rel: "answers" }], createdBy: cliActor("clossys pin") }));
+}
+
+/** The planner's repin of an adopted agent loop slot through the pin gate: `change` edits the agent's pinned version. */
+async function pinAgentLoop(root: string, agent: LoopAgent, loop: AgentLoopName, change: (content: { steps: { id: string; when?: unknown }[] } & Record<string, unknown>) => unknown): Promise<void> {
+  const own = readAgentLoopPin(root, agent, loop);
+  if (!own?.ok) throw new Error(own?.reason ?? `${agent}/${loop} is not adopted`);
+  const name = `${loop.slice(5)}-v2.json`;
+  const header = buildCandidateHeader({ agent, slotId: loop, name, createdBy: { actor: "planner", ref: "test" }, createdAt: AT, source: { kind: "original", ref: [] } });
+  writeCandidateBytes(join(root, "clossys"), agent, loop, name, serializeCandidate(name, header, change(structuredClone(own.content) as never)), { at: AT });
+  const pinned = await runPinCli([`${agent}/${loop}`, name, "--by", "planner:test", "--at", AT, "--root", root], root);
+  if (pinned.exitCode !== 0) throw new Error(pinned.message);
 }
 
 /** loop.choose's own hooks: every code verb passes; the agent seat's pick is recorded and does nothing. */
@@ -146,7 +158,8 @@ describe("clossys pin --by code:scorecard: code pins the scorecard's single top 
   it("refuses the hero once the consumer's own loop version gives it a confirm step, before the gate judges anything", async () => {
     const w = heroWorld();
     const good = w.submit("Ship your site this week");
-    pinConsumerLoop(w.root, "loop.choose", content => ({ ...content, steps: content.steps.map(step => step.id === "confirm" ? { ...step, when: { ia: ["designer/themes", "designer/assets", "designer/sections", "writer/voice"] } } : step) }));
+    // R3: the fixture adopts each placed agent's loops, so the consumer's own loop.choose for the hero is designer's.
+    await pinAgentLoop(w.root, "designer", "loop.choose", content => ({ ...content, steps: content.steps.map(step => step.id === "confirm" ? { ...step, when: { ia: ["designer/themes", "designer/assets", "designer/sections", "writer/voice"] } } : step) }));
     expect(ownerStepRefusal(w.root, "designer", HERO)).toMatch(/has the confirm step loop\.choose\/confirm/);
     const result = await w.codePin(good.name);
     expect(result.exitCode).toBe(1);

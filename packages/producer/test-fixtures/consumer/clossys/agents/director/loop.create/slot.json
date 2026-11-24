@@ -1,0 +1,49 @@
+{
+  "schema": "clossys.slot/2",
+  "id": "loop.create",
+  "agent": "director",
+  "kind": "loop",
+  "status": "starter",
+  "ia": {
+    "l0": "loops",
+    "l1": "loops/direction-loops",
+    "l2": "loops/direction-loops/agent",
+    "order": 57
+  },
+  "createdBy": {
+    "actor": "code",
+    "cli": "clossys loop",
+    "version": "0.1.0"
+  },
+  "createdAt": "2026-11-19T00:00:00Z",
+  "refs": [
+    {
+      "to": "producer/loop.create/package:create-v1.json",
+      "rel": "consumedBy"
+    }
+  ],
+  "base": {
+    "package": "@clossys/director",
+    "version": "0.6.0",
+    "path": "loops/loop.create/create-v1.json",
+    "sha256": "62f0f21e99a5947d75e2198b32a76cf46b70c062fc828ebac8cd5f4e49e3850c"
+  },
+  "standard": "loop",
+  "brief": {
+    "purpose": "director's own loop.create: Producer's standard loop.create with director's own steps, skills and tiers.",
+    "mustDo": [],
+    "inputs": [],
+    "acceptance": []
+  },
+  "contract": {
+    "loop": "loop.create",
+    "extends": "producer/loop.create",
+    "requirements": []
+  },
+  "tighten": [],
+  "family": {
+    "options": 1,
+    "varyOn": null,
+    "values": []
+  }
+}
