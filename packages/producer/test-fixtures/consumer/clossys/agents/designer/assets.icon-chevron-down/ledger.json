@@ -369,6 +369,56 @@
           "sha256": "8b49ef00107f6aa71001a667ccb48ac629e5235ee4b033a0109deb76183a1d70"
         }
       ]
+    },
+    {
+      "op": "slot",
+      "at": "2026-11-23T00:00:00Z",
+      "by": "producer",
+      "verb": "migrate",
+      "skill": {
+        "path": "packages/producer/actions/migrate/action.json",
+        "sha256": "8b07b093fc4ab43ae85ccd8c821f1d2cc02970225d90a986b2521806d9024342"
+      },
+      "model": "none",
+      "tier": "none",
+      "migration": "placement",
+      "decision": "create",
+      "overlaps": [
+        {
+          "slot": "designer/assets.icon-chevron-up",
+          "why": "one L2 (assets.icons/icons-navigation) and kind family, inputs equal"
+        },
+        {
+          "slot": "designer/assets.icon-chevron-left",
+          "why": "one L2 (assets.icons/icons-navigation) and kind family, inputs equal"
+        },
+        {
+          "slot": "designer/assets.icon-chevron-right",
+          "why": "one L2 (assets.icons/icons-navigation) and kind family, inputs equal"
+        },
+        {
+          "slot": "designer/assets.icon-arrow-right",
+          "why": "one L2 (assets.icons/icons-navigation) and kind family, inputs equal"
+        },
+        {
+          "slot": "designer/assets.icon-external-link",
+          "why": "one L2 (assets.icons/icons-navigation) and kind family, inputs equal"
+        },
+        {
+          "slot": "designer/assets.icon-home",
+          "why": "one L2 (assets.icons/icons-navigation) and kind family, inputs equal"
+        },
+        {
+          "slot": "designer/assets.icon-panel-left",
+          "why": "one L2 (assets.icons/icons-navigation) and kind family, inputs equal"
+        }
+      ],
+      "records": [
+        {
+          "file": "slot.json",
+          "sha256": "2dfc52afa6e1affecadd184f0f44f9b01381ffa7ffb694e7ceb68f26fef013ce"
+        }
+      ]
     }
   ]
 }

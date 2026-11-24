@@ -363,6 +363,48 @@
           "sha256": "98e07a499db1207d35b24fa11860214cbce072b11dd3421cac91000664501b98"
         }
       ]
+    },
+    {
+      "op": "slot",
+      "at": "2026-11-23T00:00:00Z",
+      "by": "producer",
+      "verb": "migrate",
+      "skill": {
+        "path": "packages/producer/actions/migrate/action.json",
+        "sha256": "8b07b093fc4ab43ae85ccd8c821f1d2cc02970225d90a986b2521806d9024342"
+      },
+      "model": "none",
+      "tier": "none",
+      "migration": "placement",
+      "decision": "create",
+      "overlaps": [
+        {
+          "slot": "designer/themes.background",
+          "why": "one L2 (themes.colors/colors-surfaces) and kind family, inputs equal"
+        },
+        {
+          "slot": "designer/themes.foreground",
+          "why": "one L2 (themes.colors/colors-surfaces) and kind family, inputs equal"
+        },
+        {
+          "slot": "designer/themes.card-foreground",
+          "why": "one L2 (themes.colors/colors-surfaces) and kind family, inputs equal"
+        },
+        {
+          "slot": "designer/themes.popover",
+          "why": "one L2 (themes.colors/colors-surfaces) and kind family, inputs equal"
+        },
+        {
+          "slot": "designer/themes.popover-foreground",
+          "why": "one L2 (themes.colors/colors-surfaces) and kind family, inputs equal"
+        }
+      ],
+      "records": [
+        {
+          "file": "slot.json",
+          "sha256": "a2a898564a970ff487233af4710f16c27baad9ebb87552e51360982a2c3d8b4e"
+        }
+      ]
     }
   ]
 }

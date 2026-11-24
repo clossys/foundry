@@ -156,6 +156,60 @@
           "sha256": "374781e32c6a82a20d526f1f0f391f7777829b00e41cf4a7b3124f42e46fa2ea"
         }
       ]
+    },
+    {
+      "op": "slot",
+      "at": "2026-11-23T00:00:00Z",
+      "by": "producer",
+      "verb": "migrate",
+      "skill": {
+        "path": "packages/producer/actions/migrate/action.json",
+        "sha256": "8b07b093fc4ab43ae85ccd8c821f1d2cc02970225d90a986b2521806d9024342"
+      },
+      "model": "none",
+      "tier": "none",
+      "migration": "placement",
+      "decision": "create",
+      "overlaps": [
+        {
+          "slot": "designer/sections.hero",
+          "why": "one L2 (sections.sections/sections-story) and kind family, inputs a subset"
+        },
+        {
+          "slot": "designer/sections.page-header",
+          "why": "one L2 (sections.sections/sections-story) and kind family, inputs a subset"
+        },
+        {
+          "slot": "designer/sections.features",
+          "why": "one L2 (sections.sections/sections-story) and kind family, inputs a subset"
+        },
+        {
+          "slot": "designer/sections.pricing",
+          "why": "one L2 (sections.sections/sections-story) and kind family, inputs a subset"
+        },
+        {
+          "slot": "designer/sections.testimonials",
+          "why": "one L2 (sections.sections/sections-story) and kind family, inputs a subset"
+        },
+        {
+          "slot": "designer/sections.logo-cloud",
+          "why": "one L2 (sections.sections/sections-story) and kind family, inputs a subset"
+        },
+        {
+          "slot": "designer/sections.people",
+          "why": "one L2 (sections.sections/sections-story) and kind family, inputs a subset"
+        },
+        {
+          "slot": "designer/sections.comparison",
+          "why": "one L2 (sections.sections/sections-story) and kind family, inputs a subset"
+        }
+      ],
+      "records": [
+        {
+          "file": "slot.json",
+          "sha256": "374781e32c6a82a20d526f1f0f391f7777829b00e41cf4a7b3124f42e46fa2ea"
+        }
+      ]
     }
   ]
 }

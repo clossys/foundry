@@ -99,6 +99,88 @@
           "sha256": "da0b29339aa3c5a8b9d08cf490e09ea095b937e6f7bef5cd88330a78410b95f1"
         }
       ]
+    },
+    {
+      "op": "slot",
+      "at": "2026-11-23T00:00:00Z",
+      "by": "producer",
+      "verb": "migrate",
+      "skill": {
+        "path": "packages/producer/actions/migrate/action.json",
+        "sha256": "8b07b093fc4ab43ae85ccd8c821f1d2cc02970225d90a986b2521806d9024342"
+      },
+      "model": "none",
+      "tier": "none",
+      "migration": "placement",
+      "decision": "create",
+      "overlaps": [
+        {
+          "slot": "designer/components.field",
+          "why": "one L2 (components.components/components-inputs) and kind family, inputs a subset"
+        },
+        {
+          "slot": "designer/components.form",
+          "why": "one L2 (components.components/components-inputs) and kind family, inputs a subset"
+        },
+        {
+          "slot": "designer/components.text-field",
+          "why": "one L2 (components.components/components-inputs) and kind family, inputs a subset"
+        },
+        {
+          "slot": "designer/components.search-field",
+          "why": "one L2 (components.components/components-inputs) and kind family, inputs a subset"
+        },
+        {
+          "slot": "designer/components.checkbox",
+          "why": "one L2 (components.components/components-inputs) and kind family, inputs a subset"
+        },
+        {
+          "slot": "designer/components.radio-group",
+          "why": "one L2 (components.components/components-inputs) and kind family, inputs a subset"
+        },
+        {
+          "slot": "designer/components.switch",
+          "why": "one L2 (components.components/components-inputs) and kind family, inputs a subset"
+        },
+        {
+          "slot": "designer/components.slider",
+          "why": "one L2 (components.components/components-inputs) and kind family, inputs a subset"
+        },
+        {
+          "slot": "designer/components.select",
+          "why": "one L2 (components.components/components-inputs) and kind family, inputs a subset"
+        },
+        {
+          "slot": "designer/components.combo-box",
+          "why": "one L2 (components.components/components-inputs) and kind family, inputs a subset"
+        },
+        {
+          "slot": "designer/components.tag-group",
+          "why": "one L2 (components.components/components-inputs) and kind family, inputs a subset"
+        },
+        {
+          "slot": "designer/components.color-picker",
+          "why": "one L2 (components.components/components-inputs) and kind family, inputs a subset"
+        },
+        {
+          "slot": "designer/components.date-field",
+          "why": "one L2 (components.components/components-inputs) and kind family, inputs a subset"
+        },
+        {
+          "slot": "designer/components.date-picker",
+          "why": "one L2 (components.components/components-inputs) and kind family, inputs a subset"
+        },
+        {
+          "slot": "designer/components.calendar",
+          "why": "one L2 (components.components/components-inputs) and kind family, inputs a subset"
+        }
+      ],
+      "records": [
+        {
+          "file": "slot.json",
+          "sha256": "da0b29339aa3c5a8b9d08cf490e09ea095b937e6f7bef5cd88330a78410b95f1"
+        }
+      ]
     }
   ]
 }

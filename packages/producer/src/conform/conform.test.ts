@@ -492,8 +492,9 @@ describe("conformance over the repo and its fixture", () => {
     for (const agent of report.agents) {
       expect(agent.cells).toHaveLength(36);
       expect(agent.dogfood).toHaveLength(5);
-      // Shared today: placement records no decision.
-      expect(agent.cells.find(cell => cell.id === "L2")!.red, `${agent.agent} L2`).toBe(true);
+      // Today: every placed Director, Designer and Writer slot records its placement decision (clossys migrate
+      // placement); Publisher places no slot yet, so its L2 is vacuous (red).
+      expect(agent.cells.find(cell => cell.id === "L2")!.red, `${agent.agent} L2`).toBe(agent.agent === "publisher");
       // U5: the scope and slot loops reach every agent through its own skill, so W1 keeps no scope or slot rows.
       expect(agent.cells.find(cell => cell.id === "W1")!.rows.filter(row => /^loop\.(scope|slot)\b|^(scope|slot):/.test(row)), agent.agent).toEqual([]);
       // The cascade rows (U6): a repin re-verdicts its dependants, every edge resolves, no input reads a candidate

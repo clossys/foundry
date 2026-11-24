@@ -62,6 +62,36 @@
           "sha256": "6fd882488808f21d5e92fa72b1d909b9216454010784aad1bf4933e56c42d71f"
         }
       ]
+    },
+    {
+      "op": "slot",
+      "at": "2026-11-23T00:00:00Z",
+      "by": "producer",
+      "verb": "migrate",
+      "skill": {
+        "path": "packages/producer/actions/migrate/action.json",
+        "sha256": "8b07b093fc4ab43ae85ccd8c821f1d2cc02970225d90a986b2521806d9024342"
+      },
+      "model": "none",
+      "tier": "none",
+      "migration": "placement",
+      "decision": "create",
+      "overlaps": [
+        {
+          "slot": "director/capability.team.role",
+          "why": "one L2 (task-force/team) and kind family, inputs empty on both sides, requirements equal"
+        },
+        {
+          "slot": "director/capability.competency.critical",
+          "why": "one L2 (task-force/team) and kind family, inputs empty on both sides, requirements equal"
+        }
+      ],
+      "records": [
+        {
+          "file": "slot.json",
+          "sha256": "6fd882488808f21d5e92fa72b1d909b9216454010784aad1bf4933e56c42d71f"
+        }
+      ]
     }
   ]
 }

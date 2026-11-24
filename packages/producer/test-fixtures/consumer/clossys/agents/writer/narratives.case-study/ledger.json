@@ -24,6 +24,32 @@
           "sha256": "75d281e9703b530b0d8caf1b3f5d21f660996730d27e035e005f166a872fce50"
         }
       ]
+    },
+    {
+      "op": "slot",
+      "at": "2026-11-23T00:00:00Z",
+      "by": "producer",
+      "verb": "migrate",
+      "skill": {
+        "path": "packages/producer/actions/migrate/action.json",
+        "sha256": "8b07b093fc4ab43ae85ccd8c821f1d2cc02970225d90a986b2521806d9024342"
+      },
+      "model": "none",
+      "tier": "none",
+      "migration": "placement",
+      "decision": "create",
+      "overlaps": [
+        {
+          "slot": "writer/narratives.article",
+          "why": "one L2 (prose.editorial/narratives) and kind family, inputs a subset"
+        }
+      ],
+      "records": [
+        {
+          "file": "slot.json",
+          "sha256": "75d281e9703b530b0d8caf1b3f5d21f660996730d27e035e005f166a872fce50"
+        }
+      ]
     }
   ]
 }

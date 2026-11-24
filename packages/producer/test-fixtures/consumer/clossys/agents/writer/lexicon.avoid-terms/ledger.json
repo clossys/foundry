@@ -319,6 +319,32 @@
           "sha256": "2960cc8930143e0ee0d745a4dfbb4ec92a2fea8afe3f2e7941039d4da08655d4"
         }
       ]
+    },
+    {
+      "op": "slot",
+      "at": "2026-11-23T00:00:00Z",
+      "by": "producer",
+      "verb": "migrate",
+      "skill": {
+        "path": "packages/producer/actions/migrate/action.json",
+        "sha256": "8b07b093fc4ab43ae85ccd8c821f1d2cc02970225d90a986b2521806d9024342"
+      },
+      "model": "none",
+      "tier": "none",
+      "migration": "placement",
+      "decision": "create",
+      "overlaps": [
+        {
+          "slot": "writer/lexicon.avoid-patterns",
+          "why": "one L2 (voice.wording/terms) and kind family, inputs a superset"
+        }
+      ],
+      "records": [
+        {
+          "file": "slot.json",
+          "sha256": "d1f21fa5642060d7d603fdaacc672c1bd0e5cde80f931d4cfe56604f56bd7cc3"
+        }
+      ]
     }
   ]
 }

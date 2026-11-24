@@ -99,6 +99,48 @@
           "sha256": "fd53797d7d16cd76bee7abd8a6a380293d27971924a5cb89431a7ffe03338ed9"
         }
       ]
+    },
+    {
+      "op": "slot",
+      "at": "2026-11-23T00:00:00Z",
+      "by": "producer",
+      "verb": "migrate",
+      "skill": {
+        "path": "packages/producer/actions/migrate/action.json",
+        "sha256": "8b07b093fc4ab43ae85ccd8c821f1d2cc02970225d90a986b2521806d9024342"
+      },
+      "model": "none",
+      "tier": "none",
+      "migration": "placement",
+      "decision": "create",
+      "overlaps": [
+        {
+          "slot": "designer/components.button",
+          "why": "one L2 (components.components/components-actions) and kind family, inputs a subset"
+        },
+        {
+          "slot": "designer/components.toggle-button",
+          "why": "one L2 (components.components/components-actions) and kind family, inputs a subset"
+        },
+        {
+          "slot": "designer/components.toolbar",
+          "why": "one L2 (components.components/components-actions) and kind family, inputs Jaccard 0.83"
+        },
+        {
+          "slot": "designer/components.menu",
+          "why": "one L2 (components.components/components-actions) and kind family, inputs a subset"
+        },
+        {
+          "slot": "designer/components.command",
+          "why": "one L2 (components.components/components-actions) and kind family, inputs a subset"
+        }
+      ],
+      "records": [
+        {
+          "file": "slot.json",
+          "sha256": "fd53797d7d16cd76bee7abd8a6a380293d27971924a5cb89431a7ffe03338ed9"
+        }
+      ]
     }
   ]
 }

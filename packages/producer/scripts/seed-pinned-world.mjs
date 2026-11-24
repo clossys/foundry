@@ -817,6 +817,15 @@ async function adoptLoops(w) {
 }
 
 /**
+ * The last step (foundry-build-0048 R1): `clossys migrate placement --apply` backfills the placement decision on
+ * every placed slot whose ledger holds none, as a real consumer does to its store. Its clock is the R1 run's.
+ */
+export const PLACEMENT_AT = "2026-11-23T00:00:00Z";
+async function placement(w) {
+  await w.run("producer", "migrate", "placement", "--apply", "--at", PLACEMENT_AT);
+}
+
+/**
  * Seeds the unpinned base of `from` in a temporary root and returns the pinned tree there (`keep`) or copies it to
  * `out` (which must not hold a tree already) and removes it. The root holds the seeder's mark; `out` never does.
  * `resume` continues a kept root in place, skipping the slots it pinned already (a development aid; the committed
@@ -846,6 +855,7 @@ export async function seed({ from, out, only, keep = false, resume } = {}) {
     const order = all.filter(ref => !blocked.has(ref) && (!only || only.some(prefix => ref.startsWith(prefix))));
     for (const ref of order) if (!pinned(w.consumer, ref)) await seedSlot(w, ref);
     if (!only) await adoptLoops(w);
+    if (!only) await placement(w);
     // Only the repository this run made goes; a resumed root's own .git stays.
     if (ownGit) rmSync(join(root, ".git"), { recursive: true, force: true });
     if (out) {
