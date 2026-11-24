@@ -43,7 +43,8 @@ import { OPTION_TABLE } from "./option-classes.js";
 import { CONTRACT_AGENTS, familyFor, seededContract } from "../../migrate/contracts.js";
 import { readStandard } from "../standards.js";
 import { AGENT_LOOPS, holdsAgentLoops, isLoopAgent, withAgentLoopsIa } from "../../loop/agent-loops-ia.js";
-import { consumedIds, consumedLeaves, filterFoundryIa, isConsumedAgent } from "./consumed.js";
+import { consumedIds, consumedLeaves, filterFoundryIa, scopedToConsumed } from "./consumed.js";
+import { DIRECTOR_READER_EDGE } from "../../check/ia-orphans.js";
 
 /**
  * The agents whose IA a package owns: the three catalog agents and the Producer seat tree
@@ -292,7 +293,9 @@ function adoptedCurrent(consumerDir: string, agent: SyncAgent, id: string, slot:
     const holder = agents.includes(agent as AgentId) ? agent as AgentId : agents[0];
     return holder ? [{ to: `${holder}/${use}` as Ref["to"], rel: "uses" as const }] : [];
   });
-  const made = slotFromV1(v1, { kind, status: "starter", ia: positionIa(id, position), inputs, uses, createdBy: { actor: "code", cli: options.cli ?? "clossys ia sync", version: options.version }, at: options.at });
+  const built = slotFromV1(v1, { kind, status: "starter", ia: positionIa(id, position), inputs, uses, createdBy: { actor: "code", cli: options.cli ?? "clossys ia sync", version: options.version }, at: options.at });
+  // A Director leaf carries the Director's reader edge (CHAT-DIR B1): the Director reads every strategy cell it holds.
+  const made = agent === "director" ? { ...built, refs: [...built.refs, { ...DIRECTOR_READER_EDGE }] } : built;
   if (!(CONTRACT_AGENTS as readonly string[]).includes(agent)) return made;
   const family = familyFor(agent as (typeof CONTRACT_AGENTS)[number], id, `${position.l1}/${position.l2}`);
   return { ...made, contract: seededPackageContract(consumerDir, agent, made.contract, made.standard) as Slot["contract"], ...(family ? { family } : {}) };
@@ -342,9 +345,10 @@ export interface SyncState {
 }
 
 /**
- * The sync state of one agent. With the package IA defaulted, a Director, Designer or Writer package is scoped to the
+ * The sync state of one agent. With the package IA defaulted, a Designer or Writer package is scoped to the
  * leaves a publication reaches (consumed.ts) plus the package leaves the consumer already places: the sync adopts a
- * newly consumed leaf and never re-adds an unconsumed one. `consumed` scopes a given package the same way (tests).
+ * newly consumed leaf and never re-adds an unconsumed one; the Director's whole catalog is its target (scopedToConsumed).
+ * `consumed` scopes a given package the same way (tests).
  */
 export function syncState(consumerDir: string, agent: SyncAgent, pkg?: FoundryIa, consumed?: ReadonlySet<string>): SyncState {
   const full = pkg ?? PACKAGE_IA[agent]();
@@ -359,7 +363,7 @@ export function syncState(consumerDir: string, agent: SyncAgent, pkg?: FoundryIa
   const stepGone = (id: string) => { const step = seatStepOf(id); return steps !== undefined && step !== undefined && !steps.has(step); };
   const retiring = loose.filter(stepGone);
   const undeclared = loose.filter(id => !stepGone(id));
-  const reach = consumed ?? (pkg === undefined && isConsumedAgent(agent) ? consumedIds(consumedLeaves(dirname(consumerDir)), agent) : undefined);
+  const reach = consumed ?? (pkg === undefined && scopedToConsumed(agent) ? consumedIds(consumedLeaves(dirname(consumerDir)), agent) : undefined);
   const scoped = reach ? filterFoundryIa(full, new Set([...packageIds].filter(id => reach.has(id) || placedNow.has(id)))) : full;
   const unconsumed = reach ? [...packageIds].filter(id => placedNow.has(id) && !reach.has(id)) : [];
   const target = targetIa(agent, scoped.ia, consumer);

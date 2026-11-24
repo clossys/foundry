@@ -4,14 +4,22 @@
  * publication, a fixed Publisher responsibility in every consumer (init-admin.ts); a second run changes nothing.
  * With `--publication <id>` it does the same first (the admin workspace is built at init for every consumer, owner A1),
  * then records that publication's install outputs (`init-outputs.ts`).
+ * Where the Director package is installed and the workspace has no Director root (no director ia.json), it adopts the
+ * Director IA (`clossys ia director --adopt`, the Director's first) before the loops; a later run finds the root and
+ * adopts nothing.
  * With `--starters <id,...>` it does the same first, then seats each opt-in starter publication and its pages from the
  * Publisher package's own starter and page archetypes (`init-starters.ts`; today `site`).
  */
 import { realpathSync } from "node:fs";
-import { resolve } from "node:path";
+import { join, resolve } from "node:path";
+import { AgentResolutionError, resolveAgent } from "../agents.js";
+import { iaPath } from "../records/slot-model/layout.js";
+import { modelExists } from "../records/slots.js";
 import { ensureAgentsPointer } from "../views/agents-pointer.js";
 import { CliUsageError } from "./args.js";
 import { seatAdmin } from "./init-admin.js";
+import { adoptIa } from "./owner.js";
+import { placeSkills } from "./init-skills.js";
 import { seatStarter, type StarterSeat, starterLines } from "./init-starters.js";
 import { adoptInitLoops } from "./init-loops.js";
 import { INIT_OUTPUTS_USAGE, runInitOutputsCli } from "./init-outputs.js";
@@ -24,7 +32,8 @@ export const INIT_USAGE = "Usage: clossys init [--starters <id,...>] [--root <di
   + "  run clossys views list, follow clossys views show <id>, answer only through clossys answer.\n"
   + "  seats the admin workspace (Publisher admin pages and publication.admin in the admin tab) through clossys ia,\n"
   + "  and raises one Designer slot request for each frame or section those pages compose that no workspace slot holds\n"
-  + "  (the data-bound admin sections among them), then adopts and pins the five loops of every agent the workspace\n"
+  + "  (the data-bound admin sections among them), adopts the Director IA (clossys ia director --adopt) when the Director\n"
+  + "  package is installed and the workspace has no Director root, then adopts and pins the five loops of every agent the workspace\n"
   + "  places (Publisher always) through the pin gate; --at stamps those writes.\n"
   + `  --starters (${SEATABLE_STARTERS.join(", ")}) then seats that opt-in publication and its routed pages from the Publisher package's\n`
   + "  starter and page archetypes through clossys ia, raises one slot request for each Designer or Writer slot they cite that no\n"
@@ -97,21 +106,40 @@ export async function runInitCli(argv: readonly string[], cwd: string): Promise<
  */
 async function initWorkspace(workspace: string, at: string | undefined, cwd: string, refused = "init refused"): Promise<CliResult> {
   const pointer = ensureAgentsPointer(workspace);
-  const said = pointer.outcome === "added" ? `added the views pointer to ${pointer.file}` : `${pointer.file} already has the views pointer`;
+  const pointerSaid = pointer.outcome === "added" ? `added the views pointer to ${pointer.file}` : `${pointer.file} already has the views pointer`;
+  // The installed packages' agent skills, copied where Claude and Codex discover them (init-skills.ts), then checked.
+  const skills = placeSkills(workspace);
+  const said = [`placed ${skills.roles.length} agent skill${skills.roles.length === 1 ? "" : "s"} (${skills.roles.join(", ") || "none installed"}); ${skills.written.length} file${skills.written.length === 1 ? "" : "s"} written${skills.claude === "added" ? "; CLAUDE.md imports @AGENTS.md" : ""}`, pointerSaid].join("\n");
+  if (skills.issues.length) return { exitCode: 1, root: workspace, output: { ...pointer, skills }, message: (refused === "init refused" ? [said, ...skills.issues.map(issue => `${refused}: ${issue}`)] : [...skills.issues.map(issue => `${refused}: ${issue}`), said]).join("\n") };
   // The slot model follows no symbolic link (records/slots.ts), so the seat runs on the workspace's real path (a tmp
   // or home folder reached through a link still seats).
   const { result, seat } = await seatAdmin(realpathSync(workspace), at ?? new Date().toISOString());
   // Plain mode keeps said-then-reason; the outputs mode leads with its own refusal (one refusal form per mode).
   const refusal = (reasons: readonly string[]): string => (refused === "init refused" ? [said, ...reasons] : [...reasons, said]).join("\n");
-  if (result) return { ...result, output: { ...pointer, admin: seat }, message: refusal([result.message.replace(/^init refused: /, `${refused}: `)]) };
+  if (result) return { ...result, output: { ...pointer, skills, admin: seat }, message: refusal([result.message.replace(/^init refused: /, `${refused}: `)]) };
+  const director = adoptDirector(realpathSync(workspace));
+  if (director && director.exitCode !== 0) return { ...director, root: workspace, output: { ...pointer, skills, admin: seat }, message: refusal([`${refused}: director ${director.message ?? ""}`]) };
   const loops = await adoptInitLoops(realpathSync(workspace), at ?? new Date().toISOString(), cwd);
-  if (loops.issues.length) return { exitCode: 1, root: workspace, output: { ...pointer, admin: seat, loops }, message: refusal(loops.issues.map(issue => `${refused}: loops ${issue}`)) };
+  if (loops.issues.length) return { exitCode: 1, root: workspace, output: { ...pointer, skills, admin: seat, loops }, message: refusal(loops.issues.map(issue => `${refused}: loops ${issue}`)) };
   const raised = seat.requests.filter(item => item.created);
   const admin = seat.placed.length
     ? `seated the admin workspace: ${seat.placed.length} Publisher slot${seat.placed.length === 1 ? "" : "s"} placed${seat.started ? " in a new Publisher IA" : ""}`
     : "the admin workspace is already seated";
   return {
-    exitCode: 0, root: workspace, output: { ...pointer, admin: seat, loops },
-    message: [admin, ...(seat.rewired.length ? [`rewired ${seat.rewired.length} admin slot${seat.rewired.length === 1 ? "" : "s"} to the units the workspace now holds: ${seat.rewired.join(", ")}`] : []), ...(raised.length ? [`raised ${raised.length} Designer slot request${raised.length === 1 ? "" : "s"} for admin units no workspace slot holds: ${raised.map(item => item.target).join(", ")}`] : []), ...(seat.seeded.length || seat.waiting.length ? [`seeded ${seat.seeded.length} admin record${seat.seeded.length === 1 ? "" : "s"}; pinned ${seat.pinned.length}${seat.waiting.length ? `; ${seat.waiting.length} wait for upstream pins: ${seat.waiting.map(item => item.slot).join(", ")}` : ""}`] : []), ...(loops.pinned.length ? [`adopted and pinned ${loops.pinned.length} agent loop${loops.pinned.length === 1 ? "" : "s"} (${loops.agents.join(", ")})`] : []), said].join("\n"),
+    exitCode: 0, root: workspace, output: { ...pointer, skills, admin: seat, director: director ? "adopted" : "present", loops },
+    message: [admin, ...(seat.rewired.length ? [`rewired ${seat.rewired.length} admin slot${seat.rewired.length === 1 ? "" : "s"} to the units the workspace now holds: ${seat.rewired.join(", ")}`] : []), ...(raised.length ? [`raised ${raised.length} Designer slot request${raised.length === 1 ? "" : "s"} for admin units no workspace slot holds: ${raised.map(item => item.target).join(", ")}`] : []), ...(seat.seeded.length || seat.waiting.length ? [`seeded ${seat.seeded.length} admin record${seat.seeded.length === 1 ? "" : "s"}; pinned ${seat.pinned.length}${seat.waiting.length ? `; ${seat.waiting.length} wait for upstream pins: ${seat.waiting.map(item => item.slot).join(", ")}` : ""}`] : []), ...(director ? [director.message ?? "adopted the Director IA"] : []), ...(loops.pinned.length ? [`adopted and pinned ${loops.pinned.length} agent loop${loops.pinned.length === 1 ? "" : "s"} (${loops.agents.join(", ")})`] : []), said].join("\n"),
   };
+}
+
+/**
+ * The Director root at init: `clossys ia director --adopt` where the Director package resolves and the workspace has no
+ * director ia.json; undefined (nothing run) when either is not so, which keeps a second init a no-op.
+ */
+function adoptDirector(workspace: string): CliResult | undefined {
+  if (modelExists(iaPath(join(workspace, "clossys"), "director"))) return undefined;
+  try { resolveAgent("director"); } catch (error) {
+    if (error instanceof AgentResolutionError) return undefined;
+    throw error;
+  }
+  return adoptIa("director", workspace, false);
 }

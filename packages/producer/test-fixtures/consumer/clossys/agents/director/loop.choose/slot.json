@@ -1,0 +1,49 @@
+{
+  "schema": "clossys.slot/2",
+  "id": "loop.choose",
+  "agent": "director",
+  "kind": "loop",
+  "status": "starter",
+  "ia": {
+    "l0": "loops",
+    "l1": "loops/direction-loops",
+    "l2": "loops/direction-loops/agent",
+    "order": 58
+  },
+  "createdBy": {
+    "actor": "code",
+    "cli": "clossys loop",
+    "version": "0.1.0"
+  },
+  "createdAt": "2026-11-19T00:00:00Z",
+  "refs": [
+    {
+      "to": "producer/loop.choose/package:choose-v1.json",
+      "rel": "consumedBy"
+    }
+  ],
+  "base": {
+    "package": "@clossys/director",
+    "version": "0.6.0",
+    "path": "loops/loop.choose/choose-v1.json",
+    "sha256": "59ce791ef40979ae374b72d6975cec30327edca4476626010ab9fb0dc3152e63"
+  },
+  "standard": "loop",
+  "brief": {
+    "purpose": "director's own loop.choose: Producer's standard loop.choose with director's own steps, skills and tiers.",
+    "mustDo": [],
+    "inputs": [],
+    "acceptance": []
+  },
+  "contract": {
+    "loop": "loop.choose",
+    "extends": "producer/loop.choose",
+    "requirements": []
+  },
+  "tighten": [],
+  "family": {
+    "options": 1,
+    "varyOn": null,
+    "values": []
+  }
+}

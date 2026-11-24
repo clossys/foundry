@@ -1,0 +1,65 @@
+{
+  "schema": "clossys.ledger/1",
+  "events": [
+    {
+      "op": "slot",
+      "at": "2026-11-19T00:00:00Z",
+      "by": "planner",
+      "verb": "ia",
+      "skill": {
+        "path": "packages/producer/actions/ia/skill.md",
+        "sha256": "147a7eaf66267728953e0c8111a9c20b93475f95f8063745d9d1d1087658fe73"
+      },
+      "model": "none",
+      "tier": "none",
+      "kind": "ia",
+      "decision": "create",
+      "overlaps": [],
+      "records": [
+        {
+          "file": "slot.json",
+          "sha256": "4a328701c0112ab48660e177575b996de74bedcea70a62cea9304f593edc89d8"
+        }
+      ]
+    },
+    {
+      "op": "submit",
+      "at": "2026-11-19T00:00:00Z",
+      "by": "planner",
+      "verb": "submit",
+      "skill": {
+        "path": "packages/director/actions/director.candidates/skill.md",
+        "sha256": "ef3152a8feebf238334e615ff3c5fb7578c0d25824ab778f27faaf4b6ccd6986"
+      },
+      "model": "none",
+      "tier": "none",
+      "rung": "adapt",
+      "seed": "@clossys/director:loops/loop.scope/scope-v1.json",
+      "reason": "director's package loop.scope candidate, its header re-addressed to this consumer slot; content unchanged",
+      "name": "scope-v1.json",
+      "sha256": "6d1fe0ccd58435e70be99369f377d4508f8e3ea65a3c336e5bedc11c5a4e4f73"
+    },
+    {
+      "op": "pin",
+      "at": "2026-11-19T00:00:00Z",
+      "by": "planner:package-default",
+      "verb": "pin",
+      "skill": {
+        "path": "packages/producer/actions/pin.director/skill.md",
+        "sha256": "6cc66877d0b4c923d9adc797198f19a71d16b02212ce9690f8f35351c18208ab"
+      },
+      "model": "none",
+      "tier": "none",
+      "candidate": "scope-v1.json",
+      "sha256": "6d1fe0ccd58435e70be99369f377d4508f8e3ea65a3c336e5bedc11c5a4e4f73",
+      "decidedBy": "planner:package-default",
+      "basis": "planner",
+      "records": [
+        {
+          "file": "pin.json",
+          "sha256": "c7a33f637984ad613155a48144d601f6f8f7c18ee5aa34eff61ca140b1aa9152"
+        }
+      ]
+    }
+  ]
+}

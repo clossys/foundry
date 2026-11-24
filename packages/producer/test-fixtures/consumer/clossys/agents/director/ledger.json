@@ -57,6 +57,26 @@
           "sha256": "62a0181b907e13b7f0820ea99af63045ca8d3505b37be92a0b3638236d645736"
         }
       ]
+    },
+    {
+      "op": "ia",
+      "at": "2026-11-19T00:00:00Z",
+      "by": "planner",
+      "verb": "ia",
+      "skill": {
+        "path": "packages/producer/actions/ia/skill.md",
+        "sha256": "147a7eaf66267728953e0c8111a9c20b93475f95f8063745d9d1d1087658fe73"
+      },
+      "model": "none",
+      "tier": "none",
+      "kind": "ia",
+      "decision": "adopt-loops",
+      "records": [
+        {
+          "file": "ia.json",
+          "sha256": "fab99a226b5e4d11b5b806669bed92b79aca51f1a57d11a974f33f9016bf9ebe"
+        }
+      ]
     }
   ]
 }

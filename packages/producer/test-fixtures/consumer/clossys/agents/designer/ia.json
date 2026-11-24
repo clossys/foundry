@@ -526,6 +526,23 @@
           ]
         }
       ]
+    },
+    {
+      "id": "loops.design-loops",
+      "label": "Design loops",
+      "children": [
+        {
+          "id": "design-loops-agent",
+          "label": "Agent loops",
+          "slots": [
+            "loop.scope",
+            "loop.slot",
+            "loop.create",
+            "loop.choose",
+            "loop.cascade"
+          ]
+        }
+      ]
     }
   ],
   "retired": [

@@ -182,10 +182,11 @@ describe("clossys init seeds the admin slots and adopts the loops of the agents 
     const result = await runInitCli(["--at", AT], root);
     expect(result.exitCode, result.message).toBe(0);
     const { loops } = outputOf(result);
-    expect(loops.agents).toEqual(["publisher"]);
+    // The init adopts the installed Director's IA too (CHAT-DIR gap 8), so the Director's loops are adopted with Publisher's.
+    expect(loops.agents).toEqual(["director", "publisher"]);
     expect(loops.issues).toEqual([]);
-    expect(loops.pinned).toHaveLength(AGENT_LOOPS.length);
-    expect(result.message).toContain(`adopted and pinned ${AGENT_LOOPS.length} agent loops (publisher)`);
+    expect(loops.pinned).toHaveLength(2 * AGENT_LOOPS.length);
+    expect(result.message).toContain(`adopted and pinned ${2 * AGENT_LOOPS.length} agent loops (director, publisher)`);
     expect(runLoopAgentStandard(root)).toEqual({ check: LOOP_AGENT_STANDARD, status: "pass", findings: [] });
     const again = await runInitCli(["--at", "2026-11-18T10:00:00Z"], root);
     expect(again.exitCode, again.message).toBe(0);

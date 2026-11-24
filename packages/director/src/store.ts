@@ -17,6 +17,15 @@ import { storeFault, type DirectorStoreReader } from "./store-io.js";
  */
 export const EVIDENCE_PREFIX = "../../evidence/director";
 
+/**
+ * The Producer's agent-loop group in a consumer's Director ia.json (`clossys init` loops, foundry-build-0048 U9a): one L1
+ * whose every group holds only `loop.*` slots. Those are Producer-standard leaves, not strategy cells, so the strategy
+ * tree is read without that L1 (CHAT-DIR ruling A1); every other node still meets the exact cover.
+ */
+const isAgentLoopNode = (node: { children?: unknown } | undefined): boolean =>
+  Array.isArray(node?.children) && node.children.length > 0 && (node.children as { slots?: unknown }[]).every(child =>
+    Array.isArray(child?.slots) && child.slots.length > 0 && child.slots.every(id => typeof id === "string" && id.startsWith("loop.")));
+
 type Issue = [StrategyRootIssue["reason"], string];
 /** One fault vocabulary for every reader, so messages stay stable whoever reads. */
 function faultIssue(error: unknown, operation: "list" | "read"): Issue {
@@ -149,7 +158,7 @@ export function readStrategyRoot(root: string, store: DirectorStoreReader, optio
   try { hasIa = store.stat(model.root, "ia.json") !== undefined; } catch (error) { issue("ia.json", ...faultIssue(error, "read")); }
   const ia = hasIa ? json("ia.json") as { nodes?: unknown } | undefined : undefined;
   if (ia !== undefined) {
-    const nodes = Array.isArray(ia?.nodes) ? ia.nodes as { id?: unknown; label?: unknown; children?: unknown }[] : undefined;
+    const nodes = Array.isArray(ia?.nodes) ? (ia.nodes as { id?: unknown; label?: unknown; children?: unknown }[]).filter(node => !isAgentLoopNode(node)) : undefined;
     const grouping = nodes?.map(node => ({
       id: node?.id, name: node?.label,
       children: Array.isArray(node?.children) ? (node.children as { id?: unknown; label?: unknown; slots?: unknown }[]).map(child => ({ id: child?.id, name: child?.label, cells: child?.slots })) : node?.children,

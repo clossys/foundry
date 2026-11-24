@@ -36,7 +36,7 @@ import { designerIa, directorIa, slotPositions, writerIa, type FoundryIa } from 
 import { feedsIndex } from "../records/slot-model/derive.js";
 import { PRODUCER_IA_SOURCE } from "../records/slot-model/pipeline-seats.js";
 import { adoptedCurrentSlots, driftCounts, holdsRecord, knownSlots, RETIRED_SEATS_DIR, SYNC_AGENTS, syncPlan, syncState, syncVerdict, type SeatRetire, type SyncAgent, type SyncVerdict } from "../records/slot-model/ia-sync.js";
-import { consumedIds, consumedLeaves, filterFoundryIa, filterIa } from "../records/slot-model/consumed.js";
+import { consumedIds, consumedLeaves, filterFoundryIa, filterIa, scopedToConsumed } from "../records/slot-model/consumed.js";
 import { consumerGraph, PublisherDataError } from "../check/ia-orphans.js";
 import { pinRecords, validateIa, validatePin, validateSlotDoc } from "../records/slot-model/validate.js";
 import { isModelDir, listModelDir, listSlots, modelExists, readModelBytes, readModelText, readSlot, readSlotEntry, readSlotRecordText, usedBy, withModelOverlay } from "../records/slots.js";
@@ -314,17 +314,19 @@ function startIa(agent: string, root: string, dry: boolean): CliResult {
  * `clossys ia <agent> --adopt`: the agent's Foundry IA and every slot.json, written only where the agent has no ia.json.
  * Only the package leaves a declared or seated publication reaches are placed (CONSISTENCY D5 option 1, consumed.ts):
  * code decides which, and a skipped leaf stays adoptable through `clossys request`. Where the agent has an ia.json, the
- * re-run takes the placed package leaves no publication reaches out of the tree (pruneUnconsumed).
+ * re-run takes the placed package leaves no publication reaches out of the tree (pruneUnconsumed). The Director is not
+ * scoped (scopedToConsumed): it places every catalog leaf once, and its re-run removes nothing.
  */
-function adoptIa(agent: string, root: string, dry: boolean): CliResult {
+export function adoptIa(agent: string, root: string, dry: boolean): CliResult {
   if (!(FOUNDRY_IA_AGENTS as readonly string[]).includes(agent)) throw new CliUsageError(`ia --adopt takes ${FOUNDRY_IA_AGENTS.join(", ")}; the Publisher IA is the workspace's own (ia publisher --start)\n${IA_USAGE}`);
   const read = FOUNDRY_IA[agent as keyof typeof FOUNDRY_IA], after = FOUNDRY_IA_AFTER[agent as keyof typeof FOUNDRY_IA];
   const consumer = join(root, "clossys"), iaFile = iaPath(consumer, agent as SlotAgent);
-  if (modelExists(iaFile)) return pruneUnconsumed(agent as keyof typeof FOUNDRY_IA, consumer, root, iaFile, dry);
+  if (modelExists(iaFile)) return scopedToConsumed(agent) ? pruneUnconsumed(agent, consumer, root, iaFile, dry)
+    : { exitCode: 0, root, message: `ia: ${agent} ia.json exists and places the whole catalog; nothing to remove (change it slot by slot: --under, --remove)` };
   const first = after.filter(up => !modelExists(iaPath(consumer, up)));
   if (first.length) return refuse("ia", `adopt the ${first.join(", ")} IA first: ${agent} slots read its slots`);
   const whole = read();
-  const foundry = filterFoundryIa(whole, consumedIds(consumedLeaves(root), agent as keyof typeof FOUNDRY_IA));
+  const foundry = scopedToConsumed(agent) ? filterFoundryIa(whole, consumedIds(consumedLeaves(root), agent)) : whole;
   // Refs resolve against the slots this workspace places, plus the adopted ones; the Director's feeds become downstream inputs.
   const known = new Set(foundry.slots.keys());
   for (const other of SLOT_AGENTS) if (other !== agent && modelExists(iaPath(consumer, other))) {

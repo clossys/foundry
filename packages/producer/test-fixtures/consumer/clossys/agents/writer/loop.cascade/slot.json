@@ -1,0 +1,49 @@
+{
+  "schema": "clossys.slot/2",
+  "id": "loop.cascade",
+  "agent": "writer",
+  "kind": "loop",
+  "status": "starter",
+  "ia": {
+    "l0": "loops",
+    "l1": "loops/writing-loops",
+    "l2": "loops/writing-loops/agent",
+    "order": 109
+  },
+  "createdBy": {
+    "actor": "code",
+    "cli": "clossys loop",
+    "version": "0.1.0"
+  },
+  "createdAt": "2026-11-19T00:00:00Z",
+  "refs": [
+    {
+      "to": "producer/loop.cascade/package:cascade-v1.json",
+      "rel": "consumedBy"
+    }
+  ],
+  "base": {
+    "package": "@clossys/writer",
+    "version": "0.6.0",
+    "path": "loops/loop.cascade/cascade-v1.json",
+    "sha256": "394ccb46102d2604dbeed14d73bcb000f486f6cae30d9b5011c29d21c3fea72e"
+  },
+  "standard": "loop",
+  "brief": {
+    "purpose": "writer's own loop.cascade: Producer's standard loop.cascade with writer's own steps, skills and tiers.",
+    "mustDo": [],
+    "inputs": [],
+    "acceptance": []
+  },
+  "contract": {
+    "loop": "loop.cascade",
+    "extends": "producer/loop.cascade",
+    "requirements": []
+  },
+  "tighten": [],
+  "family": {
+    "options": 1,
+    "varyOn": null,
+    "values": []
+  }
+}

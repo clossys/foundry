@@ -10,7 +10,8 @@
  *             candidate (header `refs` plus every `<agent>/<slot-id>` string, value or key, in a JSON candidate's content;
  *             a release manifest names its pins as keys)
  * backward  = a slot whose `consumedBy` ref names a reached slot is reached
- * runner    = an agent `loop.*` slot whose own `consumedBy` ref names a Producer loop (`producer/<loop>`) is reached,
+ * runner    = an agent `loop.*` slot, or a Director slot (the Director's reader, CHAT-DIR B1), whose own `consumedBy`
+ *             ref names a Producer loop (`producer/<loop>`) is reached,
  *             and the walk stops there: an agent loop slot is terminal (no forward edge, no backward edge walked from
  *             it), so a slot name written inside a loop version (a step condition, an owner-pick rule) is never
  *             consumption (foundry-build-0048 CONSISTENCY fix r1)
@@ -243,9 +244,18 @@ export function walkGraph(graph: ConsumerGraph, from: readonly string[], skip: R
  */
 export const RUNNER_ROOTS: readonly string[] = LOOP_NAMES.map(loop => `producer/${loop}`);
 
-/** The agent loop slots the runner consumes: each one whose own consumedBy edge names a Producer loop. Terminal. */
+/**
+ * The Director's reader as a consumer (CHAT-DIR ruling B1, recorded the way D5 option 3 records the runner): the
+ * Director reads every strategy cell it holds, in the scope loop's scope-director step (`producer/loop.scope`).
+ * `clossys ia director --adopt` writes this consumedBy edge on each Director leaf it places (ia-sync.ts adoptedCurrent);
+ * the runner reaches a Director slot through it and stops there, as at an agent loop slot.
+ */
+export const DIRECTOR_READER_EDGE = { to: "producer/loop.scope/package:scope-v1.json", rel: "consumedBy" } as const satisfies Ref;
+const isDirectorCellKey = (key: string): boolean => key.startsWith("director/") && !isAgentLoopKey(key);
+
+/** The agent loop slots and Director cells the runner consumes: each one whose own consumedBy edge names a Producer loop. Terminal. */
 export function runnerReach(graph: ConsumerGraph): Set<string> {
-  return new Set(RUNNER_ROOTS.flatMap(runner => (graph.backward.get(runner) ?? []).filter(isAgentLoopKey)));
+  return new Set(RUNNER_ROOTS.flatMap(runner => (graph.backward.get(runner) ?? []).filter(key => isAgentLoopKey(key) || isDirectorCellKey(key))));
 }
 
 /**

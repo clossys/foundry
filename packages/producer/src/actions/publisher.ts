@@ -25,13 +25,14 @@ import type { CliResult } from "../cli/main.js";
 import { discoverRoot } from "../cli/root.js";
 import { installedPackageRoot } from "../package-path.js";
 import { slotDir } from "../records/candidate.js";
-import { isPageRecord, PAGE_SCHEMA, pageRecordFindings, type PageSlotContract } from "./page-option.js";
+import { readPinFile } from "../records/pin-map.js";
+import { isPageRecord, PAGE_SCHEMA, pageRecordFindings, type PageSlotContract, type PinnedRecords } from "./page-option.js";
 
 export type Exit = 0 | 1 | 2;
 
 /** The slice of the Publisher check API (`@clossys/publisher` dist/check/index.js) these actions call. */
 export interface PublisherCheckApi {
-  checkPageOption(pageId: string, content: Record<string, unknown>, page: unknown, layout: unknown, designer: unknown): readonly { check: string; message: string }[];
+  checkPageOption(pageId: string, content: Record<string, unknown>, page: unknown, layout: unknown, designer: unknown, engines?: unknown, pinned?: PinnedRecords): readonly { check: string; message: string }[];
   checkLayoutUnits(layoutId: string, layout: unknown, designer: unknown): readonly string[];
   slotContract(id: string): { kind?: string; publication?: string } | undefined;
   loadDesignerCatalog(): { live: ReadonlySet<string>; retired: ReadonlySet<string> };
@@ -88,6 +89,18 @@ function pageSlots(root: string): string[] {
   return readdirSync(dir, { withFileTypes: true }).filter(entry => entry.isDirectory() && PAGE_SLOT.test(entry.name)).map(entry => entry.name).sort();
 }
 
+/** The records each Writer slot's pin map pins, read once per slot from its `pin.json`; a single pin or none pins no record. */
+function writerPinnedRecords(root: string): PinnedRecords {
+  const seen = new Map<string, ReadonlySet<string>>();
+  return writerSlot => {
+    if (!seen.has(writerSlot)) {
+      const pin = readPinFile(join(slotDir(root, "writer", writerSlot), "pin.json"));
+      seen.set(writerSlot, new Set(pin.kind === "pin-map" ? Object.keys(pin.doc.records) : []));
+    }
+    return seen.get(writerSlot);
+  };
+}
+
 /** Every candidate file of a page slot, or only the pinned one (`pinned`); an unpinned slot ships the package default. */
 function pageRecords(root: string, slotId: string, pinned: boolean): { file: string; error?: string }[] {
   const dir = slotDir(root, "publisher", slotId);
@@ -125,6 +138,7 @@ export async function checkPublisherPages(start: string, options: PublisherActio
   // The data-bound record sections bind no Writer copy (foundry-build-0048 U20); unreadable contracts exempt none.
   let dataBound: ReadonlySet<string> = new Set();
   try { dataBound = dataBoundSections(root); } catch { /* fail closed: every section then needs its copy binding */ }
+  const pinned = writerPinnedRecords(root);
   const findings: PublisherFinding[] = [];
   const checked: string[] = [];
   const layoutsSeen = new Set<string>();
@@ -146,7 +160,7 @@ export async function checkPublisherPages(start: string, options: PublisherActio
       let layout: ReturnType<PublisherCheckApi["slotContract"]>;
       if (isPageRecord(doc)) {
         // The one page shape (DECISION 0048-PAGE-SHAPE): a clossys.page/1 record, read as the option checkPageOption judges.
-        const judged = pageRecordFindings(api, slotId, doc, page as PageSlotContract, designer, dataBound);
+        const judged = pageRecordFindings(api, slotId, doc, page as PageSlotContract, designer, dataBound, pinned);
         for (const finding of judged.findings) findings.push({ check: finding.check, subject, detail: finding.message });
         layoutId = judged.layoutId ?? "";
         layout = judged.layout;
