@@ -1,0 +1,152 @@
+{
+  "clossys": {
+    "schema": "clossys.candidate/1",
+    "id": "director/loop.create/create-v1.json",
+    "agent": "director",
+    "kind": "candidate",
+    "status": "submitted",
+    "slot": "director/loop.create",
+    "createdBy": {
+      "actor": "package",
+      "package": "@clossys/director",
+      "version": "0.6.0"
+    },
+    "createdAt": "2026-11-17T00:00:00Z",
+    "refs": [],
+    "source": {
+      "kind": "package-default",
+      "ref": [
+        "@clossys/director:loops/loop.create/create-v1.json"
+      ]
+    },
+    "rationale": []
+  },
+  "content": {
+    "trigger": [
+      "T2",
+      "T3",
+      "T4",
+      "T5",
+      "T6",
+      "T7"
+    ],
+    "steps": [
+      {
+        "id": "triage",
+        "does": "code reads the run's trigger: one that names one record and no rule (T1 init, T2 starter-fill, T4 add-l3, T6 failed-check, T7 upstream-cascade, T8 new-release) settles refine-brief with no tightening and keeps a settle record; only a slot-wide trigger (T3 tighten-brief, T5 owner-feedback) reaches the owner of the slot",
+        "decider": {
+          "by": "code"
+        },
+        "cli": "clossys settle brief <ref>",
+        "reads": [
+          "<slot>/slot.json"
+        ],
+        "writes": [
+          "clossys/.state/runs/loops/*.settle/*"
+        ],
+        "checks": [],
+        "onFail": {
+          "raise": "queue.clarify",
+          "then": "retry"
+        }
+      },
+      {
+        "id": "refine-brief",
+        "does": "decide whether the trigger is a rule for the whole slot (tighten the brief) or one record; often no tightening",
+        "decider": {
+          "by": "agent",
+          "agent": "director",
+          "verb": "refine-brief",
+          "tier": "mid",
+          "skill": "packages/director/actions/director.brief/skill.md"
+        },
+        "cli": "clossys brief <ref> --tighten --path <path> --op <op> --value <value> --why <why> --by <by>",
+        "reads": [
+          "<slot>/slot.json",
+          "<inputs>"
+        ],
+        "writes": [
+          "<slot>/slot.json"
+        ],
+        "checks": [
+          "brief.tighten-only"
+        ],
+        "onFail": {
+          "raise": "queue.clarify",
+          "then": "retry"
+        }
+      },
+      {
+        "id": "adopt",
+        "does": "code reads the slot's contract: a Designer components slot under an adopt-first standard (not a consumer asset, one option) that holds no candidate, whose contract fixture a shadcn-aria or diceui stock item ships with every import locked, gets that item unmodified at rung L1 (submitted by code:adopt through the candidate guard) and settles create with a settle record; certify judges it like any candidate, and every other slot, a refused submit or a failed certify reaches the agent's create",
+        "decider": {
+          "by": "code"
+        },
+        "cli": "clossys settle adopt <ref>",
+        "reads": [
+          "<slot>/slot.json",
+          "<slot>/candidates/*",
+          "<slot>/ledger.json"
+        ],
+        "writes": [
+          "<slot>/candidates/*",
+          "<slot>/ledger.json",
+          "clossys/.state/runs/loops/*.settle/*"
+        ],
+        "checks": [],
+        "onFail": {
+          "raise": "queue.clarify",
+          "then": "retry"
+        }
+      },
+      {
+        "id": "create",
+        "does": "write the slot's family of candidates against the current brief and contract: family.options distinct candidates (one when the family offers one), differing on family.varyOn across family.values, each meeting contract.requirements and contract.fixture, each submitted through the candidates verb so its ledger holds a submit record",
+        "decider": {
+          "by": "agent",
+          "agent": "director",
+          "verb": "create-candidates",
+          "tier": "mid",
+          "skill": "packages/director/actions/director.candidates/skill.md"
+        },
+        "cli": "clossys next <ref> --submit <file>",
+        "reads": [
+          "<slot>/slot.json",
+          "<inputs>"
+        ],
+        "writes": [
+          "<slot>/candidates/*",
+          "<slot>/ledger.json"
+        ],
+        "checks": []
+      },
+      {
+        "id": "certify",
+        "does": "certify every candidate (schema, contract fixture, the kind certifier, the standard's and the contract's requirements) and count the submitted, certified ones against family.options",
+        "decider": {
+          "by": "code"
+        },
+        "cli": "clossys options <ref> --check",
+        "reads": [
+          "<slot>/slot.json",
+          "<slot>/candidates/*",
+          "<slot>/ledger.json"
+        ],
+        "writes": [
+          "clossys/.state/checks/<agent>/<slot-id>/*"
+        ],
+        "checks": [
+          "<slot standard>",
+          "candidates.certified"
+        ],
+        "onFail": {
+          "raise": "queue.fix",
+          "then": "retry"
+        }
+      }
+    ],
+    "exit": "the slot holds family.options (else one) candidates that are submitted through the candidates verb and certified; loop.choose pins one",
+    "repeat": "per slot; a failed certification raises queue.fix and creates again, up to maxRounds",
+    "maxRounds": 3
+  }
+}

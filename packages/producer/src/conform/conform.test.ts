@@ -501,9 +501,10 @@ describe("conformance over the repo and its fixture", () => {
       // file, release refuses needs-refresh.
       for (const id of ["X1", "X2", "X3", "X4"]) expect(agent.cells.find(cell => cell.id === id)!.rows, `${agent.agent} ${id}`).toEqual([]);
       // U9a: every agent declares its five own loops, each extending Producer's standard; W1 judges them. U26: the cascade
-      // carries the owner's impact step and each adapter names its cascade skill, so W1 is green. The fixture places director, designer and writer, adopts none of their
-      // loop slots, so W2 is red with all five missing (no vacuous pass); its Publisher IA is empty and places nothing.
-      expect(agent.cells.find(cell => cell.id === "W2")!.rows, agent.agent).toEqual(agent.agent === "publisher" ? [] : AGENT_LOOPS.map(loop => `${agent.agent}/${loop}: missing (the consumer places ${agent.agent} but holds none of its loop slots; run clossys loop ${agent.agent}/${loop})`));
+      // carries the owner's impact step and each adapter names its cascade skill, so W1 is green. R3: the fixture places director, designer and writer and
+      // holds all five of their loop slots, each pinned (adopted by `clossys loop`, the step `clossys init` runs), so W2 is green; Publisher's IA places nothing.
+      expect(agent.cells.find(cell => cell.id === "W2")!.rows, agent.agent).toEqual([]);
+      expect(agent.cells.find(cell => cell.id === "W2")!.red, `${agent.agent} W2`).toBe(false);
       expect(agent.cells.find(cell => cell.id === "W1")!.rows, agent.agent).toEqual([]);
       expect(agent.cells.find(cell => cell.id === "W1")!.red, `${agent.agent} W1`).toBe(false);
     }

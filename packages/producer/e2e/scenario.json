@@ -269,6 +269,66 @@
       }
     },
     {
+      "id": "ia.hero-copy",
+      "run": [
+        "ia",
+        "writer/sections.hero.copy",
+        "--contract",
+        "{scenario}/hero-copy.contract.json",
+        "--standard",
+        "copy.headline",
+        "--under",
+        "section-copy/section-copy.story",
+        "--kind",
+        "strings",
+        "--inputs",
+        "identity.verbal.voice"
+      ]
+    },
+    {
+      "id": "craft.hero-copy",
+      "craft": {
+        "ref": "writer/sections.hero.copy",
+        "standard": "copy.headline",
+        "file": "hero-copy.md",
+        "candidate": "copy-v1.md",
+        "pin": "writer/sections.hero.copy#copy",
+        "gap": "copy.entries",
+        "rung": "create",
+        "skill": "packages/writer/actions/writer.candidates/skill.md"
+      }
+    },
+    {
+      "id": "ia.home-meta",
+      "run": [
+        "ia",
+        "writer/page.home.meta",
+        "--contract",
+        "{scenario}/home-meta.contract.json",
+        "--standard",
+        "string",
+        "--under",
+        "page-metadata/page-metadata.site",
+        "--kind",
+        "strings",
+        "--inputs",
+        "identity.verbal.voice"
+      ]
+    },
+    {
+      "id": "craft.home-meta",
+      "craft": {
+        "ref": "writer/page.home.meta",
+        "standard": "string",
+        "file": "home-meta.md",
+        "candidate": "meta-v1.md",
+        "pin": "writer/page.home.meta#meta",
+        "gap": "copy.entries",
+        "rung": "create",
+        "skill": "packages/writer/actions/writer.candidates/skill.md"
+      }
+    },
+    {
       "id": "ia.page",
       "run": [
         "ia",
@@ -282,7 +342,7 @@
         "--kind",
         "page",
         "--inputs",
-        "strings.site,frames.site-shell,sections.hero",
+        "strings.site,sections.hero.copy,page.home.meta,frames.site-shell,sections.hero",
         "--uses",
         "frames.site-shell,sections.hero"
       ]

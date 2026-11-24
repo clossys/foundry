@@ -38,6 +38,7 @@
   },
   "contract": {
     "kind": "release",
+    "standard": "release",
     "publication": "docs",
     "exports": [
       {

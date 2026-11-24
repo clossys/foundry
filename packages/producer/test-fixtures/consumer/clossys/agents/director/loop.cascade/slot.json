@@ -1,0 +1,49 @@
+{
+  "schema": "clossys.slot/2",
+  "id": "loop.cascade",
+  "agent": "director",
+  "kind": "loop",
+  "status": "starter",
+  "ia": {
+    "l0": "loops",
+    "l1": "loops/direction-loops",
+    "l2": "loops/direction-loops/agent",
+    "order": 59
+  },
+  "createdBy": {
+    "actor": "code",
+    "cli": "clossys loop",
+    "version": "0.1.0"
+  },
+  "createdAt": "2026-11-19T00:00:00Z",
+  "refs": [
+    {
+      "to": "producer/loop.cascade/package:cascade-v1.json",
+      "rel": "consumedBy"
+    }
+  ],
+  "base": {
+    "package": "@clossys/director",
+    "version": "0.6.0",
+    "path": "loops/loop.cascade/cascade-v1.json",
+    "sha256": "46640c8144a832fce9cb2f21dc2b235529e52932712926b76f9897afd88c4d88"
+  },
+  "standard": "loop",
+  "brief": {
+    "purpose": "director's own loop.cascade: Producer's standard loop.cascade with director's own steps, skills and tiers.",
+    "mustDo": [],
+    "inputs": [],
+    "acceptance": []
+  },
+  "contract": {
+    "loop": "loop.cascade",
+    "extends": "producer/loop.cascade",
+    "requirements": []
+  },
+  "tighten": [],
+  "family": {
+    "options": 1,
+    "varyOn": null,
+    "values": []
+  }
+}

@@ -90,6 +90,36 @@ it("refuses a literal publication tree name: names are pinned Writer keys", asyn
   }
 });
 
+it("resolves a <writer slot>#<key> entry title by its key; an unheld key is still refused (BR-E2E5)", async () => {
+  await author();
+  const { readPinnedPublication, resolvePublicationTitles } = await import("../publish/pinned-publication.js");
+  const publication = await readPinnedPublication(join(root, "clossys"), "example-site");
+  const entry = publication.map.entries[0]!;
+  const held = resolvePublicationTitles(join(root, "clossys"), publication).map.entries[0]!.title;
+  const titled = (title: string) => ({ ...publication, map: { ...publication.map, entries: [{ ...entry, title }, ...publication.map.entries.slice(1)] } }) as typeof publication;
+  expect(resolvePublicationTitles(join(root, "clossys"), titled(`page.home.meta#${entry.title}`)).map.entries[0]!.title).toBe(held);
+  expect(() => resolvePublicationTitles(join(root, "clossys"), titled("page.home.meta#nope"))).toThrow(/title names "page\.home\.meta#nope", which no pinned Writer string registers/);
+});
+
+it("resolves page.home.meta#title through the pinned meta slot's row, registered as page.home.meta.title (BR-E2E5 option A)", async () => {
+  await author();
+  const writer = agentRoot(root, "writer");
+  const ia = JSON.parse(await readFile(join(writer, "ia.json"), "utf8"));
+  ia.nodes[0].children.push({ id: "home-meta", label: "Home meta", slots: ["page.home.meta"] });
+  await writeFile(join(writer, "ia.json"), JSON.stringify(ia, null, 2) + "\n");
+  const { serializeFrontmatter } = await import("../records/slot-model/index.js");
+  const bytes = serializeFrontmatter({ slot: "page.home.meta", locales: ["en"], source: { kind: "original", ref: [] } },
+    '## en\n\n### title\n<!-- {"id":"title","bindings":[]} -->\nHome title\n');
+  await mkdir(join(writer, "page.home.meta", "candidates"), { recursive: true });
+  await writeFile(join(writer, "page.home.meta", "candidates", "meta-v1.md"), bytes);
+  await writeFile(join(writer, "page.home.meta", "pin.json"), JSON.stringify({ candidate: "meta-v1.md", sha256: createHash("sha256").update(bytes).digest("hex"), decidedBy: "planner:synthetic-test-only", basis: "planner", at: "2026-01-01T00:00:00Z" }));
+  const { readPinnedPublication, resolvePublicationTitles } = await import("../publish/pinned-publication.js");
+  const publication = await readPinnedPublication(join(root, "clossys"), "example-site");
+  const entry = publication.map.entries[0]!;
+  const titled = { ...publication, map: { ...publication.map, entries: [{ ...entry, title: "page.home.meta#title" }, ...publication.map.entries.slice(1)] } } as typeof publication;
+  expect(resolvePublicationTitles(join(root, "clossys"), titled).map.entries[0]!.title).toBe("Home title");
+});
+
 it("retains only declared app targets and refuses unavailable, escaping and aliased app mappings", async () => {
   await author();
   expect((await consumerApps(root)).publications[0]!.target).toBeUndefined();

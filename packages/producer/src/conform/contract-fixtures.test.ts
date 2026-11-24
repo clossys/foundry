@@ -14,6 +14,7 @@ import { fileURLToPath } from "node:url";
 import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
 import { contractFixtureIssues } from "../records/slot-model/contract-fixture.js";
 import { fixtureShapeIssues } from "../records/slot-model/validate.js";
+import { isAgentLoop } from "../loop/agent-loops.js";
 import { exportedNames, GAPS_FILE, NO_REFERENCE, planReferenceFixtures, REFERENCE_FIXTURE_RULES, referenceFixture, referenceIndex, referenceShips, richer, slotReferenceShips } from "../specimen/reference-fixtures.js";
 import { PROBES, type ProbeFacts } from "./dogfood.js";
 import type { AgentModel, ConformModel } from "./model.js";
@@ -29,7 +30,8 @@ const gapsDoc = () => JSON.parse(readFileSync(join(DESIGNER, GAPS_FILE), "utf8")
 const consumer = fileURLToPath(new URL("../../test-fixtures/consumer/clossys/agents/designer", import.meta.url));
 const placed = (): string[] => {
   const ia = JSON.parse(readFileSync(join(consumer, "ia.json"), "utf8")) as { nodes: { children?: { slots?: string[] }[] }[] };
-  return ia.nodes.flatMap(node => (node.children ?? []).flatMap(child => child.slots ?? []));
+  // R3: the adopted loop slots are Producer-standard loops, not Designer components (conform's model skips them too).
+  return ia.nodes.flatMap(node => (node.children ?? []).flatMap(child => child.slots ?? [])).filter(id => !isAgentLoop(id));
 };
 const fixtureOf = (id: string) => catalog("components").find(row => row.id === id)?.contract.fixture as Fixture | undefined;
 const index = referenceIndex(DESIGNER);

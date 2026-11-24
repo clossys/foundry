@@ -54,6 +54,7 @@
   },
   "contract": {
     "kind": "release",
+    "standard": "release",
     "publication": "site",
     "exports": [
       {

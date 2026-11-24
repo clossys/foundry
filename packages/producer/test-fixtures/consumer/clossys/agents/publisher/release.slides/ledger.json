@@ -18,7 +18,7 @@
       "records": [
         {
           "file": "slot.json",
-          "sha256": "8674245e1ce3a28074e9a2c4269de2c176ba42d40711d6222a3854eedd062906"
+          "sha256": "68841f3e35c38fcddb822dc77e15be21b77e760b2583e948963fcd2328878978"
         }
       ]
     },
@@ -40,7 +40,7 @@
       "records": [
         {
           "file": "slot.json",
-          "sha256": "e5991630d714acf7e90bca221ce75d5e45c61f54e891f4811856bcc5d9a75354"
+          "sha256": "8338129ef79be26d1cecaddd5880e7d801fdb37012fac5dda203f14ee4b2c698"
         }
       ]
     }

@@ -1,0 +1,49 @@
+{
+  "schema": "clossys.slot/2",
+  "id": "loop.choose",
+  "agent": "designer",
+  "kind": "loop",
+  "status": "starter",
+  "ia": {
+    "l0": "loops",
+    "l1": "loops/design-loops",
+    "l2": "loops/design-loops/design-loops-agent",
+    "order": 215
+  },
+  "createdBy": {
+    "actor": "code",
+    "cli": "clossys loop",
+    "version": "0.1.0"
+  },
+  "createdAt": "2026-11-19T00:00:00Z",
+  "refs": [
+    {
+      "to": "producer/loop.choose/package:choose-v1.json",
+      "rel": "consumedBy"
+    }
+  ],
+  "base": {
+    "package": "@clossys/designer",
+    "version": "0.12.0",
+    "path": "loops/loop.choose/choose-v1.json",
+    "sha256": "9e266b233696b02ec0b40367b0d6e6154e6a660831ae2aa1cf8f8c138d433a6e"
+  },
+  "standard": "loop",
+  "brief": {
+    "purpose": "designer's own loop.choose: Producer's standard loop.choose with designer's own steps, skills and tiers.",
+    "mustDo": [],
+    "inputs": [],
+    "acceptance": []
+  },
+  "contract": {
+    "loop": "loop.choose",
+    "extends": "producer/loop.choose",
+    "requirements": []
+  },
+  "tighten": [],
+  "family": {
+    "options": 1,
+    "varyOn": null,
+    "values": []
+  }
+}
