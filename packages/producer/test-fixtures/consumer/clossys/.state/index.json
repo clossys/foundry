@@ -1,7 +1,7 @@
 {
   "schema": "clossys.index/1",
   "events": 1703,
-  "head": "02e803a22054cb4edfcd2cc335a7e97c99f81c1b2e94c44c23f92c018c32216e",
+  "head": "b133c2b61ffb588eaf6ef1611f37e99c27f55b7078bbe0a79322c084b7085388",
   "subjects": {
     "designer": {
       "seq": 1289,
@@ -13,439 +13,439 @@
       "seq": 1434,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:33.778Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "designer/assets.favicon": {
       "seq": 1433,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:33.723Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "designer/assets.icon-arrow-right": {
       "seq": 1443,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:34.264Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "designer/assets.icon-check": {
       "seq": 1449,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:34.723Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "designer/assets.icon-chevron-down": {
       "seq": 1440,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:34.113Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "designer/assets.icon-chevron-left": {
       "seq": 1441,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:34.162Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "designer/assets.icon-chevron-right": {
       "seq": 1442,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:34.211Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "designer/assets.icon-chevron-up": {
       "seq": 1439,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:34.062Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "designer/assets.icon-close": {
       "seq": 1448,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:34.597Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "designer/assets.icon-danger": {
       "seq": 1458,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:35.538Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "designer/assets.icon-date": {
       "seq": 1471,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:36.732Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "designer/assets.icon-document": {
       "seq": 1464,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:36.088Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "designer/assets.icon-document-approved": {
       "seq": 1465,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:36.175Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "designer/assets.icon-external-link": {
       "seq": 1444,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:34.315Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "designer/assets.icon-folder": {
       "seq": 1466,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:36.234Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "designer/assets.icon-grid-view": {
       "seq": 1452,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:34.937Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "designer/assets.icon-guide": {
       "seq": 1467,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:36.322Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "designer/assets.icon-home": {
       "seq": 1445,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:34.366Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "designer/assets.icon-info": {
       "seq": 1459,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:35.613Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "designer/assets.icon-integration": {
       "seq": 1477,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:37.677Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "designer/assets.icon-layers": {
       "seq": 1470,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:36.642Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "designer/assets.icon-legal": {
       "seq": 1468,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:36.413Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "designer/assets.icon-list-view": {
       "seq": 1451,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:34.863Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "designer/assets.icon-locked": {
       "seq": 1476,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:37.545Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "designer/assets.icon-organization": {
       "seq": 1462,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:35.885Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "designer/assets.icon-package": {
       "seq": 1469,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:36.513Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "designer/assets.icon-panel-left": {
       "seq": 1446,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:34.434Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "designer/assets.icon-payment": {
       "seq": 1473,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:37.134Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "designer/assets.icon-receipt": {
       "seq": 1474,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:37.217Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "designer/assets.icon-search": {
       "seq": 1447,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:34.503Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "designer/assets.icon-security": {
       "seq": 1475,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:37.429Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "designer/assets.icon-settings": {
       "seq": 1450,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:34.794Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "designer/assets.icon-success": {
       "seq": 1456,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:35.366Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "designer/assets.icon-team": {
       "seq": 1461,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:35.794Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "designer/assets.icon-theme-dark": {
       "seq": 1454,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:35.083Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "designer/assets.icon-theme-light": {
       "seq": 1453,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:35.007Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "designer/assets.icon-theme-system": {
       "seq": 1455,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:35.182Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "designer/assets.icon-time": {
       "seq": 1472,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:36.897Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "designer/assets.icon-user": {
       "seq": 1460,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:35.703Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "designer/assets.icon-warning": {
       "seq": 1457,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:35.456Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "designer/assets.icon-website": {
       "seq": 1463,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:35.977Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "designer/assets.image": {
       "seq": 1435,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:33.833Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "designer/assets.image-ratio": {
       "seq": 1437,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:33.958Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "designer/assets.lockup": {
       "seq": 1431,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:33.602Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "designer/assets.mark": {
       "seq": 1432,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:33.659Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "designer/assets.pattern": {
       "seq": 1438,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:34.009Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "designer/assets.video": {
       "seq": 1436,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:33.904Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "designer/components.avatar": {
       "seq": 1522,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:40.814Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "designer/components.badge": {
       "seq": 1520,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:40.712Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "designer/components.banner": {
       "seq": 1511,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:40.259Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "designer/components.breadcrumbs": {
       "seq": 1507,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:40.063Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "designer/components.button": {
       "seq": 1478,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:37.801Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "designer/components.calendar": {
       "seq": 1499,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:39.644Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "designer/components.card": {
       "seq": 1525,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:40.958Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "designer/components.chart-area": {
       "seq": 1506,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:40.009Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "designer/components.chart-bar": {
       "seq": 1504,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:39.898Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "designer/components.chart-line": {
       "seq": 1505,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:39.949Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "designer/components.checkbox": {
       "seq": 1488,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:39.055Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "designer/components.color-picker": {
       "seq": 1496,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:39.491Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "designer/components.combo-box": {
       "seq": 1493,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:39.325Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "designer/components.command": {
       "seq": 1483,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:38.702Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "designer/components.date-field": {
       "seq": 1497,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:39.543Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "designer/components.date-picker": {
       "seq": 1498,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:39.594Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "designer/components.dialog": {
       "seq": 1530,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:41.205Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "designer/components.disclosure": {
       "seq": 1526,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:41.008Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "designer/components.empty": {
       "seq": 1517,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:40.564Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "designer/components.field": {
       "seq": 1484,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:38.781Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "designer/components.file-trigger": {
       "seq": 1495,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:39.438Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "designer/components.form": {
       "seq": 1485,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:38.860Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "designer/components.grid-list": {
       "seq": 1501,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:39.749Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "designer/components.icon": {
       "seq": 1523,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:40.863Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "designer/components.item": {
       "seq": 1502,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:39.797Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "designer/components.keyboard": {
       "seq": 1521,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:40.761Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "designer/components.link": {
       "seq": 173,
@@ -457,7 +457,7 @@
       "seq": 1524,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:40.910Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "designer/components.media-player": {
       "seq": 337,
@@ -469,109 +469,109 @@
       "seq": 1482,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:38.520Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "designer/components.meter": {
       "seq": 1514,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:40.417Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "designer/components.navigation-tree": {
       "seq": 1510,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:40.209Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "designer/components.popover": {
       "seq": 1532,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:41.317Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "designer/components.progress-bar": {
       "seq": 1513,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:40.357Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "designer/components.radio-group": {
       "seq": 1489,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:39.116Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "designer/components.resize-handle": {
       "seq": 1529,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:41.154Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "designer/components.rich-text": {
       "seq": 1519,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:40.662Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "designer/components.scroll-area": {
       "seq": 1527,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:41.057Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "designer/components.search-field": {
       "seq": 1487,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:39.004Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "designer/components.select": {
       "seq": 1492,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:39.275Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "designer/components.semantic-content": {
       "seq": 1518,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:40.613Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "designer/components.separator": {
       "seq": 1528,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:41.104Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "designer/components.sheet": {
       "seq": 1531,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:41.265Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "designer/components.sidebar": {
       "seq": 1509,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:40.158Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "designer/components.skeleton": {
       "seq": 1516,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:40.514Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "designer/components.slider": {
       "seq": 1491,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:39.221Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "designer/components.spinner": {
       "seq": 1515,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:40.464Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "designer/components.status-mark": {
       "seq": 416,
@@ -583,139 +583,139 @@
       "seq": 1597,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:44.656Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "designer/components.switch": {
       "seq": 1490,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:39.167Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "designer/components.table": {
       "seq": 1500,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:39.696Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "designer/components.tabs": {
       "seq": 1508,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:40.112Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "designer/components.tag-group": {
       "seq": 1494,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:39.383Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "designer/components.text-field": {
       "seq": 1486,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:38.939Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "designer/components.toast": {
       "seq": 1512,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:40.309Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "designer/components.toggle-button": {
       "seq": 1479,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:37.954Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "designer/components.toggle-group": {
       "seq": 1480,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:38.206Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "designer/components.toolbar": {
       "seq": 1481,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:38.400Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "designer/components.tooltip": {
       "seq": 1533,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:41.364Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "designer/components.tree": {
       "seq": 1503,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:39.847Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "designer/frames.app-header": {
       "seq": 1590,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:44.202Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "designer/frames.app-shell": {
       "seq": 1585,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:43.951Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "designer/frames.app-sidebar": {
       "seq": 1591,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:44.260Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "designer/frames.auth-shell": {
       "seq": 1586,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:44.001Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "designer/frames.command": {
       "seq": 1594,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:44.472Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "designer/frames.deck": {
       "seq": 1587,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:44.050Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "designer/frames.inspector": {
       "seq": 1592,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:44.315Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "designer/frames.sheet": {
       "seq": 1593,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:44.377Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "designer/frames.site-footer": {
       "seq": 1589,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:44.152Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "designer/frames.site-header": {
       "seq": 1588,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:44.099Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "designer/frames.site-shell": {
       "seq": 1584,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:43.901Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "designer/loop.cascade": {
       "seq": 1309,
@@ -751,583 +751,583 @@
       "seq": 1578,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:43.593Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "designer/sections.account-summary": {
       "seq": 1562,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:42.785Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "designer/sections.activity-feed": {
       "seq": 1564,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:42.888Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "designer/sections.article": {
       "seq": 1548,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:42.101Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "designer/sections.audit-log": {
       "seq": 1565,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:42.937Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "designer/sections.band": {
       "seq": 1534,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:41.412Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "designer/sections.call-to-action": {
       "seq": 1542,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:41.809Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "designer/sections.candidate-preview": {
       "seq": 1570,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:43.187Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "designer/sections.chat": {
       "seq": 1576,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:43.491Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "designer/sections.column-mapper": {
       "seq": 1579,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:43.642Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "designer/sections.comparison": {
       "seq": 1546,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:41.999Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "designer/sections.consent": {
       "seq": 1583,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:43.849Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "designer/sections.content": {
       "seq": 1547,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:42.048Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "designer/sections.data-grid": {
       "seq": 1559,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:42.639Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "designer/sections.data-table": {
       "seq": 1558,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:42.591Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "designer/sections.empty-state": {
       "seq": 1580,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:43.693Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "designer/sections.error-state": {
       "seq": 1581,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:43.747Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "designer/sections.explorer": {
       "seq": 1566,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:42.986Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "designer/sections.faq": {
       "seq": 1552,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:42.298Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "designer/sections.features": {
       "seq": 1540,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:41.711Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "designer/sections.filter-builder": {
       "seq": 1567,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:43.037Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "designer/sections.form": {
       "seq": 1573,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:43.340Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "designer/sections.gallery": {
       "seq": 1551,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:42.250Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "designer/sections.hero": {
       "seq": 1538,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:41.609Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "designer/sections.link-index": {
       "seq": 1555,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:42.443Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "designer/sections.logo-cloud": {
       "seq": 1544,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:41.904Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "designer/sections.media": {
       "seq": 1550,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:42.200Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "designer/sections.notices": {
       "seq": 1582,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:43.796Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "designer/sections.page-header": {
       "seq": 1539,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:41.662Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "designer/sections.pagination": {
       "seq": 1536,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:41.510Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "designer/sections.people": {
       "seq": 1545,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:41.951Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "designer/sections.pricing": {
       "seq": 1541,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:41.758Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "designer/sections.producer.system-empty": {
       "seq": 1596,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:44.605Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "designer/sections.producer.team-strip": {
       "seq": 1595,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:44.546Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "designer/sections.question-packet": {
       "seq": 1571,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:43.237Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "designer/sections.queue-list": {
       "seq": 1572,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:43.289Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "designer/sections.resource-list": {
       "seq": 1556,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:42.494Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "designer/sections.section-header": {
       "seq": 1535,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:41.462Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "designer/sections.sectioned-document": {
       "seq": 1549,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:42.150Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "designer/sections.settings": {
       "seq": 1577,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:43.541Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "designer/sections.sign-in-form": {
       "seq": 1574,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:43.390Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "designer/sections.slot-detail": {
       "seq": 1569,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:43.137Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "designer/sections.slot-gallery": {
       "seq": 1568,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:43.087Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "designer/sections.stats": {
       "seq": 1560,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:42.689Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "designer/sections.status-list": {
       "seq": 1563,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:42.836Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "designer/sections.steps": {
       "seq": 1553,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:42.347Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "designer/sections.table-of-contents": {
       "seq": 1537,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:41.560Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "designer/sections.task-list": {
       "seq": 1557,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:42.542Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "designer/sections.testimonials": {
       "seq": 1543,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:41.856Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "designer/sections.timeline": {
       "seq": 1554,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:42.395Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "designer/sections.usage": {
       "seq": 1561,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:42.737Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "designer/sections.wizard": {
       "seq": 1575,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:43.440Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "designer/themes.accent": {
       "seq": 1396,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:31.798Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "designer/themes.accent-foreground": {
       "seq": 1397,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:31.866Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "designer/themes.animate-marquee": {
       "seq": 1428,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:33.445Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "designer/themes.animate-marquee-vertical": {
       "seq": 1429,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:33.497Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "designer/themes.animate-shiny-text": {
       "seq": 1430,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:33.550Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "designer/themes.background": {
       "seq": 1386,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:31.170Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "designer/themes.border": {
       "seq": 1401,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:32.073Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "designer/themes.card": {
       "seq": 1388,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:31.272Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "designer/themes.card-foreground": {
       "seq": 1389,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:31.322Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "designer/themes.chart-1": {
       "seq": 1412,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:32.626Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "designer/themes.chart-2": {
       "seq": 1413,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:32.677Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "designer/themes.chart-3": {
       "seq": 1414,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:32.729Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "designer/themes.chart-4": {
       "seq": 1415,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:32.778Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "designer/themes.chart-5": {
       "seq": 1416,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:32.829Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "designer/themes.destructive": {
       "seq": 1398,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:31.924Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "designer/themes.font-heading": {
       "seq": 1421,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:33.077Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "designer/themes.font-mono": {
       "seq": 1422,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:33.136Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "designer/themes.font-sans": {
       "seq": 1420,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:33.027Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "designer/themes.font-serif": {
       "seq": 1423,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:33.188Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "designer/themes.foreground": {
       "seq": 1387,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:31.221Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "designer/themes.info": {
       "seq": 1419,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:32.977Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "designer/themes.input": {
       "seq": 1402,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:32.122Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "designer/themes.muted": {
       "seq": 1399,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:31.972Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "designer/themes.muted-foreground": {
       "seq": 1400,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:32.023Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "designer/themes.popover": {
       "seq": 1390,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:31.382Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "designer/themes.popover-foreground": {
       "seq": 1391,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:31.440Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "designer/themes.primary": {
       "seq": 1392,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:31.492Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "designer/themes.primary-foreground": {
       "seq": 1393,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:31.543Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "designer/themes.radius": {
       "seq": 1426,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:33.341Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "designer/themes.ring": {
       "seq": 1403,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:32.173Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "designer/themes.secondary": {
       "seq": 1394,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:31.592Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "designer/themes.secondary-foreground": {
       "seq": 1395,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:31.643Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "designer/themes.shadow": {
       "seq": 1427,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:33.394Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "designer/themes.sidebar": {
       "seq": 1404,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:32.225Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "designer/themes.sidebar-accent": {
       "seq": 1408,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:32.424Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "designer/themes.sidebar-accent-foreground": {
       "seq": 1409,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:32.474Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "designer/themes.sidebar-border": {
       "seq": 1410,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:32.526Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "designer/themes.sidebar-foreground": {
       "seq": 1405,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:32.275Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "designer/themes.sidebar-primary": {
       "seq": 1406,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:32.324Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "designer/themes.sidebar-primary-foreground": {
       "seq": 1407,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:32.375Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "designer/themes.sidebar-ring": {
       "seq": 1411,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:32.577Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "designer/themes.spacing": {
       "seq": 1425,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:33.290Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "designer/themes.success": {
       "seq": 1417,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:32.878Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "designer/themes.tracking-tight": {
       "seq": 1424,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:33.241Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "designer/themes.warning": {
       "seq": 1418,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:32.927Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "director": {
       "seq": 1268,
@@ -1339,331 +1339,331 @@
       "seq": 1355,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:30.457Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "director/advantage.defensibility.moat": {
       "seq": 1356,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:30.482Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "director/advantage.model.margin": {
       "seq": 1358,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:30.526Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "director/advantage.model.pricing": {
       "seq": 1357,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:30.507Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "director/advantage.proposition.promise": {
       "seq": 1353,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:30.412Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "director/advantage.proposition.proof": {
       "seq": 1354,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:30.434Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "director/aspiration.culture.behavior": {
       "seq": 1342,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:30.175Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "director/aspiration.culture.belief": {
       "seq": 1341,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:30.153Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "director/aspiration.goal.annual": {
       "seq": 1368,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:30.740Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "director/aspiration.goal.long-term": {
       "seq": 1367,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:30.719Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "director/aspiration.purpose.mission": {
       "seq": 1339,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:30.111Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "director/aspiration.purpose.vision": {
       "seq": 1340,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:30.131Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "director/capability.competency.critical": {
       "seq": 1376,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:30.915Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "director/capability.competency.gap": {
       "seq": 1377,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:30.936Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "director/capability.operation.delivery": {
       "seq": 1382,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:31.044Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "director/capability.resource.allocation": {
       "seq": 1381,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:31.023Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "director/capability.resource.funding": {
       "seq": 1380,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:31.001Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "director/capability.sourcing.build": {
       "seq": 1378,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:30.957Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "director/capability.sourcing.partner": {
       "seq": 1379,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:30.979Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "director/capability.team.role": {
       "seq": 1375,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:30.894Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "director/capability.team.structure": {
       "seq": 1383,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:31.066Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "director/context.company.constraint": {
       "seq": 1338,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:30.089Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "director/context.company.strength": {
       "seq": 1337,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:30.070Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "director/context.competition.alternative": {
       "seq": 1335,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:30.028Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "director/context.competition.gap": {
       "seq": 1336,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:30.049Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "director/context.customer.buying": {
       "seq": 1334,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:30.008Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "director/context.customer.need": {
       "seq": 1333,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:29.984Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "director/context.market.size": {
       "seq": 1331,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:29.936Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "director/context.market.trend": {
       "seq": 1332,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:29.964Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "director/execution.measure.driver": {
       "seq": 1370,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:30.784Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "director/execution.measure.north-star": {
       "seq": 1369,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:30.761Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "director/execution.priority.bet": {
       "seq": 1371,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:30.807Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "director/execution.priority.parked": {
       "seq": 1372,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:30.830Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "director/execution.risk.mitigation": {
       "seq": 1385,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:31.120Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "director/execution.risk.threat": {
       "seq": 1384,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:31.088Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "director/execution.roadmap.milestone": {
       "seq": 1373,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:30.851Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "director/execution.roadmap.release": {
       "seq": 1374,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:30.872Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "director/focus.category.definition": {
       "seq": 1343,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:30.198Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "director/focus.category.stance": {
       "seq": 1344,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:30.220Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "director/focus.lifecycle.acquisition": {
       "seq": 1351,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:30.369Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "director/focus.lifecycle.retention": {
       "seq": 1352,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:30.389Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "director/focus.offer.excluded": {
       "seq": 1348,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:30.303Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "director/focus.offer.included": {
       "seq": 1347,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:30.282Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "director/focus.reach.channel": {
       "seq": 1349,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:30.325Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "director/focus.reach.geography": {
       "seq": 1350,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:30.348Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "director/focus.segment.core": {
       "seq": 1345,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:30.241Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "director/focus.segment.next": {
       "seq": 1346,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:30.261Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "director/identity.brand.essence": {
       "seq": 1359,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:30.547Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "director/identity.brand.personality": {
       "seq": 1360,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:30.570Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "director/identity.naming.architecture": {
       "seq": 1362,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:30.613Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "director/identity.naming.name": {
       "seq": 1361,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:30.591Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "director/identity.verbal.narrative": {
       "seq": 1363,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:30.633Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "director/identity.verbal.voice": {
       "seq": 1364,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:30.656Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "director/identity.visual.imagery": {
       "seq": 1366,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:30.700Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "director/identity.visual.style": {
       "seq": 1365,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:30.678Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "director/loop.cascade": {
       "seq": 1288,
@@ -1855,43 +1855,43 @@
       "seq": 1669,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:47.434Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "writer/assets.lockup.copy": {
       "seq": 1667,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:47.297Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "writer/assets.mark.copy": {
       "seq": 1668,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:47.362Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "writer/assets.video.copy": {
       "seq": 1670,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:47.509Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "writer/components.breadcrumbs.copy": {
       "seq": 1616,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:45.283Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "writer/components.command.copy": {
       "seq": 1615,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:45.249Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "writer/components.dialog.copy": {
       "seq": 1618,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:45.347Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "writer/components.media-player.copy": {
       "seq": 260,
@@ -1903,109 +1903,109 @@
       "seq": 1619,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:45.379Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "writer/components.sidebar.copy": {
       "seq": 1617,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:45.314Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "writer/frames.app-header.copy": {
       "seq": 1665,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:47.142Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "writer/frames.app-sidebar.copy": {
       "seq": 1666,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:47.217Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "writer/frames.site-footer.copy": {
       "seq": 1664,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:47.072Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "writer/frames.site-header.copy": {
       "seq": 1663,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:47.007Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "writer/lexicon.avoid-patterns": {
       "seq": 1609,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:45.040Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "writer/lexicon.avoid-terms": {
       "seq": 1608,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:45.008Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "writer/lexicon.capitalization": {
       "seq": 1605,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:44.921Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "writer/lexicon.energy": {
       "seq": 1600,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:44.766Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "writer/lexicon.formality": {
       "seq": 1598,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:44.702Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "writer/lexicon.mood": {
       "seq": 1602,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:44.826Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "writer/lexicon.person": {
       "seq": 1601,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:44.798Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "writer/lexicon.preferred-terms": {
       "seq": 1607,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:44.978Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "writer/lexicon.punctuation": {
       "seq": 1606,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:44.948Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "writer/lexicon.reading-level": {
       "seq": 1604,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:44.891Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "writer/lexicon.sentence-length": {
       "seq": 1603,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:44.861Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "writer/lexicon.warmth": {
       "seq": 1599,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:44.733Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "writer/loop.cascade": {
       "seq": 1330,
@@ -2041,481 +2041,481 @@
       "seq": 1610,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:45.072Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "writer/narratives.case-study": {
       "seq": 1611,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:45.102Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "writer/narratives.guide": {
       "seq": 1613,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:45.179Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "writer/narratives.legal-document": {
       "seq": 1614,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:45.215Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "writer/narratives.release-notes": {
       "seq": 1612,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:45.145Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "writer/page.about.meta": {
       "seq": 1673,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:47.715Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "writer/page.admin-gallery.meta": {
       "seq": 1697,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:49.369Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "writer/page.admin-home.meta": {
       "seq": 1696,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:49.303Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "writer/page.admin-questions.meta": {
       "seq": 1700,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:49.591Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "writer/page.admin-requests.meta": {
       "seq": 1699,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:49.505Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "writer/page.admin-slot.meta": {
       "seq": 1698,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:49.430Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "writer/page.app-home.meta": {
       "seq": 1691,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:48.980Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "writer/page.app-not-found.meta": {
       "seq": 1694,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:49.177Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "writer/page.article.meta": {
       "seq": 1684,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:48.554Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "writer/page.changelog.meta": {
       "seq": 1685,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:48.625Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "writer/page.contact.meta": {
       "seq": 1675,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:47.874Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "writer/page.deck.meta": {
       "seq": 1702,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:49.720Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "writer/page.docs-index.meta": {
       "seq": 1682,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:48.404Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "writer/page.error.meta": {
       "seq": 1680,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:48.228Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "writer/page.guide.meta": {
       "seq": 1683,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:48.484Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "writer/page.home.meta": {
       "seq": 1672,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:47.641Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "writer/page.list.meta": {
       "seq": 1692,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:49.036Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "writer/page.not-authorized.meta": {
       "seq": 1689,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:48.864Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "writer/page.not-found.meta": {
       "seq": 1679,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:48.157Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "writer/page.pricing.meta": {
       "seq": 1674,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:47.786Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "writer/page.privacy.meta": {
       "seq": 1678,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:48.089Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "writer/page.service-unavailable.meta": {
       "seq": 1690,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:48.927Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "writer/page.settings.meta": {
       "seq": 1693,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:49.118Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "writer/page.sign-in.meta": {
       "seq": 1687,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:48.745Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "writer/page.sign-out-confirm.meta": {
       "seq": 1688,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:48.806Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "writer/page.site-page.meta": {
       "seq": 1676,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:47.946Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "writer/page.terms.meta": {
       "seq": 1677,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:48.018Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "writer/publication.admin.meta": {
       "seq": 1695,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:49.239Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "writer/publication.app.meta": {
       "seq": 1686,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:48.683Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "writer/publication.docs.meta": {
       "seq": 1681,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:48.338Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "writer/publication.site.meta": {
       "seq": 1671,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:47.577Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "writer/publication.slides.meta": {
       "seq": 1701,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:49.658Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "writer/sections.access-matrix.copy": {
       "seq": 1657,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:46.596Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "writer/sections.account-summary.copy": {
       "seq": 1646,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:46.218Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "writer/sections.activity-feed.copy": {
       "seq": 1648,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:46.277Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "writer/sections.article.copy": {
       "seq": 1633,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:45.813Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "writer/sections.audit-log.copy": {
       "seq": 1649,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:46.309Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "writer/sections.call-to-action.copy": {
       "seq": 1627,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:45.621Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "writer/sections.chat.copy": {
       "seq": 1655,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:46.508Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "writer/sections.column-mapper.copy": {
       "seq": 1658,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:46.666Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "writer/sections.comparison.copy": {
       "seq": 1631,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:45.750Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "writer/sections.consent.copy": {
       "seq": 1662,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:46.942Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "writer/sections.content.copy": {
       "seq": 1632,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:45.781Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "writer/sections.data-grid.copy": {
       "seq": 1643,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:46.124Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "writer/sections.data-table.copy": {
       "seq": 1642,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:46.095Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "writer/sections.empty-state.copy": {
       "seq": 1659,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:46.740Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "writer/sections.error-state.copy": {
       "seq": 1660,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:46.811Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "writer/sections.explorer.copy": {
       "seq": 1650,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:46.345Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "writer/sections.faq.copy": {
       "seq": 1636,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:45.903Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "writer/sections.features.copy": {
       "seq": 1625,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:45.556Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "writer/sections.filter-builder.copy": {
       "seq": 1651,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:46.374Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "writer/sections.form.copy": {
       "seq": 1652,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:46.405Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "writer/sections.gallery.copy": {
       "seq": 1635,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:45.875Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "writer/sections.hero.copy": {
       "seq": 1623,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:45.494Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "writer/sections.link-index.copy": {
       "seq": 1639,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:45.994Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "writer/sections.logo-cloud.copy": {
       "seq": 1629,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:45.683Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "writer/sections.media.copy": {
       "seq": 1634,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:45.844Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "writer/sections.notices.copy": {
       "seq": 1661,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:46.879Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "writer/sections.page-header.copy": {
       "seq": 1624,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:45.526Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "writer/sections.pagination.copy": {
       "seq": 1621,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:45.437Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "writer/sections.people.copy": {
       "seq": 1630,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:45.718Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "writer/sections.pricing.copy": {
       "seq": 1626,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:45.588Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "writer/sections.resource-list.copy": {
       "seq": 1640,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:46.033Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "writer/sections.section-header.copy": {
       "seq": 1620,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:45.407Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "writer/sections.settings.copy": {
       "seq": 1656,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:46.537Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "writer/sections.sign-in-form.copy": {
       "seq": 1653,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:46.434Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "writer/sections.stats.copy": {
       "seq": 1644,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:46.157Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "writer/sections.status-list.copy": {
       "seq": 1647,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:46.247Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "writer/sections.steps.copy": {
       "seq": 1637,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:45.933Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "writer/sections.table-of-contents.copy": {
       "seq": 1622,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:45.465Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "writer/sections.task-list.copy": {
       "seq": 1641,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:46.065Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "writer/sections.testimonials.copy": {
       "seq": 1628,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:45.651Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "writer/sections.timeline.copy": {
       "seq": 1638,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:45.962Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "writer/sections.usage.copy": {
       "seq": 1645,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:46.187Z"
+      "at": "2026-11-19T00:00:00.000Z"
     },
     "writer/sections.wizard.copy": {
       "seq": 1654,
       "kind": "slot.slot",
       "actor": "producer",
-      "at": "2026-11-24T00:54:46.472Z"
+      "at": "2026-11-19T00:00:00.000Z"
     }
   },
   "records": {
