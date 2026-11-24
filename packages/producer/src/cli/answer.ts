@@ -2,6 +2,7 @@
 import { resolve } from "node:path";
 import { AnswerRefused, answerQueueEntry, VIAS, type AnswerInput, type Via } from "../queue/answer.js";
 import { EntryLockedError } from "../queue/entry.js";
+import { ReplayRefused, replayAnswersFile, writeAnswersExport, type ReplayStep } from "../queue/replay.js";
 import { CliUsageError } from "./args.js";
 import type { CliResult } from "./main.js";
 import { discoverRoot } from "./root.js";
@@ -10,9 +11,13 @@ export const ANSWER_USAGE = "Usage: clossys answer <entry-id | queue.<kind>#<id>
   + "       clossys answer <entry> <answer> --by agent:<agent> [--note <text>]           # only for entries whose decider is that agent\n"
   + "       clossys answer <entry> <answer> --by code:<cli> --answers <pin ref | producer/queue.approve#<id>> [--note <text>]   # closes a fix or clarify only\n"
   + "  appends one answered event and sets status answered. Exit 1 when a rule refuses it (answer.open-only, answer.decider-match,\n"
-  + "  answer.option-valid, answer.quote-required, ledger.append-only); nothing is written then.";
+  + "  answer.option-valid, answer.quote-required, ledger.append-only); nothing is written then.\n"
+  + "       clossys answer --export <file> [--root <dir>]   # writes the recorded owner answers (clossys.answers/1, no ids or times)\n"
+  + "       clossys answer --replay <file> [--root <dir>]   # re-applies them in order, no model, and runs each pick's printed\n"
+  + "  pin; exit 1 naming the first answer with no open question (same queue, subject and ask) or refused, the answers\n"
+  + "  before it kept; a re-run skips what is applied and carries on once that question is raised.";
 
-const VALUE_FLAGS = ["--by", "--via", "--quote", "--note", "--answers", "--root"] as const;
+const VALUE_FLAGS = ["--by", "--via", "--quote", "--note", "--answers", "--root", "--export", "--replay"] as const;
 type ValueFlag = typeof VALUE_FLAGS[number];
 
 export async function runAnswerCli(argv: readonly string[], cwd: string, now?: Date): Promise<CliResult> {
@@ -31,6 +36,30 @@ export async function runAnswerCli(argv: readonly string[], cwd: string, now?: D
     }
     if (arg.startsWith("--")) throw new CliUsageError(`Unknown argument: ${arg}\n${ANSWER_USAGE}`);
     positional.push(arg);
+  }
+  const exportFile = flags["--export"], replayFile = flags["--replay"];
+  if (exportFile !== undefined || replayFile !== undefined) {
+    const extra = Object.keys(flags).filter(flag => flag !== "--root" && flag !== "--export" && flag !== "--replay");
+    if (exportFile !== undefined && replayFile !== undefined) throw new CliUsageError(`--export and --replay are separate runs\n${ANSWER_USAGE}`);
+    if (positional.length || extra.length) throw new CliUsageError(`--export and --replay take only a file and --root\n${ANSWER_USAGE}`);
+    const root = discoverRoot(resolve(cwd, flags["--root"] ?? "."));
+    if (exportFile !== undefined) {
+      const doc = writeAnswersExport(root, resolve(cwd, exportFile));
+      return { exitCode: 0, root, message: `exported  ${doc.answers.length} owner answer(s)  ${exportFile}`, output: { file: exportFile, answers: doc.answers.length } };
+    }
+    const lines = (steps: readonly ReplayStep[]): string[] => steps.flatMap(step => [
+      `${step.action === "answered" ? "answered" : "already "}  ${step.queue}  ${step.id}`,
+      ...(step.pin ? [`${step.pin.action === "pinned" ? "pinned  " : "already "}  ${step.pin.command}`] : []),
+    ]);
+    try {
+      const steps = await replayAnswersFile(root, resolve(cwd, replayFile!), now, replayFile);
+      return { exitCode: 0, root, message: steps.length ? lines(steps).join("\n") : "no answers to replay", output: { steps } };
+    } catch (error) {
+      if (error instanceof ReplayRefused && error.index < 0) return { exitCode: 1, root, message: `replay refused: ${error.message}` };
+      if (error instanceof ReplayRefused) return { exitCode: 1, root, message: [...lines(error.steps), `replay stopped: ${error.message}`].join("\n"), output: { steps: error.steps, stopped: error.index + 1 } };
+      if (error instanceof EntryLockedError) return { exitCode: 1, root, message: `replay refused: ${error.message}` };
+      throw error;
+    }
   }
   if (positional.length !== 2) throw new CliUsageError(`clossys answer takes <entry> and <answer>\n${ANSWER_USAGE}`);
   if (flags["--by"] === undefined) throw new CliUsageError(`clossys answer needs --by\n${ANSWER_USAGE}`);
