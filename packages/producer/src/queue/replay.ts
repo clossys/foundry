@@ -14,14 +14,17 @@
  * the answers before it stay applied, and a re-run once that question is raised carries on from there. A rule refusal
  * stops it the same way. An owner answer to a queue.pick whose option names a candidate is followed, as `clossys answer`
  * prints it, by that same `clossys pin ... --by owner:queue.pick#<id>` run through the pin verb (every pin rule and
- * guard runs); a pin that already records that candidate from that answer is not run again, so a re-run writes nothing.
+ * guard runs); a pin that already records that candidate from that answer, or a slot ledger that holds that answer's
+ * pin event (a later pick may have re-pinned the slot since), is not run again, so a re-run writes nothing.
  * The answers and pins it writes are stamped one second apart from `now`, in replay order, so the replayed consumer's
  * own export lists them in the same order (answers written in the same second would sort by queue).
  */
 import { readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { runPinCli } from "../cli/pin.js";
+import { ledgerEventsOf } from "../records/ledger.js";
 import { readPinFile } from "../records/pin-map.js";
+import { readLedgerText } from "../records/slots.js";
 import type { QueueEntry, Ref } from "../records/types.js";
 import { AnswerRefused, answerQueueEntry, pickFollowUp, VIAS, type Via } from "./answer.js";
 import { listQueueEntryFiles, QUEUE_NAMES, readQueueEntry } from "./entry.js";
@@ -120,14 +123,21 @@ export interface ReplayStep {
 
 const PIN_COMMAND = /^clossys pin ([a-z]+)\/([^\s#]+)(?:#(\S+))? (\S+) --by (\S+)$/;
 
-/** True when the slot's pin already records `candidate` decided by `by` (the follow-up ran). */
+/**
+ * True when the follow-up already ran: the slot's pin records `candidate` decided by `by`, or its ledger holds a pin
+ * event from that answer (`decidedBy` = `by`, same candidate and record), so a pick a later pick re-pinned is applied too.
+ */
 function pinRecorded(root: string, command: string): boolean {
   const match = PIN_COMMAND.exec(command);
   if (!match) return false;
   const [, agent, slotId, record, candidate, by] = match;
-  const read = readPinFile(join(root, "clossys", "agents", agent!, slotId!, "pin.json"));
+  const dir = join(root, "clossys", "agents", agent!, slotId!);
+  const read = readPinFile(join(dir, "pin.json"));
   const pinned = read.kind === "pin" ? read.doc : read.kind === "pin-map" && record !== undefined ? read.doc.records[record] : undefined;
-  return pinned !== undefined && pinned.candidate === candidate && pinned.decidedBy === by;
+  if (pinned !== undefined && pinned.candidate === candidate && pinned.decidedBy === by) return true;
+  let events: Record<string, unknown>[] | undefined;
+  try { events = ledgerEventsOf(JSON.parse(readLedgerText(dir) ?? "null")); } catch { return false; }
+  return (events ?? []).some(event => event.op === "pin" && event.decidedBy === by && event.candidate === candidate && event.record === record);
 }
 
 /**

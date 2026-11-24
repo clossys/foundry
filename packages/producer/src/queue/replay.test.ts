@@ -1,4 +1,4 @@
-import { cpSync, mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSync } from "node:fs";
+import { cpSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, realpathSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -87,6 +87,14 @@ function consumer(stamp: string, pins = false) {
     bytes(): string[] {
       return [...listQueueEntryFiles(root).map(at => at.file), join(root, "clossys", "agents", "writer", SLOT, "pin.json")].map(file => readFileSync(file, "utf8"));
     },
+    /** Every file under the consumer (ledger.json, pin.json, scorecard and .state included), path -> text. */
+    tree(): Record<string, string> {
+      const files: Record<string, string> = {};
+      for (const entry of readdirSync(root, { recursive: true, withFileTypes: true })) {
+        if (entry.isFile()) { const file = join(entry.parentPath, entry.name); files[file.slice(root.length + 1)] = readFileSync(file, "utf8"); }
+      }
+      return files;
+    },
   };
 }
 
@@ -144,6 +152,46 @@ describe("clossys answer --export / --replay", () => {
     const before = second.bytes();
     expect(await runAnswerCli(["--replay", file], second.root)).toMatchObject({ exitCode: 0, message: expect.not.stringContaining("answered") as unknown as string });
     expect(second.bytes()).toEqual(before);
+  }, 120_000);
+
+  it("re-runs write nothing when a later owner pick re-pinned the slot an earlier pick pinned", async () => {
+    // Two picks on one slot: the second re-pins it to a newer candidate, submitted at the same time on every consumer.
+    const NEWER = GOOD.replace("Ship your site this week", "Ship your site today");
+    const twoPicks = (stamp: string) => {
+      const c = consumer(stamp, true);
+      const newer = writeCandidate(join(c.root, "clossys"), "writer", SLOT, "copy", NEWER, { at: "2026-11-18T10:00:01Z", provenance: { by: "agent:writer", model: "claude-opus-5-5", tier: "high" } }).name;
+      const pick = (slug: string, ask: string, candidate: string) => c.raise("queue.pick", slug, ask, { options: [{ id: "good", summary: "the submitted copy", candidate }, { id: "keep", summary: "keep the pinned copy" }], default: "keep" });
+      return { c, newer, pick1: pick("pick1", "Pick the hero copy?", c.candidate!), pick2: pick("pick2", "Pick the hero copy again?", newer) };
+    };
+    const first = twoPicks("20261120T0800Z");
+    for (const [id, at] of [[first.pick1, "2026-11-20T09:00:00Z"], [first.pick2, "2026-11-20T10:00:00Z"]] as const) {
+      const picked = await runAnswerCli([id, "good", "--by", "owner", "--via", "chat", "--quote", id], first.c.root, new Date(at));
+      expect(picked.exitCode, picked.message).toBe(0);
+      const pinned = await runPinCli([...(picked.output as { next: string }).next.split(" ").slice(2), "--at", at.replace(":00Z", ":30Z"), "--root", first.c.root], first.c.root);
+      expect(pinned.exitCode, pinned.message).toBe(0);
+    }
+    const file = join(first.c.root, "answers.json");
+    expect(await runAnswerCli(["--export", file], first.c.root)).toMatchObject({ exitCode: 0, output: { answers: 2 } });
+
+    const second = twoPicks("20261122T1500Z");
+    const replayed = await runAnswerCli(["--replay", file], second.c.root, new Date("2026-11-22T16:00:00Z"));
+    expect(replayed.exitCode, replayed.message).toBe(0);
+    expect(replayed.message).toContain(`pinned    clossys pin writer/${SLOT}#copy ${second.c.candidate} --by owner:queue.pick#${second.pick1}`);
+    expect(replayed.message).toContain(`pinned    clossys pin writer/${SLOT}#copy ${second.newer} --by owner:queue.pick#${second.pick2}`);
+    // The first replay ends at the second pick, as on the original.
+    expect(second.c.pin()).toEqual(first.c.pin());
+    expect((second.c.pin() as { record: { candidate: string } }).record.candidate).toBe(second.newer);
+
+    // A second and a third replay run no pin (no fall-back to the older candidate) and leave every file byte-equal.
+    const before = second.c.tree();
+    expect(Object.keys(before)).toEqual(expect.arrayContaining([`clossys/agents/writer/${SLOT}/ledger.json`, `clossys/agents/writer/${SLOT}/pin.json`]));
+    for (const at of ["2026-11-22T17:00:00Z", "2026-11-22T18:00:00Z"]) {
+      const again = await runAnswerCli(["--replay", file], second.c.root, new Date(at));
+      expect(again.exitCode, again.message).toBe(0);
+      expect(again.message).not.toMatch(/^(answered|pinned) /m);
+      expect(again.message.match(/^already {3}clossys pin /gm)).toHaveLength(2);
+      expect(second.c.tree()).toEqual(before);
+    }
   }, 120_000);
 
   it("exits 1 naming the first answer that matches no open question, and writes nothing", async () => {
