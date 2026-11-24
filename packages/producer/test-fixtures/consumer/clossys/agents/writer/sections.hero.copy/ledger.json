@@ -335,7 +335,7 @@
         },
         "standard": {
           "id": "copy.headline",
-          "sha256": "0d2333e6e3b07ab00a5dbe8bbf3d96c6d164cd4e8c9687cfe5c2c9ce64146933",
+          "sha256": "29da98735341a70d0ad3b0d3f0de4a511936e336222133d75465f3437b48ab80",
           "requirements": [
             {
               "check": "copy.voice-derived",

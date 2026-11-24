@@ -36,6 +36,24 @@
         "requirements.json": "26a2932f556785901f6a37057cefc2ab665b9b82fa71653e4bbb9e1013606f71",
         "taste.md": "0d022c9c89d48d01c7db2242518a03af12dfc19090a3bb0d4752dcb283ed2661"
       }
+    },
+    {
+      "op": "standard",
+      "at": "2026-11-24T00:00:00Z",
+      "by": "planner",
+      "verb": "standard",
+      "model": "none",
+      "tier": "none",
+      "standard": {
+        "agent": "writer",
+        "id": "passage",
+        "sha256": "07113449f8fec6f24af4bb614c4ef0b00c2e4f3cdb45306941cbf5c9c44f739d"
+      },
+      "files": {
+        "exemplars/exemplars.json": "0cd5f72b673c8d1fea28eac251bdf8fc2661736c41edb72b829eaefe982f5206",
+        "requirements.json": "4f1922cab7de0d144a617c449b293ffdb0b404cb39accb25cc0e5daab2f010a5",
+        "taste.md": "0d022c9c89d48d01c7db2242518a03af12dfc19090a3bb0d4752dcb283ed2661"
+      }
     }
   ]
 }

@@ -7,6 +7,8 @@
   "mode": "craft",
   "craftTier": "mid",
   "seeds": [],
+  "createOnly": true,
+  "createOnlyReason": "Narratives tell the consumer own story in its pinned voice from upstream briefs; this craft standard has no seed registry, so every narrative without a package default is created.",
   "requirements": [
     {
       "check": "copy.voice-derived",

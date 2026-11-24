@@ -9,6 +9,8 @@
   "mode": "craft",
   "craftTier": "high",
   "seeds": [],
+  "createOnly": true,
+  "createOnlyReason": "Headlines are the consumer own claims in its pinned voice from upstream briefs; this craft standard has no seed registry, so every headline without a package default is created.",
   "requirements": [
     {
       "check": "copy.voice-derived",

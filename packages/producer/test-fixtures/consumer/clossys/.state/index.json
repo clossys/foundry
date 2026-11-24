@@ -1,7 +1,7 @@
 {
   "schema": "clossys.index/1",
   "events": 2837,
-  "head": "bd8f5ddf174ea2defe66bc406de7594c75111ab16e48806c42b7c84479fe4010",
+  "head": "c9bc0fed39d83f21702613ed503dabf54f6a21ec8f06939827d88c526bdca3ac",
   "subjects": {
     "designer": {
       "seq": 2409,
@@ -7466,8 +7466,8 @@
     },
     "clossys/agents/writer/frames.site-header.copy/ledger.json": {
       "seq": 2783,
-      "logged": "61dc26e3668ef10937a445fd714c308b639ca0938314d594432141ef9be52c0e",
-      "disk": "61dc26e3668ef10937a445fd714c308b639ca0938314d594432141ef9be52c0e"
+      "logged": "881c50e304c8cee2f46c8d28a9bdb2455448d6004b7e98fc33a8fba8e99955f1",
+      "disk": "881c50e304c8cee2f46c8d28a9bdb2455448d6004b7e98fc33a8fba8e99955f1"
     },
     "clossys/agents/writer/frames.site-header.copy/pin.json": {
       "seq": 1243,
@@ -7946,8 +7946,8 @@
     },
     "clossys/agents/writer/page.home.meta/ledger.json": {
       "seq": 2792,
-      "logged": "f3f0dc8c8c9062d3653c8ae2428d1d5fd4e4d1993754ad14e8a560a751af7f86",
-      "disk": "f3f0dc8c8c9062d3653c8ae2428d1d5fd4e4d1993754ad14e8a560a751af7f86"
+      "logged": "ebec8961d479a96b61f3ae791adcdb358fc95acb1912296394b25314dd826503",
+      "disk": "ebec8961d479a96b61f3ae791adcdb358fc95acb1912296394b25314dd826503"
     },
     "clossys/agents/writer/page.home.meta/pin.json": {
       "seq": 1259,
@@ -8101,8 +8101,8 @@
     },
     "clossys/agents/writer/publication.site.meta/ledger.json": {
       "seq": 2791,
-      "logged": "6c44386a08499a875c79932609953e110e362d98e5fa02dc5f87b9007520b39b",
-      "disk": "6c44386a08499a875c79932609953e110e362d98e5fa02dc5f87b9007520b39b"
+      "logged": "977457f96bac812955f09d2b1541cbe6113b53854960c2863e02e3b6c68f655b",
+      "disk": "977457f96bac812955f09d2b1541cbe6113b53854960c2863e02e3b6c68f655b"
     },
     "clossys/agents/writer/publication.site.meta/pin.json": {
       "seq": 1267,
@@ -8336,8 +8336,8 @@
     },
     "clossys/agents/writer/sections.hero.copy/ledger.json": {
       "seq": 2743,
-      "logged": "54a89ffb8164df3f20eaf609100af26e14a6541db8ff12e2a50d70ae2a0d9581",
-      "disk": "54a89ffb8164df3f20eaf609100af26e14a6541db8ff12e2a50d70ae2a0d9581"
+      "logged": "2cf1d951edfe6a125596621f25bebc4bbbe25fca2651882f0e2b726a57cef5dd",
+      "disk": "2cf1d951edfe6a125596621f25bebc4bbbe25fca2651882f0e2b726a57cef5dd"
     },
     "clossys/agents/writer/sections.hero.copy/pin.json": {
       "seq": 1235,
