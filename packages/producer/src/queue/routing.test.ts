@@ -91,10 +91,11 @@ describe("routing.json", () => {
     expect(() => ownerClasses(loops)).toThrow(/choose-v1.json does not parse/);
     // A raise over a router that cannot read its owner classes is refused, never routed to an agent.
     const facts = consumerFacts(consumer);
+    const held = listRequests(consumer, "change");
     const unreadable = Object.defineProperty({ ...facts }, "classes", { get: () => { throw new RoutingError("the loop versions do not read"); } }) as RoutingFacts;
     expect(() => raiseWork(consumer, { kind: "change", target: "director/focus.segment.core", from: "owner", why: "narrow it", want: "repin", source: "cli", by: "owner", at: AT }, { facts: unreadable }))
       .toThrow(/the router refuses change director\/focus\.segment\.core: the loop versions do not read; nothing was written/);
-    expect(listRequests(consumer, "change")).toEqual([]);
+    expect(listRequests(consumer, "change")).toEqual(held);
   });
 
   it("refuses an unknown match or destination, and a handler row without handling", () => {
