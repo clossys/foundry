@@ -7,6 +7,8 @@
   "mode": "craft",
   "craftTier": "mid",
   "seeds": [],
+  "createOnly": true,
+  "createOnlyReason": "Passages are the consumer own body copy in its pinned voice from upstream briefs; this craft standard has no seed registry, so every passage without a package default is created.",
   "requirements": [
     {
       "check": "copy.voice-derived",

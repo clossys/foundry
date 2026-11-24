@@ -324,7 +324,7 @@
         },
         "standard": {
           "id": "string",
-          "sha256": "fcf4b07759a543489708a743b3b1eca44ab73361d6a92c68b9a8158186bb6b65",
+          "sha256": "9d364d814fd4d597c37c824a3863391cc4ecae5c81ad36a6a3e9ce1cf1d8e0d9",
           "requirements": [
             {
               "check": "copy.voice-derived",
