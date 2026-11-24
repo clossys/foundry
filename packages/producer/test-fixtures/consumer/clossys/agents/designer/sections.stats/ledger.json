@@ -137,6 +137,88 @@
           "sha256": "2b9a850d6f2cba9b3d44cb33569452e73036afeeda1f3587ef90fb010b876a2f"
         }
       ]
+    },
+    {
+      "op": "slot",
+      "at": "2026-11-23T00:00:00Z",
+      "by": "producer",
+      "verb": "migrate",
+      "skill": {
+        "path": "packages/producer/actions/migrate/action.json",
+        "sha256": "8b07b093fc4ab43ae85ccd8c821f1d2cc02970225d90a986b2521806d9024342"
+      },
+      "model": "none",
+      "tier": "none",
+      "migration": "placement",
+      "decision": "create",
+      "overlaps": [
+        {
+          "slot": "designer/sections.link-index",
+          "why": "one L2 (sections.sections/sections-records) and kind family, inputs a superset"
+        },
+        {
+          "slot": "designer/sections.resource-list",
+          "why": "one L2 (sections.sections/sections-records) and kind family, inputs a superset"
+        },
+        {
+          "slot": "designer/sections.task-list",
+          "why": "one L2 (sections.sections/sections-records) and kind family, inputs Jaccard 0.80"
+        },
+        {
+          "slot": "designer/sections.data-table",
+          "why": "one L2 (sections.sections/sections-records) and kind family, inputs a subset"
+        },
+        {
+          "slot": "designer/sections.usage",
+          "why": "one L2 (sections.sections/sections-records) and kind family, inputs a superset"
+        },
+        {
+          "slot": "designer/sections.status-list",
+          "why": "one L2 (sections.sections/sections-records) and kind family, inputs a superset"
+        },
+        {
+          "slot": "designer/sections.activity-feed",
+          "why": "one L2 (sections.sections/sections-records) and kind family, inputs a superset"
+        },
+        {
+          "slot": "designer/sections.audit-log",
+          "why": "one L2 (sections.sections/sections-records) and kind family, inputs a superset"
+        },
+        {
+          "slot": "designer/sections.explorer",
+          "why": "one L2 (sections.sections/sections-records) and kind family, inputs a subset"
+        },
+        {
+          "slot": "designer/sections.filter-builder",
+          "why": "one L2 (sections.sections/sections-records) and kind family, inputs a subset"
+        },
+        {
+          "slot": "designer/sections.slot-gallery",
+          "why": "one L2 (sections.sections/sections-records) and kind family, inputs a subset"
+        },
+        {
+          "slot": "designer/sections.slot-detail",
+          "why": "one L2 (sections.sections/sections-records) and kind family, inputs a subset"
+        },
+        {
+          "slot": "designer/sections.candidate-preview",
+          "why": "one L2 (sections.sections/sections-records) and kind family, inputs a subset"
+        },
+        {
+          "slot": "designer/sections.question-packet",
+          "why": "one L2 (sections.sections/sections-records) and kind family, inputs a subset"
+        },
+        {
+          "slot": "designer/sections.queue-list",
+          "why": "one L2 (sections.sections/sections-records) and kind family, inputs a subset"
+        }
+      ],
+      "records": [
+        {
+          "file": "slot.json",
+          "sha256": "2b9a850d6f2cba9b3d44cb33569452e73036afeeda1f3587ef90fb010b876a2f"
+        }
+      ]
     }
   ]
 }

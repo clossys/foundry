@@ -61,6 +61,32 @@
           "sha256": "238a52a9e20eb0603a1e81231aecc873c3927e60468715a90020bef74f21c516"
         }
       ]
+    },
+    {
+      "op": "slot",
+      "at": "2026-11-23T00:00:00Z",
+      "by": "producer",
+      "verb": "migrate",
+      "skill": {
+        "path": "packages/producer/actions/migrate/action.json",
+        "sha256": "8b07b093fc4ab43ae85ccd8c821f1d2cc02970225d90a986b2521806d9024342"
+      },
+      "model": "none",
+      "tier": "none",
+      "migration": "placement",
+      "decision": "create",
+      "overlaps": [
+        {
+          "slot": "designer/assets.favicon",
+          "why": "one L2 (assets.logos/logos-app-icons) and kind family, inputs equal"
+        }
+      ],
+      "records": [
+        {
+          "file": "slot.json",
+          "sha256": "238a52a9e20eb0603a1e81231aecc873c3927e60468715a90020bef74f21c516"
+        }
+      ]
     }
   ]
 }

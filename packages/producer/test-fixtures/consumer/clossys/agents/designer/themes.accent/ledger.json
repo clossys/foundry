@@ -61,6 +61,52 @@
           "sha256": "8abd4793b4c616a85c9bc630e25505031df48d59a50b5a96bbd34ef09f2f248c"
         }
       ]
+    },
+    {
+      "op": "slot",
+      "at": "2026-11-23T00:00:00Z",
+      "by": "producer",
+      "verb": "migrate",
+      "skill": {
+        "path": "packages/producer/actions/migrate/action.json",
+        "sha256": "8b07b093fc4ab43ae85ccd8c821f1d2cc02970225d90a986b2521806d9024342"
+      },
+      "model": "none",
+      "tier": "none",
+      "migration": "placement",
+      "decision": "create",
+      "overlaps": [
+        {
+          "slot": "designer/themes.primary",
+          "why": "one L2 (themes.colors/colors-emphasis) and kind family, inputs equal"
+        },
+        {
+          "slot": "designer/themes.primary-foreground",
+          "why": "one L2 (themes.colors/colors-emphasis) and kind family, inputs equal"
+        },
+        {
+          "slot": "designer/themes.secondary",
+          "why": "one L2 (themes.colors/colors-emphasis) and kind family, inputs equal"
+        },
+        {
+          "slot": "designer/themes.secondary-foreground",
+          "why": "one L2 (themes.colors/colors-emphasis) and kind family, inputs equal"
+        },
+        {
+          "slot": "designer/themes.accent-foreground",
+          "why": "one L2 (themes.colors/colors-emphasis) and kind family, inputs equal"
+        },
+        {
+          "slot": "designer/themes.destructive",
+          "why": "one L2 (themes.colors/colors-emphasis) and kind family, inputs equal"
+        }
+      ],
+      "records": [
+        {
+          "file": "slot.json",
+          "sha256": "8abd4793b4c616a85c9bc630e25505031df48d59a50b5a96bbd34ef09f2f248c"
+        }
+      ]
     }
   ]
 }

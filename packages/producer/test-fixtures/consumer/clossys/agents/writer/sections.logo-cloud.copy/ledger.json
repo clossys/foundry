@@ -44,6 +44,60 @@
           "sha256": "f96d9a083aa05f75f61866d3b33c081b2dc3ffb2158bbd949da8c2fa379ee625"
         }
       ]
+    },
+    {
+      "op": "slot",
+      "at": "2026-11-23T00:00:00Z",
+      "by": "producer",
+      "verb": "migrate",
+      "skill": {
+        "path": "packages/producer/actions/migrate/action.json",
+        "sha256": "8b07b093fc4ab43ae85ccd8c821f1d2cc02970225d90a986b2521806d9024342"
+      },
+      "model": "none",
+      "tier": "none",
+      "migration": "placement",
+      "decision": "create",
+      "overlaps": [
+        {
+          "slot": "writer/sections.hero.copy",
+          "why": "one L2 (copy.section-copy/story) and kind family, inputs a subset"
+        },
+        {
+          "slot": "writer/sections.page-header.copy",
+          "why": "one L2 (copy.section-copy/story) and kind family, inputs a subset"
+        },
+        {
+          "slot": "writer/sections.features.copy",
+          "why": "one L2 (copy.section-copy/story) and kind family, inputs a subset"
+        },
+        {
+          "slot": "writer/sections.pricing.copy",
+          "why": "one L2 (copy.section-copy/story) and kind family, inputs a subset"
+        },
+        {
+          "slot": "writer/sections.call-to-action.copy",
+          "why": "one L2 (copy.section-copy/story) and kind family, inputs a subset"
+        },
+        {
+          "slot": "writer/sections.testimonials.copy",
+          "why": "one L2 (copy.section-copy/story) and kind family, inputs equal"
+        },
+        {
+          "slot": "writer/sections.people.copy",
+          "why": "one L2 (copy.section-copy/story) and kind family, inputs a subset"
+        },
+        {
+          "slot": "writer/sections.comparison.copy",
+          "why": "one L2 (copy.section-copy/story) and kind family, inputs a subset"
+        }
+      ],
+      "records": [
+        {
+          "file": "slot.json",
+          "sha256": "f96d9a083aa05f75f61866d3b33c081b2dc3ffb2158bbd949da8c2fa379ee625"
+        }
+      ]
     }
   ]
 }

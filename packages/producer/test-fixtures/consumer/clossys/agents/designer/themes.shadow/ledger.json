@@ -381,6 +381,36 @@
           "sha256": "759c202586239e2d8399f1c8f9ee22b9b0711bc8d7374900adf241de76c204b1"
         }
       ]
+    },
+    {
+      "op": "slot",
+      "at": "2026-11-23T00:00:00Z",
+      "by": "producer",
+      "verb": "migrate",
+      "skill": {
+        "path": "packages/producer/actions/migrate/action.json",
+        "sha256": "8b07b093fc4ab43ae85ccd8c821f1d2cc02970225d90a986b2521806d9024342"
+      },
+      "model": "none",
+      "tier": "none",
+      "migration": "placement",
+      "decision": "create",
+      "overlaps": [
+        {
+          "slot": "designer/themes.spacing",
+          "why": "one L2 (themes.layout/layout-shape) and kind family, inputs equal"
+        },
+        {
+          "slot": "designer/themes.radius",
+          "why": "one L2 (themes.layout/layout-shape) and kind family, inputs equal"
+        }
+      ],
+      "records": [
+        {
+          "file": "slot.json",
+          "sha256": "8f52229a69660c215dc00d880d93e0cf60a0cfb4fbba83afebcc94076b40e5f2"
+        }
+      ]
     }
   ]
 }

@@ -61,6 +61,48 @@
           "sha256": "a548cde9759dfbc1dae6bd67dbab4adb5a3b47b702b228ab1f5011482fe1398b"
         }
       ]
+    },
+    {
+      "op": "slot",
+      "at": "2026-11-23T00:00:00Z",
+      "by": "producer",
+      "verb": "migrate",
+      "skill": {
+        "path": "packages/producer/actions/migrate/action.json",
+        "sha256": "8b07b093fc4ab43ae85ccd8c821f1d2cc02970225d90a986b2521806d9024342"
+      },
+      "model": "none",
+      "tier": "none",
+      "migration": "placement",
+      "decision": "create",
+      "overlaps": [
+        {
+          "slot": "writer/publication.admin.meta",
+          "why": "one L2 (copy.page-metadata/admin) and kind family, inputs equal"
+        },
+        {
+          "slot": "writer/page.admin-home.meta",
+          "why": "one L2 (copy.page-metadata/admin) and kind family, inputs equal"
+        },
+        {
+          "slot": "writer/page.admin-gallery.meta",
+          "why": "one L2 (copy.page-metadata/admin) and kind family, inputs equal"
+        },
+        {
+          "slot": "writer/page.admin-requests.meta",
+          "why": "one L2 (copy.page-metadata/admin) and kind family, inputs equal"
+        },
+        {
+          "slot": "writer/page.admin-questions.meta",
+          "why": "one L2 (copy.page-metadata/admin) and kind family, inputs equal"
+        }
+      ],
+      "records": [
+        {
+          "file": "slot.json",
+          "sha256": "a548cde9759dfbc1dae6bd67dbab4adb5a3b47b702b228ab1f5011482fe1398b"
+        }
+      ]
     }
   ]
 }

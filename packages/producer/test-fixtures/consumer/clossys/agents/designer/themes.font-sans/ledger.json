@@ -61,6 +61,44 @@
           "sha256": "d553ab2a707be3b0fd324a56b2fa23f93ef27a2624ca1b16a5974fbca74e1414"
         }
       ]
+    },
+    {
+      "op": "slot",
+      "at": "2026-11-23T00:00:00Z",
+      "by": "producer",
+      "verb": "migrate",
+      "skill": {
+        "path": "packages/producer/actions/migrate/action.json",
+        "sha256": "8b07b093fc4ab43ae85ccd8c821f1d2cc02970225d90a986b2521806d9024342"
+      },
+      "model": "none",
+      "tier": "none",
+      "migration": "placement",
+      "decision": "create",
+      "overlaps": [
+        {
+          "slot": "designer/themes.font-heading",
+          "why": "one L2 (themes.typography/typography-fonts) and kind family, inputs equal"
+        },
+        {
+          "slot": "designer/themes.font-mono",
+          "why": "one L2 (themes.typography/typography-fonts) and kind family, inputs equal"
+        },
+        {
+          "slot": "designer/themes.font-serif",
+          "why": "one L2 (themes.typography/typography-fonts) and kind family, inputs equal"
+        },
+        {
+          "slot": "designer/themes.tracking-tight",
+          "why": "one L2 (themes.typography/typography-fonts) and kind family, inputs equal"
+        }
+      ],
+      "records": [
+        {
+          "file": "slot.json",
+          "sha256": "d553ab2a707be3b0fd324a56b2fa23f93ef27a2624ca1b16a5974fbca74e1414"
+        }
+      ]
     }
   ]
 }

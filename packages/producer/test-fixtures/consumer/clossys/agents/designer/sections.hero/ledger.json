@@ -194,6 +194,44 @@
           "sha256": "2a2a63d1400949b14968312837af4f504c448ad41c000f9265583b0a97e5753c"
         }
       ]
+    },
+    {
+      "op": "slot",
+      "at": "2026-11-23T00:00:00Z",
+      "by": "producer",
+      "verb": "migrate",
+      "skill": {
+        "path": "packages/producer/actions/migrate/action.json",
+        "sha256": "8b07b093fc4ab43ae85ccd8c821f1d2cc02970225d90a986b2521806d9024342"
+      },
+      "model": "none",
+      "tier": "none",
+      "migration": "placement",
+      "decision": "create",
+      "overlaps": [
+        {
+          "slot": "designer/sections.page-header",
+          "why": "one L2 (sections.sections/sections-story) and kind family, inputs a superset"
+        },
+        {
+          "slot": "designer/sections.pricing",
+          "why": "one L2 (sections.sections/sections-story) and kind family, inputs a superset"
+        },
+        {
+          "slot": "designer/sections.call-to-action",
+          "why": "one L2 (sections.sections/sections-story) and kind family, inputs a superset"
+        },
+        {
+          "slot": "designer/sections.logo-cloud",
+          "why": "one L2 (sections.sections/sections-story) and kind family, inputs a superset"
+        }
+      ],
+      "records": [
+        {
+          "file": "slot.json",
+          "sha256": "2a2a63d1400949b14968312837af4f504c448ad41c000f9265583b0a97e5753c"
+        }
+      ]
     }
   ]
 }

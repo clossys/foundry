@@ -121,14 +121,14 @@ function replaceFile(path: string, bytes: string): void {
  * - writeSyncedSlot: `clossys ia sync`, takes no `by` (the event is by `producer`);
  * - appendIaEvent, appendSlotDocEvent: the event of a verb that judged its actor already (`clossys ia`, retire after
  *   its actor guard, a request link written by the request writer under its seat check, `clossys loop` adoption
- *   after loop/agent-loop-adopt.ts assertActor).
+ *   after loop/agent-loop-adopt.ts assertActor; `clossys migrate placement`, `by` fixed to producer by the migration).
  */
 export const PRODUCER_INTERNAL_WRITERS: readonly { readonly writer: string; readonly callers: readonly string[] }[] = [
   { writer: "writeSlotSeed", callers: ["migrate/contracts.ts"] },
   { writer: "rewriteCitationsInPlace", callers: ["migrate/citations-to-slots.ts"] },
   { writer: "writeSlotOptions", callers: ["cli/options.ts"] },
   { writer: "appendIaEvent", callers: ["cli/owner.ts", "loop/agent-loop-adopt.ts"] },
-  { writer: "appendSlotDocEvent", callers: ["cli/owner.ts", "loop/agent-loop-adopt.ts", "records/request.ts"] },
+  { writer: "appendSlotDocEvent", callers: ["cli/owner.ts", "loop/agent-loop-adopt.ts", "migrate/placement.ts", "records/request.ts"] },
   { writer: "writeSyncedSlot", callers: ["cli/ia-sync.ts"] },
 ];
 

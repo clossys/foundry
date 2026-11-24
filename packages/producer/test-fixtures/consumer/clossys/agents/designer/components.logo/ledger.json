@@ -239,6 +239,32 @@
           "sha256": "ff59e6dbcf944d109648bcb195693e63050ed17fc2307fa00a4a29c18cd63ac4"
         }
       ]
+    },
+    {
+      "op": "slot",
+      "at": "2026-11-23T00:00:00Z",
+      "by": "producer",
+      "verb": "migrate",
+      "skill": {
+        "path": "packages/producer/actions/migrate/action.json",
+        "sha256": "8b07b093fc4ab43ae85ccd8c821f1d2cc02970225d90a986b2521806d9024342"
+      },
+      "model": "none",
+      "tier": "none",
+      "migration": "placement",
+      "decision": "create",
+      "overlaps": [
+        {
+          "slot": "designer/components.semantic-content",
+          "why": "one L2 (components.components/components-text-and-media) and kind family, inputs a superset"
+        }
+      ],
+      "records": [
+        {
+          "file": "slot.json",
+          "sha256": "28a263dd3e3ccebb0acce418cd2b4fb39cb3320da4fd2058eccd9c2752689d7d"
+        }
+      ]
     }
   ]
 }

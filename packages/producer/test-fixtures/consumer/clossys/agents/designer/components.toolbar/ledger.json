@@ -118,6 +118,44 @@
           "sha256": "0eba52ab297a7077227185ea83d7181ea88ba290e8372d99c118d635d78b7139"
         }
       ]
+    },
+    {
+      "op": "slot",
+      "at": "2026-11-23T00:00:00Z",
+      "by": "producer",
+      "verb": "migrate",
+      "skill": {
+        "path": "packages/producer/actions/migrate/action.json",
+        "sha256": "8b07b093fc4ab43ae85ccd8c821f1d2cc02970225d90a986b2521806d9024342"
+      },
+      "model": "none",
+      "tier": "none",
+      "migration": "placement",
+      "decision": "create",
+      "overlaps": [
+        {
+          "slot": "designer/components.button",
+          "why": "one L2 (components.components/components-actions) and kind family, inputs a subset"
+        },
+        {
+          "slot": "designer/components.toggle-button",
+          "why": "one L2 (components.components/components-actions) and kind family, inputs a subset"
+        },
+        {
+          "slot": "designer/components.toggle-group",
+          "why": "one L2 (components.components/components-actions) and kind family, inputs Jaccard 0.83"
+        },
+        {
+          "slot": "designer/components.command",
+          "why": "one L2 (components.components/components-actions) and kind family, inputs a subset"
+        }
+      ],
+      "records": [
+        {
+          "file": "slot.json",
+          "sha256": "0eba52ab297a7077227185ea83d7181ea88ba290e8372d99c118d635d78b7139"
+        }
+      ]
     }
   ]
 }

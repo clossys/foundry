@@ -63,6 +63,52 @@
           "sha256": "2fd7f1bc86d3dd5ad7824cf7d529955a0d99cc5bc92e51b61cbf3505a13c8c5d"
         }
       ]
+    },
+    {
+      "op": "slot",
+      "at": "2026-11-23T00:00:00Z",
+      "by": "producer",
+      "verb": "migrate",
+      "skill": {
+        "path": "packages/producer/actions/migrate/action.json",
+        "sha256": "8b07b093fc4ab43ae85ccd8c821f1d2cc02970225d90a986b2521806d9024342"
+      },
+      "model": "none",
+      "tier": "none",
+      "migration": "placement",
+      "decision": "create",
+      "overlaps": [
+        {
+          "slot": "writer/sections.content.copy",
+          "why": "one L2 (copy.section-copy/reading) and kind family, inputs Jaccard 0.89"
+        },
+        {
+          "slot": "writer/sections.article.copy",
+          "why": "one L2 (copy.section-copy/reading) and kind family, inputs Jaccard 0.89"
+        },
+        {
+          "slot": "writer/sections.media.copy",
+          "why": "one L2 (copy.section-copy/reading) and kind family, inputs Jaccard 0.89"
+        },
+        {
+          "slot": "writer/sections.gallery.copy",
+          "why": "one L2 (copy.section-copy/reading) and kind family, inputs Jaccard 0.89"
+        },
+        {
+          "slot": "writer/sections.faq.copy",
+          "why": "one L2 (copy.section-copy/reading) and kind family, inputs Jaccard 0.89"
+        },
+        {
+          "slot": "writer/sections.steps.copy",
+          "why": "one L2 (copy.section-copy/reading) and kind family, inputs Jaccard 0.89"
+        }
+      ],
+      "records": [
+        {
+          "file": "slot.json",
+          "sha256": "2fd7f1bc86d3dd5ad7824cf7d529955a0d99cc5bc92e51b61cbf3505a13c8c5d"
+        }
+      ]
     }
   ]
 }

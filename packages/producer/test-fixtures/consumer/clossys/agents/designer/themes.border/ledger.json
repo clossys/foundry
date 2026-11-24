@@ -382,6 +382,44 @@
           "sha256": "dce8a975a9f9ab84607a5e7ea4978549aabaa4fb1471c83929f29a9add6244c3"
         }
       ]
+    },
+    {
+      "op": "slot",
+      "at": "2026-11-23T00:00:00Z",
+      "by": "producer",
+      "verb": "migrate",
+      "skill": {
+        "path": "packages/producer/actions/migrate/action.json",
+        "sha256": "8b07b093fc4ab43ae85ccd8c821f1d2cc02970225d90a986b2521806d9024342"
+      },
+      "model": "none",
+      "tier": "none",
+      "migration": "placement",
+      "decision": "create",
+      "overlaps": [
+        {
+          "slot": "designer/themes.muted",
+          "why": "one L2 (themes.colors/colors-neutrals) and kind family, inputs equal"
+        },
+        {
+          "slot": "designer/themes.muted-foreground",
+          "why": "one L2 (themes.colors/colors-neutrals) and kind family, inputs equal"
+        },
+        {
+          "slot": "designer/themes.input",
+          "why": "one L2 (themes.colors/colors-neutrals) and kind family, inputs equal"
+        },
+        {
+          "slot": "designer/themes.ring",
+          "why": "one L2 (themes.colors/colors-neutrals) and kind family, inputs equal"
+        }
+      ],
+      "records": [
+        {
+          "file": "slot.json",
+          "sha256": "86295e757ba3fbf03ccdc9661d89d9f16c21cfc3db2bc3dfb05d4082465cfb91"
+        }
+      ]
     }
   ]
 }
