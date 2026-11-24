@@ -21,7 +21,7 @@
 import { createHash } from "node:crypto";
 import { readFileSync, realpathSync } from "node:fs";
 import { join, resolve } from "node:path";
-import { KIND_EXT, SEAT_AGENT, SLOT_AGENTS, seatStepOf } from "../records/slot-model/types.js";
+import { KIND_EXT, SEAT_AGENT, SLOT_AGENTS, candidateStemIssue, seatStepOf } from "../records/slot-model/types.js";
 import type { ModelAgent, SlotAgent } from "../records/slot-model/types.js";
 
 import { candidatesDir, slotDir } from "../records/slot-model/layout.js";
@@ -250,9 +250,10 @@ export async function runNextSubmitCli(argv: readonly string[], cwd: string, ste
   try { bytes = readFileSync(file, "utf8"); } catch (error) { return reject(`cannot read ${flags.submit}: ${errorMessage(error)}`); }
   const schema = owning.packet?.write[0]?.schema ?? owning.outputs[0]?.schema;
   if (!schema) return reject(`${owning.id} names no output schema`);
-  // R08.1: a candidate's stem is its slot's leaf, whatever the submitted file is called.
-  const stem = slot.split(".").at(-1)!;
-  if (flags.name !== undefined && flags.name !== stem) return reject(`--name ${flags.name} is not ${target}'s leaf ${stem}; a candidate is named <leaf>-v<n> (R08.1)`);
+  // R08.1: a candidate's stem is its slot's leaf or a record its contract declares, whatever the submitted file is called.
+  const nameIssue = flags.name === undefined ? undefined : candidateStemIssue(slot, readSlot(consumer, agent as SlotAgent, slot).contract, flags.name);
+  if (nameIssue) return reject(`--name ${flags.name} for ${target} ${nameIssue}; a candidate is named <leaf>-v<n> (R08.1)`);
+  const stem = flags.name ?? slot.split(".").at(-1)!;
   const ext = file.endsWith(".json") ? "json" : "md";
   const schemaIssues = validateFile(schema, `clossys/agents/${agent}/${slot}/candidates/${stem}-v1.${ext}`, bytes, packageRoot);
   if (schemaIssues.length) return reject(`${flags.submit} fails schema ${schema}: ${schemaIssues.slice(0, 5).map(issue => `${issue.path} ${issue.message}`).join("; ")}`);

@@ -9,6 +9,7 @@ import type { CandidateHistory, PathChange } from "../types.js";
 import { gitBlobId, MIGRATIONS_FILE, MIGRATIONS_SCHEMA, type MigratedEvent } from "../../records/migrations.js";
 import { sha256Hex } from "../../records/hash.js";
 import { appendMigrationEvents } from "../../records/slot-write.js";
+import { candidateStemIssue } from "../../records/slot-model/index.js";
 import { R08, addIndex, editedInPlace, isEdit, naming } from "./R08-immutability.js";
 
 const clean = () => contextOf(cleanSpec());
@@ -37,6 +38,32 @@ describe("R08.1 naming", () => {
     ]);
   });
 
+  // BR-E2E9: a Writer slot's candidate may also be named for a record its contract declares (home.meta for page.home.meta).
+  const declaring = (spec: WorkspaceSpec, names: string[]) => {
+    const slot = spec.writer!["home.hero"]!;
+    const doc = slot.slot as Record<string, unknown>;
+    slot.slot = { ...doc, contract: { ...(doc.contract as Record<string, unknown>), records: { "home.hero": { placement: "publisher/site.home#hero" } } } };
+    const text = slot.candidates!["hero-v1.md"];
+    slot.candidates = { ...slot.candidates, ...Object.fromEntries(names.map(name => [name, text])) };
+  };
+
+  it("accepts the leaf and a record the slot's contract declares as a stem", () => {
+    expect(naming(broken(spec => declaring(spec, ["home.hero-v2.md"])))).toEqual([]);
+  });
+
+  it("flags an undeclared stem and another slot's record, naming the declared records", () => {
+    const rows = expectCatches(naming, clean(), broken(spec => declaring(spec, ["nope-v2.md", "about.hero-v3.md"])));
+    expect(rows.map(row => `${row.candidate}: ${row.reason}`).sort()).toEqual([
+      "about.hero-v3.md: stem about.hero is not the slot leaf hero or a record its contract declares (home.hero)",
+      "nope-v2.md: stem nope is not the slot leaf hero or a record its contract declares (home.hero)",
+    ]);
+  });
+
+  it("flags a declared record's stem on a slot whose contract does not declare it", () => {
+    const rows = expectCatches(naming, clean(), broken(spec => { const slot = spec.writer!["home.hero"]!; slot.candidates = { ...slot.candidates, "home.hero-v2.md": slot.candidates!["hero-v1.md"] }; }));
+    expect(rows.map(row => `${row.candidate}: ${row.reason}`)).toEqual(["home.hero-v2.md: stem home.hero is not the slot leaf hero"]);
+  });
+
   it("flags a version reused after retire and a retired name written again", () => {
     const rows = expectCatches(naming, clean(), broken(spec => {
       const slot = spec.designer!["ui.button"]!;
@@ -44,6 +71,21 @@ describe("R08.1 naming", () => {
       slot.retired = { "button-v2.json.json": { schema: "clossys.retire/1", slot: "ui.button", candidate: "button-v2.json", sha256: "0".repeat(64), by: "planner", reason: "superseded", at: "2026-11-13T00:00:00Z" } };
     }));
     expect(rows).toEqual([expect.objectContaining({ candidate: "button-v2.json", reason: expect.stringContaining("name was retired and is written again") })]);
+  });
+});
+
+describe("candidateStemIssue, the R08.1 stem rule next --submit --name shares", () => {
+  const home = { records: { "home.meta": { placement: "publisher/page.home#meta" } } };
+  it("accepts the slot leaf and a record the slot's contract declares", () => {
+    expect(candidateStemIssue("page.home.meta", home, "meta")).toBeUndefined();
+    expect(candidateStemIssue("page.home.meta", home, "home.meta")).toBeUndefined();
+    expect(candidateStemIssue("page.home.meta", {}, "meta")).toBeUndefined();
+  });
+  it("refuses an undeclared stem and another slot's record", () => {
+    expect(candidateStemIssue("page.home.meta", home, "nope")).toBe("is not the slot leaf meta or a record its contract declares (home.meta)");
+    expect(candidateStemIssue("page.home.meta", home, "about.meta")).toBe("is not the slot leaf meta or a record its contract declares (home.meta)");
+    expect(candidateStemIssue("page.about.meta", { records: { "about.meta": {} } }, "about.meta")).toBeUndefined();
+    expect(candidateStemIssue("page.home.meta", undefined, "home.meta")).toBe("is not the slot leaf meta");
   });
 });
 

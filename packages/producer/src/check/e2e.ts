@@ -560,7 +560,8 @@ async function craft(step: ScenarioStep, scenario: Scenario, shipped: string, co
   if (!Array.isArray(manifest)) stop("e2e.step", `${step.id}.packet`, "critique-packet --json printed no manifest");
   writeFileSync(join(inputs, "critique.json"), JSON.stringify({ schema: "clossys.critique/1", slot, candidate: c.candidate, standard: c.standard, scores: { [c.gap]: 4 }, packet: { manifest } }));
   await clossys(`${step.id}.critique`, ["critique", c.ref, "--record", join(inputs, "critique.json"), "--model", `${scenario.model}-critic`, "--tier", scenario.tier]);
-  await clossys(`${step.id}.submit`, ["next", c.ref, "--submit", candidateFile, ...llm, "--basis", "planner", ...skill, "--rung", c.rung, "--reason", "no seed: a fresh consumer holds none"]);
+  // The submit names the scenario's candidate stem (R08.1: the leaf or a record the slot's contract declares).
+  await clossys(`${step.id}.submit`, ["next", c.ref, "--submit", candidateFile, ...llm, "--basis", "planner", ...skill, "--rung", c.rung, "--reason", "no seed: a fresh consumer holds none", "--name", c.candidate.replace(/-v[1-9][0-9]*\.[a-z]+$/, "")]);
   if (!c.unpinned) await clossys(`${step.id}.pin`, ["pin", c.pin ?? c.ref, c.candidate, "--by", `agent:${agent}`]);
 }
 
