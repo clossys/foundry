@@ -115,9 +115,11 @@ describe("the shipped scenario", () => {
   });
 
   it("asserts the document title is the page's Writer title text, never the page id", () => {
-    const strings = readFileSync(join(SHIPPED, "site.md"), "utf8").split("\n");
+    // The title ref is `<slot>#<record id>`: the Writer holds it under that record id in the slot's file.
+    const strings = readFileSync(join(SHIPPED, "home-meta.md"), "utf8").split("\n");
     const page = JSON.parse(readFileSync(join(SHIPPED, "home.json"), "utf8")) as { title: string };
-    const heading = strings.indexOf(`### ${page.title}`);
+    expect(page.title.slice(0, page.title.indexOf("#"))).toBe("page.home.meta");
+    const heading = strings.indexOf(`### ${page.title.slice(page.title.indexOf("#") + 1)}`);
     expect(heading, `${page.title} is a Writer key`).toBeGreaterThan(-1);
     const text = strings.slice(heading + 1).find(line => line.trim() && !line.startsWith("<!--"))!;
     expect(Object.values(scenario.render).flat()).toContain(`<title>${text}</title>`);
