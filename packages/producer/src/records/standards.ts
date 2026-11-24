@@ -27,6 +27,11 @@ export const EXEMPLARS_MIN = 5, EXEMPLARS_MAX = 12;
  * Apache-2.0, CC0, CC-BY with attribution).
  */
 export const DEFAULT_LICENSES = Object.freeze(["MIT", "Apache-2.0", "CC0-1.0", "CC-BY-4.0"]);
+/**
+ * The seed registry allowlist used when the Designer has no `policy.json` `seedRegistries` list (R15.9):
+ * stock shadcn and shadcn-aria only (owner decision 2026-11-24).
+ */
+export const DEFAULT_SEED_REGISTRIES = Object.freeze(["shadcn", "shadcn-aria"]);
 /** Who may change a standard (R16.3): `clossys standard --by owner|planner`. */
 export const STANDARD_AUTHORS = Object.freeze(["owner", "planner"]);
 
@@ -345,14 +350,13 @@ export function exemplarIssues(standard: Standard, policy: StandardPolicy): stri
 
 /**
  * R15.9 (the standard half): only Designer standards list seeds, each from a registry the Designer
- * policy.json allowlists (`<registry>`, `<registry>/<item>` or `<registry>:<item>`).
+ * policy.json allowlists, else DEFAULT_SEED_REGISTRIES (`<registry>`, `<registry>/<item>` or `<registry>:<item>`).
  */
 export function seedIssues(standard: Standard, policy: StandardPolicy): string[] {
   const seeds = standard.doc?.seeds ?? [];
   if (!seeds.length) return [];
   if (standard.agent !== "designer") return [`${standard.agent} standards list no seeds (seeds: [])`];
-  if (!policy.seedRegistries) return [`seeds ${seeds.join(", ")} cannot be checked: the designer policy.json lists no seedRegistries`];
-  const registries = new Set(policy.seedRegistries);
+  const registries = new Set(policy.seedRegistries ?? DEFAULT_SEED_REGISTRIES);
   return seeds.filter(seed => !registries.has(seed.split(/[/:]/)[0]!)).map(seed => `seed ${seed} is not from a policy.json seed registry (${[...registries].join(", ") || "none"})`);
 }
 

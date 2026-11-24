@@ -5,7 +5,7 @@ import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import { criterionIds } from "../constitution/criteria/core/catalog.js";
 import {
-  CARD_STANDARDS, cardContractIssues, cardCoverage, DEFAULT_LICENSES, exemplarIssues, ledgerEvents, loadStandards, parseTaste, readStandard, readStandardPolicy, requirementIssues,
+  CARD_STANDARDS, cardContractIssues, cardCoverage, DEFAULT_LICENSES, DEFAULT_SEED_REGISTRIES, exemplarIssues, ledgerEvents, loadStandards, parseTaste, readStandard, readStandardPolicy, requirementIssues,
   resolveRequirements, seedIssues, slotKinds, STANDARD_AGENTS, standardFits, standardFor, tasteIssues,
 } from "./standards.js";
 
@@ -114,6 +114,24 @@ describe("records/standards", () => {
     put(join(consumer, "agents", "writer", "policy.json"), "[");
     expect(readStandardPolicy(consumer, "writer").error).toMatch(/policy\.json/);
     expect(DEFAULT_LICENSES).toEqual(["MIT", "Apache-2.0", "CC0-1.0", "CC-BY-4.0"]);
+  });
+
+  it("with no policy.json, Designer seeds come from stock shadcn and shadcn-aria only; a consumer list overrides", () => {
+    const none = readStandardPolicy(mkdtempSync(join(tmpdir(), "standards-consumer-")), "designer");
+    expect(none).toEqual({});
+    const seeded = (seeds: string[], agent = "designer") => ({ agent, doc: { seeds } }) as unknown as Parameters<typeof seedIssues>[0];
+    expect(DEFAULT_SEED_REGISTRIES).toEqual(["shadcn", "shadcn-aria"]);
+    expect(seedIssues(seeded(["shadcn", "shadcn-aria", "shadcn/button", "shadcn-aria:dialog"]), none)).toEqual([]);
+    expect(seedIssues(seeded(["magicui/marquee", "shadcn-app", "shadcn"]), none)).toEqual([
+      "seed magicui/marquee is not from a policy.json seed registry (shadcn, shadcn-aria)",
+      "seed shadcn-app is not from a policy.json seed registry (shadcn, shadcn-aria)",
+    ]);
+    // A consumer list replaces the default: its registries pass, the default's no longer do.
+    expect(seedIssues(seeded(["magicui/marquee"]), { seedRegistries: ["magicui"] })).toEqual([]);
+    expect(seedIssues(seeded(["shadcn/button"]), { seedRegistries: ["magicui"] })).toEqual(["seed shadcn/button is not from a policy.json seed registry (magicui)"]);
+    expect(seedIssues(seeded(["shadcn"]), { seedRegistries: [] })).toEqual(["seed shadcn is not from a policy.json seed registry (none)"]);
+    // The default never lets a non-Designer standard list seeds.
+    expect(seedIssues(seeded(["shadcn"], "writer"), none)).toEqual(["writer standards list no seeds (seeds: [])"]);
   });
 
   it("resolves requirements: the contract parameterises and extends the standard's", () => {

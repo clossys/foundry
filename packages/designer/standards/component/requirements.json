@@ -6,7 +6,10 @@
   ],
   "mode": "adopt-first",
   "craftTier": "high",
-  "seeds": [],
+  "seeds": [
+    "shadcn",
+    "shadcn-aria"
+  ],
   "createGaps": [
     "missing-behavior",
     "a11y-failure",
