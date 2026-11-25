@@ -34,7 +34,7 @@
       }
     }
   ],
-  "derive": [],
+  "derive": [{"module": "src/catalog/ia/tree.ts"}],
   "edgeFiles": [],
   "loops": ["loop.scope", "loop.slot", "loop.create", "loop.choose", "loop.cascade"],
   "skill": "skill/SKILL.md",

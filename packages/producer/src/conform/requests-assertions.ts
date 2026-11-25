@@ -102,12 +102,14 @@ export const REQUEST_ASSERTIONS: Readonly<Record<string, Assertion>> = {
     for (const edge of issuing) {
       if (!agent.edges.some(item => item.target === edge.to || agentOf(item.to) === edge.to)) rows.push(`requests.issuing to ${edge.to}: no input or uses edge of ${agent.agent} reads ${edge.to}`);
     }
-    const crossing = facts.entries.filter(fact => raisedBy(agent, fact) && !targets(agent, fact));
-    for (const fact of crossing) {
+    // Every entry the agent raised is judged, in-tree ones included: one to itself passes, one to another agent needs
+    // a declared issuing edge. Each counts as evidence, so a root agent with no issuing edge is judged by its own requests.
+    const raised = facts.entries.filter(fact => raisedBy(agent, fact));
+    for (const fact of raised.filter(item => !targets(agent, item))) {
       const to = agentOf(target(fact));
       if (!issuing.some(edge => edge.to === to && edge.kinds.includes(fact.kind))) rows.push(`${ref(fact)}: ${agent.agent} raised ${fact.kind} to ${to} with no declared issuing edge`);
     }
-    return { rows, evidence: issuing.length + crossing.length };
+    return { rows, evidence: issuing.length + raised.length };
   },
   /**
    * Q7: a closed entry has an outcome, a resolving result ref and a notify event to the requester, and its requester
