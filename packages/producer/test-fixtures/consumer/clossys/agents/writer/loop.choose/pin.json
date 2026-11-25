@@ -16,16 +16,16 @@
       "to": "producer/checks.scorecard",
       "rel": "cites",
       "record": "writer/loop.choose",
-      "sha256": "ff3fe3eb6ee6abc6b5ba9b1f81b15e0b9bf707833181327f38a29e339460c9dc"
+      "sha256": "746ea136ca9a4fc96be29c4268c87097e633922559ed0af1ec3406eb4bbd1eab"
     },
     {
       "to": "producer/loop.choose/package:choose-v1.json",
       "rel": "uses",
-      "sha256": "5135b0d77437796c54e4ff26b405d17389ab8f874723f28c0d6db69c2d64da79"
+      "sha256": "e801ceb863bbe81cf2395a46ee4bf5ca9a4c9eea37ffa6c97ff597e667f8ba8e"
     }
   ],
   "candidate": "choose-v1.json",
-  "sha256": "65f5ec709acd8d3d63051d25a87e80a39c016dcb090e1161c896b959f1162a66",
+  "sha256": "f2656d107147cae75804835c222d6224c62d4baef04a379d7dc71765b2cc236e",
   "decidedBy": "planner:package-default",
   "basis": "planner",
   "at": "2026-11-19T00:00:00Z"

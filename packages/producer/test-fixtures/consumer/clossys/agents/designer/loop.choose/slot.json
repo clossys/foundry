@@ -26,7 +26,7 @@
     "package": "@clossys/designer",
     "version": "0.12.0",
     "path": "loops/loop.choose/choose-v1.json",
-    "sha256": "9e266b233696b02ec0b40367b0d6e6154e6a660831ae2aa1cf8f8c138d433a6e"
+    "sha256": "0598d1383fe1594f9be8cf8fd564e4ac20050d9af98656522628dbac509dea29"
   },
   "standard": "loop",
   "brief": {

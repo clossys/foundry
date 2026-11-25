@@ -18,7 +18,7 @@
       "records": [
         {
           "file": "slot.json",
-          "sha256": "594adb829230fda3353f156c4756ec49cc2cc4439ed178f19296e580f17f67f4"
+          "sha256": "97085438e520cdd9b1fbd18b33bce8074b70f6cbe584c0d4180fd478ca0cb995"
         }
       ]
     },
@@ -37,7 +37,7 @@
       "seed": "@clossys/designer:loops/loop.choose/choose-v1.json",
       "reason": "designer's package loop.choose candidate, its header re-addressed to this consumer slot; content unchanged",
       "name": "choose-v1.json",
-      "sha256": "c382b128acc582069a01a4e034b2f97bd514c217cb6df6033f2b96f62a354461"
+      "sha256": "9858289b53a2c2664b4cd0b16e693a05581170dc5ba3f15a66ff0980579f3ac0"
     },
     {
       "op": "pin",
@@ -51,13 +51,13 @@
       "model": "none",
       "tier": "none",
       "candidate": "choose-v1.json",
-      "sha256": "c382b128acc582069a01a4e034b2f97bd514c217cb6df6033f2b96f62a354461",
+      "sha256": "9858289b53a2c2664b4cd0b16e693a05581170dc5ba3f15a66ff0980579f3ac0",
       "decidedBy": "planner:package-default",
       "basis": "planner",
       "records": [
         {
           "file": "pin.json",
-          "sha256": "661ec00df2b9c63d0c6a30c367a634f8215dd374cfaa31fe90b4a0a707695355"
+          "sha256": "a0dda3e6c96e2fa51b364605a73bdb3ec0abf8b0cfde508f041be4acf3931dc5"
         }
       ]
     }

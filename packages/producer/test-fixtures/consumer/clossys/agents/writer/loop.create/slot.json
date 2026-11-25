@@ -26,7 +26,7 @@
     "package": "@clossys/writer",
     "version": "0.6.0",
     "path": "loops/loop.create/create-v1.json",
-    "sha256": "ea38a7a49b90edd152fcc54acc682acc13005701e6d1181d34e5ae22eb29b9d0"
+    "sha256": "7f48a4eada4de164871c3e0666fa249fabf4edf271451ad8d938c9c16c5c9e15"
   },
   "standard": "loop",
   "brief": {
