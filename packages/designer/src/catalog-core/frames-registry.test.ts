@@ -114,10 +114,15 @@ describe("draft frame registry", () => {
     // foundry-build-0048 FCR: frames.site-header has no reference adoptable in the selected style and engine, so it is
     // composed and the derive drops its package props and fixture; re-pinned from the data (the contract diff is exactly
     // those two keys on that one row, and the row below proves they are gone).
+    // foundry-build-0048 SSC: frames.site-shell's reference rows are its parts' references, so one named rule row makes it
+    // composed and the derive drops its package props and fixture; re-pinned from the data (the contract diff is exactly
+    // those two keys on that one row, and the row below proves they are gone).
     expect(createHash("sha256").update(JSON.stringify(original)).digest("hex"))
-      .toBe("af7a6401b13d9cfed0b4b5981717c0f4fb194176ae7b8fb7b8da1de983b11643");
-    const header = slots.find(slot => slot.id === "frames.site-header")!.contract as unknown as Record<string, unknown>;
-    expect([header.props, header.fixture]).toEqual([undefined, undefined]);
+      .toBe("a553a3e8586d5e80fb82d4a4d24a095abe7c26fa2a4ea046f0301596ab00c789");
+    for (const id of ["frames.site-header", "frames.site-shell"]) {
+      const composed = slots.find(slot => slot.id === id)!.contract as unknown as Record<string, unknown>;
+      expect([composed.props, composed.fixture], id).toEqual([undefined, undefined]);
+    }
     expect(slots.find(slot => slot.id === "frames.auth-shell")).toEqual({
       id: "frames.auth-shell", layer: "frames", requires: [], status: "draft",
       contract: {
