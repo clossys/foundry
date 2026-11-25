@@ -202,11 +202,14 @@ describe("S2-1 bounded section composition reconciliation", () => {
     // undoContractFixtures restores the U23 digest, so no other base field moved.
     // BR-RETIRE3 (owner 2026-11-20): components.link becomes components.button and components.status-mark and
     // components.media-player leave every compose list; re-pinned from the data. undoRetire3 restores the U28 digest.
+    // foundry-build-0048 FCR: a section with no reference adoptable in the selected style and engine is composed, so the
+    // derive drops its package props and fixture (consumer-owned; judged against its own pinned, certified composition).
+    // Re-pinned from the data; undoContractFixtures below still gives the U23 digest, so no other base field moved.
     expect(createHash("sha256").update(JSON.stringify(original)).digest("hex"))
-      .toBe("8041830c5ce47f506dc3ab5f1f62ebc86f41cda829eb52b019f4df6a1582471f");
+      .toBe("0cee5c81972dee16a206d290464ba15ea56229e31184fec861f9b55d8399617c");
     const unretired = original.map(undoRetire3);
     expect(createHash("sha256").update(JSON.stringify(unretired)).digest("hex"))
-      .toBe("d3b3e73d31669ff37ce4143a8cb0c7727223ae6bcfafcf1ce133733def536cc4");
+      .toBe("733b19c3822c841dd06658dbe1ecb8ccf5898784213e31ed8a7203017473dcd5");
     const unfixtured = unretired.map(undoContractFixtures);
     expect(createHash("sha256").update(JSON.stringify(unfixtured)).digest("hex"))
       .toBe("fdf86d560a377b2be9cc37f95b76a8dace74c0960f4ef8f2a1ffa396b600e2db");

@@ -133,6 +133,8 @@ export declare const CODES: readonly RefVerbatimCode[];
 export declare const BASELINE_CEILING: readonly string[];
 export declare function baselineKey(row: BaselineRow): string;
 export declare function engineFamily(style: unknown): string | undefined;
+/** True when the code names no headless engine (no Radix, React Aria or Base UI imports or engine props): REF-FLAVOR's neutral file. */
+export declare function isEngineNeutral(text: string, fileName?: string): boolean;
 /**
  * Check one Designer candidate: `<slot>/<element>/v<N>` names candidate `<element>-v<N>.json` of
  * slot `<slot>`, read through the slot-model reader. A missing or unreadable candidate is REF-NO-SOURCE.

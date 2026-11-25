@@ -14,6 +14,7 @@
  */
 import { existsSync, readFileSync } from "node:fs";
 import { join, posix } from "node:path";
+import { engineFamily, isEngineNeutral } from "@clossys/designer/ref-verbatim";
 import { DESIGNER_SHADCN_FLAVOR } from "@clossys/designer/shadcn-flavor";
 import { CONTRACT_FIXTURE_SCHEMA, type ContractFixture } from "../records/slot-model/contract-fixture.js";
 import { BLOCK_FIXTURE_RULES, blockContractProps, blockFixture, blockMount, hasDefaultExport } from "./block-fixtures.js";
@@ -46,8 +47,16 @@ export const REFERENCE_FIXTURE_RULES = {
   },
 } as const;
 
-export const GAPS_FILE = "src/catalog/contract-fixture-gaps.json";
+export { GAPS_FILE } from "./composed-slots.js";
+import { GAPS_FILE } from "./composed-slots.js";
 export const NO_REFERENCE = "no adopted reference";
+/**
+ * FCR: a section or frame slot none of whose reference rows is adoptable in the selected style and engine
+ * (REF-FLAVOR: the same engine family, or every code file engine-neutral) is composed. The package gives it
+ * no contract fixture: its fixture is the file and export of its own pinned candidate, certified (passing
+ * verdict, critique, scorecard) and pinned through the CHOOSE gate (conform/dogfood.ts `composedPinMiss`, certify/element.ts `composedFixtureFit`).
+ */
+export const COMPOSED = "no adoptable reference in the selected style and engine: the contract fixture is the file and export of the slot's own pinned, certified composition";
 const LAYERS = Object.keys(REFERENCE_FIXTURE_RULES.layers) as (keyof typeof REFERENCE_FIXTURE_RULES.layers)[];
 /** The layers whose slot contracts carry adopted reference rows. */
 const REFERENCE_LAYERS = ["components", "sections", "frames"] as const;
@@ -93,6 +102,8 @@ function flavorStyle(): string {
 
 /** The Designer package's adopted references: what each vendored file exports, and the selected style. */
 export interface ReferenceIndex {
+  /** The Designer package root the vendored references are read from. */
+  readonly root: string;
   readonly style: string;
   readonly manifest: Manifest;
   /** Every vendored code file an adopted reference ships, by its registry path, with its value exports. */
@@ -123,7 +134,7 @@ export function referenceIndex(designerRoot: string, style: string = flavorStyle
     const contracts = join(designerRoot, "src/catalog/slot-contracts", `${layer}.json`);
     for (const row of json(contracts) as { slot: string; references?: ReferenceRow[] }[]) references.set(row.slot, row.references ?? []);
   }
-  return { style, manifest, ships, itemShips, references };
+  return { root: designerRoot, style, manifest, ships, itemShips, references };
 }
 
 /** Whether an adopted reference ships `file` and it exports `name`. */
@@ -154,6 +165,18 @@ function styled(index: ReferenceIndex, row: ReferenceRow): ManifestItem | { gap:
   if (!family) return item;
   const restyled = index.manifest.items.find(entry => entry.registry === family[0] && entry.name === row.item);
   return restyled ?? { gap: `${NO_REFERENCE}: ${row.registry}/${row.item} has no ${family[0]} item in style ${index.style}` };
+}
+
+/**
+ * Whether an item a section or frame reference row adopts is adoptable in the selected style's engine, by the
+ * REF-FLAVOR rule (check-ref-verbatim.mjs): its registry's style is of the selected engine family, or every code
+ * file it ships names no headless engine. Otherwise `{ gap }` names the engine-flavoured files.
+ */
+function engineAdoptable(index: ReferenceIndex, item: ManifestItem): true | { gap: string } {
+  const style = index.manifest.registries[item.registry]?.style;
+  if (style && engineFamily(style) === engineFamily(index.style)) return true;
+  const flavoured = [...(index.itemShips.get(item)?.keys() ?? [])].filter(path => !isEngineNeutral(readFileSync(join(index.root, "references", item.dir, path), "utf8"), path));
+  return flavoured.length ? { gap: `${item.registry}/${item.name} is ${style ?? "unstyled"} and ${flavoured.join(", ")} names a headless engine; the selected style is ${index.style}` } : true;
 }
 
 /** The fixture one component slot's reference rows determine, or `{ gap }` naming why none. */
@@ -189,9 +212,21 @@ export function referenceFixture(index: ReferenceIndex, slot: string, references
   return { gap: misses.join("; ") };
 }
 
-/** The fixture one section or frame slot's reference rows determine (block-fixtures.ts), or `{ gap }` naming why none. */
-export function blockReferenceFixture(index: ReferenceIndex, layer: "sections" | "frames", contract: Readonly<Record<string, unknown>>, references: readonly ReferenceRow[], designerRoot: string): { fixture: ContractFixture; props: readonly string[]; reference: string } | { gap: string } {
-  if (!references.length) return { gap: NO_REFERENCE };
+/**
+ * The fixture one section or frame slot's reference rows determine (block-fixtures.ts), or `{ gap }` naming why none.
+ * FCR: when no row is adoptable in the selected style and engine (`styled`, then `engineAdoptable`), the slot is
+ * `{ composed }`: its fixture is its own pinned, certified composition's. A slot with at least one adoptable row keeps
+ * the reference derive exactly as before (its first row that mounts, else the gap).
+ */
+export function blockReferenceFixture(index: ReferenceIndex, layer: "sections" | "frames", contract: Readonly<Record<string, unknown>>, references: readonly ReferenceRow[], designerRoot: string): { fixture: ContractFixture; props: readonly string[]; reference: string } | { gap: string } | { composed: string } {
+  if (!references.length) return { composed: `${COMPOSED} (${NO_REFERENCE})` };
+  const unadoptable: string[] = [];
+  for (const row of references) {
+    const item = styled(index, row);
+    const engine = "gap" in item ? item : engineAdoptable(index, item);
+    if (engine !== true) unadoptable.push(engine.gap);
+  }
+  if (unadoptable.length === references.length) return { composed: `${COMPOSED} (${unadoptable.join("; ")})` };
   const misses: string[] = [];
   for (const row of references) {
     const item = styled(index, row);
@@ -216,11 +251,14 @@ export function richer(existing: unknown, derived: ContractFixture): boolean {
 }
 
 export interface FixtureGap { readonly slot: string; readonly layer: string; readonly reason: string; readonly source?: "studio" }
+/** A composed section or frame slot (FCR): no adoptable reference, so its fixture is its pinned composition's. */
+export interface ComposedSlot { readonly slot: string; readonly layer: "sections" | "frames"; readonly reason: string }
 export interface ReferenceFixturePlan {
   readonly files: readonly { readonly path: string; readonly before: string; readonly after: string }[];
   readonly fixtures: number;
   readonly kept: number;
   readonly gaps: readonly FixtureGap[];
+  readonly composed: readonly ComposedSlot[];
 }
 
 const text = (value: unknown) => `${JSON.stringify(value, null, 2)}\n`;
@@ -238,6 +276,7 @@ export function planReferenceFixtures(designerRoot: string, studioSlots: readonl
   const retired = new Set(existsSync(retiredPath) ? (json(retiredPath) as { id: string }[]).map(entry => entry.id) : []);
   const files: { path: string; before: string; after: string }[] = [];
   const gaps: FixtureGap[] = [];
+  const composed: ComposedSlot[] = [];
   let fixtures = 0, kept = 0;
   for (const layer of LAYERS) {
     const path = join(designerRoot, "src/catalog/slots", `${layer}.json`);
@@ -253,6 +292,7 @@ export function planReferenceFixtures(designerRoot: string, studioSlots: readonl
         delete contract.props;
         const block = retired.has(slot.id) ? { gap: BLOCK_FIXTURE_RULES.retired } : blockReferenceFixture(index, layer, contract, references.get(slot.id) ?? [], designerRoot);
         if ("gap" in block) { gaps.push({ slot: slot.id, layer, reason: block.gap }); slot.contract = contract; continue; }
+        if ("composed" in block) { composed.push({ slot: slot.id, layer, reason: block.composed }); slot.contract = contract; continue; }
         contract.props = [...block.props];
         contract.fixture = block.fixture;
         fixtures++;
@@ -288,7 +328,8 @@ export function planReferenceFixtures(designerRoot: string, studioSlots: readonl
     rules: REFERENCE_FIXTURE_RULES,
     fixtures,
     gaps,
+    composed,
   };
   files.push({ path: gapsPath, before: existsSync(gapsPath) ? readFileSync(gapsPath, "utf8") : "", after: text(doc) });
-  return { files, fixtures, kept, gaps };
+  return { files, fixtures, kept, gaps, composed };
 }

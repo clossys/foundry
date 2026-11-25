@@ -111,8 +111,13 @@ describe("draft frame registry", () => {
     // (IA audit 2026-11-16): frame copy fields; U28 9e1dbb671: frame props and contract fixtures.
     // BR-RETIRE3 (owner 2026-11-20): components.link becomes components.button (compose lists, accepts and draft notes) and
     // components.status-mark leaves every compose list; re-pinned from the data (the contract diff is exactly that rewrite).
+    // foundry-build-0048 FCR: frames.site-header has no reference adoptable in the selected style and engine, so it is
+    // composed and the derive drops its package props and fixture; re-pinned from the data (the contract diff is exactly
+    // those two keys on that one row, and the row below proves they are gone).
     expect(createHash("sha256").update(JSON.stringify(original)).digest("hex"))
-      .toBe("9a920e94a2a687afc324b35ee580377dc6f4c3745f699e256183ea69b6596b7c");
+      .toBe("af7a6401b13d9cfed0b4b5981717c0f4fb194176ae7b8fb7b8da1de983b11643");
+    const header = slots.find(slot => slot.id === "frames.site-header")!.contract as unknown as Record<string, unknown>;
+    expect([header.props, header.fixture]).toEqual([undefined, undefined]);
     expect(slots.find(slot => slot.id === "frames.auth-shell")).toEqual({
       id: "frames.auth-shell", layer: "frames", requires: [], status: "draft",
       contract: {

@@ -15,7 +15,7 @@ import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
 import { contractFixtureIssues } from "../records/slot-model/contract-fixture.js";
 import { fixtureShapeIssues } from "../records/slot-model/validate.js";
 import { isAgentLoop } from "../loop/agent-loops.js";
-import { exportedNames, GAPS_FILE, NO_REFERENCE, planReferenceFixtures, REFERENCE_FIXTURE_RULES, referenceFixture, referenceIndex, referenceShips, richer, slotReferenceShips } from "../specimen/reference-fixtures.js";
+import { COMPOSED, exportedNames, GAPS_FILE, NO_REFERENCE, planReferenceFixtures, REFERENCE_FIXTURE_RULES, referenceFixture, referenceIndex, referenceShips, richer, slotReferenceShips } from "../specimen/reference-fixtures.js";
 import { PROBES, type ProbeFacts } from "./dogfood.js";
 import type { AgentModel, ConformModel } from "./model.js";
 
@@ -26,7 +26,7 @@ const LAYERS = Object.keys(REFERENCE_FIXTURE_RULES.layers);
 type Row = { id: string; contract: Record<string, unknown> };
 type Fixture = { schema: string; fixtures: { file: string; export: string; props: Record<string, unknown> } };
 const catalog = (layer: string): Row[] => JSON.parse(readFileSync(join(DESIGNER, "src/catalog/slots", `${layer}.json`), "utf8")) as Row[];
-const gapsDoc = () => JSON.parse(readFileSync(join(DESIGNER, GAPS_FILE), "utf8")) as { style: string; fixtures: number; gaps: { slot: string; layer: string; reason: string; source?: string }[] };
+const gapsDoc = () => JSON.parse(readFileSync(join(DESIGNER, GAPS_FILE), "utf8")) as { style: string; fixtures: number; gaps: { slot: string; layer: string; reason: string; source?: string }[]; composed: { slot: string; layer: string; reason: string }[] };
 const consumer = fileURLToPath(new URL("../../test-fixtures/consumer/clossys/agents/designer", import.meta.url));
 const placed = (): string[] => {
   const ia = JSON.parse(readFileSync(join(consumer, "ia.json"), "utf8")) as { nodes: { children?: { slots?: string[] }[] }[] };
@@ -78,10 +78,13 @@ describe("Designer contract fixtures from adopted references", () => {
 
   it("every fixture is a valid element fixture an adopted reference ships; every other slot is a named gap", () => {
     const gaps = gapsDoc();
+    const composed = new Set(gaps.composed.map(row => row.slot));
     let fixtures = 0, total = 0;
     for (const layer of LAYERS) for (const slot of catalog(layer)) {
       total++;
       const fixture = slot.contract.fixture as Fixture | undefined;
+      // FCR: a composed frame or section is judged against its own pinned, certified composition, not a package fixture.
+      if (composed.has(slot.id)) { expect(fixture, slot.id).toBeUndefined(); expect(gaps.gaps.some(gap => gap.slot === slot.id), slot.id).toBe(false); continue; }
       if (fixture === undefined) { expect(gaps.gaps.find(gap => gap.slot === slot.id)?.reason, slot.id).toMatch(/\S/); continue; }
       fixtures++;
       expect(contractFixtureIssues(slot.contract), slot.id).toEqual([]);
@@ -90,14 +93,17 @@ describe("Designer contract fixtures from adopted references", () => {
       expect(slotReferenceShips(index, slot.id, fixture.fixtures.file, fixture.fixtures.export), slot.id).toBe(true);
     }
     expect(fixtures).toBe(gaps.fixtures);
-    expect(fixtures + gaps.gaps.filter(gap => gap.source !== "studio").length).toBe(total);
+    expect(fixtures + gaps.gaps.filter(gap => gap.source !== "studio").length + composed.size).toBe(total);
+    // Only a frame or section with no adoptable reference is composed; it carries the COMPOSED reason.
+    for (const row of gaps.composed) { expect(["frames", "sections"], row.slot).toContain(row.layer); expect(row.reason, row.slot).toContain(COMPOSED); }
     // U28: sections and frames carry fixtures too (block-fixtures.test.ts); themes and assets mount nothing.
     for (const layer of ["themes", "assets"]) expect(catalog(layer).filter(slot => slot.contract.fixture !== undefined), layer).toEqual([]);
   });
 
   it("the built-in consumer's live component slots carry the package fixture; every other live slot is a named gap", () => {
     const packaged = new Map(["components", "sections", "frames"].flatMap(layer => catalog(layer)).map(slot => [slot.id, slot.contract]));
-    const named = new Set(gapsDoc().gaps.map(gap => gap.slot));
+    // FCR: a composed slot is named in the gaps file's composed list; its fixture is consumer-owned.
+    const named = new Set([...gapsDoc().gaps, ...gapsDoc().composed].map(gap => gap.slot));
     const live = placed();
     for (const id of live) expect(packaged.get(id)?.fixture !== undefined || named.has(id), id).toBe(true);
     const fixtured = live.filter(id => packaged.get(id)?.fixture !== undefined);

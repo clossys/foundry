@@ -2759,34 +2759,6 @@
             "dir": "auto"
           }
         ]
-      },
-      "props": [
-        "copy",
-        "variant"
-      ],
-      "fixture": {
-        "schema": "clossys.element-preview/1",
-        "fixtures": {
-          "file": "mist/blocks/call-to-action/one.tsx",
-          "export": "default",
-          "props": {
-            "copy": {
-              "header": {
-                "title": "DRAFT heading",
-                "eyebrow": "DRAFT eyebrow",
-                "description": "DRAFT lead"
-              },
-              "actions": {
-                "primary": {
-                  "label": "DRAFT action"
-                },
-                "secondary": {
-                  "label": "DRAFT action"
-                }
-              }
-            }
-          }
-        }
       }
     },
     "requires": [],
@@ -6050,54 +6022,6 @@
             "dir": "auto"
           }
         ]
-      },
-      "props": [
-        "copy",
-        "variant"
-      ],
-      "fixture": {
-        "schema": "clossys.element-preview/1",
-        "fixtures": {
-          "file": "ui/faceted.tsx",
-          "export": "Faceted",
-          "props": {
-            "copy": {
-              "header": {
-                "eyebrow": "DRAFT eyebrow",
-                "heading": "DRAFT heading",
-                "description": "DRAFT lead"
-              },
-              "fields": [
-                {
-                  "label": "DRAFT label",
-                  "options": [
-                    {
-                      "label": "DRAFT label"
-                    }
-                  ]
-                }
-              ],
-              "operators": [
-                {
-                  "label": "DRAFT label"
-                }
-              ],
-              "groups": [
-                {
-                  "label": "DRAFT label"
-                }
-              ],
-              "labels": {
-                "add-rule": "DRAFT label",
-                "add-group": "DRAFT label",
-                "remove": "DRAFT label",
-                "match-all": "DRAFT label",
-                "match-any": "DRAFT label",
-                "value": "DRAFT label"
-              }
-            }
-          }
-        }
       }
     },
     "requires": [],
@@ -6787,42 +6711,6 @@
             "dir": "auto"
           }
         ]
-      },
-      "props": [
-        "copy",
-        "variant"
-      ],
-      "fixture": {
-        "schema": "clossys.element-preview/1",
-        "fixtures": {
-          "file": "mist/blocks/hero-section/one/hero-section.tsx",
-          "export": "default",
-          "props": {
-            "copy": {
-              "header": {
-                "heading": "DRAFT heading",
-                "eyebrow": "DRAFT eyebrow",
-                "description": "DRAFT lead"
-              },
-              "actions": {
-                "primary": {
-                  "label": "DRAFT action"
-                },
-                "secondary": {
-                  "label": "DRAFT action"
-                }
-              },
-              "media": {
-                "title": "DRAFT heading",
-                "series": [
-                  {
-                    "name": "DRAFT label"
-                  }
-                ]
-              }
-            }
-          }
-        }
       }
     },
     "requires": [],
@@ -8839,47 +8727,6 @@
             "dir": "auto"
           }
         ]
-      },
-      "props": [
-        "copy",
-        "variant"
-      ],
-      "fixture": {
-        "schema": "clossys.element-preview/1",
-        "fixtures": {
-          "file": "mist/blocks/pricing/one.tsx",
-          "export": "default",
-          "props": {
-            "copy": {
-              "header": {
-                "eyebrow": "DRAFT eyebrow",
-                "heading": "DRAFT heading",
-                "description": "DRAFT lead"
-              },
-              "plans": [
-                {
-                  "name": "DRAFT label",
-                  "price": "DRAFT label",
-                  "description": "DRAFT body",
-                  "features": [
-                    "DRAFT label"
-                  ],
-                  "cta": {
-                    "label": "DRAFT label"
-                  },
-                  "badge": "DRAFT label",
-                  "price-by-interval": [
-                    {
-                      "amount": "DRAFT label",
-                      "price-text": "DRAFT label"
-                    }
-                  ]
-                }
-              ],
-              "interval": "DRAFT label"
-            }
-          }
-        }
       }
     },
     "requires": [],
@@ -11261,33 +11108,6 @@
             "dir": "auto"
           }
         ]
-      },
-      "props": [
-        "copy",
-        "variant"
-      ],
-      "fixture": {
-        "schema": "clossys.element-preview/1",
-        "fixtures": {
-          "file": "ui/timeline.tsx",
-          "export": "Timeline",
-          "props": {
-            "copy": {
-              "header": {
-                "eyebrow": "DRAFT eyebrow",
-                "heading": "DRAFT heading",
-                "description": "DRAFT lead"
-              },
-              "steps": [
-                {
-                  "heading": "DRAFT heading",
-                  "description": "DRAFT body",
-                  "ordinal": "DRAFT label"
-                }
-              ]
-            }
-          }
-        }
       }
     },
     "requires": [],
@@ -11407,30 +11227,6 @@
             "dir": "auto"
           }
         ]
-      },
-      "props": [
-        "copy",
-        "variant"
-      ],
-      "fixture": {
-        "schema": "clossys.element-preview/1",
-        "fixtures": {
-          "file": "ui/scroll-spy.tsx",
-          "export": "ScrollSpy",
-          "props": {
-            "copy": {
-              "headings": [
-                {
-                  "label": "DRAFT label"
-                }
-              ],
-              "labels": {
-                "label": "DRAFT label"
-              },
-              "label": "DRAFT label"
-            }
-          }
-        }
       }
     },
     "requires": [],
@@ -12057,33 +11853,6 @@
             "dir": "auto"
           }
         ]
-      },
-      "props": [
-        "copy",
-        "variant"
-      ],
-      "fixture": {
-        "schema": "clossys.element-preview/1",
-        "fixtures": {
-          "file": "ui/timeline.tsx",
-          "export": "Timeline",
-          "props": {
-            "copy": {
-              "header": {
-                "eyebrow": "DRAFT eyebrow",
-                "heading": "DRAFT heading",
-                "description": "DRAFT lead"
-              },
-              "events": [
-                {
-                  "heading": "DRAFT heading",
-                  "date-text": "DRAFT label",
-                  "description": "DRAFT body"
-                }
-              ]
-            }
-          }
-        }
       }
     },
     "requires": [],
@@ -12560,44 +12329,6 @@
             "dir": "auto"
           }
         ]
-      },
-      "props": [
-        "copy",
-        "variant"
-      ],
-      "fixture": {
-        "schema": "clossys.element-preview/1",
-        "fixtures": {
-          "file": "ui/stepper.tsx",
-          "export": "Stepper",
-          "props": {
-            "copy": {
-              "header": {
-                "eyebrow": "DRAFT eyebrow",
-                "heading": "DRAFT heading",
-                "description": "DRAFT lead"
-              },
-              "steps": [
-                {
-                  "label": "DRAFT label"
-                }
-              ],
-              "progress": {
-                "label": "DRAFT label"
-              },
-              "back": {
-                "label": "DRAFT label"
-              },
-              "next": {
-                "label": "DRAFT label",
-                "finish": "DRAFT label"
-              },
-              "review": {
-                "label": "DRAFT label"
-              }
-            }
-          }
-        }
       }
     },
     "requires": [],

@@ -26,6 +26,7 @@ import { join, posix } from "node:path";
 import ts from "typescript";
 import { interactiveBackdropMetaIssues, previewFigureAltIssues, previewInteractiveBackdropIssues } from "@clossys/designer/catalog";
 import { contractFixtureIssues, type ContractFixture } from "../../records/slot-model/contract-fixture.js";
+import { designerComposedSlots } from "../../specimen/composed-slots.js";
 import { dependencyPart } from "../../specimen/specimen-tree.js";
 import { installPathOf, isObject, registryFiles, slotDoc, stringList } from "../checks/shared.js";
 import type { CandidateRecord, SlotRecord } from "../types.js";
@@ -130,6 +131,12 @@ export interface CodeEnv {
   readonly installers: ReadonlyMap<string, readonly string[]>;
   /** Pinned Writer copy: key → text. */
   readonly copy: ReadonlyMap<string, string>;
+  /**
+   * The composed Designer slots (FCR: a frames.* or sections.* slot with no reference adoptable in the selected style
+   * and engine, whose contract fixture is the file and export of its own pinned, certified composition); the installed
+   * Designer package's derived set (`designerComposedSlots`) when absent.
+   */
+  readonly composed?: ReadonlySet<string>;
 }
 
 /** One certification's module system: the primary candidate plus the pinned payloads it reaches. */
@@ -301,8 +308,53 @@ function fixtureStart(slotId: string, uses: readonly string[], candidate: CodeCa
   const primary = payloadOf(slotId, candidate);
   const entry = primary.byPath.get(posix.normalize(fixture.fixtures.file));
   if (!entry) return [...reasons, reason("fixture", `the candidate ships no ${fixture.fixtures.file}, which the contract fixture mounts`)];
+  reasons.push(...composedFixtureFit(slotId, fixture, env));
   const host = hostRequire(env.root);
   return { reasons, fixture, primary, entry, modules: new Modules(primary, new Set(uses), env, host), host };
+}
+
+/**
+ * FCR: a composed slot's contract fixture is the file and export of its own pinned composition, so once the slot is
+ * pinned the file the fixture mounts is one that pin ships (a fixture pointing anywhere else judges no composition).
+ * Before its first pin the fixture is the one the create loop declared, and the candidate must ship it (fixtureStart).
+ */
+function composedFixtureFit(slotId: string, fixture: ContractFixture, env: CodeEnv): Reason[] {
+  if (!(env.composed ?? designerComposedSlots()).has(slotId)) return [];
+  const pinned = env.pins.get(pinKey("designer", slotId));
+  if (!pinned || payloadOf(slotId, pinned.candidate).byPath.has(posix.normalize(fixture.fixtures.file))) return [];
+  return [reason("fixture", `composed slot ${slotId}'s contract fixture mounts ${fixture.fixtures.file}, which its pinned composition does not ship`)];
+}
+
+const VOID_ELEMENTS = new Set(["area", "base", "br", "col", "embed", "hr", "img", "input", "link", "meta", "param", "source", "track", "wbr"]);
+/** Elements (and roles) that scope a `<header>` out of the banner landmark (HTML-AAM: sectioning content and main). */
+const BANNER_SCOPING = new Set(["article", "aside", "main", "nav", "section"]);
+const BANNER_SCOPING_ROLES = new Set(["article", "complementary", "main", "navigation", "region"]);
+const roleOf = (attributes: string): string | undefined => /\brole\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]+))/i.exec(attributes)?.slice(1).find(value => value !== undefined)?.trim().split(/\s+/)[0]?.toLowerCase();
+
+/**
+ * The banner landmarks of rendered markup (`role="banner"`, or a `<header>` with no explicit role outside sectioning
+ * content and main), and how many of them nest inside another banner. The frame standard admits frames as parts
+ * (frames.site-shell places frames.site-header), and no banner landmark may nest inside another.
+ */
+export function bannerLandmarks(markup: string): { readonly banners: number; readonly nested: number } {
+  const stack: { readonly tag: string; readonly banner: boolean; readonly scoping: boolean }[] = [];
+  let banners = 0, nested = 0;
+  for (const match of markup.matchAll(/<(\/?)([a-zA-Z][\w:-]*)((?:[^>"']|"[^"]*"|'[^']*')*)>/g)) {
+    const [, closing, rawTag, attributes = ""] = match;
+    const tag = rawTag!.toLowerCase();
+    if (closing) {
+      const at = stack.map(item => item.tag).lastIndexOf(tag);
+      if (at >= 0) stack.length = at;
+      continue;
+    }
+    const role = roleOf(attributes);
+    const scoped = stack.some(item => item.scoping);
+    const banner = role === "banner" || (role === undefined && tag === "header" && !scoped);
+    if (banner) { banners += 1; if (stack.some(item => item.banner)) nested += 1; }
+    if (VOID_ELEMENTS.has(tag) || attributes.trimEnd().endsWith("/")) continue;
+    stack.push({ tag, banner, scoping: BANNER_SCOPING.has(tag) || (role !== undefined && BANNER_SCOPING_ROLES.has(role)) });
+  }
+  return { banners, nested };
 }
 
 const exportedFunctions = (exports: unknown): string[] => (isObject(exports) || typeof exports === "function" ? Object.keys(exports as object).filter(key => typeof (exports as Record<string, unknown>)[key] === "function") : []);
@@ -400,6 +452,7 @@ function renderFit(slot: SlotRecord, candidate: CandidateRecord, contract: Reado
     try { markup = server.renderToString(React.createElement(Component as never, tree(fixture.fixtures.props) as never)); }
     catch (error) { return [...reasons, ...modules.failures, reason("render", `rendering ${name} with the contract fixture throws: ${firstLine(error)}`)]; }
     if (!markup.trim()) reasons.push(reason("render", `${name} renders nothing with the contract fixture`));
+    if (slot.id.startsWith("frames.") && bannerLandmarks(markup).nested) reasons.push(reason("render", `${name} renders a banner landmark nested inside another banner with the contract fixture; a frame placing a frame keeps exactly one banner`));
     return [...reasons, ...modules.failures];
   } finally { console.error = quiet.error; console.warn = quiet.warn; }
 }

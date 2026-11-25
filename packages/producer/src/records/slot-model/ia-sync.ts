@@ -206,11 +206,20 @@ function seededPackageContract(consumerDir: string, agent: SyncAgent, contract: 
   const doc = typeof standard === "string" ? readStandard(dirname(consumerDir), agent as (typeof CONTRACT_AGENTS)[number], standard).doc : undefined;
   return seededContract(agent, contract as Record<string, unknown>, doc);
 }
-/** A slot/2 contract as the package sees it: without the consumer's `notNeeded` marker. */
-const packageContract = (contract: unknown): unknown => {
+/**
+ * A slot/2 contract as the package sees it: without the consumer's `notNeeded` marker, nor the contract keys the
+ * package leaves to the consumer (FoundrySlot `consumerOwned`: a composed slot's fixture and its props, FCR).
+ */
+const packageContract = (contract: unknown, owned: readonly string[] = []): unknown => {
   if (!contract || typeof contract !== "object" || Array.isArray(contract)) return contract;
   const { notNeeded: _marker, ...rest } = contract as Doc;
+  for (const key of owned) delete rest[key];
   return rest;
+};
+/** The consumer-owned contract keys (FoundrySlot `consumerOwned`) a slot/2 contract holds, to keep on write. */
+const ownedKeys = (contract: unknown, owned: readonly string[] = []): Doc => {
+  if (!contract || typeof contract !== "object" || Array.isArray(contract)) return {};
+  return Object.fromEntries(owned.filter(key => Object.hasOwn(contract, key)).map(key => [key, structuredClone((contract as Doc)[key])]));
 };
 /** A clossys.slot/2 file (a recut store), as a plain test: the doc keeps its Doc type. */
 const isCurrent = (doc: Doc): boolean => isCurrentSlot(doc);
@@ -262,7 +271,7 @@ function inputRefs(id: string, slot: FoundrySlot, behaviour: SlotBehaviour, exis
 function syncedCurrent(consumerDir: string, current: Slot, id: string, slot: FoundrySlot, position: SlotPosition, behaviour: SlotBehaviour, held: ReadonlyMap<string, readonly AgentId[]>, agent: SyncAgent): Slot {
   const marker = (current.contract as Doc | undefined)?.notNeeded;
   const seeded = seededPackageContract(consumerDir, agent, structuredClone(slot.contract), behaviour.standard ?? current.standard) as Record<string, unknown>;
-  const contract: Record<string, unknown> = { ...seeded, ...(marker !== undefined ? { notNeeded: marker } : {}) };
+  const contract: Record<string, unknown> = { ...(packageContract(seeded, slot.consumerOwned) as Record<string, unknown>), ...ownedKeys(current.contract, slot.consumerOwned), ...(marker !== undefined ? { notNeeded: marker } : {}) };
   const inputs = inputRefs(id, slot, behaviour, current.refs, held, agent);
   const next: Slot = {
     ...current,
@@ -429,7 +438,7 @@ export function syncDrift(consumerDir: string, agent: SyncAgent, state: SyncStat
       if (family !== slot.kind || (current && slot.targetKind !== undefined && doc.kind !== slot.targetKind)) add("kind", `${id} is kind ${String(doc.kind)}, the package says ${slot.targetKind && current ? slot.targetKind : slot.kind}`, id);
       const behaviour = packageBehaviour(agent, id, slot, position, ctx!);
       const want = current ? seededPackageContract(consumerDir, agent, slot.contract, behaviour.standard ?? doc.standard) : slot.contract;
-      if (!sameJson(current ? packageContract(doc.contract) : doc.contract, want)) add("contract", `${id} contract differs from the package`, id);
+      if (!sameJson(current ? packageContract(doc.contract, slot.consumerOwned) : doc.contract, current ? packageContract(want, slot.consumerOwned) : want)) add("contract", `${id} contract differs from the package`, id);
       const off = behaviourOff(doc, behaviour);
       if (off.length) add("behaviour", `${id} ${off.map(item => item.key).join(", ")} differ from the package (${off.map(item => `${item.key} ${JSON.stringify(item.have ?? null)} vs ${JSON.stringify(item.want ?? null)}`).join("; ")})`, id);
     }

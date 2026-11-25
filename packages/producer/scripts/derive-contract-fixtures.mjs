@@ -44,7 +44,7 @@ if (fromReferences) {
   const studio = JSON.parse(readFileSync(join(root, "packages/producer/src/studio-defaults/designer-slots.json"), "utf8")).slots;
   const plan = planReferenceFixtures(join(root, "packages/designer"), studio);
   const stale = plan.files.filter(file => file.before !== file.after);
-  const summary = `contract fixtures: ${plan.fixtures} derived from adopted references (${plan.kept} richer kept), ${plan.gaps.length} not determined`;
+  const summary = `contract fixtures: ${plan.fixtures} derived from adopted references (${plan.kept} richer kept), ${plan.gaps.length} not determined, ${plan.composed.length} composed (judged against their own pinned, certified composition)`;
   if (check) {
     for (const file of stale) process.stderr.write(`contract fixtures stale: ${file.path} (run derive-contract-fixtures.mjs --from-references --write)\n`);
     process.stdout.write(`${summary}${stale.length ? `, ${stale.length} file(s) stale` : ""}\n`);
