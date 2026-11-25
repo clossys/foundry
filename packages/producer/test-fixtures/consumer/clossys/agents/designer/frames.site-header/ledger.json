@@ -178,6 +178,540 @@
     },
     {
       "op": "slot",
+      "at": "2026-11-19T00:00:00Z",
+      "by": "planner",
+      "verb": "ia",
+      "skill": {
+        "path": "packages/producer/actions/ia/skill.md",
+        "sha256": "147a7eaf66267728953e0c8111a9c20b93475f95f8063745d9d1d1087658fe73"
+      },
+      "model": "none",
+      "tier": "none",
+      "kind": "ia",
+      "records": [
+        {
+          "file": "slot.json",
+          "sha256": "549d58285bb52757b0a221ca7ed5ea503e80ec1bbf4d4822ddb8e545a4f9b1aa"
+        }
+      ]
+    },
+    {
+      "op": "verdict",
+      "at": "2026-11-19T00:00:00Z",
+      "by": "agent:designer.verdict",
+      "verb": "verdict",
+      "skill": {
+        "path": "packages/producer/actions/verdict/skill.md",
+        "sha256": "5d5fec5f8d9dbb928995a8847776ee06e4a3ba12b44223e2f3230768a6dbbc15"
+      },
+      "model": "fixture-model",
+      "tier": "mid",
+      "verdict": "create",
+      "create": true,
+      "reason": "fixture world: no admitted reference item fills frames.site-header, so it is composed from the consumer's pinned stock components.button, components.dialog",
+      "gaps": [
+        {
+          "id": "orientation"
+        }
+      ]
+    },
+    {
+      "op": "craft:brief",
+      "at": "2026-11-19T00:00:00.000Z",
+      "by": "agent:designer.candidates",
+      "verb": "submit",
+      "skill": {
+        "path": "packages/designer/actions/designer.candidates/skill.md",
+        "sha256": "8632e4fb40c3974a5c81a578b7be27606713121b027f120a346e5fba09e31930"
+      },
+      "model": "fixture-model",
+      "tier": "mid",
+      "goal": "fixture world: fill frames.site-header to frame",
+      "assembled": {
+        "inputs": [
+          {
+            "agent": "director",
+            "slot": "advantage.proposition.promise",
+            "candidate": "promise-v1.md",
+            "sha256": "393f344d3ea6400bf21d12cfb20f0e01e9403dd56a8a5119090f22a268a0dd28"
+          },
+          {
+            "agent": "designer",
+            "slot": "assets.icon-close",
+            "candidate": "icon-close-v1.json",
+            "sha256": "0928dcaf54d5ffcf1ea924da7e2226dee6ef00476974771b075374ecf9e0b6a1"
+          },
+          {
+            "agent": "designer",
+            "slot": "assets.lockup",
+            "candidate": "lockup-v1.json",
+            "sha256": "357ba7e24feb38396aec2ef0471b3dc858de5aa46157502b2a0852961f21e4ee"
+          },
+          {
+            "agent": "designer",
+            "slot": "assets.mark",
+            "candidate": "mark-v1.json",
+            "sha256": "52f79f25cc77930e37c2daf02acc474fe2dd407659b14d577d1175a0bc1898c7"
+          },
+          {
+            "agent": "director",
+            "slot": "focus.category.definition",
+            "candidate": "definition-v1.md",
+            "sha256": "aa13638b9ad5aca20634e0a602faf41b3b7a432032861c019608b0ae81b7a8bb"
+          },
+          {
+            "agent": "director",
+            "slot": "focus.segment.core",
+            "candidate": "core-v1.md",
+            "sha256": "929e8e8bd08b16c13ab46a2ed08dc092d82b29c773c5d27ef15df9f1636858cd"
+          },
+          {
+            "agent": "director",
+            "slot": "identity.brand.essence",
+            "candidate": "essence-v1.md",
+            "sha256": "0e6faca610a7112af6b84833dab579d4d456dd05a9eec4b32407416442d65263"
+          },
+          {
+            "agent": "director",
+            "slot": "identity.brand.personality",
+            "candidate": "personality-v1.md",
+            "sha256": "556cf36aaa83bd42033ed609d7f53da3cfbd9f7aa718515af5eac98ffea93b4a"
+          },
+          {
+            "agent": "director",
+            "slot": "identity.verbal.voice",
+            "candidate": "voice-v1.md",
+            "sha256": "bd81813a81ea950e1a410866471900190ffba47ae9768282849ffe699f7676ca"
+          },
+          {
+            "agent": "director",
+            "slot": "identity.visual.imagery",
+            "candidate": "imagery-v1.md",
+            "sha256": "b57079616787be16449d74b7afaf67dddb820db5f78c1a4b17a65998ad435c20"
+          },
+          {
+            "agent": "director",
+            "slot": "identity.visual.style",
+            "candidate": "style-v1.md",
+            "sha256": "7d0992da68a3022b4b95339cc6e876a5a085d79a1ba59ebc6d67d101990c96ed"
+          },
+          {
+            "agent": "designer",
+            "slot": "themes.accent-foreground",
+            "candidate": "accent-foreground-v1.json",
+            "sha256": "a2dec74a6a67df3367a521a76de92a95892cb75ba9bcc63bda2f9882c170ed71"
+          },
+          {
+            "agent": "designer",
+            "slot": "themes.background",
+            "candidate": "background-v1.json",
+            "sha256": "09d19788b04be9a35d6eb6fcafe5b105b59330bda70e8681bc41f3e069595a95"
+          },
+          {
+            "agent": "designer",
+            "slot": "themes.border",
+            "candidate": "border-v1.json",
+            "sha256": "1219e0e2c657aee5ba5df3f35790fb1880a64f9e05288a28b9e61bddf6fdaf1d"
+          },
+          {
+            "agent": "designer",
+            "slot": "themes.muted-foreground",
+            "candidate": "muted-foreground-v1.json",
+            "sha256": "bdb8e4c6ed3dd289709236482ad527625b1f742f2cc83e66226f497abcdfe43d"
+          },
+          {
+            "agent": "designer",
+            "slot": "themes.radius",
+            "candidate": "radius-v1.json",
+            "sha256": "ca32a189cfb1dc134c0da8e5ce5aec2819431ee8553bed432e9f5b723ffbe926"
+          },
+          {
+            "agent": "designer",
+            "slot": "themes.spacing",
+            "candidate": "spacing-v1.json",
+            "sha256": "a5aba621c5fe45e0796c659e09e30cb319a8e71fc1a0704d8003a36ebfe1857e"
+          }
+        ],
+        "contract": {
+          "value": {
+            "kind": "frame",
+            "root": "header",
+            "landmarks": [
+              {
+                "slot": "brand",
+                "role": "banner",
+                "topLevel": true,
+                "nameRequired": false
+              },
+              {
+                "slot": "nav",
+                "role": "navigation",
+                "topLevel": false,
+                "nameRequired": true
+              }
+            ],
+            "slots": [
+              {
+                "id": "brand",
+                "required": true,
+                "accepts": "components.logo"
+              },
+              {
+                "id": "nav",
+                "required": false,
+                "accepts": "components.button"
+              },
+              {
+                "id": "actions",
+                "required": false,
+                "accepts": "components.button"
+              }
+            ],
+            "members": {
+              "mode": "closed",
+              "names": [
+                "surface.solid",
+                "surface.transparent",
+                "surface.glass",
+                "tone.base",
+                "tone.inverse",
+                "nav-placement.leading",
+                "nav-placement.centered",
+                "position.sticky",
+                "position.static"
+              ]
+            },
+            "statePorts": [],
+            "rendering": "server",
+            "breakpoints": [
+              "sm",
+              "md",
+              "lg",
+              "xl",
+              "2xl"
+            ],
+            "allowedReads": {
+              "themes": [
+                "themes.background",
+                "themes.card",
+                "themes.popover",
+                "themes.secondary",
+                "themes.accent",
+                "themes.muted",
+                "themes.sidebar",
+                "themes.sidebar-accent",
+                "themes.border",
+                "themes.input",
+                "themes.sidebar-border",
+                "themes.foreground",
+                "themes.card-foreground",
+                "themes.popover-foreground",
+                "themes.primary-foreground",
+                "themes.secondary-foreground",
+                "themes.accent-foreground",
+                "themes.muted-foreground",
+                "themes.sidebar-foreground",
+                "themes.sidebar-primary-foreground",
+                "themes.sidebar-accent-foreground",
+                "themes.primary",
+                "themes.sidebar-primary",
+                "themes.radius",
+                "themes.ring",
+                "themes.sidebar-ring",
+                "themes.spacing",
+                "themes.destructive",
+                "themes.font-sans",
+                "themes.font-heading",
+                "themes.font-mono"
+              ],
+              "assets": [
+                "assets.lockup",
+                "assets.mark",
+                "assets.icon-close"
+              ]
+            },
+            "composes": [
+              "components.logo",
+              "components.button",
+              "components.icon",
+              "components.badge",
+              "components.disclosure",
+              "components.dialog"
+            ],
+            "copy": {
+              "sourceLocale": "en",
+              "fields": [
+                {
+                  "key": "skip.label",
+                  "kind": "plain",
+                  "role": "label",
+                  "required": true,
+                  "maxLength": {
+                    "en": 60
+                  },
+                  "dir": "auto"
+                },
+                {
+                  "key": "navigation.label",
+                  "kind": "plain",
+                  "role": "label",
+                  "required": true,
+                  "maxLength": {
+                    "en": 60
+                  },
+                  "dir": "auto"
+                },
+                {
+                  "key": "navigation.open",
+                  "kind": "plain",
+                  "role": "action",
+                  "required": true,
+                  "maxLength": {
+                    "en": 24
+                  },
+                  "dir": "auto"
+                },
+                {
+                  "key": "navigation.close",
+                  "kind": "plain",
+                  "role": "action",
+                  "required": true,
+                  "maxLength": {
+                    "en": 24
+                  },
+                  "dir": "auto"
+                }
+              ]
+            },
+            "props": [
+              "children"
+            ],
+            "fixture": {
+              "schema": "clossys.element-preview/1",
+              "fixtures": {
+                "file": "registry/frames/site-header.tsx",
+                "export": "SiteHeader",
+                "props": {
+                  "children": [
+                    "DRAFT brand (components.logo)",
+                    "DRAFT nav (components.button)",
+                    "DRAFT actions (components.button)"
+                  ]
+                }
+              }
+            },
+            "requirements": [
+              {
+                "check": "compose.layers"
+              },
+              {
+                "check": "source.ref"
+              },
+              {
+                "check": "tokens.only"
+              }
+            ]
+          },
+          "sha256": "67619cabd25387d175261686729d1a7c816e030bdc4824b6ee41fbf917c140a0"
+        },
+        "standard": {
+          "id": "frame",
+          "sha256": "bcfa533cb4aeda11c9d3fb3fbe4d75110c8b4a5f70d20667d924449f34554b29",
+          "requirements": [
+            {
+              "check": "compose.layers",
+              "params": {
+                "layers": [
+                  "components",
+                  "sections"
+                ]
+              }
+            },
+            {
+              "check": "source.ref",
+              "params": {
+                "kinds": [
+                  "registry",
+                  "composition",
+                  "npm",
+                  "derived",
+                  "original"
+                ],
+                "registries": [
+                  "shadcn-aria",
+                  "shadcn",
+                  "magicui",
+                  "tailark-oss",
+                  "assistant-ui",
+                  "reactflow",
+                  "npm"
+                ],
+                "licenses": [
+                  "MIT",
+                  "Apache-2.0"
+                ]
+              }
+            },
+            {
+              "check": "tokens.only",
+              "params": {}
+            }
+          ],
+          "taste": [
+            {
+              "id": "orientation",
+              "anchors": {
+                "1": "The user cannot tell where they are.",
+                "2": "Location shown in one place only.",
+                "3": "Location clear, next step unclear.",
+                "4": "Where am I and where can I go are both clear.",
+                "5": "Navigation disappears until needed and never loses the user."
+              }
+            },
+            {
+              "id": "economy",
+              "anchors": {
+                "1": "Chrome dominates the content.",
+                "2": "Too many persistent controls.",
+                "3": "Balanced, one control too many.",
+                "4": "Chrome serves the content.",
+                "5": "The frame is barely noticed; the content owns the screen."
+              }
+            },
+            {
+              "id": "polish",
+              "anchors": {
+                "1": "Landmarks or responsive states missing.",
+                "2": "Breaks at one breakpoint.",
+                "3": "Clean at desktop only.",
+                "4": "Clean at every breakpoint and both modes.",
+                "5": "Holds up beside the exemplars."
+              }
+            }
+          ]
+        },
+        "recipe": {
+          "id": "create.frame",
+          "axes": [
+            "navigation",
+            "chrome",
+            "emphasis"
+          ]
+        }
+      }
+    },
+    {
+      "op": "craft:diverge",
+      "at": "2026-11-19T00:00:00.000Z",
+      "by": "agent:designer.candidates",
+      "verb": "submit",
+      "skill": {
+        "path": "packages/designer/actions/designer.candidates/skill.md",
+        "sha256": "8632e4fb40c3974a5c81a578b7be27606713121b027f120a346e5fba09e31930"
+      },
+      "model": "fixture-model",
+      "tier": "mid",
+      "directions": [
+        {
+          "id": "d1",
+          "idea": "a plain reading of the slot contract",
+          "axes": {
+            "navigation": "plain",
+            "chrome": "plain",
+            "emphasis": "plain"
+          }
+        },
+        {
+          "id": "d2",
+          "idea": "a warm reading of the slot contract",
+          "axes": {
+            "navigation": "warm",
+            "chrome": "warm",
+            "emphasis": "warm"
+          }
+        },
+        {
+          "id": "d3",
+          "idea": "a brisk reading of the slot contract",
+          "axes": {
+            "navigation": "brisk",
+            "chrome": "brisk",
+            "emphasis": "brisk"
+          }
+        }
+      ]
+    },
+    {
+      "op": "craft:render",
+      "at": "2026-11-19T00:00:00.000Z",
+      "by": "agent:designer.candidates",
+      "verb": "submit",
+      "skill": {
+        "path": "packages/designer/actions/designer.candidates/skill.md",
+        "sha256": "8632e4fb40c3974a5c81a578b7be27606713121b027f120a346e5fba09e31930"
+      },
+      "model": "fixture-model",
+      "tier": "mid"
+    },
+    {
+      "op": "craft:critique",
+      "at": "2026-11-19T00:00:00Z",
+      "by": "agent:designer.critic",
+      "verb": "critique",
+      "skill": {
+        "path": "packages/producer/actions/critic/skill.md",
+        "sha256": "6a0d22415447bfa5dc020f5058edcedb2a5a771d660cb4e81bf66f8f4f276c06"
+      },
+      "model": "fixture-critic",
+      "tier": "mid",
+      "critique": "critiques/site-header-v1.json",
+      "sha256": "4bc4562ae59f88353d96deb32dd8b94468f8ae6a4c5528b7f4dbea4bad2c0043"
+    },
+    {
+      "op": "submit",
+      "at": "2026-11-19T00:00:00.000Z",
+      "by": "agent:designer.candidates",
+      "verb": "submit",
+      "skill": {
+        "path": "packages/designer/actions/designer.candidates/skill.md",
+        "sha256": "8632e4fb40c3974a5c81a578b7be27606713121b027f120a346e5fba09e31930"
+      },
+      "model": "fixture-model",
+      "tier": "mid",
+      "basis": "agent",
+      "rung": "L4",
+      "reason": "fixture world: no admitted reference item fills frames.site-header, so it is composed from the consumer's pinned stock components.button, components.dialog",
+      "ladder": {
+        "rung": "L4",
+        "reason": "fixture world: no admitted reference item fills frames.site-header, so it is composed from the consumer's pinned stock components.button, components.dialog"
+      },
+      "name": "site-header-v1.json",
+      "sha256": "736a07f3fdce21d41a3ccaf139bac882b7a12968f2f2739c9f5d88164a0f8d92"
+    },
+    {
+      "op": "pin",
+      "at": "2026-11-19T00:00:00Z",
+      "by": "planner:fixture-world",
+      "verb": "pin",
+      "skill": {
+        "path": "packages/producer/actions/pin.designer/skill.md",
+        "sha256": "6f838d31c7d3832d5051a19ad2ec23d58872e6c97c7f7fca0045456e1301580b"
+      },
+      "model": "none",
+      "tier": "none",
+      "candidate": "site-header-v1.json",
+      "sha256": "736a07f3fdce21d41a3ccaf139bac882b7a12968f2f2739c9f5d88164a0f8d92",
+      "decidedBy": "planner:fixture-world",
+      "basis": "planner",
+      "records": [
+        {
+          "file": "pin.json",
+          "sha256": "4145e3faf9514e11d4ecc7fe3640215767cd7b32ee5da7030854b9ee114e8933"
+        }
+      ]
+    },
+    {
+      "op": "slot",
       "at": "2026-11-23T00:00:00Z",
       "by": "producer",
       "verb": "migrate",
@@ -193,7 +727,7 @@
       "records": [
         {
           "file": "slot.json",
-          "sha256": "08871c2be031e5fec11ddec2a5d105991c7f3101c0fee17060f2b1857201c678"
+          "sha256": "549d58285bb52757b0a221ca7ed5ea503e80ec1bbf4d4822ddb8e545a4f9b1aa"
         }
       ]
     }

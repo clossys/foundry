@@ -1,0 +1,18 @@
+{
+  "schema": "clossys.scorecard/1",
+  "slot": "designer/frames.site-footer",
+  "at": "2026-11-19T00:00:00Z",
+  "pick": "site-footer-v1.json",
+  "candidates": [
+    {
+      "rank": 1,
+      "candidate": "site-footer-v1.json",
+      "sha256": "a42e826cc10748076eb72958e031287f53b6e45e2ee1a716bddded3743516435",
+      "submitted": true,
+      "certified": true,
+      "verdict": "certify",
+      "reasons": [],
+      "pinSet": "cefc9351be334a85cab12596d2eb85aad6e1e718e6464c8b2616159cbf7f8504"
+    }
+  ]
+}

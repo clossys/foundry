@@ -178,6 +178,565 @@
     },
     {
       "op": "slot",
+      "at": "2026-11-19T00:00:00Z",
+      "by": "planner",
+      "verb": "ia",
+      "skill": {
+        "path": "packages/producer/actions/ia/skill.md",
+        "sha256": "147a7eaf66267728953e0c8111a9c20b93475f95f8063745d9d1d1087658fe73"
+      },
+      "model": "none",
+      "tier": "none",
+      "kind": "ia",
+      "records": [
+        {
+          "file": "slot.json",
+          "sha256": "90fe680ff8315ed6ed4e863f986f2b24c1f6140c018ea2b7d9278dc9de51aa41"
+        }
+      ]
+    },
+    {
+      "op": "verdict",
+      "at": "2026-11-19T00:00:00Z",
+      "by": "agent:designer.verdict",
+      "verb": "verdict",
+      "skill": {
+        "path": "packages/producer/actions/verdict/skill.md",
+        "sha256": "5d5fec5f8d9dbb928995a8847776ee06e4a3ba12b44223e2f3230768a6dbbc15"
+      },
+      "model": "fixture-model",
+      "tier": "mid",
+      "verdict": "create",
+      "create": true,
+      "reason": "fixture world: no admitted reference item fills frames.site-shell, so it is composed from the consumer's pinned stock components.separator",
+      "gaps": [
+        {
+          "id": "orientation"
+        }
+      ]
+    },
+    {
+      "op": "craft:brief",
+      "at": "2026-11-19T00:00:00.000Z",
+      "by": "agent:designer.candidates",
+      "verb": "submit",
+      "skill": {
+        "path": "packages/designer/actions/designer.candidates/skill.md",
+        "sha256": "8632e4fb40c3974a5c81a578b7be27606713121b027f120a346e5fba09e31930"
+      },
+      "model": "fixture-model",
+      "tier": "mid",
+      "goal": "fixture world: fill frames.site-shell to frame",
+      "assembled": {
+        "inputs": [
+          {
+            "agent": "director",
+            "slot": "advantage.proposition.promise",
+            "candidate": "promise-v1.md",
+            "sha256": "393f344d3ea6400bf21d12cfb20f0e01e9403dd56a8a5119090f22a268a0dd28"
+          },
+          {
+            "agent": "designer",
+            "slot": "assets.image",
+            "candidate": "image-v1.json",
+            "sha256": "3d369af3c021537747d5a26a3283096a695383a5e19cdae1e07923e15d0d5531"
+          },
+          {
+            "agent": "director",
+            "slot": "focus.category.definition",
+            "candidate": "definition-v1.md",
+            "sha256": "aa13638b9ad5aca20634e0a602faf41b3b7a432032861c019608b0ae81b7a8bb"
+          },
+          {
+            "agent": "director",
+            "slot": "focus.segment.core",
+            "candidate": "core-v1.md",
+            "sha256": "929e8e8bd08b16c13ab46a2ed08dc092d82b29c773c5d27ef15df9f1636858cd"
+          },
+          {
+            "agent": "director",
+            "slot": "identity.brand.essence",
+            "candidate": "essence-v1.md",
+            "sha256": "0e6faca610a7112af6b84833dab579d4d456dd05a9eec4b32407416442d65263"
+          },
+          {
+            "agent": "director",
+            "slot": "identity.brand.personality",
+            "candidate": "personality-v1.md",
+            "sha256": "556cf36aaa83bd42033ed609d7f53da3cfbd9f7aa718515af5eac98ffea93b4a"
+          },
+          {
+            "agent": "director",
+            "slot": "identity.verbal.voice",
+            "candidate": "voice-v1.md",
+            "sha256": "bd81813a81ea950e1a410866471900190ffba47ae9768282849ffe699f7676ca"
+          },
+          {
+            "agent": "director",
+            "slot": "identity.visual.imagery",
+            "candidate": "imagery-v1.md",
+            "sha256": "b57079616787be16449d74b7afaf67dddb820db5f78c1a4b17a65998ad435c20"
+          },
+          {
+            "agent": "director",
+            "slot": "identity.visual.style",
+            "candidate": "style-v1.md",
+            "sha256": "7d0992da68a3022b4b95339cc6e876a5a085d79a1ba59ebc6d67d101990c96ed"
+          },
+          {
+            "agent": "designer",
+            "slot": "themes.accent-foreground",
+            "candidate": "accent-foreground-v1.json",
+            "sha256": "a2dec74a6a67df3367a521a76de92a95892cb75ba9bcc63bda2f9882c170ed71"
+          },
+          {
+            "agent": "designer",
+            "slot": "themes.background",
+            "candidate": "background-v1.json",
+            "sha256": "09d19788b04be9a35d6eb6fcafe5b105b59330bda70e8681bc41f3e069595a95"
+          },
+          {
+            "agent": "designer",
+            "slot": "themes.border",
+            "candidate": "border-v1.json",
+            "sha256": "1219e0e2c657aee5ba5df3f35790fb1880a64f9e05288a28b9e61bddf6fdaf1d"
+          },
+          {
+            "agent": "designer",
+            "slot": "themes.font-heading",
+            "candidate": "font-heading-v1.json",
+            "sha256": "9ae43d5f3a87bb90f32a1db460b0154d602d991e7df0796adf9d2ce996032496"
+          },
+          {
+            "agent": "designer",
+            "slot": "themes.foreground",
+            "candidate": "foreground-v1.json",
+            "sha256": "b4614ced442d5e4822da8c74c4395eaabab460902d9e5151db6d84a2a6627927"
+          },
+          {
+            "agent": "designer",
+            "slot": "themes.muted",
+            "candidate": "muted-v1.json",
+            "sha256": "aa79e59f9b23bf4c347c3a9ce0e9970431084ec5852cd41b8c4a1e54ed34a6ae"
+          },
+          {
+            "agent": "designer",
+            "slot": "themes.muted-foreground",
+            "candidate": "muted-foreground-v1.json",
+            "sha256": "bdb8e4c6ed3dd289709236482ad527625b1f742f2cc83e66226f497abcdfe43d"
+          },
+          {
+            "agent": "designer",
+            "slot": "themes.primary",
+            "candidate": "primary-v1.json",
+            "sha256": "ac54db969a44a556cf8c43c98146cbb3987cea10890b9a4333313bda669a3c7c"
+          },
+          {
+            "agent": "designer",
+            "slot": "themes.radius",
+            "candidate": "radius-v1.json",
+            "sha256": "ca32a189cfb1dc134c0da8e5ce5aec2819431ee8553bed432e9f5b723ffbe926"
+          },
+          {
+            "agent": "designer",
+            "slot": "themes.ring",
+            "candidate": "ring-v1.json",
+            "sha256": "9d41cc14f6f60e0d2cd5a81e6891cecb365ff3081ff8972d9270fd2fa462ad44"
+          },
+          {
+            "agent": "designer",
+            "slot": "themes.shadow",
+            "candidate": "shadow-v1.json",
+            "sha256": "63e1669ef08144306dd5625ba7a5788476929ea314ff951bda707f93d4e26881"
+          },
+          {
+            "agent": "designer",
+            "slot": "themes.spacing",
+            "candidate": "spacing-v1.json",
+            "sha256": "a5aba621c5fe45e0796c659e09e30cb319a8e71fc1a0704d8003a36ebfe1857e"
+          }
+        ],
+        "contract": {
+          "value": {
+            "kind": "frame",
+            "root": "div",
+            "landmarks": [
+              {
+                "slot": "consent",
+                "role": "region",
+                "topLevel": true,
+                "nameRequired": true
+              },
+              {
+                "slot": "header",
+                "role": "banner",
+                "topLevel": true,
+                "nameRequired": false
+              },
+              {
+                "slot": "main",
+                "role": "main",
+                "topLevel": true,
+                "nameRequired": false,
+                "id": "main-content",
+                "tabIndex": -1
+              },
+              {
+                "slot": "footer",
+                "role": "contentinfo",
+                "topLevel": true,
+                "nameRequired": false
+              },
+              {
+                "slot": "toasts",
+                "role": "region",
+                "topLevel": true,
+                "nameRequired": true
+              }
+            ],
+            "slots": [
+              {
+                "id": "skip-link",
+                "required": true,
+                "accepts": "host-node"
+              },
+              {
+                "id": "progress",
+                "required": false,
+                "accepts": "components.progress-bar"
+              },
+              {
+                "id": "consent",
+                "required": false,
+                "accepts": "sections.consent"
+              },
+              {
+                "id": "header",
+                "required": false,
+                "accepts": "host-node"
+              },
+              {
+                "id": "main",
+                "required": true,
+                "accepts": "view"
+              },
+              {
+                "id": "footer",
+                "required": false,
+                "accepts": "host-node"
+              },
+              {
+                "id": "toasts",
+                "required": false,
+                "accepts": "components.toast"
+              }
+            ],
+            "members": {
+              "mode": "closed",
+              "names": [
+                "chrome.full",
+                "chrome.minimal",
+                "footer-placement.flow",
+                "footer-placement.overlay",
+                "header-placement.overlay"
+              ]
+            },
+            "statePorts": [],
+            "rendering": "server",
+            "breakpoints": [
+              "sm",
+              "md",
+              "lg",
+              "xl",
+              "2xl"
+            ],
+            "allowedReads": {
+              "themes": [
+                "themes.background",
+                "themes.card",
+                "themes.popover",
+                "themes.secondary",
+                "themes.accent",
+                "themes.muted",
+                "themes.sidebar",
+                "themes.sidebar-accent",
+                "themes.foreground",
+                "themes.card-foreground",
+                "themes.popover-foreground",
+                "themes.primary-foreground",
+                "themes.secondary-foreground",
+                "themes.accent-foreground",
+                "themes.muted-foreground",
+                "themes.sidebar-foreground",
+                "themes.sidebar-primary-foreground",
+                "themes.sidebar-accent-foreground",
+                "themes.primary",
+                "themes.sidebar-primary",
+                "themes.border",
+                "themes.input",
+                "themes.sidebar-border",
+                "themes.radius",
+                "themes.shadow",
+                "themes.ring",
+                "themes.sidebar-ring",
+                "themes.tracking-tight",
+                "themes.spacing",
+                "themes.destructive",
+                "themes.font-sans",
+                "themes.font-heading",
+                "themes.font-mono"
+              ],
+              "assets": [
+                "assets.image"
+              ]
+            },
+            "composes": [
+              "frames.site-header",
+              "frames.site-footer",
+              "components.progress-bar",
+              "components.toast",
+              "components.avatar",
+              "components.badge",
+              "components.card",
+              "components.disclosure",
+              "components.icon",
+              "components.logo",
+              "components.semantic-content"
+            ],
+            "skipTarget": "main-content",
+            "props": [
+              "children"
+            ],
+            "fixture": {
+              "schema": "clossys.element-preview/1",
+              "fixtures": {
+                "file": "registry/frames/site-shell.tsx",
+                "export": "SiteShell",
+                "props": {
+                  "children": [
+                    "DRAFT skip-link",
+                    "DRAFT progress (components.progress-bar)",
+                    "DRAFT consent (sections.consent)",
+                    "DRAFT header",
+                    "DRAFT main (view)",
+                    "DRAFT footer",
+                    "DRAFT toasts (components.toast)"
+                  ]
+                }
+              }
+            },
+            "requirements": [
+              {
+                "check": "compose.layers"
+              },
+              {
+                "check": "source.ref"
+              },
+              {
+                "check": "tokens.only"
+              }
+            ]
+          },
+          "sha256": "f1e7a8ddf0b4eae9f849f97a7f0947a64bc3152e8644c838ff843157cc224bed"
+        },
+        "standard": {
+          "id": "frame",
+          "sha256": "bcfa533cb4aeda11c9d3fb3fbe4d75110c8b4a5f70d20667d924449f34554b29",
+          "requirements": [
+            {
+              "check": "compose.layers",
+              "params": {
+                "layers": [
+                  "components",
+                  "sections"
+                ]
+              }
+            },
+            {
+              "check": "source.ref",
+              "params": {
+                "kinds": [
+                  "registry",
+                  "composition",
+                  "npm",
+                  "derived",
+                  "original"
+                ],
+                "registries": [
+                  "shadcn-aria",
+                  "shadcn",
+                  "magicui",
+                  "tailark-oss",
+                  "assistant-ui",
+                  "reactflow",
+                  "npm"
+                ],
+                "licenses": [
+                  "MIT",
+                  "Apache-2.0"
+                ]
+              }
+            },
+            {
+              "check": "tokens.only",
+              "params": {}
+            }
+          ],
+          "taste": [
+            {
+              "id": "orientation",
+              "anchors": {
+                "1": "The user cannot tell where they are.",
+                "2": "Location shown in one place only.",
+                "3": "Location clear, next step unclear.",
+                "4": "Where am I and where can I go are both clear.",
+                "5": "Navigation disappears until needed and never loses the user."
+              }
+            },
+            {
+              "id": "economy",
+              "anchors": {
+                "1": "Chrome dominates the content.",
+                "2": "Too many persistent controls.",
+                "3": "Balanced, one control too many.",
+                "4": "Chrome serves the content.",
+                "5": "The frame is barely noticed; the content owns the screen."
+              }
+            },
+            {
+              "id": "polish",
+              "anchors": {
+                "1": "Landmarks or responsive states missing.",
+                "2": "Breaks at one breakpoint.",
+                "3": "Clean at desktop only.",
+                "4": "Clean at every breakpoint and both modes.",
+                "5": "Holds up beside the exemplars."
+              }
+            }
+          ]
+        },
+        "recipe": {
+          "id": "create.frame",
+          "axes": [
+            "navigation",
+            "chrome",
+            "emphasis"
+          ]
+        }
+      }
+    },
+    {
+      "op": "craft:diverge",
+      "at": "2026-11-19T00:00:00.000Z",
+      "by": "agent:designer.candidates",
+      "verb": "submit",
+      "skill": {
+        "path": "packages/designer/actions/designer.candidates/skill.md",
+        "sha256": "8632e4fb40c3974a5c81a578b7be27606713121b027f120a346e5fba09e31930"
+      },
+      "model": "fixture-model",
+      "tier": "mid",
+      "directions": [
+        {
+          "id": "d1",
+          "idea": "a plain reading of the slot contract",
+          "axes": {
+            "navigation": "plain",
+            "chrome": "plain",
+            "emphasis": "plain"
+          }
+        },
+        {
+          "id": "d2",
+          "idea": "a warm reading of the slot contract",
+          "axes": {
+            "navigation": "warm",
+            "chrome": "warm",
+            "emphasis": "warm"
+          }
+        },
+        {
+          "id": "d3",
+          "idea": "a brisk reading of the slot contract",
+          "axes": {
+            "navigation": "brisk",
+            "chrome": "brisk",
+            "emphasis": "brisk"
+          }
+        }
+      ]
+    },
+    {
+      "op": "craft:render",
+      "at": "2026-11-19T00:00:00.000Z",
+      "by": "agent:designer.candidates",
+      "verb": "submit",
+      "skill": {
+        "path": "packages/designer/actions/designer.candidates/skill.md",
+        "sha256": "8632e4fb40c3974a5c81a578b7be27606713121b027f120a346e5fba09e31930"
+      },
+      "model": "fixture-model",
+      "tier": "mid"
+    },
+    {
+      "op": "craft:critique",
+      "at": "2026-11-19T00:00:00Z",
+      "by": "agent:designer.critic",
+      "verb": "critique",
+      "skill": {
+        "path": "packages/producer/actions/critic/skill.md",
+        "sha256": "6a0d22415447bfa5dc020f5058edcedb2a5a771d660cb4e81bf66f8f4f276c06"
+      },
+      "model": "fixture-critic",
+      "tier": "mid",
+      "critique": "critiques/site-shell-v1.json",
+      "sha256": "5773d70502a7654928e0c46c4f3b0a830e92cbf49d94e521baf80707748eba8a"
+    },
+    {
+      "op": "submit",
+      "at": "2026-11-19T00:00:00.000Z",
+      "by": "agent:designer.candidates",
+      "verb": "submit",
+      "skill": {
+        "path": "packages/designer/actions/designer.candidates/skill.md",
+        "sha256": "8632e4fb40c3974a5c81a578b7be27606713121b027f120a346e5fba09e31930"
+      },
+      "model": "fixture-model",
+      "tier": "mid",
+      "basis": "agent",
+      "rung": "L4",
+      "reason": "fixture world: no admitted reference item fills frames.site-shell, so it is composed from the consumer's pinned stock components.separator",
+      "ladder": {
+        "rung": "L4",
+        "reason": "fixture world: no admitted reference item fills frames.site-shell, so it is composed from the consumer's pinned stock components.separator"
+      },
+      "name": "site-shell-v1.json",
+      "sha256": "554c5122a4c45e3d572686a092704d7cfae0697023fd11076519b8a3792875e0"
+    },
+    {
+      "op": "pin",
+      "at": "2026-11-19T00:00:00Z",
+      "by": "planner:fixture-world",
+      "verb": "pin",
+      "skill": {
+        "path": "packages/producer/actions/pin.designer/skill.md",
+        "sha256": "6f838d31c7d3832d5051a19ad2ec23d58872e6c97c7f7fca0045456e1301580b"
+      },
+      "model": "none",
+      "tier": "none",
+      "candidate": "site-shell-v1.json",
+      "sha256": "554c5122a4c45e3d572686a092704d7cfae0697023fd11076519b8a3792875e0",
+      "decidedBy": "planner:fixture-world",
+      "basis": "planner",
+      "records": [
+        {
+          "file": "pin.json",
+          "sha256": "afae301dd7113760d0f3a423e183b1d1bd91debb7213a3f3e0e288fa3f1ee929"
+        }
+      ]
+    },
+    {
+      "op": "slot",
       "at": "2026-11-23T00:00:00Z",
       "by": "producer",
       "verb": "migrate",
@@ -198,7 +757,7 @@
       "records": [
         {
           "file": "slot.json",
-          "sha256": "bb468a4f164db6612d9e278f3add20979958af0aed55ee086069f769cf9015c8"
+          "sha256": "90fe680ff8315ed6ed4e863f986f2b24c1f6140c018ea2b7d9278dc9de51aa41"
         }
       ]
     }

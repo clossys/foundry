@@ -1,0 +1,27 @@
+{
+  "schema": "clossys.critique/1",
+  "slot": "chrome.site-header",
+  "candidate": "site-header-v1.json",
+  "standard": "chrome",
+  "scores": {
+    "wayfinding": 4,
+    "grouping": 4,
+    "restraint": 4
+  },
+  "packet": {
+    "manifest": [
+      {
+        "role": "taste",
+        "ref": "packages/publisher/standards/chrome/taste.md"
+      },
+      {
+        "role": "contract",
+        "ref": "clossys/agents/publisher/chrome.site-header/slot.json#contract"
+      },
+      {
+        "role": "render",
+        "ref": "clossys/.state/renders/publisher/chrome.site-header/site-header-v1.png"
+      }
+    ]
+  }
+}

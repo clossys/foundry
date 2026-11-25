@@ -76,7 +76,12 @@
           ]
         }
       }
-    ]
+    ],
+    "fixture": {
+      "route": {
+        "path": "/"
+      }
+    }
   },
   "tighten": [],
   "family": {

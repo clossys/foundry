@@ -177,6 +177,49 @@
       ]
     },
     {
+      "op": "submit",
+      "at": "2026-11-19T00:00:00.000Z",
+      "by": "agent:designer.candidates",
+      "verb": "submit",
+      "skill": {
+        "path": "packages/designer/actions/designer.candidates/skill.md",
+        "sha256": "8632e4fb40c3974a5c81a578b7be27606713121b027f120a346e5fba09e31930"
+      },
+      "model": "fixture-model",
+      "tier": "mid",
+      "basis": "agent",
+      "rung": "L2",
+      "seed": "tailark-oss/mist-footer-1",
+      "ladder": {
+        "rung": "L2",
+        "seed": "tailark-oss/mist-footer-1"
+      },
+      "name": "site-footer-v1.json",
+      "sha256": "a42e826cc10748076eb72958e031287f53b6e45e2ee1a716bddded3743516435"
+    },
+    {
+      "op": "pin",
+      "at": "2026-11-19T00:00:00Z",
+      "by": "planner:fixture-world",
+      "verb": "pin",
+      "skill": {
+        "path": "packages/producer/actions/pin.designer/skill.md",
+        "sha256": "6f838d31c7d3832d5051a19ad2ec23d58872e6c97c7f7fca0045456e1301580b"
+      },
+      "model": "none",
+      "tier": "none",
+      "candidate": "site-footer-v1.json",
+      "sha256": "a42e826cc10748076eb72958e031287f53b6e45e2ee1a716bddded3743516435",
+      "decidedBy": "planner:fixture-world",
+      "basis": "planner",
+      "records": [
+        {
+          "file": "pin.json",
+          "sha256": "c5d691db8b21fd6bed7c46dc8ff7eac981543a8c47ef5ba9391ad20c27df16fd"
+        }
+      ]
+    },
+    {
       "op": "slot",
       "at": "2026-11-23T00:00:00Z",
       "by": "producer",

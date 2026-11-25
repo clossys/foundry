@@ -1,0 +1,27 @@
+{
+  "schema": "clossys.pin/2",
+  "id": "designer/frames.site-footer/pin",
+  "agent": "designer",
+  "kind": "pin",
+  "status": "confirm",
+  "createdBy": {
+    "actor": "code",
+    "cli": "clossys pin",
+    "version": "0.1.0"
+  },
+  "createdAt": "2026-11-19T00:00:00Z",
+  "updatedAt": "2026-11-19T00:00:00Z",
+  "refs": [
+    {
+      "to": "producer/checks.scorecard",
+      "rel": "cites",
+      "record": "designer/frames.site-footer",
+      "sha256": "78bcb4f4417a528239deb20237be5a985f0d2b1aa80b1f969249ebcff9943f2c"
+    }
+  ],
+  "candidate": "site-footer-v1.json",
+  "sha256": "a42e826cc10748076eb72958e031287f53b6e45e2ee1a716bddded3743516435",
+  "decidedBy": "planner:fixture-world",
+  "basis": "planner",
+  "at": "2026-11-19T00:00:00Z"
+}

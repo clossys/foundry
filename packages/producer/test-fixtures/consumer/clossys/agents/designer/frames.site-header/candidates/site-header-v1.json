@@ -1,0 +1,61 @@
+{
+  "clossys": {
+    "schema": "clossys.candidate/1",
+    "id": "designer/frames.site-header/site-header-v1.json",
+    "agent": "designer",
+    "kind": "candidate",
+    "status": "submitted",
+    "slot": "designer/frames.site-header",
+    "createdBy": {
+      "actor": "agent",
+      "agent": "designer",
+      "skill": "packages/designer/actions/designer.candidates/skill.md",
+      "skillSha256": "8632e4fb40c3974a5c81a578b7be27606713121b027f120a346e5fba09e31930",
+      "model": "fixture-model",
+      "tier": "mid"
+    },
+    "createdAt": "2026-11-19T00:00:00Z",
+    "refs": [],
+    "source": {
+      "kind": "composition",
+      "ref": [],
+      "license": "MIT",
+      "parts": [
+        {
+          "slot": "components.button",
+          "files": [
+            "registry/aria-nova/ui/button.tsx"
+          ]
+        },
+        {
+          "slot": "components.dialog",
+          "files": [
+            "registry/aria-nova/ui/dialog.tsx"
+          ]
+        }
+      ]
+    },
+    "rationale": []
+  },
+  "content": {
+    "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+    "name": "site-header",
+    "type": "registry:block",
+    "dependencies": [],
+    "files": [
+      {
+        "path": "registry/frames/site-header.tsx",
+        "type": "registry:component",
+        "target": "components/frames/site-header.tsx",
+        "content": "import { Button, LinkButton } from \"@/components/ui/button\";\nimport { Dialog, DialogClose, DialogTitle, DialogTrigger } from \"@/components/ui/dialog\";\n\nexport interface SiteHeaderLink {\n  href: string;\n  label: string;\n}\n\nexport function SiteHeader({ skipLabel, navigationLabel, navigationOpen, navigationClose, brand, links = [], actions, children }: {\n  skipLabel?: string;\n  navigationLabel?: string;\n  navigationOpen?: string;\n  navigationClose?: string;\n  brand?: React.ReactNode;\n  links?: SiteHeaderLink[];\n  actions?: React.ReactNode;\n  children?: React.ReactNode;\n}) {\n  const items = links.map(link => <LinkButton key={link.href} href={link.href} variant=\"ghost\">{link.label}</LinkButton>);\n  return (\n    <header>\n      <LinkButton href=\"#main-content\" variant=\"link\">{skipLabel}</LinkButton>\n      {brand}\n      <nav aria-label={navigationLabel}>{items}</nav>\n      <DialogTrigger>\n        <Button variant=\"outline\">{navigationOpen}</Button>\n        <Dialog showCloseButton={false}>\n          <DialogTitle>{navigationLabel}</DialogTitle>\n          <nav aria-label={navigationLabel}>{items}</nav>\n          <DialogClose>{navigationClose}</DialogClose>\n        </Dialog>\n      </DialogTrigger>\n      {actions}\n      {children}\n    </header>\n  );\n}\n"
+      }
+    ],
+    "meta": {
+      "slot": "frames.site-header",
+      "element": {
+        "slot": "frames.site-header",
+        "reason": "Realises director:identity.visual.style: composed from the pinned stock components.button, components.dialog."
+      }
+    }
+  }
+}

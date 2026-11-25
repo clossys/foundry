@@ -1,0 +1,25 @@
+{
+  "schema": "clossys.page/1",
+  "slug": "site-header",
+  "title": "frames.site-header.copy#navigation.label",
+  "frame": "frames.site-shell",
+  "sections": [
+    "frames.site-header"
+  ],
+  "copy": {
+    "skip.label": "frames.site-header.copy#skip.label",
+    "navigation.label": "frames.site-header.copy#navigation.label",
+    "navigation.open": "frames.site-header.copy#navigation.open",
+    "navigation.close": "frames.site-header.copy#navigation.close"
+  },
+  "meta": {
+    "source": {
+      "kind": "derived",
+      "ref": [
+        "designer:frames.site-shell",
+        "designer:frames.site-header",
+        "writer:frames.site-header.copy"
+      ]
+    }
+  }
+}

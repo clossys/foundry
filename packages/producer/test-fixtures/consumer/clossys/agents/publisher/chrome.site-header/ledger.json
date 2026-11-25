@@ -974,6 +974,278 @@
           "sha256": "5358c97d3f7639f8954da96a6920d960003438ae555847d2eb62752515e83404"
         }
       ]
+    },
+    {
+      "op": "slot",
+      "at": "2026-11-19T00:00:00Z",
+      "by": "planner",
+      "verb": "ia",
+      "skill": {
+        "path": "packages/producer/actions/ia/skill.md",
+        "sha256": "147a7eaf66267728953e0c8111a9c20b93475f95f8063745d9d1d1087658fe73"
+      },
+      "model": "none",
+      "tier": "none",
+      "kind": "ia",
+      "records": [
+        {
+          "file": "slot.json",
+          "sha256": "bdd55eec1bcfe45f8100ca894adbee8c5e744e8d9e3efdfb0c97e4b7f72c779d"
+        }
+      ]
+    },
+    {
+      "op": "verdict",
+      "at": "2026-11-19T00:00:00Z",
+      "by": "agent:publisher.verdict",
+      "verb": "verdict",
+      "skill": {
+        "path": "packages/producer/actions/verdict/skill.md",
+        "sha256": "5d5fec5f8d9dbb928995a8847776ee06e4a3ba12b44223e2f3230768a6dbbc15"
+      },
+      "model": "fixture-model",
+      "tier": "mid",
+      "verdict": "create",
+      "create": true,
+      "reason": "fixture world: a synthetic consumer, so its chrome is assembled from its own pinned frame, unit and copy",
+      "gaps": [
+        {
+          "id": "wayfinding"
+        }
+      ]
+    },
+    {
+      "op": "craft:brief",
+      "at": "2026-11-19T00:00:00.000Z",
+      "by": "agent:publisher.candidates",
+      "verb": "submit",
+      "skill": {
+        "path": "packages/publisher/actions/publisher.candidates/skill.md",
+        "sha256": "5c72becf74bd0b03ccad9a99074ffe8d1070aa99f734df4e42ae111aaee544b0"
+      },
+      "model": "fixture-model",
+      "tier": "mid",
+      "goal": "fixture world: fill chrome.site-header to chrome",
+      "assembled": {
+        "inputs": [
+          {
+            "agent": "designer",
+            "slot": "frames.site-shell",
+            "candidate": "site-shell-v1.json",
+            "sha256": "554c5122a4c45e3d572686a092704d7cfae0697023fd11076519b8a3792875e0"
+          },
+          {
+            "agent": "designer",
+            "slot": "frames.site-header",
+            "candidate": "site-header-v1.json",
+            "sha256": "736a07f3fdce21d41a3ccaf139bac882b7a12968f2f2739c9f5d88164a0f8d92"
+          },
+          {
+            "agent": "writer",
+            "slot": "frames.site-header.copy",
+            "candidate": "copy-v1.md",
+            "sha256": "b8f253ced303b4cc5e62d84d26451a377d0dc16f61f6e2f8ccccb405803d0fab"
+          }
+        ],
+        "contract": {
+          "value": {
+            "kind": "chrome",
+            "purpose": "Header links to page ids, one call to action and its target.",
+            "frame": "designer/frames.site-shell",
+            "unit": "designer/frames.site-header",
+            "copy": "writer/frames.site-header.copy#site.header",
+            "publications": [
+              "site",
+              "docs"
+            ],
+            "requirements": [
+              {
+                "check": "citation.grammar"
+              },
+              {
+                "check": "composes.allowed",
+                "params": {
+                  "allowed": [
+                    "designer/frames.site-shell",
+                    "designer/frames.site-header",
+                    "writer/frames.site-header.copy#site.header"
+                  ]
+                }
+              }
+            ],
+            "fixture": {
+              "route": {
+                "path": "/"
+              }
+            }
+          },
+          "sha256": "4a53da54799f71dff060c3da60d132a909bd80db26eca4264c65405a86229507"
+        },
+        "standard": {
+          "id": "chrome",
+          "sha256": "5ea8db0d2610a779ab2744e32935608cedfa80ece209a11e5762d5b80f7750ff",
+          "requirements": [
+            {
+              "check": "citation.grammar",
+              "params": {}
+            },
+            {
+              "check": "composes.allowed",
+              "params": {}
+            }
+          ],
+          "taste": [
+            {
+              "id": "wayfinding",
+              "anchors": {
+                "1": "The user cannot tell where they are or where a link goes.",
+                "2": "Destinations are listed, but the current place is not marked.",
+                "3": "The current place is marked; one destination label is unclear.",
+                "4": "Clear place and destinations; one route needs an extra step.",
+                "5": "The user always knows where they are, where they can go and how to get back."
+              }
+            },
+            {
+              "id": "grouping",
+              "anchors": {
+                "1": "Links sit in one flat, unordered list.",
+                "2": "Groups exist but follow the organisation, not the user's tasks.",
+                "3": "Task groups with one link in the wrong group.",
+                "4": "Task groups in a sensible order; one group is too large.",
+                "5": "Links group by the user's tasks, ordered by how often each is needed."
+              }
+            },
+            {
+              "id": "restraint",
+              "anchors": {
+                "1": "The chrome lists every page and crowds the content.",
+                "2": "Most links are needed, but secondary ones compete with primary ones.",
+                "3": "Only needed links; one secondary link sits at the top level.",
+                "4": "Lean; one link could move to a lower level.",
+                "5": "Exactly the destinations the user needs at this level, and nothing competes with the content."
+              }
+            }
+          ]
+        },
+        "recipe": {
+          "id": "assemble.page",
+          "axes": [
+            "lead",
+            "order",
+            "grouping"
+          ]
+        }
+      }
+    },
+    {
+      "op": "craft:diverge",
+      "at": "2026-11-19T00:00:00.000Z",
+      "by": "agent:publisher.candidates",
+      "verb": "submit",
+      "skill": {
+        "path": "packages/publisher/actions/publisher.candidates/skill.md",
+        "sha256": "5c72becf74bd0b03ccad9a99074ffe8d1070aa99f734df4e42ae111aaee544b0"
+      },
+      "model": "fixture-model",
+      "tier": "mid",
+      "directions": [
+        {
+          "id": "d1",
+          "idea": "a plain reading of the slot contract",
+          "axes": {
+            "lead": "plain",
+            "order": "plain",
+            "grouping": "plain"
+          }
+        },
+        {
+          "id": "d2",
+          "idea": "a warm reading of the slot contract",
+          "axes": {
+            "lead": "warm",
+            "order": "warm",
+            "grouping": "warm"
+          }
+        },
+        {
+          "id": "d3",
+          "idea": "a brisk reading of the slot contract",
+          "axes": {
+            "lead": "brisk",
+            "order": "brisk",
+            "grouping": "brisk"
+          }
+        }
+      ]
+    },
+    {
+      "op": "craft:render",
+      "at": "2026-11-19T00:00:00.000Z",
+      "by": "agent:publisher.candidates",
+      "verb": "submit",
+      "skill": {
+        "path": "packages/publisher/actions/publisher.candidates/skill.md",
+        "sha256": "5c72becf74bd0b03ccad9a99074ffe8d1070aa99f734df4e42ae111aaee544b0"
+      },
+      "model": "fixture-model",
+      "tier": "mid"
+    },
+    {
+      "op": "craft:critique",
+      "at": "2026-11-19T00:00:00Z",
+      "by": "agent:publisher.critic",
+      "verb": "critique",
+      "skill": {
+        "path": "packages/producer/actions/critic/skill.md",
+        "sha256": "6a0d22415447bfa5dc020f5058edcedb2a5a771d660cb4e81bf66f8f4f276c06"
+      },
+      "model": "fixture-critic",
+      "tier": "mid",
+      "critique": "critiques/site-header-v1.json",
+      "sha256": "78979f5ba4311f6c38f28cc1e655bdbb5cfdb4424d195c28dff6c8654f8f5a84"
+    },
+    {
+      "op": "submit",
+      "at": "2026-11-19T00:00:00.000Z",
+      "by": "agent:publisher.candidates",
+      "verb": "submit",
+      "skill": {
+        "path": "packages/publisher/actions/publisher.candidates/skill.md",
+        "sha256": "5c72becf74bd0b03ccad9a99074ffe8d1070aa99f734df4e42ae111aaee544b0"
+      },
+      "model": "fixture-model",
+      "tier": "mid",
+      "basis": "agent",
+      "rung": "create",
+      "reason": "fixture world: a synthetic consumer, so its chrome is assembled from its own pinned frame, unit and copy",
+      "ladder": {
+        "rung": "create",
+        "reason": "fixture world: a synthetic consumer, so its chrome is assembled from its own pinned frame, unit and copy"
+      },
+      "name": "site-header-v1.json",
+      "sha256": "dfb16fba3d7273029f1b2aaf1c7c1d79e61662228894796ef55af2e62dad4bae"
+    },
+    {
+      "op": "pin",
+      "at": "2026-11-19T00:00:00Z",
+      "by": "planner:fixture-world",
+      "verb": "pin",
+      "skill": {
+        "path": "packages/producer/actions/pin.publisher/skill.md",
+        "sha256": "33cd1658345c92487f91680b664148b1ace9a2d314b845f4e4c2d139f2dc2c51"
+      },
+      "model": "none",
+      "tier": "none",
+      "candidate": "site-header-v1.json",
+      "sha256": "dfb16fba3d7273029f1b2aaf1c7c1d79e61662228894796ef55af2e62dad4bae",
+      "decidedBy": "planner:fixture-world",
+      "basis": "planner",
+      "records": [
+        {
+          "file": "pin.json",
+          "sha256": "2c27ac763d55c7a515d926a6edf37562c24ed47fee90332e9f0a376bc44e58c6"
+        }
+      ]
     }
   ]
 }

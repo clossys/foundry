@@ -87,27 +87,11 @@
       "rel": "input"
     },
     {
-      "to": "designer/components.badge",
-      "rel": "uses"
-    },
-    {
       "to": "designer/components.button",
       "rel": "uses"
     },
     {
       "to": "designer/components.dialog",
-      "rel": "uses"
-    },
-    {
-      "to": "designer/components.disclosure",
-      "rel": "uses"
-    },
-    {
-      "to": "designer/components.icon",
-      "rel": "uses"
-    },
-    {
-      "to": "designer/components.logo",
       "rel": "uses"
     }
   ],
@@ -344,8 +328,8 @@
     "fixture": {
       "schema": "clossys.element-preview/1",
       "fixtures": {
-        "file": "mist/blocks/hero-section/one/header.tsx",
-        "export": "HeroHeader",
+        "file": "registry/frames/site-header.tsx",
+        "export": "SiteHeader",
         "props": {
           "children": [
             "DRAFT brand (components.logo)",

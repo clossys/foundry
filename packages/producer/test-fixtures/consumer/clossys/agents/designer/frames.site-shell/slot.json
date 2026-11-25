@@ -103,47 +103,7 @@
       "rel": "input"
     },
     {
-      "to": "designer/components.avatar",
-      "rel": "uses"
-    },
-    {
-      "to": "designer/components.badge",
-      "rel": "uses"
-    },
-    {
-      "to": "designer/components.card",
-      "rel": "uses"
-    },
-    {
-      "to": "designer/components.disclosure",
-      "rel": "uses"
-    },
-    {
-      "to": "designer/components.icon",
-      "rel": "uses"
-    },
-    {
-      "to": "designer/components.logo",
-      "rel": "uses"
-    },
-    {
-      "to": "designer/components.progress-bar",
-      "rel": "uses"
-    },
-    {
-      "to": "designer/components.semantic-content",
-      "rel": "uses"
-    },
-    {
-      "to": "designer/components.toast",
-      "rel": "uses"
-    },
-    {
-      "to": "designer/frames.site-footer",
-      "rel": "uses"
-    },
-    {
-      "to": "designer/frames.site-header",
+      "to": "designer/components.separator",
       "rel": "uses"
     }
   ],
@@ -393,8 +353,8 @@
     "fixture": {
       "schema": "clossys.element-preview/1",
       "fixtures": {
-        "file": "mist/blocks/hero-section/one/header.tsx",
-        "export": "HeroHeader",
+        "file": "registry/frames/site-shell.tsx",
+        "export": "SiteShell",
         "props": {
           "children": [
             "DRAFT skip-link",

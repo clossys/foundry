@@ -1,0 +1,27 @@
+{
+  "schema": "clossys.pin/2",
+  "id": "publisher/chrome.site-header/pin",
+  "agent": "publisher",
+  "kind": "pin",
+  "status": "confirm",
+  "createdBy": {
+    "actor": "code",
+    "cli": "clossys pin",
+    "version": "0.1.0"
+  },
+  "createdAt": "2026-11-19T00:00:00Z",
+  "updatedAt": "2026-11-19T00:00:00Z",
+  "refs": [
+    {
+      "to": "producer/checks.scorecard",
+      "rel": "cites",
+      "record": "publisher/chrome.site-header",
+      "sha256": "3d7f73792bfc2aa93fe88e574113eb72469ced7b50327c642578e6d85006bd6a"
+    }
+  ],
+  "candidate": "site-header-v1.json",
+  "sha256": "dfb16fba3d7273029f1b2aaf1c7c1d79e61662228894796ef55af2e62dad4bae",
+  "decidedBy": "planner:fixture-world",
+  "basis": "planner",
+  "at": "2026-11-19T00:00:00Z"
+}
