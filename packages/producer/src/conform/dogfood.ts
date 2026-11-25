@@ -10,14 +10,16 @@
  */
 import { cpSync, existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, realpathSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { join, posix } from "node:path";
 import { standardTastePath } from "../cli/critique.js";
+import { candidateLineage, globMatch } from "../constitution/certify/source.js";
 import { runConstitution } from "../constitution/run.js";
 import { resolveAgent } from "../agents.js";
-import { referenceIndex, slotReferenceShips, type ReferenceIndex } from "../specimen/reference-fixtures.js";
+import { readCandidate } from "../records/slots.js";
+import { CODE, exportedNames, referenceIndex, slotReferenceShips, type ReferenceIndex } from "../specimen/reference-fixtures.js";
 import { draftCopyIssues, type CopyField } from "../specimen/block-fixtures.js";
 import { ASSERTIONS, KIND_FAMILY, type Judgement } from "./assertions.js";
-import type { AgentModel, ConformModel } from "./model.js";
+import type { AgentModel, ConformModel, LiveSlot } from "./model.js";
 import { probeRecipePages, type RecipePageFacts } from "./recipe-page.js";
 
 export const EMPTY_L2 = "conform-probe-empty";
@@ -38,6 +40,10 @@ export interface ProbeFacts {
   readonly pinGate?: Readonly<Record<string, PinGateResult | string>>;
   /** Whether an adopted Designer reference ships a file with an export (default: the installed Designer package's references). */
   readonly referenceShips?: (slot: string, file: string, name: string) => boolean;
+  /** The provenance rule's consumerAssets slot globs (default: the installed Designer package's src/catalog/rules/provenance.json). */
+  readonly consumerAssets?: readonly string[];
+  /** The raw bytes of a slot's pinned candidate file (default: the one slot-model reader, records/slots.ts readCandidate); throws when absent or unreadable. */
+  readonly candidateText?: (slot: string, name: string) => string;
 }
 
 export interface PinGateResult { readonly target: string; readonly candidate: string; readonly accepted: boolean; readonly message: string; readonly verbs?: readonly VerbProbe[] }
@@ -328,23 +334,80 @@ function defaultReferenceShips(): ((slot: string, file: string, name: string) =>
   return typeof index === "string" ? index : (slot, file, name) => slotReferenceShips(index, slot, file, name);
 }
 
-/** The layers whose live Designer fixtures must mount what the slot's own adopted reference ships (U27 components, U28 sections and frames). */
+/** The Designer package's provenance rule, relative to the package root (it ships in the package's `files`). */
+const PROVENANCE_RULE_FILE = "src/catalog/rules/provenance.json";
+
+/** The Designer package's provenance rule consumerAssets slot globs, read once per process. */
+let designerConsumerAssets: readonly string[] | string | undefined;
+function defaultConsumerAssets(): readonly string[] | string {
+  if (designerConsumerAssets === undefined) {
+    try {
+      const rule = JSON.parse(readFileSync(join(resolveAgent("designer").packageRoot, PROVENANCE_RULE_FILE), "utf8")) as { consumerAssets?: { slots?: unknown } };
+      const slots = rule.consumerAssets?.slots;
+      designerConsumerAssets = Array.isArray(slots) && slots.every(entry => typeof entry === "string") ? slots as string[] : `the Designer provenance rule ${PROVENANCE_RULE_FILE} lists no consumerAssets.slots`;
+    } catch (error) { designerConsumerAssets = `the Designer provenance rule ${PROVENANCE_RULE_FILE} cannot be read: ${error instanceof Error ? error.message : String(error)}`; }
+  }
+  return designerConsumerAssets;
+}
+
+/**
+ * The layers whose live Designer fixtures must mount what the slot's own adopted reference ships (U27 components, U28
+ * sections and frames). The one carve-out is the provenance rule's own (CPE): a component slot in its consumerAssets
+ * ("no registry ships them") may instead mount what its accepted pinned consumer-owned candidate ships.
+ */
 const REFERENCED_FIXTURE_LAYERS = ["components.", "sections.", "frames."] as const;
 
 /**
- * Live Designer component, section and frame fixtures that mount a file or export none of the slot's own adopted
- * references ships; and section fixtures whose `props.copy` does not satisfy the contract's copy fields (U28).
+ * Why a consumer-asset component slot's accepted pinned candidate does not ship `file` and its value export `name` from
+ * a consumer-owned source (candidateLineage original, which includes derived from the consumer's own asset slots, or
+ * npm); undefined when it does. The pin counts only when the slot/2 reader takes it (pinRejection absent), and the
+ * source is read from the candidate's clossys.source header, never from anything else.
  */
-function unshippedComponentFixtures(agent: AgentModel, facts: ProbeFacts): string[] {
+function pinnedConsumerMiss(slot: LiveSlot, file: string, name: string, read: (slot: string, name: string) => string): string | undefined {
+  if (slot.pin === undefined) return "it has no pin";
+  if (slot.pinRejection !== undefined) return `the slot/2 reader refuses its pin (${slot.pinRejection})`;
+  const candidate = slot.pin.candidate;
+  if (typeof candidate !== "string") return "its pin names no candidate";
+  let doc: { clossys?: { source?: { kind?: unknown; ref?: unknown; hash?: unknown } }; content?: { files?: unknown } };
+  try { doc = JSON.parse(read(slot.id, candidate)) as typeof doc; }
+  catch (error) { return `its pinned candidate ${candidate} cannot be read: ${error instanceof Error ? error.message : String(error)}`; }
+  const source = doc?.clossys?.source;
+  const owned = source?.kind === "npm" || candidateLineage(slot.id, { meta: { ...(source !== undefined ? { source } : {}) } })?.mode === "original";
+  if (!owned) return `its pinned candidate ${candidate} has source ${JSON.stringify(source?.kind ?? null)}, which is not consumer-owned (original, derived from the consumer's own asset slots, or npm)`;
+  const files = Array.isArray(doc?.content?.files) ? doc.content.files as { path?: unknown; content?: unknown }[] : [];
+  const shipped = files.find(entry => typeof entry?.path === "string" && posix.normalize(entry.path) === posix.normalize(file));
+  if (!shipped) return `its pinned candidate ${candidate} ships no file ${file}`;
+  if (!CODE.test(shipped.path as string)) return `its pinned candidate's ${file} is not a code file`;
+  if (typeof shipped.content !== "string" || !exportedNames(shipped.content).includes(name)) return `its pinned candidate's ${file} has no value export ${name}`;
+  return undefined;
+}
+
+/**
+ * Live Designer component, section and frame fixtures that mount a file or export none of the slot's own adopted
+ * references ships, and, for a consumer-asset component slot (provenance consumerAssets), that its accepted pinned
+ * consumer-owned candidate does not ship either; and section fixtures whose `props.copy` does not satisfy the
+ * contract's copy fields (U28).
+ */
+function unshippedComponentFixtures(agent: AgentModel, model: ConformModel, facts: ProbeFacts): string[] {
   const live = agent.live.filter(slot => REFERENCED_FIXTURE_LAYERS.some(prefix => slot.id.startsWith(prefix)) && slot.contract.fixture !== undefined);
   if (!live.length) return [];
   const ships = facts.referenceShips ?? defaultReferenceShips();
   if (typeof ships === "string") return [ships];
+  const assets = facts.consumerAssets ?? defaultConsumerAssets();
+  if (typeof assets === "string") return [assets];
+  const read = facts.candidateText ?? ((slot: string, name: string) => readCandidate(model.consumer, "designer", slot, name).raw);
   const rows: string[] = [];
   for (const slot of live) {
     const fixture = slot.contract.fixture as { fixtures?: { file?: unknown; export?: unknown } } | undefined;
     const file = fixture?.fixtures?.file, name = fixture?.fixtures?.export;
-    if (typeof file !== "string" || typeof name !== "string" || !ships(slot.id, file, name)) rows.push(`${slot.id}: contract.fixture mounts ${String(file)}#${String(name)}, which none of its adopted references ships in the selected style`);
+    if (typeof file !== "string" || typeof name !== "string" || !ships(slot.id, file, name)) {
+      const consumerAsset = slot.id.startsWith("components.") && assets.some(pattern => globMatch(pattern, slot.id));
+      if (!consumerAsset) rows.push(`${slot.id}: contract.fixture mounts ${String(file)}#${String(name)}, which none of its adopted references ships in the selected style`);
+      else {
+        const miss = typeof file !== "string" || typeof name !== "string" ? "the fixture names no file or export" : pinnedConsumerMiss(slot, file, name, read);
+        if (miss !== undefined) rows.push(`${slot.id}: contract.fixture mounts ${String(file)}#${String(name)}, which neither its adopted references ship in the selected style nor its accepted pinned consumer-owned candidate ships (${miss})`);
+      }
+    }
     if (slot.id.startsWith("sections.")) {
       const copy = slot.contract.copy as { fields?: unknown } | undefined;
       const fields = Array.isArray(copy?.fields) ? copy.fields as CopyField[] : [];
@@ -377,12 +440,14 @@ export const PROBES: Readonly<Record<string, Probe>> = {
     if (agent.skillText === undefined) return pass([`${agent.adapter?.skill ?? "skill"} is missing`]);
     return pass(/--basis picked/.test(agent.skillText) ? [`${agent.adapter!.skill} teaches \`--basis picked\`, which pin refuses (it needs owner:queue.<kind>#<id>)`] : []);
   },
-  "contract-fixture": (agent, _model, facts) => {
+  "contract-fixture": (agent, model, facts) => {
     const fixtures = agent.live.filter(slot => slot.contract.fixture !== undefined).length;
     const rows = fixtures ? [] : [`none of ${agent.live.length} live slot contracts carries contract.fixture`];
     // U27: a Designer component fixture must mount a file and an export its own adopted reference ships in the
     // selected style, so a stock candidate copied from that reference can certify; any other path or name is red.
-    if (agent.agent === "designer") rows.push(...unshippedComponentFixtures(agent, facts));
+    // CPE: a provenance consumerAssets component slot (no registry ships it) may instead mount what its accepted
+    // pinned consumer-owned candidate ships.
+    if (agent.agent === "designer") rows.push(...unshippedComponentFixtures(agent, model, facts));
     return pass(rows, agent.live.length);
   },
   "upstream-pinned": (agent, model) => {

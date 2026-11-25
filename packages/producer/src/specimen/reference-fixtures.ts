@@ -51,7 +51,8 @@ export const NO_REFERENCE = "no adopted reference";
 const LAYERS = Object.keys(REFERENCE_FIXTURE_RULES.layers) as (keyof typeof REFERENCE_FIXTURE_RULES.layers)[];
 /** The layers whose slot contracts carry adopted reference rows. */
 const REFERENCE_LAYERS = ["components", "sections", "frames"] as const;
-const CODE = /\.(?:tsx|ts|jsx|js)$/;
+/** A code file a fixture can mount (a vendored reference file, or a pinned consumer-owned candidate file, CPE). */
+export const CODE = /\.(?:tsx|ts|jsx|js)$/;
 
 interface ManifestFile { readonly path: string }
 interface ManifestItem { readonly registry: string; readonly name: string; readonly version: string; readonly dir: string; readonly files?: readonly ManifestFile[] }

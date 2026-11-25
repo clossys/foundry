@@ -190,6 +190,98 @@ describe("DF.CREATE probe (strengthened)", () => {
   });
 });
 
+describe("DF.CREATE probe on a consumer-asset component slot (provenance consumerAssets, CPE)", () => {
+  type Source = Record<string, unknown> | undefined;
+  const candidate = (source: Source, path = "ui/x.tsx", content = "export function X() { return null }\n") => ({
+    clossys: { schema: "clossys.candidate/1", ...(source ? { source } : {}) }, content: { name: "x", files: [{ path, type: "registry:ui", content }] },
+  });
+  const ORIGINAL: Source = { kind: "original", ref: [] };
+  const fixture = (file?: string, name = "X") => ({ schema: "clossys.element-preview/1", fixtures: { ...(file !== undefined ? { file } : {}), export: name, props: {} } });
+  const PIN = { schema: "clossys.pin/2", candidate: "x-v1.json" };
+  type SlotOverrides = { id?: string; fixture?: unknown; pin?: Record<string, unknown> | null; pinRejection?: string };
+  const live = ({ id = "components.logo", fixture: mount = fixture("ui/x.tsx"), pin = PIN, pinRejection }: SlotOverrides = {}) => ({
+    id, source: "placed", contract: { props: [], fixture: mount }, inputs: [], uses: [], ledger: [],
+    ...(pin ? { pin } : {}), ...(pinRejection !== undefined ? { pinRejection } : {}),
+  });
+  interface World { slot?: SlotOverrides; assets?: string[]; candidates?: Record<string, unknown>; ships?: ProbeFacts["referenceShips"] }
+  const probe = ({ slot = {}, assets = ["components.logo", "components.icon"], candidates = { "x-v1.json": candidate(ORIGINAL) }, ships = () => false }: World = {}) =>
+    PROBES["contract-fixture"]!({ agent: "designer", live: [live(slot)] } as unknown as AgentModel, {} as ConformModel, {
+      emptyL2Detected: {}, requestVerb: true, critiqueMonorepoPath: false, referenceShips: ships, consumerAssets: assets,
+      candidateText: (_slot, name) => {
+        const doc = candidates[name];
+        if (doc === undefined) throw new Error(`ENOENT: ${name}`);
+        return typeof doc === "string" ? doc : JSON.stringify(doc);
+      },
+    }).rows;
+  const red = (id: string, why: RegExp) => [expect.stringMatching(new RegExp(`^${id.replace(/\./g, "\\.")}: contract\\.fixture mounts .*, which neither its adopted references ship in the selected style nor its accepted pinned consumer-owned candidate ships \\(${why.source}\\)$`))];
+
+  it("green: an accepted pin's original candidate ships the fixture file and value export", () => {
+    expect(probe()).toEqual([]);
+  });
+
+  it("green: an npm candidate that re-exports the fixture name (the fixture world's icon)", () => {
+    const npm = candidate({ kind: "npm", ref: ["npm/lucide-react@1.65.0"], license: "ISC" }, "ui/icon.tsx", "export { ArrowRight as Icon } from \"lucide-react\";\n");
+    expect(probe({ slot: { id: "components.icon", fixture: fixture("ui/icon.tsx", "Icon") }, candidates: { "x-v1.json": npm } })).toEqual([]);
+  });
+
+  it("green: a candidate derived only from the consumer's own asset slots is an original", () => {
+    const derived = candidate({ kind: "derived", ref: ["clossys/agents/designer/assets.mark"] });
+    expect(probe({ candidates: { "x-v1.json": derived } })).toEqual([]);
+  });
+
+  it("OR kept: a consumer-asset slot whose adopted reference ships the fixture passes with no pin", () => {
+    expect(probe({ slot: { pin: null }, ships: (slot, file, name) => slot === "components.logo" && file === "ui/x.tsx" && name === "X" })).toEqual([]);
+  });
+
+  it("matches the provenance list through its globs", () => {
+    expect(probe({ slot: { id: "components.brand-mark" }, assets: ["components.brand-*"] })).toEqual([]);
+    expect(probe({ slot: { id: "components.brandmark" }, assets: ["components.brand-*"] })).toHaveLength(1);
+  });
+
+  it("mutation: each broken fixture, pin, candidate or source gives exactly one row", () => {
+    const registry = candidate({ kind: "registry", ref: ["shadcn/button@1"], hash: "sha256:00" });
+    const fromReference = candidate({ kind: "derived", ref: ["shadcn/button@1"], hash: "sha256:00" });
+    const cases: [string, World, RegExp][] = [
+      ["fixture export renamed", { slot: { fixture: fixture("ui/x.tsx", "Y") } }, /its pinned candidate's ui\/x\.tsx has no value export Y/],
+      ["fixture path changed", { slot: { fixture: fixture("ui/y.tsx") } }, /its pinned candidate x-v1\.json ships no file ui\/y\.tsx/],
+      ["candidate file path changed", { candidates: { "x-v1.json": candidate(ORIGINAL, "ui/z.tsx") } }, /its pinned candidate x-v1\.json ships no file ui\/x\.tsx/],
+      ["type-only export", { candidates: { "x-v1.json": candidate(ORIGINAL, "ui/x.tsx", "type X = string;\nexport { type X }\n") } }, /its pinned candidate's ui\/x\.tsx has no value export X/],
+      ["non-code file", { slot: { fixture: fixture("ui/x.svg") }, candidates: { "x-v1.json": candidate(ORIGINAL, "ui/x.svg", "<svg/>") } }, /its pinned candidate's ui\/x\.svg is not a code file/],
+      ["no fixture file", { slot: { fixture: fixture(undefined) } }, /the fixture names no file or export/],
+      ["no pin", { slot: { pin: null } }, /it has no pin/],
+      ["refused pin", { slot: { pinRejection: "hash-drift" } }, /the slot\/2 reader refuses its pin \(hash-drift\)/],
+      ["pin names no candidate", { slot: { pin: { schema: "clossys.pin/2" } } }, /its pin names no candidate/],
+      ["pinned candidate missing", { slot: { pin: { ...PIN, candidate: "gone-v1.json" } } }, /its pinned candidate gone-v1\.json cannot be read: ENOENT: gone-v1\.json/],
+      ["pinned candidate unparsable", { candidates: { "x-v1.json": "{ not json" } }, /its pinned candidate x-v1\.json cannot be read: .*/],
+      ["registry source", { candidates: { "x-v1.json": registry } }, /its pinned candidate x-v1\.json has source "registry", which is not consumer-owned .*/],
+      ["derived from a reference", { candidates: { "x-v1.json": fromReference } }, /its pinned candidate x-v1\.json has source "derived", which is not consumer-owned .*/],
+      ["no clossys.source", { candidates: { "x-v1.json": candidate(undefined) } }, /its pinned candidate x-v1\.json has source null, which is not consumer-owned .*/],
+    ];
+    for (const [name, world, why] of cases) expect(probe(world), name).toEqual(red(world.slot?.id ?? "components.logo", why));
+  });
+
+  it("mutation: outside consumerAssets the same original candidate is red with the U27 message", () => {
+    const u27 = (id: string) => [`${id}: contract.fixture mounts ui/x.tsx#X, which none of its adopted references ships in the selected style`];
+    expect(probe({ assets: [] }), "slot removed from consumerAssets").toEqual(u27("components.logo"));
+    expect(probe({ slot: { id: "components.button" } }), "components.button").toEqual(u27("components.button"));
+    expect(probe({ slot: { id: "frames.logo" }, assets: ["frames.logo"] }), "not a component slot").toEqual(u27("frames.logo"));
+  });
+
+  it("the fixture world's three consumer-asset slots pass on their real pinned candidates, read by the default readers", () => {
+    const root = join(consumer, "../..");
+    const slotOf = (id: string, mount?: unknown) => {
+      const doc = JSON.parse(readFileSync(join(consumer, id, "slot.json"), "utf8")) as { contract: Record<string, unknown> };
+      const pin = JSON.parse(readFileSync(join(consumer, id, "pin.json"), "utf8")) as Record<string, unknown>;
+      return { id, source: "placed", contract: { ...doc.contract, ...(mount ? { fixture: mount } : {}) }, inputs: [], uses: [], ledger: [], pin };
+    };
+    const ids = ["components.icon", "components.logo", "components.semantic-content"];
+    const run = (slots: unknown[]) => PROBES["contract-fixture"]!({ agent: "designer", live: slots } as unknown as AgentModel, { consumer: root } as ConformModel, { emptyL2Detected: {}, requestVerb: true, critiqueMonorepoPath: false }).rows;
+    expect(run(ids.map(id => slotOf(id)))).toEqual([]);
+    // Fixture-world mutation: the icon fixture's export renamed to Icons brings its row back.
+    expect(run([slotOf("components.icon", fixture("ui/icon.tsx", "Icons"))])).toEqual(red("components.icon", /its pinned candidate's ui\/icon\.tsx has no value export Icons/));
+  });
+});
+
 describe("packed Designer layout (what a tarball consumer installs)", () => {
   let packed: string | undefined, packedRoot = "";
   beforeAll(() => {
