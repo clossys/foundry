@@ -191,7 +191,26 @@
       "records": [
         {
           "file": "slot.json",
-          "sha256": "549d58285bb52757b0a221ca7ed5ea503e80ec1bbf4d4822ddb8e545a4f9b1aa"
+          "sha256": "034f47066819e57aa8ec53307be76b660434ff78f286db24c2174d9237b80ef1"
+        }
+      ]
+    },
+    {
+      "op": "slot",
+      "at": "2026-11-19T00:00:00Z",
+      "by": "planner",
+      "verb": "ia",
+      "skill": {
+        "path": "packages/producer/actions/ia/skill.md",
+        "sha256": "147a7eaf66267728953e0c8111a9c20b93475f95f8063745d9d1d1087658fe73"
+      },
+      "model": "none",
+      "tier": "none",
+      "kind": "ia",
+      "records": [
+        {
+          "file": "slot.json",
+          "sha256": "f01b2c35faa1ecc65b7f238c5179bc4027faf759987932916dd35f8c64d71954"
         }
       ]
     },
@@ -483,8 +502,16 @@
                 }
               ]
             },
-            "props": [
-              "children"
+            "requirements": [
+              {
+                "check": "compose.layers"
+              },
+              {
+                "check": "source.ref"
+              },
+              {
+                "check": "tokens.only"
+              }
             ],
             "fixture": {
               "schema": "clossys.element-preview/1",
@@ -500,29 +527,22 @@
                 }
               }
             },
-            "requirements": [
-              {
-                "check": "compose.layers"
-              },
-              {
-                "check": "source.ref"
-              },
-              {
-                "check": "tokens.only"
-              }
+            "props": [
+              "children"
             ]
           },
-          "sha256": "67619cabd25387d175261686729d1a7c816e030bdc4824b6ee41fbf917c140a0"
+          "sha256": "8504ec250f32c6d6e4606cabed14df708517d57013a48029657fb9194c2e10c6"
         },
         "standard": {
           "id": "frame",
-          "sha256": "bcfa533cb4aeda11c9d3fb3fbe4d75110c8b4a5f70d20667d924449f34554b29",
+          "sha256": "33193db059aa62a7021792f0f6ca1d9fdbbf4d9ad990b7582ef87e77754758aa",
           "requirements": [
             {
               "check": "compose.layers",
               "params": {
                 "layers": [
                   "components",
+                  "frames",
                   "sections"
                 ]
               }
@@ -727,7 +747,7 @@
       "records": [
         {
           "file": "slot.json",
-          "sha256": "549d58285bb52757b0a221ca7ed5ea503e80ec1bbf4d4822ddb8e545a4f9b1aa"
+          "sha256": "f01b2c35faa1ecc65b7f238c5179bc4027faf759987932916dd35f8c64d71954"
         }
       ]
     }

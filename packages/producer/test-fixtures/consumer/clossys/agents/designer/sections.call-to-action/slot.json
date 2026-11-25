@@ -251,9 +251,16 @@
         }
       ]
     },
-    "props": [
-      "copy",
-      "variant"
+    "requirements": [
+      {
+        "check": "compose.layers"
+      },
+      {
+        "check": "source.ref"
+      },
+      {
+        "check": "tokens.only"
+      }
     ],
     "fixture": {
       "schema": "clossys.element-preview/1",
@@ -279,16 +286,9 @@
         }
       }
     },
-    "requirements": [
-      {
-        "check": "compose.layers"
-      },
-      {
-        "check": "source.ref"
-      },
-      {
-        "check": "tokens.only"
-      }
+    "props": [
+      "copy",
+      "variant"
     ]
   },
   "tighten": [],

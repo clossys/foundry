@@ -347,8 +347,16 @@
       "components.semantic-content"
     ],
     "skipTarget": "main-content",
-    "props": [
-      "children"
+    "requirements": [
+      {
+        "check": "compose.layers"
+      },
+      {
+        "check": "source.ref"
+      },
+      {
+        "check": "tokens.only"
+      }
     ],
     "fixture": {
       "schema": "clossys.element-preview/1",
@@ -368,16 +376,8 @@
         }
       }
     },
-    "requirements": [
-      {
-        "check": "compose.layers"
-      },
-      {
-        "check": "source.ref"
-      },
-      {
-        "check": "tokens.only"
-      }
+    "props": [
+      "children"
     ]
   },
   "tighten": [],
