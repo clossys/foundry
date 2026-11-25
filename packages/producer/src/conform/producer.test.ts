@@ -27,7 +27,10 @@ type Mutable = { -readonly [K in keyof ProducerModel]: any };
  */
 function world(mutate: (model: Mutable) => void = () => {}): ProducerModel {
   const base = readProducerModel(FIXTURE);
-  const ia = structuredClone(readProducerIa()) as any[];
+  // The change queue no loop fills yet (P3) leaves the all-green world, its IA leaf with it (CPF1).
+  const ia = (structuredClone(readProducerIa()) as any[]).map(layer => layer.layer !== "queue" ? layer : {
+    ...layer, nodes: layer.nodes.map((node: any) => ({ ...node, children: node.children.filter((child: any) => !child.leaves.includes("queue.change")) })),
+  });
   const leaves = ia.flatMap(layer => layer.nodes.flatMap((node: any) => node.children.flatMap((child: any) => child.leaves)));
   const loops = new Map(structuredClone([...base.loops])) as Map<LoopName, any>;
   for (const read of loops.values()) if (read.ok) { const dead = new Set(deadEndSteps(read.steps)); for (const step of read.steps) if (dead.has(step.id)) step.onFail = { raise: "queue.fix", then: "retry" }; }
@@ -156,7 +159,8 @@ describe("Producer over the repo and its fixture (U9)", () => {
     const producer = report.producer!;
     expect(producer.cells.map(cell => cell.id)).toEqual(["P1", "P2", "P3", "P4", "P5", "P6", "P7", "P8"]);
     const rows = (id: string) => producer.cells.find(cell => cell.id === id)!.rows;
-    expect(rows("P1")).toEqual(["producer IA queue: queue.change is not placed"]);
+    // CPF1: queue.change is placed in the queue IA, so P1 is green; P3 still names the unfilled change queue.
+    expect(rows("P1")).toEqual([]);
     expect(rows("P3")).toEqual(["queue.change: no loop fills it (no owner step raises it, no failure routes to it, no step writes it)"]);
     expect(rows("P4")).toHaveLength(26);
     expect(rows("P4")).toEqual(expect.arrayContaining(["loop.fill: step create has no failure route: a failed run stops and lands in no queue", "loop.audit: step route has no failure route: a failed run stops and lands in no queue"]));
@@ -165,7 +169,7 @@ describe("Producer over the repo and its fixture (U9)", () => {
     // U9 fix r1 (P8): the skill names every loop and queue leaf, loop.scope, loop.slot, queue.pick, queue.approve and queue.slot among them.
     for (const id of ["P2", "P7", "P8"]) expect(rows(id), id).toEqual([]);
     expect(report.ok).toBe(false);
-    expect(formatReport(report)).toMatch(/^conform producer\n {2}RED {3}P1 /);
+    expect(formatReport(report)).toMatch(/^conform producer\n {2}GREEN P1 /);
     expect(conformProducer(readProducerModel(FIXTURE), readRegistry()).agent).toBe("producer");
   });
   it("clossys conform --agent producer judges Producer alone and exits 1 while a row is red; an unknown subject is refused", async () => {

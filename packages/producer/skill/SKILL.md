@@ -61,10 +61,10 @@ The six Producer loops run one step at a time from the loop version the consumer
 - DRAFT: `clossys run loop.slot --request <id>` answers one open `queue.slot` entry
   (`clossys request --list --open`). The assignee reuses a placed slot or proposes one new leaf. A new
   leaf waits on the owner's `queue.approve` entry, is placed through `clossys ia`, and the entry closes.
-- DRAFT: decisions land in five queues under `clossys/agents/producer/`. `queue.pick` holds a pick the
+- DRAFT: decisions land in six queues under `clossys/agents/producer/`. `queue.pick` holds a pick the
   owner confirms, and `queue.approve` an owner sign-off (a new leaf's signature among them).
-  `queue.clarify` holds an owner question, `queue.fix` a finding routed to a slot's agent, and
-  `queue.slot` a slot request.
+  `queue.clarify` holds an owner question, `queue.fix` a finding routed to a slot's agent,
+  `queue.change` a requested change to a slot, and `queue.slot` a slot request.
 - An agent step prints its packet (agent, verb, tier, skill under
   `packages/<agent>/actions/<action-id>/skill.md`): run that skill, then
   `clossys run loop.<name> --resume --run <run-id> --step-exit <0|1|2> --model <serving model> [--wrote <file>]...`.

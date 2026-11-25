@@ -40,6 +40,13 @@
           ]
         },
         {
+          "id": "problems-changes",
+          "label": "Changes",
+          "leaves": [
+            "queue.change"
+          ]
+        },
+        {
           "id": "problems-requests",
           "label": "Requests",
           "leaves": [
