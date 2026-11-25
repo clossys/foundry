@@ -608,6 +608,29 @@ describe("pin gate probe (the real pin verb on a temporary copy)", () => {
     expect(c3(opened("owner-pin", { exit: 0, gated: false }))).toContainEqual(expect.stringMatching(/^owner-pin writer\/\S+ \S+ accepted a submitted candidate with no passing verdict \(exit 0\)$/));
     expect(c3(opened("pick", { exit: 1, gated: false, message: "pick refused: R02.2" }))).toContainEqual(expect.stringMatching(/^pick writer\/\S+ \S+ \(submitted-uncertified\) was refused before the CHOOSE gate \(exit 1\): pick refused: R02\.2$/));
   });
+  // C3P (foundry-build-0048 D5-a): chrome and layout candidates are judged by the page record rules (the reader's kind
+  // family page), so the probe submits its uncertified page record there too, and the pin reaches the CHOOSE gate.
+  for (const id of ["chrome.site-header", "layout.marketing-home"]) {
+    const kind = id.split(".")[0]!;
+    it(`submits to the ${kind} slot publisher/${id} and is refused by the CHOOSE gate with no passing verdict`, async () => {
+      const publisher = model.agents.find(agent => agent.agent === "publisher")!;
+      const only: AgentModel = { ...publisher, live: publisher.live.filter(slot => slot.id === id) };
+      expect(only.live.map(slot => `${slot.schema} ${slot.kind}`)).toEqual([`clossys.slot/2 ${kind}`]);
+      const results = await probePinGate(FIXTURE, [only]);
+      expect(typeof results.publisher, String(results.publisher)).toBe("object");
+      const gate = results.publisher as PinGateResult;
+      expect(gate.target).toMatch(new RegExp(`^publisher/${id.replace(/\./g, "\\.")}(?:#|$)`));
+      for (const run of gate.verbs!) {
+        expect(run.exit, `${run.case} ${run.verb}: ${run.message}`).not.toBe(0);
+        expect(run.gated, `${run.case} ${run.verb}: ${run.message}`).toBe(true);
+      }
+      const pin = gate.verbs!.find(run => run.case === "submitted-uncertified" && run.verb === "pin")!;
+      expect(pin.message).toMatch(/no passing verdict/);
+      const facts = { emptyL2Detected: {}, requestVerb: true, critiqueMonorepoPath: false, iaContract: {}, pinGate: results };
+      expect(ASSERTIONS.C3!(only, model, facts)).toEqual({ rows: [], evidence: gate.verbs!.length });
+      expect(gate.verbs!.length).toBeGreaterThan(0);
+    });
+  }
 });
 
 describe("adapter paths", () => {

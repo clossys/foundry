@@ -15,6 +15,7 @@ import { standardTastePath } from "../cli/critique.js";
 import { candidateLineage, globMatch } from "../constitution/certify/source.js";
 import { runConstitution } from "../constitution/run.js";
 import { resolveAgent } from "../agents.js";
+import { slotFamily } from "../records/slot-current.js";
 import { readCandidate } from "../records/slots.js";
 import { CODE, exportedNames, referenceIndex, slotReferenceShips, type ReferenceIndex } from "../specimen/reference-fixtures.js";
 import { draftCopyIssues, type CopyField } from "../specimen/block-fixtures.js";
@@ -143,8 +144,10 @@ export const GATE_REFUSAL = /no submit record|no passing verdict|pinned only thr
 
 /** A schema-valid candidate that certifies against no contract (no keys, no derived source): submitted, never passing. */
 function uncertifiedBytes(slot: { readonly id: string; readonly kind?: string }, ext: string): unknown {
-  // A Publisher page (the placed probe slot): schema-valid, but no frame, no sections and an inline title (page.assembled).
-  if (ext === "json" && slot.kind === "page") return { schema: "clossys.page/1", path: `/${PIN_PROBE_NAME}`, title: "Conform probe page", frame: null, sections: [], copy: {}, meta: { source: { kind: "original", ref: [] } } };
+  // A Publisher page record for every slot the page record rules judge: the reader's kind family `page` (page, layout and
+  // chrome; records/slot-current.ts slotFamily, the kind the candidate validator applies). Schema-valid, but no frame, no
+  // sections and an inline title (page.assembled), so it reaches the CHOOSE gate and certifies against nothing.
+  if (ext === "json" && slotFamily(slot.kind) === "page") return { schema: "clossys.page/1", path: `/${PIN_PROBE_NAME}`, title: "Conform probe page", frame: null, sections: [], copy: {}, meta: { source: { kind: "original", ref: [] } } };
   if (ext === "json") return { name: PIN_PROBE_NAME, type: "registry:file", files: [{ path: `${PIN_PROBE_NAME}.svg`, type: "registry:file", content: "<svg/>" }], meta: { source: { kind: "original", ref: [] } } };
   const head = `---\nslot: "${slot.id}"\n`;
   return slot.kind === "brief"
