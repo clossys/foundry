@@ -570,9 +570,10 @@ describe("pin gate probe (the real pin verb on a temporary copy)", () => {
   });
   it("pins no hand-placed or uncertified candidate for any agent through any verb: each refusal is the CHOOSE gate's", async () => {
     const results = await probePinGate(FIXTURE, model.agents);
-    // R05.2 CHOOSE (foundry-build-0048): the fixture places the Publisher's package leaves (R6), its Directory tab first,
-    // so the probe runs the same verbs on its first live clossys.slot/2 slot, the page publisher/page.home.
-    expect((results.publisher as PinGateResult).target, String(results.publisher)).toMatch(/^publisher\/page\.home(?:#|$)/);
+    // R05.2 CHOOSE (foundry-build-0048): the fixture places the Publisher's package leaves (R6) and pins the chrome
+    // publisher/chrome.site-header, so the probe runs the same verbs on its first live clossys.slot/2 slot that carries
+    // candidates, that chrome.
+    expect((results.publisher as PinGateResult).target, String(results.publisher)).toMatch(/^publisher\/chrome\.site-header(?:#|$)/);
     for (const agent of ["director", "designer", "writer", "publisher"]) {
       const result = results[agent];
       expect(typeof result, `${agent}: ${String(result)}`).toBe("object");

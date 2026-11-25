@@ -623,11 +623,17 @@ function frame(root, consumer, id, doc, standard) {
  * consumer's pinned stock components (registry or npm lineage; an original such as the logo is no part):
  * - frames.site-header: the one partner header (tailark-oss mist header) is radix-flavored (asChild), which the
  *   consumer's aria engine refuses (REF-FLAVOR), and no stock item ships a header;
- * - frames.site-shell: no reference item ships a shell.
- * A frame composes no frame (the frame standard's compose.layers takes components and sections), so the shell places
- * its header and footer as host nodes (its contract slots accept host-node) and Publisher chrome mounts the header
- * frame into it. Each copy string is a prop (REF-COMP-COPY), each raw element unstyled (REF-COMP-MARKUP), and the
- * slot's `uses` are set to its parts (REF-COMP-USES) with its contract fixture repointed to the composed file.
+ * - frames.site-shell: no reference item ships a shell (its references are its parts'), so it is composed (SSC).
+ * The shell places its header and footer as host nodes, not as the frames.site-header and frames.site-footer parts:
+ * its contract's header and footer slots accept host-node (REF-COMP-LANDMARK), so a composed header with no
+ * <header> of the shell's own leaves no banner, and wrapping the header frame's <header> in one nests a banner;
+ * frames.site-footer is a stock adopt (registry lineage), and a composition places only pinned composed frames
+ * (REF-COMP-PART). Publisher chrome mounts the header frame into the shell's header slot.
+ * Each slot's `uses` are its parts (REF-COMP-USES): every part must be imported (REF-COMP-UNUSED) and stock
+ * (REF-COMP-PART), and the package uses include parts no composition may place (the logo and semantic-content are
+ * originals, the icon fails ref-verbatim, progress and toast are not in the component layer).
+ * Each copy string is a prop (REF-COMP-COPY) and each raw element unstyled (REF-COMP-MARKUP). The fixture of a
+ * composed slot is the consumer's own (ia sync keeps it), so the seeder declares it mounting the composed file.
  */
 const COMPOSED_FRAMES = {
   "frames.site-header": {
