@@ -3,6 +3,8 @@
   "id": "assemble.page",
   "produces": [
     "page",
+    "layout",
+    "chrome",
     "publication"
   ],
   "rung": "create",
