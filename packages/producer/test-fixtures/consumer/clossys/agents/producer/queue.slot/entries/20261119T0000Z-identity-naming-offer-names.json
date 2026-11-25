@@ -1,0 +1,106 @@
+{
+  "schema": "clossys.queue-entry/2",
+  "id": "20261119T0000Z-identity-naming-offer-names",
+  "kind": "slot",
+  "from": "writer/lexicon.preferred-terms",
+  "assignee": "director",
+  "target": "director/identity.naming.offer-names",
+  "status": "closed",
+  "opened": "20261119T0000Z-identity-naming-offer-names#1",
+  "rel": "input",
+  "why": "writer/lexicon.preferred-terms names identity.naming.offer-names as an input; no slot holds it",
+  "source": "ia",
+  "createdBy": {
+    "actor": "code",
+    "cli": "clossys ia",
+    "version": "0.1.0"
+  },
+  "createdAt": "2026-11-19T00:00:00Z",
+  "refs": [
+    {
+      "to": "writer/lexicon.preferred-terms",
+      "rel": "raisedBy"
+    }
+  ],
+  "route": {
+    "row": "slot.home",
+    "table": "ceb9890678db86be17bc2e25ad19bc226db227b875fcd858a3a354bd3b9d34c7",
+    "delegated": true,
+    "assignee": "director",
+    "handler": {
+      "skill": "packages/director/actions/director.slot/skill.md",
+      "loop": "loop.slot"
+    }
+  },
+  "options": [
+    {
+      "id": "handoff",
+      "label": "Hand it to director to answer by its skill",
+      "then": {
+        "verb": "handoff",
+        "args": [
+          "director"
+        ]
+      }
+    }
+  ],
+  "events": [
+    {
+      "id": "20261119T0000Z-identity-naming-offer-names#1",
+      "at": "2026-11-19T00:00:00Z",
+      "op": "raised",
+      "by": "planner",
+      "via": "cli",
+      "detail": "writer/lexicon.preferred-terms names identity.naming.offer-names as an input; no slot holds it"
+    },
+    {
+      "id": "20261119T0000Z-identity-naming-offer-names#2",
+      "at": "2026-11-19T00:00:00Z",
+      "op": "routed",
+      "by": "producer",
+      "detail": "row owner.class -> owner (queue.pick from loop.choose/choose-v1#owner-pick)"
+    },
+    {
+      "id": "20261119T0000Z-identity-naming-offer-names#3",
+      "at": "2026-11-19T00:00:00Z",
+      "op": "answered",
+      "by": "owner",
+      "option": "handoff",
+      "via": "cli",
+      "quote": "Made-up fixture answer: hand it to director to answer by its skill."
+    },
+    {
+      "id": "20261119T0000Z-identity-naming-offer-names#4",
+      "at": "2026-11-19T00:00:00Z",
+      "op": "routed",
+      "by": "producer",
+      "detail": "row slot.home -> director (loop.slot, packages/director/actions/director.slot/skill.md), delegated by the owner's handoff"
+    },
+    {
+      "id": "20261119T0000Z-identity-naming-offer-names#5",
+      "at": "2026-11-19T00:00:00Z",
+      "op": "decided",
+      "by": "director",
+      "detail": "reuse director/identity.naming.architecture"
+    },
+    {
+      "id": "20261119T0000Z-identity-naming-offer-names#6",
+      "at": "2026-11-19T00:00:00Z",
+      "op": "closed",
+      "by": "producer",
+      "detail": "linked writer/lexicon.preferred-terms to director/identity.naming.architecture"
+    }
+  ],
+  "overlaps": [],
+  "decision": "reuse",
+  "reuse": "director/identity.naming.architecture",
+  "link": "director/identity.naming.architecture",
+  "outcome": "reused",
+  "result": "director/identity.naming.architecture",
+  "notified": {
+    "to": "writer/lexicon.preferred-terms",
+    "at": "2026-11-19T00:00:00Z"
+  },
+  "closedAt": "2026-11-19T00:00:00Z",
+  "closed": "20261119T0000Z-identity-naming-offer-names#6"
+}

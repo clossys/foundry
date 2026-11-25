@@ -128,6 +128,16 @@ const ownRequirementsOf = (agent: AgentModel, slot: LiveSlot): unknown[] => {
 };
 /** At this many slot-id literals one module holds a fixed list, not a derivation. */
 export const FIXED_LIST_MIN = 5;
+/**
+ * Every real slot id: a leaf of some agent's tree (parked and awaiting leaves included) or a placed slot. L5 counts
+ * only these, so a file name or a rule code in a derive module is not a slot id.
+ */
+function slotIdsOf(model: ConformModel): Set<string> {
+  const ids = new Set<string>();
+  for (const set of [...model.packageIds.values(), ...model.liveIds.values()]) for (const id of set) ids.add(id);
+  for (const agent of model.agents) for (const tree of agent.trees) for (const l1 of tree.l1) for (const l2 of l1.l2) for (const id of l2.leaves) ids.add(id);
+  return ids;
+}
 
 /** Why a slot's `family` is not the slot/2 shape {options 1|2|3, varyOn, values}, or undefined when it is. */
 export function familyIssue(family: unknown): string | undefined {
@@ -269,10 +279,11 @@ export const ASSERTIONS: Readonly<Record<string, Assertion>> = {
       evidence: closed.length,
     };
   },
-  L5: agent => {
+  L5: (agent, model) => {
+    const slotIds = slotIdsOf(model);
     const rows = agent.derive.flatMap(entry => {
       if (entry.text === undefined) return [`${entry.module}: missing`];
-      const ids = new Set([...entry.text.matchAll(ID_LITERAL)].map(match => match[1]!));
+      const ids = new Set([...entry.text.matchAll(ID_LITERAL)].map(match => match[1]!).filter(id => slotIds.has(id)));
       return ids.size >= FIXED_LIST_MIN ? [`${entry.module}: a fixed list of ${ids.size} slot ids, not derived from source data`] : [];
     });
     if (!agent.derive.length && agent.hasDeriveDir) rows.push("src/derive exists but conform.json declares no derive module");

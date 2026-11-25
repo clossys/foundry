@@ -152,6 +152,9 @@ describe.each(FIXTURES)("on %s", (_name, FIXTURE, pinnedParity) => {
       // The fixture's own open entries: the queue.change entries the interview filed (none on the old tree).
       const changeDir = join(root, "clossys", "agents", "producer", "queue.change", "entries");
       const filed = (existsSync(changeDir) ? readdirSync(changeDir) : []).filter(file => file.endsWith(".json")).map(file => file.slice(0, -".json".length)).sort();
+      // The seeder's closed queue.slot entries are never open, so they show only with --queue all.
+      const slotDir = join(root, "clossys", "agents", "producer", "queue.slot", "entries");
+      const closed = (existsSync(slotDir) ? readdirSync(slotDir) : []).filter(file => file.endsWith(".json")).map(file => file.slice(0, -".json".length)).sort();
       const fixture = statusView(root).queue;
       expect(fixture.map(item => item.id).sort()).toEqual(filed);
       expect(fixture.every(item => item.queue === "queue.change" && item.decider === "owner" && item.subject.startsWith("director/"))).toBe(true);
@@ -163,7 +166,7 @@ describe.each(FIXTURES)("on %s", (_name, FIXTURE, pinnedParity) => {
         ask: "Confirm the synthetic moat brief", default: "keep moat-v1.md", raisedAt: "2026-01-03T00:00:00Z",
       }, ...fixture]);
       expect(schemaIssues(open)).toEqual([]);
-      expect(detailed({ queue: "all" }).queue.map(item => item.id).sort()).toEqual(["20260102T0000Z-old", "20260103T0000Z-moat", ...filed].sort());
+      expect(detailed({ queue: "all" }).queue.map(item => item.id).sort()).toEqual(["20260102T0000Z-old", "20260103T0000Z-moat", ...filed, ...closed].sort());
       expect(detailed({ agent: "writer" }).queue).toEqual([]);
     });
 

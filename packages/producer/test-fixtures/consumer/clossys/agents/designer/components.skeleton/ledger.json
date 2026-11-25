@@ -156,6 +156,48 @@
           "sha256": "43e707a49aaee6acd46b8aa6834bceb673232b54bdcdc10d5febb52ae59716b7"
         }
       ]
+    },
+    {
+      "op": "slot",
+      "at": "2026-11-19T00:00:00Z",
+      "by": "planner",
+      "verb": "ia",
+      "skill": {
+        "path": "packages/producer/actions/ia/skill.md",
+        "sha256": "147a7eaf66267728953e0c8111a9c20b93475f95f8063745d9d1d1087658fe73"
+      },
+      "model": "none",
+      "tier": "none",
+      "kind": "ia",
+      "records": [
+        {
+          "file": "slot.json",
+          "sha256": "3f47b54fa472dd53b0bb16d09e3a098db6c05d228f68d7cf285362e9449674c4"
+        }
+      ]
+    },
+    {
+      "op": "slot",
+      "at": "2026-11-19T00:00:00Z",
+      "by": "producer",
+      "verb": "request",
+      "skill": {
+        "path": "packages/designer/actions/designer.slot/skill.md",
+        "sha256": "051fae19cda02a041058aa6e67ac666cf96c0e77728c08b736ca0a27248d4747"
+      },
+      "model": "none",
+      "tier": "none",
+      "kind": "request",
+      "request": "20261119T0000Z-themes-skeleton-fill",
+      "link": "designer/themes.muted",
+      "rel": "input",
+      "to": "designer/components.skeleton",
+      "records": [
+        {
+          "file": "slot.json",
+          "sha256": "f044b8a86d6f4bdf4067eac156cd72564e26632919895a17d8c62c5b1af42840"
+        }
+      ]
     }
   ]
 }

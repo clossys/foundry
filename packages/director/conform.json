@@ -21,7 +21,7 @@
       "dir": "recipes/create.structured", "fixture": {"output": "recipes/create.structured/fixture/context.market.size.json", "slot": "context.market.size"}
     }
   ],
-  "derive": [],
+  "derive": [{"module": "src/catalog.ts"}, {"module": "src/catalog/ia/tree.ts"}],
   "edgeFiles": [
     {
       "file": "src/slot-contracts/contracts.json",

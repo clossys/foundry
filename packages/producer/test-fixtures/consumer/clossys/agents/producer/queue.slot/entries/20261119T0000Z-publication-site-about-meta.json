@@ -1,0 +1,82 @@
+{
+  "schema": "clossys.queue-entry/2",
+  "id": "20261119T0000Z-publication-site-about-meta",
+  "kind": "slot",
+  "from": "publisher/page.about",
+  "assignee": "writer",
+  "target": "writer/publication.site.about-meta",
+  "status": "closed",
+  "opened": "20261119T0000Z-publication-site-about-meta#1",
+  "rel": "input",
+  "why": "publisher/page.about names publication.site.about-meta as an input; no slot holds it",
+  "source": "ia",
+  "createdBy": {
+    "actor": "code",
+    "cli": "clossys ia",
+    "version": "0.1.0"
+  },
+  "createdAt": "2026-11-19T00:00:00Z",
+  "refs": [
+    {
+      "to": "publisher/page.about",
+      "rel": "raisedBy"
+    }
+  ],
+  "route": {
+    "row": "slot.home",
+    "table": "ceb9890678db86be17bc2e25ad19bc226db227b875fcd858a3a354bd3b9d34c7",
+    "assignee": "writer",
+    "handler": {
+      "skill": "packages/writer/actions/writer.slot/skill.md",
+      "loop": "loop.slot"
+    }
+  },
+  "events": [
+    {
+      "id": "20261119T0000Z-publication-site-about-meta#1",
+      "at": "2026-11-19T00:00:00Z",
+      "op": "raised",
+      "by": "planner",
+      "via": "cli",
+      "detail": "publisher/page.about names publication.site.about-meta as an input; no slot holds it"
+    },
+    {
+      "id": "20261119T0000Z-publication-site-about-meta#2",
+      "at": "2026-11-19T00:00:00Z",
+      "op": "routed",
+      "by": "producer",
+      "detail": "row slot.home -> writer (loop.slot, packages/writer/actions/writer.slot/skill.md)"
+    },
+    {
+      "id": "20261119T0000Z-publication-site-about-meta#3",
+      "at": "2026-11-19T00:00:00Z",
+      "op": "decided",
+      "by": "writer",
+      "detail": "reuse writer/page.about.meta"
+    },
+    {
+      "id": "20261119T0000Z-publication-site-about-meta#4",
+      "at": "2026-11-19T00:00:00Z",
+      "op": "closed",
+      "by": "producer",
+      "detail": "linked publisher/page.about to writer/page.about.meta"
+    }
+  ],
+  "overlaps": [
+    {
+      "slot": "writer/publication.site.meta",
+      "why": "similar purpose (0.75)"
+    }
+  ],
+  "decision": "reuse",
+  "reuse": "writer/page.about.meta",
+  "link": "writer/page.about.meta",
+  "outcome": "reused",
+  "result": "writer/page.about.meta",
+  "notified": {
+    "to": "publisher/page.about",
+    "at": "2026-11-19T00:00:00Z"
+  },
+  "closedAt": "2026-11-19T00:00:00Z",
+  "closed": "20261119T0000Z-publication-site-about-meta#4"
+}

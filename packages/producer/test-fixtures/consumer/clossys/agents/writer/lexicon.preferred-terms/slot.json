@@ -27,11 +27,11 @@
       "rel": "input"
     },
     {
-      "to": "director/identity.naming.architecture",
+      "to": "director/focus.category.definition",
       "rel": "input"
     },
     {
-      "to": "director/focus.category.definition",
+      "to": "director/identity.naming.architecture",
       "rel": "input"
     }
   ],
@@ -50,11 +50,11 @@
         "rel": "input"
       },
       {
-        "to": "director/identity.naming.architecture",
+        "to": "director/focus.category.definition",
         "rel": "input"
       },
       {
-        "to": "director/focus.category.definition",
+        "to": "director/identity.naming.architecture",
         "rel": "input"
       }
     ],
