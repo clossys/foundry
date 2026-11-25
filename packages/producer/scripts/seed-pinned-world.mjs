@@ -2,7 +2,8 @@
 /**
  * The pinned test world (foundry-build-0048 Unit A): seeds test-fixtures/consumer so that every slot the
  * fixture pages read (the upstream closure of the site shell, the hero section and their Writer copy) holds a
- * candidate pinned through the CHOOSE gate. Only the clossys verbs write: `clossys verdict --record` (the P1
+ * candidate pinned through the CHOOSE gate, and so does one Publisher page (Unit D: the site header chrome, seeded
+ * in a second pass once the Publisher leaves are placed). Only the clossys verbs write: `clossys verdict --record` (the P1
  * create verdict), `clossys next --stage brief|diverge|render` and `clossys critique` (the P2 craft stages),
  * `clossys next --submit` (the guarded candidates verb) and `clossys pin` (the gate, its scorecard and the pin
  * ledger event). The content is synthetic fixture data, one generator per standard; it names no brand or client.
@@ -18,7 +19,7 @@
  * why; the run leaves them (and their downstream) unpinned and prints them. Any other refusal stops the run (exit 1).
  * Before the seeding, the run does what a real consumer does to its store: `clossys migrate slots --apply` (the
  * Producer seats are clossys.slot/1 in the base). After it, the run places every Publisher package leaf
- * (scripts/place-fixture-publisher.mjs) on the same clock.
+ * (scripts/place-fixture-publisher.mjs) on the same clock, then seeds PUBLISHER_TARGETS through the same verbs.
  */
 import { execFileSync } from "node:child_process";
 import { createHash } from "node:crypto";
@@ -54,6 +55,11 @@ const BY = "planner:fixture-world";
 
 /** The slots the fixture pages read, besides the pages themselves (Publisher places them in its tests). */
 export const TARGETS = ["designer/frames.site-shell", "designer/sections.hero", "writer/sections.hero.copy", "writer/frames.site-header.copy", "writer/page.home.meta", "writer/publication.site.meta"];
+/**
+ * The Publisher slots the run pins (Unit D): the site header chrome, whose upstream is the frames and copy above.
+ * Publisher leaves exist only once placePublisher has run, so these seed in a second pass after it.
+ */
+export const PUBLISHER_TARGETS = ["publisher/chrome.site-header"];
 
 // ---------------------------------------------------------------- base (the unpinned fixture)
 
@@ -569,16 +575,216 @@ function component(root, consumer, id, doc, standard) {
 }
 
 /**
- * The consumer's own frame and hero (planner ruling D3, 2026-11-20): Foundry authors no frame or site section, so
- * the seeder reuses the scripted candidate files `clossys check --e2e` already ships (e2e/scenario.json craft.frame
- * and craft.hero), byte for byte, at that scenario's rung, through the same craft verbs. Both slots are BLOCKED today
- * with the contract gap the shipped file leaves; this generator fills a slot as soon as its BLOCKED entry goes.
+ * The consumer's own hero (planner ruling D3, 2026-11-20): Foundry authors no site section, so the seeder reuses the
+ * scripted candidate file `clossys check --e2e` already ships (e2e/scenario.json craft.hero), byte for byte, at that
+ * scenario's rung, through the same craft verbs. The slot is BLOCKED today with the contract gap the shipped file
+ * leaves; this generator fills it as soon as its BLOCKED entry goes. (The frames are composed: COMPOSED_FRAMES.)
  */
-const SHIPPED_CRAFT = { "frames.site-shell": "site-shell.json", "sections.hero": "hero.json" };
+const SHIPPED_CRAFT = { "sections.hero": "hero.json" };
 function shippedCraft(id) {
   const step = JSON.parse(readFileSync(join(PRODUCER, "e2e", "scenario.json"), "utf8")).steps.find(each => each.craft?.ref === `designer/${id}`);
   if (!step || step.craft.file !== SHIPPED_CRAFT[id]) throw new Error(`e2e/scenario.json crafts no designer/${id} from ${SHIPPED_CRAFT[id]}`);
   return { ext: "json", body: readFileSync(join(PRODUCER, "e2e", step.craft.file), "utf8"), rung: step.craft.rung, reason: "fixture world: the consumer's own crafted element, the scripted candidate `clossys check --e2e` ships" };
+}
+
+/** The stock registries (source ladder L1); every other registry a standard's source.ref admits is a partner (L2). */
+const STOCK = ["shadcn-aria", "shadcn"];
+
+/**
+ * A frame candidate (frame, craft): the reference item whose files ship the slot's contract fixture, climbing the
+ * source ladder (stock first, then a partner registry the standard's source.ref admits): its code is the reference
+ * file normalized to the consumer's components.json, adopted at L1 (stock) or L2 (partner) with the item as seed.
+ */
+function frame(root, consumer, id, doc, standard) {
+  const file = doc.contract?.fixture?.fixtures?.file;
+  const admitted = (standard.doc.requirements ?? []).find(item => item.check === "source.ref")?.params?.registries ?? [];
+  const rank = row => (STOCK.includes(row.registry) ? 0 : 1);
+  const rows = file ? manifest().filter(row => admitted.includes(row.registry) && (row.slots ?? []).includes(id) && row.files.some(each => each.path === file)).sort((a, b) => rank(a) - rank(b)) : [];
+  const row = rows[0];
+  if (!row) throw new Refused(`designer/${id}`, `no admitted reference item ships the contract fixture ${file ?? "(none)"}`);
+  const files = row.files.filter(each => each.path === file).map(each => ({ path: each.path, type: "registry:component", content: normalizedSeedFile(consumer, refId(row), each.path, { manifest: { items: manifest() }, referencesDir: REFERENCES }) }));
+  const item = {
+    name: id.split(".").at(-1),
+    type: "registry:block",
+    dependencies: declare(root, `designer/${id}`, files),
+    files,
+    meta: {
+      slot: id,
+      source: sourceFrom("registry", row),
+      refVerbatim: { files: Object.fromEntries(files.map(each => [each.path, each.path])) },
+      element: { slot: id, reason: designerReason(standard, doc, `${STOCK.includes(row.registry) ? "stock" : "partner"} ${refId(row)}, adopted unmodified`) },
+    },
+  };
+  return { ext: "json", body: `${JSON.stringify(item, null, 2)}\n`, rung: STOCK.includes(row.registry) ? "L1" : "L2", seed: `${row.registry}/${row.name}` };
+}
+
+/**
+ * The frames no admitted reference item fills, so each is crafted (create.frame, rung L4) as a composition of the
+ * consumer's pinned stock components (registry or npm lineage; an original such as the logo is no part):
+ * - frames.site-header: the one partner header (tailark-oss mist header) is radix-flavored (asChild), which the
+ *   consumer's aria engine refuses (REF-FLAVOR), and no stock item ships a header;
+ * - frames.site-shell: no reference item ships a shell.
+ * A frame composes no frame (the frame standard's compose.layers takes components and sections), so the shell places
+ * its header and footer as host nodes (its contract slots accept host-node) and Publisher chrome mounts the header
+ * frame into it. Each copy string is a prop (REF-COMP-COPY), each raw element unstyled (REF-COMP-MARKUP), and the
+ * slot's `uses` are set to its parts (REF-COMP-USES) with its contract fixture repointed to the composed file.
+ */
+const COMPOSED_FRAMES = {
+  "frames.site-header": {
+    file: "registry/frames/site-header.tsx",
+    parts: ["components.button", "components.dialog"],
+    code: `import { Button, LinkButton } from "@/components/ui/button";
+import { Dialog, DialogClose, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+
+export interface SiteHeaderLink {
+  href: string;
+  label: string;
+}
+
+export function SiteHeader({ skipLabel, navigationLabel, navigationOpen, navigationClose, brand, links = [], actions, children }: {
+  skipLabel?: string;
+  navigationLabel?: string;
+  navigationOpen?: string;
+  navigationClose?: string;
+  brand?: React.ReactNode;
+  links?: SiteHeaderLink[];
+  actions?: React.ReactNode;
+  children?: React.ReactNode;
+}) {
+  const items = links.map(link => <LinkButton key={link.href} href={link.href} variant="ghost">{link.label}</LinkButton>);
+  return (
+    <header>
+      <LinkButton href="#main-content" variant="link">{skipLabel}</LinkButton>
+      {brand}
+      <nav aria-label={navigationLabel}>{items}</nav>
+      <DialogTrigger>
+        <Button variant="outline">{navigationOpen}</Button>
+        <Dialog showCloseButton={false}>
+          <DialogTitle>{navigationLabel}</DialogTitle>
+          <nav aria-label={navigationLabel}>{items}</nav>
+          <DialogClose>{navigationClose}</DialogClose>
+        </Dialog>
+      </DialogTrigger>
+      {actions}
+      {children}
+    </header>
+  );
+}
+`,
+  },
+  "frames.site-shell": {
+    file: "registry/frames/site-shell.tsx",
+    parts: ["components.separator"],
+    code: `import { Separator } from "@/components/ui/separator";
+
+export function SiteShell({ skipLink, progress, consent, header, footer, toasts, children }: {
+  skipLink?: React.ReactNode;
+  progress?: React.ReactNode;
+  consent?: React.ReactNode;
+  header?: React.ReactNode;
+  footer?: React.ReactNode;
+  toasts?: React.ReactNode;
+  children?: React.ReactNode;
+}) {
+  return (
+    <div>
+      {skipLink}
+      {progress}
+      {consent ? <section>{consent}</section> : null}
+      <header>{header}</header>
+      <Separator />
+      <main id="main-content" tabIndex={-1}>{children}</main>
+      <Separator />
+      <footer>{footer}</footer>
+      {toasts ? <section>{toasts}</section> : null}
+    </div>
+  );
+}
+`,
+  },
+};
+
+/** The paths a pinned stock part's pin vendors (a registry item's refVerbatim files, an npm item's code files). */
+function vendored(consumer, slot) {
+  const pin = JSON.parse(readFileSync(join(consumer, "agents", "designer", slot, "pin.json"), "utf8"));
+  const { content } = JSON.parse(readFileSync(join(consumer, "agents", "designer", slot, "candidates", pin.candidate), "utf8"));
+  const files = content.meta?.refVerbatim?.files;
+  return files ? Object.values(files) : content.files.filter(file => /\.(tsx|ts)$/.test(file.path)).map(file => file.path);
+}
+
+/** The one component a composed frame's code exports. */
+const composedExport = code => {
+  const named = [...code.matchAll(/^export function (\w+)/gm)].map(match => match[1]);
+  if (named.length !== 1) throw new Error(`a composed frame exports ${named.length} components; the fixture mounts one`);
+  return named[0];
+};
+
+/** A composed frame's contract (its own, the fixture repointed to the composed file and export, props kept) and uses. */
+function composedFrameContract(id, doc) {
+  const spec = COMPOSED_FRAMES[id];
+  if (!spec) return undefined;
+  const fixtures = { ...doc.contract.fixture.fixtures, file: spec.file, export: composedExport(spec.code) };
+  return { contract: { ...doc.contract, fixture: { ...doc.contract.fixture, fixtures } }, uses: spec.parts };
+}
+
+/** A composed frame candidate (create.frame, L4): one file installed under components/frames, its parts the pins'. */
+function composedFrame(root, consumer, id, doc, standard) {
+  const spec = COMPOSED_FRAMES[id];
+  const files = [{ path: spec.file, type: "registry:component", target: `components/frames/${spec.file.split("/").at(-1)}`, content: spec.code }];
+  const reason = `fixture world: no admitted reference item fills ${id}, so it is composed from the consumer's pinned stock ${spec.parts.join(", ")}`;
+  const item = {
+    $schema: "https://ui.shadcn.com/schema/registry-item.json",
+    name: id.split(".").at(-1),
+    type: "registry:block",
+    dependencies: declare(root, `designer/${id}`, files),
+    files,
+    meta: {
+      slot: id,
+      source: { kind: "composition", ref: [], license: "MIT", parts: spec.parts.map(slot => ({ slot, files: vendored(consumer, slot) })) },
+      element: { slot: id, reason: designerReason(standard, doc, `composed from the pinned stock ${spec.parts.join(", ")}`) },
+    },
+  };
+  return { ext: "json", body: `${JSON.stringify(item, null, 2)}\n`, rung: "L4", reason };
+}
+
+// Publisher: a chrome candidate is a clossys.page/1 record (the page family) that places only what its contract
+// names: the frame, the unit it frames and that unit's Writer copy, every value a Writer key (no inline copy).
+
+/** A slot id without its agent (`designer/frames.site-shell` -> `frames.site-shell`), the form a page record names. */
+const bare = ref => ref.split("/").at(-1);
+
+/**
+ * A chrome candidate (chrome, craft): one frame (the contract's frame) plus the unit it frames (the contract's unit),
+ * each copy field of the unit's contract bound to the key of the same name in the contract's Writer copy slot, and a
+ * derived source citing every input (R07.1). The page family requires a title; it is the unit's navigation label key.
+ */
+function chrome(consumer, id, doc) {
+  const contract = doc.contract ?? {};
+  if (typeof contract.frame !== "string" || typeof contract.unit !== "string" || typeof contract.copy !== "string") throw new Refused(`publisher/${id}`, "the chrome contract names no frame, unit and copy");
+  const unit = readSlot(consumer, contract.unit.split("/")[0], bare(contract.unit));
+  const copySlot = bare(contract.copy.split("#")[0]);
+  const keys = (unit.contract?.copy?.fields ?? []).map(field => field.key);
+  if (!keys.includes("navigation.label")) throw new Refused(`publisher/${id}`, `${contract.unit} declares no navigation.label copy field`);
+  const record = {
+    schema: "clossys.page/1",
+    slug: id.split(".").at(-1),
+    title: `${copySlot}#navigation.label`,
+    frame: bare(contract.frame),
+    sections: [bare(contract.unit)],
+    copy: Object.fromEntries(keys.map(key => [key, `${copySlot}#${key}`])),
+    meta: { source: { kind: "derived", ref: (doc.inputs ?? []).map(dep => `${agentOf(consumer, dep)}:${dep}`) } },
+  };
+  return { ext: "json", body: `${JSON.stringify(record, null, 2)}\n`, rung: "create", reason: "fixture world: a synthetic consumer, so its chrome is assembled from its own pinned frame, unit and copy" };
+}
+
+/**
+ * A chrome slot's contract with the fixture the page certifier judges it by (R05.1): the package IA places chrome
+ * with no fixture, and a chrome record names no path, so the sample route is the site's root, which every page the
+ * chrome frames shares.
+ */
+function chromeContract(id, doc) {
+  if (doc.standard !== "chrome" || doc.contract?.fixture !== undefined) return undefined;
+  return { ...doc.contract, fixture: { route: { path: "/" } } };
 }
 
 /** The candidate a slot's standard takes, with its extension and the ladder rung it comes in on. */
@@ -590,6 +796,8 @@ function candidateOf(root, consumer, agent, id, doc, standard) {
     if (doc.standard === "component" && CONSUMER_COMPONENTS[id] && consumerOwned(id)) return consumerComponent(root, id, doc, standard);
     if (doc.standard === "component" && doc.contract?.fixture) return component(root, consumer, id, doc, standard);
     if (SHIPPED_CRAFT[id]) return shippedCraft(id);
+    if (COMPOSED_FRAMES[id]) return composedFrame(root, consumer, id, doc, standard);
+    if (doc.standard === "frame") return frame(root, consumer, id, doc, standard);
   }
   if (agent === "director") return { ext: "md", body: brief(consumer, id, doc), rung: "create", reason: "fixture world: the brief standards are create-only and no package default fits a synthetic consumer" };
   if (agent === "writer") {
@@ -599,6 +807,7 @@ function candidateOf(root, consumer, agent, id, doc, standard) {
     const body = lexiconSlot ? lexicon(consumer, id, doc) : copy(consumer, id, doc);
     return { ext: "md", body, rung: "create", reason: CREATE, ...(lexiconSlot ? {} : { record: id.split(".").at(-1) }) };
   }
+  if (agent === "publisher" && doc.standard === "chrome") return chrome(consumer, id, doc);
   throw new Error(`no fixture generator for ${agent}/${id} (${doc.kind}, standard ${doc.standard})`);
 }
 
@@ -721,9 +930,6 @@ async function storeFormat(w) {
  * or contract admits a candidate and the seeder can make one.
  */
 export const BLOCKED = {
-  "designer/frames.site-footer": "no candidate: Foundry authors no frame, and `clossys check --e2e` ships no scripted site-footer candidate to reuse (e2e/scenario.json crafts only frames.site-shell and sections.hero)",
-  "designer/frames.site-header": "no candidate: Foundry authors no frame, and `clossys check --e2e` ships no scripted site-header candidate to reuse (e2e/scenario.json crafts only frames.site-shell and sections.hero)",
-  "designer/frames.site-shell": "contract gap R05.1 [fixture]: the shipped e2e/site-shell.json ships only registry/frames/site-shell.tsx (export PlainFrame), but the contract fixture mounts mist/blocks/hero-section/one/header.tsx (export HeroHeader); its uses also read frames.site-header and frames.site-footer, which hold no candidate",
   "designer/sections.hero": "contract gap R05.1 [fixture] (submit refused by the constitution guard): the shipped e2e/hero.json ships only registry/sections/hero.tsx (export SimpleHero), but the contract fixture mounts mist/blocks/hero-section/one/hero-section.tsx (export default)",
 };
 
@@ -746,9 +952,12 @@ const TIER = "mid";
 async function seedSlot(w, ref) {
   const [agent, id] = ref.split("/");
   let doc = readSlot(w.consumer, agent, id);
-  const contract = agent === "writer" ? lexiconContract(id, doc) : agent === "designer" ? consumerComponentContract(id, doc) : undefined;
+  const composed = agent === "designer" ? composedFrameContract(id, doc) : undefined;
+  const contract = agent === "writer" ? lexiconContract(id, doc)
+    : agent === "designer" ? consumerComponentContract(id, doc) ?? composed?.contract
+    : agent === "publisher" ? chromeContract(id, doc) : undefined;
   if (contract) {
-    await w.run(ref, "ia", ref, "--contract", w.file(`${id}.contract.json`, contract), "--at", AT);
+    await w.run(ref, "ia", ref, "--contract", w.file(`${id}.contract.json`, contract), ...(composed ? ["--uses", composed.uses.join(",")] : []), "--at", AT);
     doc = readSlot(w.consumer, agent, id);
   }
   const standard = readStandard(w.root, agent, doc.standard);
@@ -908,6 +1117,13 @@ export async function seed({ from, out, only, keep = false, resume } = {}) {
     for (const ref of order) if (!pinned(w.consumer, ref)) await seedSlot(w, ref);
     // The Publisher leaves, placed from the package trees (R6): the Publisher IA is the workspace's own.
     await placePublisher(w, AT);
+    // The second pass: the Publisher targets, over a closure read after placement. Their upstream was seeded above;
+    // a Publisher target that reads an unpinned slot is a refusal, never a silent skip.
+    const later = closure(w.consumer, PUBLISHER_TARGETS).filter(ref => !order.includes(ref) && !pinned(w.consumer, ref));
+    for (const [ref, rule] of blockedIn(w.consumer, closure(w.consumer, PUBLISHER_TARGETS))) throw new Refused(ref, rule);
+    const placed = later.filter(ref => !only || only.some(prefix => ref.startsWith(prefix)));
+    for (const ref of placed) await seedSlot(w, ref);
+    order.push(...placed);
     if (!only) await adoptLoops(w);
     if (!only) await placement(w);
     if (!only) await interview(w);

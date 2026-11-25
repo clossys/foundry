@@ -8,7 +8,7 @@ import { existsSync, mkdtempSync, readFileSync, realpathSync, rmSync } from "nod
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { BASE, BASE_FILE, BLOCKED, FIXTURE, REPO, assertBaseAncestor, blockedIn, closure, seed, treeFiles } from "../../scripts/seed-pinned-world.mjs";
+import { BASE, BASE_FILE, BLOCKED, FIXTURE, PUBLISHER_TARGETS, REPO, assertBaseAncestor, blockedIn, closure, seed, treeFiles } from "../../scripts/seed-pinned-world.mjs";
 
 const consumer = join(FIXTURE, "clossys");
 const pinned = (ref: string) => { const [agent, id] = ref.split("/") as [string, string]; return existsSync(join(consumer, "agents", agent, id, "pin.json")); };
@@ -41,10 +41,16 @@ describe("the pinned test world", () => {
 
   it("pins every closure slot but the BLOCKED ones and the slots that read them", () => {
     const order: string[] = closure(consumer);
-    expect(order.length).toBe(115);
+    expect(order.length).toBe(96);
     expect(Object.keys(BLOCKED).every(ref => order.includes(ref))).toBe(true);
     expect([...blockedIn(consumer, order).keys()]).toEqual([...blocked.keys()]);
     expect(order.filter(ref => !pinned(ref))).toEqual(order.filter(ref => blocked.has(ref)));
+  });
+
+  it("pins the Publisher targets and every slot they read (Unit D: publisher C4 judges a real pin)", () => {
+    const order: string[] = closure(consumer, PUBLISHER_TARGETS);
+    expect(PUBLISHER_TARGETS.every((ref: string) => order.includes(ref))).toBe(true);
+    expect(order.filter(ref => !pinned(ref))).toEqual([]);
   });
 
   it("pins the consumer-supplied logo and semantic content as originals, and holds no retired component (B1 r5, owner 2026-11-20)", () => {
