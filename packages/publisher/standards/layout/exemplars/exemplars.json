@@ -1,0 +1,58 @@
+{
+  "schema": "clossys.exemplars/1",
+  "exemplars": [
+    {
+      "id": "shadcn-blocks",
+      "ref": "https://ui.shadcn.com/blocks",
+      "source": "shadcn/ui",
+      "license": "MIT",
+      "description": "Layouts built region by region from stock blocks, each block filling one role.",
+      "why": {
+        "role-fit": "Each block fills one role.",
+        "region-order": "Blocks stack in reading order."
+      }
+    },
+    {
+      "id": "gov-uk-page-template",
+      "ref": "https://design-system.service.gov.uk/styles/page-template/",
+      "source": "GOV.UK Design System",
+      "license": "OGL-UK-3.0",
+      "description": "One page template: header, main content and footer in a fixed order, the page purpose first.",
+      "why": {
+        "region-order": "Header, main and footer in a fixed order.",
+        "hierarchy": "Purpose first in the main region."
+      }
+    },
+    {
+      "id": "nextjs-layouts",
+      "ref": "https://nextjs.org/docs/app/getting-started/layouts-and-pages",
+      "source": "Next.js docs",
+      "license": "MIT",
+      "description": "Layouts wrap pages: the frame and chrome persist and each page fills only its own regions.",
+      "why": {
+        "role-fit": "The layout owns the frame; pages fill its slots."
+      }
+    },
+    {
+      "id": "wai-aria-landmarks",
+      "ref": "https://www.w3.org/WAI/ARIA/apg/practices/landmark-regions/",
+      "source": "w3.org",
+      "license": "all-rights-reserved",
+      "description": "WAI-ARIA landmark regions: banner, navigation, main and contentinfo, each region named for its role.",
+      "why": {
+        "region-order": "Every region is a landmark with one role.",
+        "role-fit": "A region's role names what it holds."
+      }
+    },
+    {
+      "id": "vercel-templates",
+      "ref": "https://vercel.com/templates",
+      "source": "Vercel",
+      "license": "proprietary (link only)",
+      "description": "Starter layouts where the lead region states the product and every later region earns its place.",
+      "why": {
+        "hierarchy": "One clear lead region."
+      }
+    }
+  ]
+}
