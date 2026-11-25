@@ -520,7 +520,7 @@ describe("F6 failed check (T6)", () => {
     expect(second.state!.raised).toEqual([]);
     const ledger = w.ledger("loop.audit");
     expect(ledger.map(entry => entry.outcome)).toEqual([`raised ${raised.join(", ")}`, "no new entry"]);
-    expect(stepLine(ledger[0]!)).toEqual(["strict:code:1", "route:code:0", "e2e:code:0"]);
+    expect(stepLine(ledger[0]!)).toEqual(["strict:code:1", "route:code:0", "interview:code:0", "e2e:code:0"]);
     expect(ledger[0]!.checks).toEqual({ "constitution.strict": "fail", "consumer.e2e": "pass", "ia.orphans": "fail", "refs.dangling": "fail" });
 
     const hooks = stub(w.root);
@@ -731,15 +731,19 @@ describe("review rulings (foundry-build-0013 fix r1)", () => {
     }
   });
 
-  it("B3: pins.resolve is computed from the files: an agent pick that says 0 but pins nothing stops the run", async () => {
+  it("B3: pins.resolve is computed from the files: an agent pick that says 0 but pins nothing fails, its fix lands in queue.fix, and the run stops at maxRounds (GF2)", async () => {
     const w = world(["designer/components.button"]);
     const hooks = stub(w.root, { agentFor: packet => packet.step === "pick" ? { exit: 0, model: MODEL } : undefined });
     const run = await startRun(w.root, { loop: "loop.fill", slot: "designer/components.button" }, hooks, { now: clock() });
     expect(run.exitCode).toBe(1);
     const ledger = w.ledger("loop.fill")[0]!;
-    expect(ledger).toMatchObject({ status: "stopped", outcome: expect.stringMatching(/step pick failed: pins\.resolve: designer\/components\.button does not resolve: no pin and no package default/) });
+    expect(ledger).toMatchObject({ status: "stopped", outcome: expect.stringMatching(/^pick failed 3 rounds \(maxRounds\); raised queue\.clarify#/) });
     expect(ledger.checks["pins.resolve"]).toBe("fail");
     expect(stepLine(ledger).at(-1)).toBe("pick:agent/stub-model:1");
+    // Each failed round raised one kind fix on the slot, naming the failing check: the failure lands in a queue.
+    const fixes = run.state!.raised.filter(name => name.startsWith("queue.fix#"));
+    expect(fixes.length).toBeGreaterThan(0);
+    expect(w.work(fixes[0]!)).toMatchObject({ kind: "fix", target: "designer/components.button", findings: [expect.stringMatching(/^loop\.fill pick failed for designer\/components\.button; round [1-3] of 3: pins\.resolve failed$/)] });
   });
 
   it("B3: the exit checks are verified again at finish: a pin gone after the pick step ends the run not-done", async () => {
@@ -773,7 +777,10 @@ describe("review rulings (foundry-build-0013 fix r1)", () => {
     const ledger = latestLedger(w.root, "loop.release");
     expect(ledger.status).not.toBe("pinned-ready");
     expect(ledger.checks["release.ready"]).toBe("fail");
-    expect(ledger.outcome).toMatch(/release\.ready: .*fails now/);
+    // GF2: the pin step's failure routes as the gates step's does: a kind fix on the release slot, then loop.refine.
+    expect(ledger.outcome).toMatch(/^pin failed; raised (queue\.fix#\S+); loop\.refine runs from \1/);
+    const fix = /raised (queue\.fix#\S+);/.exec(ledger.outcome)![1]!;
+    expect(readRequest(join(w.root, "clossys"), fix.split("#")[1]!)).toMatchObject({ kind: "fix", target: "publisher/release.site", findings: [expect.stringMatching(/release\.ready failed$/)] });
   });
 
   it("B4: the real CLI code hook hands back the files every code step wrote: verb-reported and changed on disk", async () => {
