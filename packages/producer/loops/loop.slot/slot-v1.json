@@ -38,7 +38,11 @@
         "writes": [
           "producer/queue.slot/entries/<request>.json"
         ],
-        "checks": []
+        "checks": [],
+        "onFail": {
+          "raise": "queue.clarify",
+          "then": "retry"
+        }
       },
       {
         "id": "match",
@@ -84,6 +88,10 @@
           "owner": [
             "director"
           ]
+        },
+        "onFail": {
+          "raise": "queue.clarify",
+          "then": "retry"
         }
       },
       {
@@ -109,6 +117,10 @@
           "owner": [
             "designer"
           ]
+        },
+        "onFail": {
+          "raise": "queue.clarify",
+          "then": "retry"
         }
       },
       {
@@ -134,6 +146,10 @@
           "owner": [
             "writer"
           ]
+        },
+        "onFail": {
+          "raise": "queue.clarify",
+          "then": "retry"
         }
       },
       {
@@ -159,6 +175,10 @@
           "owner": [
             "publisher"
           ]
+        },
+        "onFail": {
+          "raise": "queue.clarify",
+          "then": "retry"
         }
       },
       {
@@ -203,6 +223,10 @@
           "decision": [
             "create"
           ]
+        },
+        "onFail": {
+          "raise": "queue.clarify",
+          "then": "retry"
         }
       },
       {
@@ -226,6 +250,10 @@
           "decision": [
             "reuse"
           ]
+        },
+        "onFail": {
+          "raise": "queue.clarify",
+          "then": "retry"
         }
       }
     ],

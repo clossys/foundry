@@ -26,7 +26,7 @@
     "package": "@clossys/designer",
     "version": "0.12.0",
     "path": "loops/loop.scope/scope-v1.json",
-    "sha256": "a54c81332858761b87a9a555f95f2734cc208ae5fb0fdcaf987fbf1b025118eb"
+    "sha256": "53edcff3020d476fe5096939b02a95ec69e350d26cc9a123a0b22be84ef09477"
   },
   "standard": "loop",
   "brief": {

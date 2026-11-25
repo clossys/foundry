@@ -112,7 +112,11 @@
         "writes": [
           "<slot>/candidates/*"
         ],
-        "checks": []
+        "checks": [],
+        "onFail": {
+          "raise": "queue.fix",
+          "then": "retry"
+        }
       },
       {
         "id": "check",
@@ -204,7 +208,11 @@
         ],
         "checks": [
           "pins.resolve"
-        ]
+        ],
+        "onFail": {
+          "raise": "queue.fix",
+          "then": "retry"
+        }
       },
       {
         "id": "confirm",
@@ -245,7 +253,11 @@
         ],
         "checks": [
           "refs.dangling"
-        ]
+        ],
+        "onFail": {
+          "raise": "queue.fix",
+          "then": "loop.choose"
+        }
       }
     ],
     "exit": "no consumed slot is on a package default, except Writer copy the owner left on sample",

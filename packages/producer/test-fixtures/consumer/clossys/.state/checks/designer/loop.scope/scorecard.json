@@ -7,12 +7,12 @@
     {
       "rank": 1,
       "candidate": "scope-v1.json",
-      "sha256": "b16432a06e2f4254a94756e9d6ee37bf8c3b2f103c1dc8a959cf7d5fb90edb33",
+      "sha256": "c5a55e0ec6fd8868098138d91c0cdfe9c1bf2ec6f5add77d2301f7fed0a86ae6",
       "submitted": true,
       "certified": true,
       "verdict": "certify",
       "reasons": [],
-      "pinSet": "0ffe1b867ec2312ff293fb64b72ab86d6c1ba6ca647f4cde4087d4a0d3440cd8"
+      "pinSet": "9ffb5b9a6156e539805867f909bea7cbf8596c8a1c5519a72dd3cda571eb96ee"
     }
   ]
 }

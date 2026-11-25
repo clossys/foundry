@@ -44,7 +44,11 @@
         ],
         "checks": [
           "requests.filed"
-        ]
+        ],
+        "onFail": {
+          "raise": "queue.fix",
+          "then": "retry"
+        }
       },
       {
         "id": "scope-writer",
@@ -65,7 +69,11 @@
         "writes": [
           "producer/queue.slot/entries/*"
         ],
-        "checks": []
+        "checks": [],
+        "onFail": {
+          "raise": "queue.clarify",
+          "then": "retry"
+        }
       }
     ],
     "exit": "every slotless need of the consumer tree is filed as a queue.slot entry; each entry starts its own loop.slot run",

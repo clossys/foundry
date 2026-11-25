@@ -57,7 +57,31 @@
           "producer/queue.fix/entries/",
           "producer/queue.clarify/entries/"
         ],
-        "checks": []
+        "checks": [],
+        "onFail": {
+          "raise": "queue.fix",
+          "then": "retry"
+        }
+      },
+      {
+        "id": "interview",
+        "does": "file every request need the owner interview finds (clossys next --owner): a slotless need as a queue.slot entry, a need on an upstream slot as a queue.change entry to that slot's owner; a re-run files nothing new",
+        "decider": {
+          "by": "code"
+        },
+        "cli": "clossys next --owner",
+        "reads": [
+          "clossys/agents/"
+        ],
+        "writes": [
+          "producer/queue.slot/entries/",
+          "producer/queue.change/entries/"
+        ],
+        "checks": [],
+        "onFail": {
+          "raise": "queue.fix",
+          "then": "retry"
+        }
       },
       {
         "id": "e2e",

@@ -26,7 +26,7 @@
     "package": "@clossys/writer",
     "version": "0.6.0",
     "path": "loops/loop.scope/scope-v1.json",
-    "sha256": "6c14d86e55cf1715b133d0003573645af7f6a508dce5da63acfee53990744254"
+    "sha256": "2de4eb1f387ff52395272defaf9db3378db0efd077f22dfe93892395c3fc31b6"
   },
   "standard": "loop",
   "brief": {

@@ -113,7 +113,11 @@
         "writes": [
           "<slot>/candidates/*"
         ],
-        "checks": []
+        "checks": [],
+        "onFail": {
+          "raise": "queue.fix",
+          "then": "retry"
+        }
       },
       {
         "id": "check",
@@ -205,7 +209,11 @@
         ],
         "checks": [
           "pins.resolve"
-        ]
+        ],
+        "onFail": {
+          "raise": "queue.fix",
+          "then": "retry"
+        }
       },
       {
         "id": "confirm",
@@ -246,7 +254,11 @@
         ],
         "checks": [
           "refs.dangling"
-        ]
+        ],
+        "onFail": {
+          "raise": "queue.fix",
+          "then": "loop.choose"
+        }
       }
     ],
     "exit": "the triggering entry is answered and no slot it touched is needs-refresh",

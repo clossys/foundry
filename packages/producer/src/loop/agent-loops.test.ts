@@ -119,12 +119,12 @@ describe("loopExtensionIssues: rounds, order, when, exit (U9a fix round 1)", () 
     const version = pkg("director", "loop.choose");
     version.exit = "whenever the agent likes";
     version.repeat = "never";
-    version.steps.find(step => step.id === "pick")!.onFail = { raise: "queue.fix", then: "retry" };
+    version.steps.find(step => step.id === "confirm")!.onFail = { raise: "queue.fix", then: "retry" };
     version.steps.find(step => step.id === "cascade")!.reads = [];
     expect(issues("director", "loop.choose", version)).toEqual([
       `director/loop.choose: changes the standard's exit (${standard("loop.choose").exit})`,
       `director/loop.choose: changes the standard's repeat (${standard("loop.choose").repeat})`,
-      "director/loop.choose: step pick adds a failure route; the standard stops the run when it fails",
+      "director/loop.choose: step confirm adds a failure route; the standard stops the run when it fails",
       "director/loop.choose: step cascade changes what the code step reads",
     ]);
   });
@@ -159,9 +159,10 @@ describe("loopExtensionIssues: the owner gate, route steps and write paths (U9a 
     }
   });
   it("refuses a route step after a step the standard does not route (a failed required step would pass on)", () => {
-    const version = pkg("writer", "loop.create");
-    version.steps.splice(version.steps.findIndex(step => step.id === "create") + 1, 0, added("writer", { id: "route", cli: "clossys check --route", decider: { by: "code" } as never }));
-    expect(issues("writer", "loop.create", version)).toContain("writer/loop.create: step route routes the findings of create, which the standard does not; a failed step would pass on");
+    // GF2: every standard code and agent step now routes its own failure, so the required step with no route is an owner step.
+    const version = pkg("writer", "loop.choose");
+    version.steps.splice(version.steps.findIndex(step => step.id === "confirm") + 1, 0, added("writer", { id: "route", cli: "clossys check --route", decider: { by: "code" } as never }));
+    expect(issues("writer", "loop.choose", version)).toContain("writer/loop.choose: step route routes the findings of confirm, which the standard does not; a failed step would pass on");
   });
   it("refuses a write outside the tree or into another agent's tree after normalization", () => {
     for (const path of ["../writer/voice.tone/slot.json", "designer/../writer/voice.tone/slot.json", "/etc/passwd", "<slot>/../../writer/x/slot.json"]) {

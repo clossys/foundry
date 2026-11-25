@@ -7,12 +7,12 @@
     {
       "rank": 1,
       "candidate": "slot-v1.json",
-      "sha256": "67af04434b53694dfa98c422f10727feaa7a7e71f5172e47727afbd98435a867",
+      "sha256": "ea67cd0f525825cde5b7a20623c0667c2be48c156acb1fb8af86c5234b2e1ccc",
       "submitted": true,
       "certified": true,
       "verdict": "certify",
       "reasons": [],
-      "pinSet": "6c66ebd4756544182110523540513f8332471ee96de295b4f6bc9ab17146ed40"
+      "pinSet": "6f4f1338fc7beb3357e79bfc36761bdebafd4c00785d92d4ae74011d8eeab4b8"
     }
   ]
 }

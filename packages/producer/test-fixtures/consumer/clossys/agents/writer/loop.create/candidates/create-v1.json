@@ -120,7 +120,11 @@
           "<slot>/candidates/*",
           "<slot>/ledger.json"
         ],
-        "checks": []
+        "checks": [],
+        "onFail": {
+          "raise": "queue.fix",
+          "then": "retry"
+        }
       },
       {
         "id": "certify",

@@ -39,7 +39,11 @@
         ],
         "checks": [
           "types.compile"
-        ]
+        ],
+        "onFail": {
+          "raise": "queue.fix",
+          "then": "loop.refine"
+        }
       },
       {
         "id": "build",
@@ -56,7 +60,11 @@
         ],
         "checks": [
           "page.no-inline-copy"
-        ]
+        ],
+        "onFail": {
+          "raise": "queue.fix",
+          "then": "loop.refine"
+        }
       },
       {
         "id": "manifest",
@@ -73,7 +81,11 @@
         ],
         "checks": [
           "candidate.immutable"
-        ]
+        ],
+        "onFail": {
+          "raise": "queue.fix",
+          "then": "loop.refine"
+        }
       },
       {
         "id": "gates",
@@ -128,7 +140,11 @@
         ],
         "checks": [
           "release.ready"
-        ]
+        ],
+        "onFail": {
+          "raise": "queue.fix",
+          "then": "loop.refine"
+        }
       }
     ],
     "exit": "release version pinned = ready",

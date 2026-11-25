@@ -125,7 +125,11 @@
         ],
         "checks": [
           "pins.resolve"
-        ]
+        ],
+        "onFail": {
+          "raise": "queue.fix",
+          "then": "loop.create"
+        }
       },
       {
         "id": "confirm",
@@ -166,7 +170,11 @@
         ],
         "checks": [
           "refs.dangling"
-        ]
+        ],
+        "onFail": {
+          "raise": "queue.fix",
+          "then": "loop.choose"
+        }
       }
     ],
     "exit": "the slot's pin resolves to a submitted, certified candidate and cites its scorecard",

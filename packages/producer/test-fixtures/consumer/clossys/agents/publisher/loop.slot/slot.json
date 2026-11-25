@@ -26,7 +26,7 @@
     "package": "@clossys/publisher",
     "version": "0.13.0",
     "path": "loops/loop.slot/slot-v1.json",
-    "sha256": "f44f4fe213e1276e748416aadf3fe2d92d5eb97cb36f327ef9a80d3fdb04d899"
+    "sha256": "677d2d392ef6e6c6bba80ccbcb64143ad8772caf387a8f1fc0d8db4a9be217ce"
   },
   "standard": "loop",
   "brief": {

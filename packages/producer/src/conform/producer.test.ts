@@ -21,21 +21,17 @@ const FIXTURE = join(REPO, "packages/producer/test-fixtures/consumer/clossys");
 
 type Mutable = { -readonly [K in keyof ProducerModel]: any };
 /**
- * Producer's real tree (the slot request queue placed, U9 fix r1), its real loops with a failure route on every step that
- * has none today (the real loops are red there, P4), the queue kinds the runner serves (the real schema also admits
- * `change`, which no loop serves: red on P1, P3 and P5), the package loop set and a skill naming every leaf.
+ * Producer's real tree (the slot request queue placed, U9 fix r1; the change queue placed, CPF1), its real loops (every
+ * step routes its failure, and loop.audit's interview step fills the change queue, GF2), the queue kinds the runner
+ * serves, the package loop set and a skill naming every leaf.
  */
 function world(mutate: (model: Mutable) => void = () => {}): ProducerModel {
   const base = readProducerModel(FIXTURE);
-  // The change queue no loop fills yet (P3) leaves the all-green world, its IA leaf with it (CPF1).
-  const ia = (structuredClone(readProducerIa()) as any[]).map(layer => layer.layer !== "queue" ? layer : {
-    ...layer, nodes: layer.nodes.map((node: any) => ({ ...node, children: node.children.filter((child: any) => !child.leaves.includes("queue.change")) })),
-  });
+  const ia = structuredClone(readProducerIa()) as any[];
   const leaves = ia.flatMap(layer => layer.nodes.flatMap((node: any) => node.children.flatMap((child: any) => child.leaves)));
   const loops = new Map(structuredClone([...base.loops])) as Map<LoopName, any>;
-  for (const read of loops.values()) if (read.ok) { const dead = new Set(deadEndSteps(read.steps)); for (const step of read.steps) if (dead.has(step.id)) step.onFail = { raise: "queue.fix", then: "retry" }; }
   const model: Mutable = {
-    ...base, ia, loops, queueKinds: base.queueKinds.filter(kind => kind !== "queue.change"), loopSet: packageLoopSet(), entries: [], awaited: new Set<string>(),
+    ...base, ia, loops, queueKinds: base.queueKinds, loopSet: packageLoopSet(), entries: [], awaited: new Set<string>(),
     skill: { path: "skill/SKILL.md", text: `runs ${leaves.join(", ")}.` },
   };
   mutate(model);
@@ -126,7 +122,11 @@ describe("Producer conformance rows (U9)", () => {
   });
   it("takes queue kinds from the queue-entry/2 schema too: a kind it admits that no loop serves is red on P1, P3 and P5 (U9 fix r1, blind2 B4)", () => {
     expect(readProducerModel(FIXTURE).queueKinds).toContain("queue.change");
-    const change = world(model => { model.queueKinds = [...model.queueKinds, "queue.change"]; });
+    // GF2: without loop.audit's interview step and its IA leaf, the schema's change kind is placed nowhere and filled by no loop.
+    const change = world(model => {
+      model.loops.set("loop.audit", { ok: true, steps: steps(model, "loop.audit").filter(each => each.id !== "interview") });
+      model.ia = model.ia.map((layer: any) => layer.layer !== "queue" ? layer : { ...layer, nodes: layer.nodes.map((node: any) => ({ ...node, children: node.children.filter((child: any) => !child.leaves.includes("queue.change")) })) });
+    });
     expect(PRODUCER_ASSERTIONS.P1!(change).rows).toEqual(["producer IA queue: queue.change is not placed"]);
     expect(PRODUCER_ASSERTIONS.P3!(change).rows).toEqual(["queue.change: no loop fills it (no owner step raises it, no failure routes to it, no step writes it)"]);
     // foundry-build-0048 U8 (Q10): `clossys run --from queue.change#<id>` takes a change back, so P5 holds for it.
@@ -154,27 +154,27 @@ describe("Producer conformance rows (U9)", () => {
 });
 
 describe("Producer over the repo and its fixture (U9)", () => {
-  it("reports Producer first, and today's known reds: the unplaced, unfilled change queue, the steps whose failure lands in no queue, the broken handoffs", () => {
+  it("reports Producer first: every cell green, queue.change filled by the audit interview step and every standard step routing its failure to a queue (GF2)", () => {
     const report = conform(readConformModel(REPO, FIXTURE, []), readRegistry(), { emptyL2Detected: {}, requestVerb: true, critiqueMonorepoPath: false }, readProducerModel(FIXTURE));
     const producer = report.producer!;
     expect(producer.cells.map(cell => cell.id)).toEqual(["P1", "P2", "P3", "P4", "P5", "P6", "P7", "P8"]);
     const rows = (id: string) => producer.cells.find(cell => cell.id === id)!.rows;
-    // CPF1: queue.change is placed in the queue IA, so P1 is green; P3 still names the unfilled change queue.
+    // CPF1: queue.change is placed in the queue IA, so P1 is green; GF2: loop.audit's interview step writes
+    // producer/queue.change/entries, so P3 is green, and every standard step routes its failure, so P4 is green.
     expect(rows("P1")).toEqual([]);
-    expect(rows("P3")).toEqual(["queue.change: no loop fills it (no owner step raises it, no failure routes to it, no step writes it)"]);
-    expect(rows("P4")).toHaveLength(26);
-    expect(rows("P4")).toEqual(expect.arrayContaining(["loop.fill: step create has no failure route: a failed run stops and lands in no queue", "loop.audit: step route has no failure route: a failed run stops and lands in no queue"]));
-    // U8 (Q10): the run takes a queue.change back (--from), so only P1 and P3 still name the change queue.
+    expect(rows("P3")).toEqual([]);
+    expect(rows("P4")).toEqual([]);
+    // U8 (Q10): the run takes a queue.change back (--from), so P5 holds for the change queue.
     expect(rows("P5")).toEqual([]);
     // U9 fix r1 (P8): the skill names every loop and queue leaf, loop.scope, loop.slot, queue.pick, queue.approve and queue.slot among them.
     for (const id of ["P2", "P7", "P8"]) expect(rows(id), id).toEqual([]);
-    expect(report.ok).toBe(false);
+    expect(report.ok).toBe(true);
     expect(formatReport(report)).toMatch(/^conform producer\n {2}GREEN P1 /);
     expect(conformProducer(readProducerModel(FIXTURE), readRegistry()).agent).toBe("producer");
   });
-  it("clossys conform --agent producer judges Producer alone and exits 1 while a row is red; an unknown subject is refused", async () => {
+  it("clossys conform --agent producer judges Producer alone and exits 0 while every Producer row is green; an unknown subject is refused", async () => {
     const run = await runConformCli(["--agent", "producer", "--json"], REPO);
-    expect(run.exitCode).toBe(1);
+    expect(run.exitCode).toBe(0);
     expect(run.message).toMatch(/^conform producer\n/);
     expect(run.message).not.toMatch(/^conform director$/m);
     expect((run.output as { agents: unknown[] }).agents).toEqual([]);
