@@ -383,20 +383,20 @@
       "by": "producer",
       "verb": "request",
       "skill": {
-        "path": "packages/writer/actions/writer.slot/skill.md",
-        "sha256": "48daf453d2299e0f5679ceb1cd842682770f89dfdab15971cd46b926bc45e189"
+        "path": "packages/director/actions/director.slot/skill.md",
+        "sha256": "30e4243a614c0014279147a7968ce6b89890a73b8387ba1fc21a75866a61f4e4"
       },
       "model": "none",
       "tier": "none",
       "kind": "request",
-      "request": "20261119T0000Z-lexicon-banned-terms",
-      "link": "writer/lexicon.avoid-terms",
+      "request": "20261119T0000Z-identity-naming-offer-names",
+      "link": "director/identity.naming.architecture",
       "rel": "input",
       "to": "writer/lexicon.preferred-terms",
       "records": [
         {
           "file": "slot.json",
-          "sha256": "3186c4604d6bd8ccc880ee109e2e35d9c7411fdd1da7cd6bad88a19a7b0329b3"
+          "sha256": "3f77d2eb4ed42421097b0372c17847b195d5baa68bbef09baa82910d58c2aa06"
         }
       ]
     }

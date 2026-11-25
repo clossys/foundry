@@ -837,27 +837,30 @@ async function interview(w) {
 }
 
 /**
- * After the interview (foundry-build-0048 CPA): one slot request per agent flows through `clossys request` to a closed
- * reuse, as a consumer's slot loop does, so the request-flow conformance rows judge real entries. Each requester is a
- * placed slot with no keyed ref (`clossys ia --inputs` takes bare ids, so a keyed ref would not survive the re-cut). It
- * names one need no slot holds through `clossys ia` (which files the request), an owner-routed entry is handed to the
- * agent with a made-up fixture answer, and the agent reuses a placed slot that already satisfies the need (never
- * create: a new leaf is not a package leaf). A need whose entry is filed already is skipped, so a rerun writes nothing.
+ * After the interview (foundry-build-0048 CPA): slot requests flow through `clossys request` to a closed reuse, as a
+ * consumer's slot loop does, so the request-flow conformance rows judge real entries: every content agent raises one
+ * (its requester row) and holds one as assignee. Each requester is a placed slot with no keyed ref (`clossys ia --inputs`
+ * takes bare ids, so a keyed ref would not survive the re-cut). It names one need no slot holds through `clossys ia`
+ * (which files the request, to the agent holding the need's first id segment, along a declared issuing edge), an
+ * owner-routed entry is handed to that agent with a made-up fixture answer, and the agent reuses a placed slot the
+ * requester already reads, so its inputs end as the package declares them (never create: a new leaf is not a package
+ * leaf). A need whose entry is filed already is skipped, so a rerun writes nothing.
  */
 export const REUSE_REQUESTS = [
-  { from: "director/execution.measure.north-star", need: "aspiration.goal.north-star", reuse: "director/aspiration.goal.long-term" },
-  { from: "designer/components.skeleton", need: "themes.skeleton-fill", reuse: "designer/themes.muted" },
-  { from: "writer/lexicon.preferred-terms", need: "lexicon.banned-terms", reuse: "writer/lexicon.avoid-terms" },
-  { from: "publisher/page.about", need: "layout.about-page", reuse: "publisher/layout.about" },
+  { from: "director/execution.measure.north-star", target: "director/aspiration.goal.north-star", reuse: "director/aspiration.goal.long-term" },
+  { from: "designer/components.skeleton", target: "designer/themes.skeleton-fill", reuse: "designer/themes.muted" },
+  { from: "writer/lexicon.preferred-terms", target: "director/identity.naming.offer-names", reuse: "director/identity.naming.architecture" },
+  { from: "publisher/page.about", target: "writer/publication.site.about-meta", reuse: "writer/page.about.meta" },
+  { from: "publisher/page.about", target: "publisher/layout.about-page", reuse: "publisher/layout.about" },
 ];
 const fixtureAnswer = agent => `Made-up fixture answer: hand it to ${agent} to answer by its skill.`;
 
 async function reuseRequests(w) {
   const entries = join(w.consumer, "agents", "producer", "queue.slot", "entries");
   const entryFor = target => (existsSync(entries) ? readdirSync(entries) : []).map(name => JSON.parse(readFileSync(join(entries, name), "utf8"))).find(entry => entry.target === target);
-  for (const { from, need, reuse } of REUSE_REQUESTS) {
+  for (const { from, target, reuse } of REUSE_REQUESTS) {
     const [agent, id] = from.split("/");
-    const target = `${agent}/${need}`;
+    const [assignee, need] = target.split("/");
     if (entryFor(target)) continue;
     const raw = JSON.parse(readFileSync(join(w.consumer, "agents", agent, id, "slot.json"), "utf8"));
     if ((raw.refs ?? []).some(ref => ref.key !== undefined)) throw new Refused(from, "the requester holds a keyed ref, which clossys ia --inputs would drop");
@@ -866,9 +869,11 @@ async function reuseRequests(w) {
     await w.run(from, "ia", from, "--contract", w.file(`${id}.request-contract.json`, doc.contract), "--inputs", inputs.join(","), "--at", AT);
     const entry = entryFor(target);
     if (!entry) throw new Refused(from, `clossys ia filed no request for ${target}`);
-    if (entry.assignee === "owner") await w.run(from, "request", entry.id, "--answer", "handoff", "--via", "cli", "--quote", fixtureAnswer(agent), "--at", AT);
+    if (entry.assignee === "owner") await w.run(from, "request", entry.id, "--answer", "handoff", "--via", "cli", "--quote", fixtureAnswer(assignee), "--at", AT);
     await w.run(from, "request", entry.id, "--decide", "reuse", "--slot", reuse, "--at", AT);
     await w.run(from, "request", entry.id, "--close", "--at", AT);
+    const after = readSlot(w.consumer, agent, id).inputs ?? [];
+    if ([...new Set(after)].sort().join() !== [...new Set(doc.inputs ?? [])].sort().join()) throw new Refused(from, `the reuse of ${reuse} changed the requester's inputs`);
   }
 }
 
