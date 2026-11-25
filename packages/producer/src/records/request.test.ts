@@ -71,6 +71,8 @@ function bytes(dir: string, base = dir, out: Record<string, string> = {}): Recor
   }
   return out;
 }
+/** The queue.slot entry files a consumer holds, sorted (the fixture world's own closed reuse entries included). */
+const entryFiles = (consumer: string): string[] => existsSync(requestsDir(consumer)) ? readdirSync(requestsDir(consumer)).sort() : [];
 /** The input refs of a placed slot (bare ids). */
 const inputsOf = (consumer: string, ref: string): string[] =>
   (JSON.parse(readFileSync(join(consumer, "agents", ref, "slot.json"), "utf8")) as { refs: { to: string; rel: string }[] }).refs.filter(item => item.rel === "input").map(item => item.to);
@@ -91,18 +93,19 @@ function approval(root: string, to: string, answer?: { answer: string; quote?: s
 describe("kind slot entries (clossys.queue-entry/2)", () => {
   it("raises one entry per target and requester under queue.slot, valid against the schema; a second raise finds it open", () => {
     const { consumer } = world();
+    const seeded = entryFiles(consumer);
     cite(consumer, "writer/narratives.faq");
     cite(consumer, "writer/narratives.other");
     const first = raiseRequest(consumer, { target: "writer/narratives.faq", from: REQUESTER, why: "w", source: "cli", by: "producer", at: AT });
     expect(first.created).toBe(true);
     expect(first.request).toMatchObject({ schema: "clossys.queue-entry/2", kind: "slot", from: REQUESTER, assignee: "writer", target: "writer/narratives.faq", status: "open", opened: `${first.request.id}#1` });
-    expect(readdirSync(requestsDir(consumer))).toEqual([`${first.request.id}.json`]);
+    expect(entryFiles(consumer)).toEqual([...seeded, `${first.request.id}.json`].sort());
     expect(requestIssues(readRequest(consumer, first.request.id))).toEqual([]);
     expect(raiseRequest(consumer, { target: "writer/narratives.faq", from: REQUESTER, why: "w", source: "cli", by: "producer", at: AT }).created).toBe(false);
-    expect(readdirSync(requestsDir(consumer))).toHaveLength(1);
+    expect(entryFiles(consumer)).toEqual([...seeded, `${first.request.id}.json`].sort());
     // A dry raise writes nothing; a target that is no slot ref is refused.
     raiseRequest(consumer, { target: "writer/narratives.other", from: REQUESTER, why: "w", source: "cli", by: "producer", at: AT }, { dry: true });
-    expect(readdirSync(requestsDir(consumer))).toHaveLength(1);
+    expect(entryFiles(consumer)).toEqual([...seeded, `${first.request.id}.json`].sort());
     expect(() => raiseRequest(consumer, { target: "narratives.faq", from: REQUESTER, why: "w", source: "cli", by: "producer", at: AT })).toThrow(/<agent>\/<slot id>/);
   });
 
@@ -168,6 +171,7 @@ describe("kind slot entries (clossys.queue-entry/2)", () => {
 describe("kind slot entries: requester, assignee and overlap gates", () => {
   it("raises only for a placed requester slot that cites the need, by that slot's own agent (or the owner, the planner or code)", () => {
     const { consumer } = world();
+    const seeded = bytes(requestsDir(consumer));
     const at = { why: "w", source: "cli" as const, at: AT };
     expect(() => raiseRequest(consumer, { ...at, target: "writer/narratives.unheld-need", from: "designer/no.such-slot", by: "designer" })).toThrow(/designer\/no\.such-slot is no placed slot/);
     expect(() => raiseRequest(consumer, { ...at, target: "writer/narratives.unheld-need", from: REQUESTER, by: "writer" })).toThrow(/writer\/sections\.article\.copy does not cite writer\/narratives\.unheld-need/);
@@ -176,16 +180,17 @@ describe("kind slot entries: requester, assignee and overlap gates", () => {
     expect(() => raiseRequest(consumer, { ...at, target: "writer/narratives.unheld-need", from: REQUESTER, by: "someone" })).toThrow(/--by must be one of/);
     expect(() => raiseRequest(consumer, { ...at, target: "writer/narratives.unheld-need", from: "owner", by: "writer" })).toThrow(/writer raises as the owner/);
     expect(() => raiseRequest(consumer, { ...at, target: "writer/narratives.unheld-need", from: REQUESTER, rel: "uses", by: "writer" })).toThrow(/does not cite writer\/narratives\.unheld-need as uses/);
-    expect(existsSync(requestsDir(consumer))).toBe(false);
+    expect(bytes(requestsDir(consumer))).toEqual(seeded);
     expect(raiseRequest(consumer, { ...at, target: "writer/narratives.unheld-need", from: REQUESTER, by: "writer" }).created).toBe(true);
     expect(raiseRequest(consumer, { ...at, target: "writer/narratives.owner-need", from: "owner", by: "owner" }).created).toBe(true);
   });
 
   it("refuses a raise for a slot that is already placed, pointing to it", () => {
     const { consumer } = world();
+    const seeded = bytes(requestsDir(consumer));
     cite(consumer, "writer/narratives.guide");
     expect(() => raiseRequest(consumer, { target: "writer/narratives.guide", from: REQUESTER, why: "w", source: "cli", by: "writer", at: AT })).toThrow(/writer\/narratives\.guide is placed: cite it/);
-    expect(existsSync(requestsDir(consumer))).toBe(false);
+    expect(bytes(requestsDir(consumer))).toEqual(seeded);
   });
 
   it("records the /1 provenance: createdBy, refs raisedBy the requester and the raising event's via", () => {

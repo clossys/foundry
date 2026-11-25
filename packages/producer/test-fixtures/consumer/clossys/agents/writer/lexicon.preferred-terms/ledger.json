@@ -357,6 +357,48 @@
           "sha256": "c674c6082ae3079901f1ae79073754bee0e15586a8bc01211348ae53c8aae001"
         }
       ]
+    },
+    {
+      "op": "slot",
+      "at": "2026-11-19T00:00:00Z",
+      "by": "planner",
+      "verb": "ia",
+      "skill": {
+        "path": "packages/producer/actions/ia/skill.md",
+        "sha256": "147a7eaf66267728953e0c8111a9c20b93475f95f8063745d9d1d1087658fe73"
+      },
+      "model": "none",
+      "tier": "none",
+      "kind": "ia",
+      "records": [
+        {
+          "file": "slot.json",
+          "sha256": "c674c6082ae3079901f1ae79073754bee0e15586a8bc01211348ae53c8aae001"
+        }
+      ]
+    },
+    {
+      "op": "slot",
+      "at": "2026-11-19T00:00:00Z",
+      "by": "producer",
+      "verb": "request",
+      "skill": {
+        "path": "packages/director/actions/director.slot/skill.md",
+        "sha256": "30e4243a614c0014279147a7968ce6b89890a73b8387ba1fc21a75866a61f4e4"
+      },
+      "model": "none",
+      "tier": "none",
+      "kind": "request",
+      "request": "20261119T0000Z-identity-naming-offer-names",
+      "link": "director/identity.naming.architecture",
+      "rel": "input",
+      "to": "writer/lexicon.preferred-terms",
+      "records": [
+        {
+          "file": "slot.json",
+          "sha256": "3f77d2eb4ed42421097b0372c17847b195d5baa68bbef09baa82910d58c2aa06"
+        }
+      ]
     }
   ]
 }
