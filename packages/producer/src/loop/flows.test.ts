@@ -1524,7 +1524,7 @@ describe("GF2 fix round 1: subject-less runs route every failed step into a queu
   };
 
   // loop.scope and loop.audit run one round (maxRounds 1): a failed step's route raises its entry and the run stops there.
-  it("loop.scope demand: a failed demand step writes exactly one queue entry on the run, the raised list names it, and the stop keeps the reason", async () => {
+  it("loop.scope demand: a failed demand step writes exactly one queue entry on the run, the raised list and the stop message name it", async () => {
     const w = world([]);
     const hooks = stub(w.root, { codeFor: failOnce("demand"), agentFor: scopeAgents });
     const run = await startRun(w.root, { loop: "loop.scope" }, hooks, { now: clock() });
