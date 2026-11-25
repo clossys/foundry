@@ -16,12 +16,8 @@
     "version": "0.1.0"
   },
   "createdAt": "2026-11-17T00:00:00Z",
-  "updatedAt": "2026-11-17T00:00:00Z",
+  "updatedAt": "2026-11-25T00:00:00Z",
   "refs": [
-    {
-      "to": "writer/lexicon.formality",
-      "rel": "input"
-    },
     {
       "to": "writer/lexicon.warmth",
       "rel": "input"
@@ -68,23 +64,19 @@
     },
     {
       "to": "director/advantage.proposition.promise",
-      "rel": "input",
-      "key": "Promise"
+      "rel": "input"
     },
     {
       "to": "director/advantage.proposition.proof",
-      "rel": "input",
-      "key": "Proof"
+      "rel": "input"
     },
     {
       "to": "director/advantage.proposition.proof",
-      "rel": "input",
-      "key": "Never-claim"
+      "rel": "input"
     },
     {
       "to": "director/identity.naming.name",
-      "rel": "input",
-      "key": "Name"
+      "rel": "input"
     },
     {
       "to": "director/context.customer.buying",
@@ -92,6 +84,10 @@
     },
     {
       "to": "director/identity.verbal.voice",
+      "rel": "input"
+    },
+    {
+      "to": "writer/lexicon.formality",
       "rel": "input"
     }
   ],
@@ -101,10 +97,6 @@
     "purpose": "Fill writer/sections.faq.copy to the passage standard.",
     "mustDo": [],
     "inputs": [
-      {
-        "to": "writer/lexicon.formality",
-        "rel": "input"
-      },
       {
         "to": "writer/lexicon.warmth",
         "rel": "input"
@@ -151,23 +143,19 @@
       },
       {
         "to": "director/advantage.proposition.promise",
-        "rel": "input",
-        "key": "Promise"
+        "rel": "input"
       },
       {
         "to": "director/advantage.proposition.proof",
-        "rel": "input",
-        "key": "Proof"
+        "rel": "input"
       },
       {
         "to": "director/advantage.proposition.proof",
-        "rel": "input",
-        "key": "Never-claim"
+        "rel": "input"
       },
       {
         "to": "director/identity.naming.name",
-        "rel": "input",
-        "key": "Name"
+        "rel": "input"
       },
       {
         "to": "director/context.customer.buying",
@@ -175,6 +163,10 @@
       },
       {
         "to": "director/identity.verbal.voice",
+        "rel": "input"
+      },
+      {
+        "to": "writer/lexicon.formality",
         "rel": "input"
       }
     ],

@@ -109,6 +109,48 @@
           "sha256": "ccbb69563d7f792de2417b2e4291f6b93ad48ccb5797d66697ea8f7705c8df94"
         }
       ]
+    },
+    {
+      "op": "slot",
+      "at": "2026-11-25T00:00:00Z",
+      "by": "planner",
+      "verb": "ia",
+      "skill": {
+        "path": "packages/producer/actions/ia/skill.md",
+        "sha256": "147a7eaf66267728953e0c8111a9c20b93475f95f8063745d9d1d1087658fe73"
+      },
+      "model": "none",
+      "tier": "none",
+      "kind": "ia",
+      "records": [
+        {
+          "file": "slot.json",
+          "sha256": "3f893e27ea9f16c96089c0e9a1cabaad9cc7195276bb4b63838ad925e953616b"
+        }
+      ]
+    },
+    {
+      "op": "slot",
+      "at": "2026-11-25T00:00:00Z",
+      "by": "producer",
+      "verb": "request",
+      "skill": {
+        "path": "packages/writer/actions/writer.slot/skill.md",
+        "sha256": "48daf453d2299e0f5679ceb1cd842682770f89dfdab15971cd46b926bc45e189"
+      },
+      "model": "none",
+      "tier": "none",
+      "kind": "request",
+      "request": "20261125T0000Z-lexicon-register",
+      "link": "writer/lexicon.formality",
+      "rel": "input",
+      "to": "writer/sections.faq.copy",
+      "records": [
+        {
+          "file": "slot.json",
+          "sha256": "e848d522848a5e8c00a6ec3ef27f82b4766e7b619ed2af30e9581904ca2955d9"
+        }
+      ]
     }
   ]
 }

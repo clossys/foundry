@@ -83,6 +83,48 @@
           "sha256": "4dc6b49c5fac6e89e814f3851251b73268fa41a2b3a86298b0554126340126f6"
         }
       ]
+    },
+    {
+      "op": "slot",
+      "at": "2026-11-25T00:00:00Z",
+      "by": "planner",
+      "verb": "ia",
+      "skill": {
+        "path": "packages/producer/actions/ia/skill.md",
+        "sha256": "147a7eaf66267728953e0c8111a9c20b93475f95f8063745d9d1d1087658fe73"
+      },
+      "model": "none",
+      "tier": "none",
+      "kind": "ia",
+      "records": [
+        {
+          "file": "slot.json",
+          "sha256": "171b7796a17cb0b063e48e57a819d420ac6a32afc221c57c185b9a388ab1d2e7"
+        }
+      ]
+    },
+    {
+      "op": "slot",
+      "at": "2026-11-25T00:00:00Z",
+      "by": "producer",
+      "verb": "request",
+      "skill": {
+        "path": "packages/director/actions/director.slot/skill.md",
+        "sha256": "30e4243a614c0014279147a7968ce6b89890a73b8387ba1fc21a75866a61f4e4"
+      },
+      "model": "none",
+      "tier": "none",
+      "kind": "request",
+      "request": "20261125T0000Z-aspiration-goal-north-star",
+      "link": "director/aspiration.goal.long-term",
+      "rel": "input",
+      "to": "director/execution.measure.north-star",
+      "records": [
+        {
+          "file": "slot.json",
+          "sha256": "171b7796a17cb0b063e48e57a819d420ac6a32afc221c57c185b9a388ab1d2e7"
+        }
+      ]
     }
   ]
 }
