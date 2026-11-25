@@ -120,7 +120,8 @@ const MUTATIONS: Record<string, Mutation> = {
   L2: agent => { agent.live[0] = slot("a.x", ["b.in"], { ledger: [{ op: "slot" }] }); },
   L3: (_agent, _machinery, _other, facts) => { facts.iaContract.director = [{ ...facts.iaContract.director[0], accepted: true }]; },
   L4: agent => { delete agent.requests[0].notified; },
-  L5: agent => { agent.derive[0].text = `export const IDS = ["a.one", "a.two", "a.three", "a.four", "a.five"];`; },
+  // Five real leaf ids of the world's trees (CPBC: L5 counts only slot ids, never file names or rule codes).
+  L5: (agent, _machinery, other) => { other.live.push(slot("b.third", [], { owner: "writer" })); agent.derive[0].text = `export const IDS = ["a.x", "a.y", "b.in", "b.other", "b.third"];`; },
   K1: agent => { agent.standards[0].exemplars = [1, 2, 3]; },
   K2: agent => { agent.defaults = new Set(["a.x"]); },
   K3: (_agent, machinery) => { machinery.rules.set("R05.1", { status: "building", enforcedFor: [] }); },
@@ -265,6 +266,25 @@ describe("conformance runner", () => {
     expect(ASSERTIONS.Q11!(...((built) => [built.agent, built.model, built.facts] as const)(world((_agent, machinery) => { machinery.requests.openFix = { ...machinery.requests.openFix, refused: new Set() }; }))).rows)
       .toEqual([expect.stringMatching(/queue.fix#f1: open on director\/a.x, which the release reads, and requests.open-fix passes/)]);
     expect(red("Q11", world((_agent, machinery) => { machinery.requests.openFix = { wired: true, closure: new Set(), refused: new Set(), error: "no release slot" }; }))).toBe(true);
+  });
+  it("L5 counts only real slot ids: five file names or rule codes stay green, five leaf ids of the trees are red", () => {
+    const l5 = (text: string) => { const built = world(agent => { agent.derive[0].text = text; }); return { red: red("L5", built), rows: ASSERTIONS.L5!(built.agent, built.model, built.facts).rows }; };
+    expect(l5(`export const RULES = ["tree.shape", "package.json", "copy.json", "retired.json", "lexicon.json", "ia.nodes"];`)).toEqual({ red: false, rows: [] });
+    // A parked leaf is still a leaf of the tree: a list of it is a fixed list.
+    const parked = world(agent => { agent.trees[0].l1.push({ id: "p", parked: true, l2: [{ id: "p1", parked: false, leaves: ["p.parked"] }] }); agent.derive[0].text = `["a.x", "a.y", "b.in", "b.other", "p.parked"]`; });
+    expect(ASSERTIONS.L5!(parked.agent, parked.model, parked.facts).rows).toEqual(["src/derive/m.ts: a fixed list of 5 slot ids, not derived from source data"]);
+    expect(l5(`["a.x", "a.y", "b.in", "b.other", "tree.shape"]`)).toEqual({ red: false, rows: [] });
+  });
+  it("Q6 judges every request the agent raised, in-tree ones included (CPBC): none is red, one to itself is green, one across with no declared edge is red", () => {
+    const q6 = (mutate: Mutation) => { const built = world(mutate); return { red: red("Q6", built), ...ASSERTIONS.Q6!(built.agent, built.model, built.facts) }; };
+    const root = (agent: Record<string, any>) => { agent.requestFacts.issuing = []; agent.requestFacts.entries = agent.requestFacts.entries.filter((fact: { id: string }) => fact.id !== "c1"); };
+    // A root agent (no issuing edge) that raised nothing judges nothing: vacuous, red.
+    expect(q6(root)).toMatchObject({ red: true, rows: [], evidence: 0 });
+    const inTree = q6(agent => { root(agent); agent.requestFacts.entries.push({ kind: "slot", id: "s2", issues: [], doc: { kind: "slot", id: "s2", from: "director/a.x", target: "director/a.y", assignee: "director", status: "open" } }); });
+    expect(inTree).toMatchObject({ red: false, rows: [], evidence: 1 });
+    const across = q6(agent => { agent.requestFacts.issuing = []; });
+    expect(across.red).toBe(true);
+    expect(across.rows).toEqual(["queue.change#c1: director raised change to writer with no declared issuing edge"]);
   });
   it("counts an empty set as red (vacuous), never green", () => {
     const cell = cellOf("C3", "C3", { rows: [], evidence: 0 });

@@ -67,7 +67,7 @@
       "dir": "recipes/create.tokens", "fixture": {"output": "recipes/create.tokens/fixture/themes.primary.json", "slot": "themes.primary"}
     }
   ],
-  "derive": [],
+  "derive": [{"module": "src/catalog-core/index.ts"}],
   "edgeFiles": [
     {
       "file": "src/catalog/slot-contracts/themes.json",
