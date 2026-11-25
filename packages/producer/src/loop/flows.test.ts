@@ -1071,6 +1071,15 @@ describe("loop.slot and loop.scope through the operator CLI (no stub; foundry-bu
     return { root, cli, run, read };
   }
   /** The requester's slot.json gains an input naming a slot no agent holds (a page's slotless need). */
+  // The fixture consumer already holds the seeder's closed queue.slot entries; a case asserts only the entries it files.
+  function slotEntries(w: ReturnType<typeof fixture>): string[] {
+    const dir = join(w.root, "clossys", "agents", "producer", "queue.slot", "entries");
+    return existsSync(dir) ? readdirSync(dir).sort() : [];
+  }
+  function filedSince(w: ReturnType<typeof fixture>, seeded: string[]): string[] {
+    return slotEntries(w).filter(name => !seeded.includes(name));
+  }
+
   function cite(w: ReturnType<typeof fixture>, need: string) {
     const file = join(w.root, "clossys", "agents", REQUESTER, "slot.json");
     const doc = JSON.parse(readFileSync(file, "utf8"));
@@ -1185,11 +1194,12 @@ describe("loop.slot and loop.scope through the operator CLI (no stub; foundry-bu
 
   it("files a slot request for a slot input naming no slot (SCOPE demand): requests.filed is red until it is filed", async () => {
     const w = fixture();
+    const seeded = slotEntries(w);
     // Mutation: a page input names a slot no agent holds.
     cite(w, "writer/sections.signup-faq.copy");
     const start = await w.run("loop.scope");
     // The demand diff is a set difference in code and runs before any agent step (DET-STEPS 1): the need is filed first.
-    expect(readdirSync(join(w.root, "clossys", "agents", "producer", "queue.slot", "entries"))).toHaveLength(1);
+    expect(filedSince(w, seeded)).toHaveLength(1);
     expect(start.message).toMatch(/step scope-director waits for agent:director \(decide, mid\)/);
     let runId = waitingRun(start.message);
     let last = start;
@@ -1199,8 +1209,9 @@ describe("loop.slot and loop.scope through the operator CLI (no stub; foundry-bu
       last = await w.run("loop.scope", "--resume", "--run", runId, "--step-exit", "0", "--model", MODEL);
     }
     expect(last.message).toMatch(/done: loop\.scope done/);
-    const requests = readdirSync(join(w.root, "clossys", "agents", "producer", "queue.slot", "entries"));
+    const requests = filedSince(w, seeded);
     expect(requests).toHaveLength(1);
+    expect(slotEntries(w)).toEqual([...seeded, ...requests].sort());
     expect(w.read(`producer/queue.slot/entries/${requests[0]}`)).toMatchObject({ kind: "slot", source: "scope", from: REQUESTER, assignee: "writer", target: "writer/sections.signup-faq.copy", status: "open" });
     const ledger = JSON.parse(readFileSync(join(w.root, "clossys", "agents", "producer", "ledger.scope", "entries", `${runId}.json`), "utf8")) as LedgerEntry;
     expect(ledger.steps[0]).toMatchObject({ id: "demand", cli: "clossys request --scan", exit: 0 });
@@ -1238,13 +1249,15 @@ describe("loop.slot and loop.scope through the operator CLI (no stub; foundry-bu
   for (const scoped of [[], ["--agent", "designer"]] as const) {
     it(`files a cited need in code before the standard loop.scope agent steps; the agent's raise of it writes nothing (${scoped.length ? "--agent designer" : "no --agent"})`, async () => {
       const w = fixture();
+      const seeded = slotEntries(w);
       citeIn(w, DIRECTOR_SLOT, "director/narratives.origin");
       const start = await w.run("loop.scope", ...scoped);
       expect(start.message).toMatch(/step scope-director waits for agent:director \(decide, mid\)/);
       const runId = waitingRun(start.message);
       // DET-STEPS 1: the demand step (code) filed the need from the citing slot before the director's step.
-      const filed = readdirSync(join(w.root, "clossys", "agents", "producer", "queue.slot", "entries"));
+      const filed = filedSince(w, seeded);
       expect(filed).toHaveLength(1);
+      expect(slotEntries(w)).toEqual([...seeded, ...filed].sort());
       const id = filed[0]!.replace(/\.json$/, "");
       expect(w.read(`producer/queue.slot/entries/${id}.json`)).toMatchObject({ kind: "slot", source: "scope", from: DIRECTOR_SLOT, target: "director/narratives.origin", status: "open" });
       const text = readFileSync(join(w.root, "clossys", "agents", "producer", "queue.slot", "entries", `${id}.json`), "utf8");
