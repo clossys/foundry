@@ -1,0 +1,20 @@
+{
+  "schema": "clossys.standard/1",
+  "id": "layout",
+  "kinds": [
+    "page"
+  ],
+  "mode": "craft",
+  "craftTier": "mid",
+  "seeds": [],
+  "requirements": [
+    {
+      "check": "citation.grammar",
+      "params": {}
+    },
+    {
+      "check": "composes.allowed",
+      "params": {}
+    }
+  ]
+}

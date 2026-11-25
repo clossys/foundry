@@ -1,0 +1,59 @@
+{
+  "schema": "clossys.exemplars/1",
+  "exemplars": [
+    {
+      "id": "wai-aria-disclosure-navigation",
+      "ref": "https://www.w3.org/WAI/ARIA/apg/patterns/disclosure/examples/disclosure-navigation/",
+      "source": "w3.org",
+      "license": "all-rights-reserved",
+      "description": "WAI-ARIA disclosure navigation: grouped site links behind disclosure buttons, the current page marked.",
+      "why": {
+        "wayfinding": "The current page is marked with aria-current.",
+        "grouping": "Links grouped under disclosure buttons."
+      }
+    },
+    {
+      "id": "gov-uk-header",
+      "ref": "https://design-system.service.gov.uk/components/header/",
+      "source": "GOV.UK Design System",
+      "license": "OGL-UK-3.0",
+      "description": "The GOV.UK header: the organisation and service name only, kept separate from navigation.",
+      "why": {
+        "restraint": "Only the service identity at the top."
+      }
+    },
+    {
+      "id": "gov-uk-footer",
+      "ref": "https://design-system.service.gov.uk/components/footer/",
+      "source": "GOV.UK Design System",
+      "license": "OGL-UK-3.0",
+      "description": "The GOV.UK footer: support links, licence and copyright, grouped below the content.",
+      "why": {
+        "grouping": "Secondary links grouped in the footer.",
+        "restraint": "Nothing competes with the content above."
+      }
+    },
+    {
+      "id": "gov-uk-service-navigation",
+      "ref": "https://design-system.service.gov.uk/components/service-navigation/",
+      "source": "GOV.UK Design System",
+      "license": "OGL-UK-3.0",
+      "description": "GOV.UK service navigation: the service's main sections in one row, the current section marked.",
+      "why": {
+        "wayfinding": "The current section is marked.",
+        "restraint": "Only the service's main sections."
+      }
+    },
+    {
+      "id": "shadcn-sidebar",
+      "ref": "https://ui.shadcn.com/docs/components/sidebar",
+      "source": "shadcn/ui",
+      "license": "MIT",
+      "description": "The shadcn sidebar: grouped, labelled menu sections with an active item and a collapsible rail.",
+      "why": {
+        "grouping": "Menu items in labelled groups.",
+        "wayfinding": "The active item is marked."
+      }
+    }
+  ]
+}

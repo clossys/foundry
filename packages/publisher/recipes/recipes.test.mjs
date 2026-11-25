@@ -41,7 +41,7 @@ const rules = issues => issues.map(item => item.rule);
 const CRAFT_RECIPE_IDS = ["assemble.page"];
 const PLUMB_RECIPE_IDS = ["release"];
 const RECIPE_IDS = [...CRAFT_RECIPE_IDS, ...PLUMB_RECIPE_IDS].sort();
-const STANDARD_COUNT = 3;
+const STANDARD_COUNT = 5;
 
 /** The faults of a plumb recipe's craft.md: a model stage, a stage not marked deterministic, a command that is not a clossys verb. */
 function plumbCraftFaults(text) {

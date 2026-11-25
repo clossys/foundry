@@ -2,7 +2,7 @@
 
 Assembles one page (a Designer frame, Designer sections and Writer keys) or one publication (pinned pages in route order) when the slot's verdict is `create`. Publisher assembles: it never writes copy or designs.
 
-- Produces: `page`, `publication` (rung `create`).
+- Produces: `page`, `layout`, `chrome`, `publication` (rung `create`).
 - Tier: mid. Axes: `lead`, `order`, `grouping`.
 - Base reference: the slot's pinned inputs: for a page, one `frames.*` frame and the `sections.*` sections it lists, and the Writer slots its copy keys come from; for a publication, the pinned `page.*` slots.
 - Designer and Writer derivation: a page names a pinned Designer frame and pinned sections by id (`page.assembled`) and carries every display string as a Writer key, never inline text (`page.no-inline-copy`); a publication orders pinned page slots into routes (`publication.routes`).
@@ -14,6 +14,8 @@ Assembles one page (a Designer frame, Designer sections and Writer keys) or one 
 | Standard | `lead` | `order` | `grouping` |
 | --- | --- | --- | --- |
 | `page` | which section opens the page | the order of the other sections | which sections share a region |
+| `layout` | which role opens the layout | the order of the other roles | which roles share a region |
+| `chrome` | which destination leads | the order of the other destinations | how destinations group |
 | `publication` | which route is home | the route order | how pages group in the tree |
 
 ## Stages (slot-constitution 5b, fixed order)
@@ -24,7 +26,7 @@ sha, contract sha, dependency pin-set hash), so a re-run with unchanged inputs c
 checks its own output before it is recorded; a non-zero exit is fixed at that stage, never carried
 forward. The same error twice is `BLOCKED`. Never run a full suite from a recipe.
 
-`<slot>` is one slot of `page`, `publication`; `<tier>` is `mid`; `<model>` is the serving model id of the run.
+`<slot>` is one slot of `page`, `layout`, `chrome`, `publication`; `<tier>` is `mid`; `<model>` is the serving model id of the run.
 
 ### 0. Preconditions (deterministic)
 
@@ -32,7 +34,7 @@ forward. The same error twice is `BLOCKED`. Never run a full suite from a recipe
    `create` for that packet's inputs (P2). `clossys next --stage` refuses itself otherwise, so read the
    refusal and stop: the recipe never records a verdict.
 2. Read `clossys/agents/publisher/<slot>/slot.json`: `standard`, `contract`, `inputs`, `uses`. The
-   standard must be one this recipe produces for (`page`, `publication`).
+   standard must be one this recipe produces for (`page`, `layout`, `chrome`, `publication`).
 
 ### 1. brief (model)
 
