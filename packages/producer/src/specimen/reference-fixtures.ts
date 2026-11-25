@@ -25,6 +25,7 @@ import { BLOCK_FIXTURE_RULES, blockContractProps, blockFixture, blockMount, hasD
  * - `overlays`: component slots whose stock component renders nothing while closed. Their fixture
  *   mounts the reference's own `<Root>Trigger` export opened by `open.prop`, with `open.trigger` as the
  *   pressable child and the reference's `<Root>` as the overlay child, so the mounted fixture renders.
+ * - `composed`: section and frame slots composed by name (SSC), each with the reason none of its rows is its own.
  */
 export const REFERENCE_FIXTURE_RULES = {
   layers: {
@@ -45,6 +46,11 @@ export const REFERENCE_FIXTURE_RULES = {
       children: [{ $component: "ResizablePanel", children: "DRAFT panel" }, { $component: "ResizableHandle", props: { withHandle: true } }, { $component: "ResizablePanel", children: "DRAFT panel" }],
     },
   },
+  // SSC: a frame or section slot whose reference rows are only its parts' references is composed by name, with why.
+  // Its rows stay in the contract (they still feed its theme reads); none is mounted as the slot's own fixture.
+  composed: {
+    "frames.site-shell": "its references are its parts' references (header, footer, toast, skip link, nav); none ships a shell",
+  },
 } as const;
 
 export { GAPS_FILE } from "./composed-slots.js";
@@ -52,7 +58,8 @@ import { GAPS_FILE } from "./composed-slots.js";
 export const NO_REFERENCE = "no adopted reference";
 /**
  * FCR: a section or frame slot none of whose reference rows is adoptable in the selected style and engine
- * (REF-FLAVOR: the same engine family, or every code file engine-neutral) is composed. The package gives it
+ * (REF-FLAVOR: the same engine family, or every code file engine-neutral) is composed, as is a slot named in
+ * `REFERENCE_FIXTURE_RULES.composed` (SSC: its rows are its parts' references, not its own). The package gives it
  * no contract fixture: its fixture is the file and export of its own pinned candidate, certified (passing
  * verdict, critique, scorecard) and pinned through the CHOOSE gate (conform/dogfood.ts `composedPinMiss`, certify/element.ts `composedFixtureFit`).
  */
@@ -290,7 +297,10 @@ export function planReferenceFixtures(designerRoot: string, studioSlots: readonl
       if (layer === "sections" || layer === "frames") {
         // U28: a block's props are its contract's (DRAFT copy, region placeholders); it declares no props list of its own.
         delete contract.props;
-        const block = retired.has(slot.id) ? { gap: BLOCK_FIXTURE_RULES.retired } : blockReferenceFixture(index, layer, contract, references.get(slot.id) ?? [], designerRoot);
+        const named = (REFERENCE_FIXTURE_RULES.composed as Readonly<Record<string, string>>)[slot.id];
+        const block = retired.has(slot.id) ? { gap: BLOCK_FIXTURE_RULES.retired }
+          : named !== undefined ? { composed: `${COMPOSED} (${named})` }
+          : blockReferenceFixture(index, layer, contract, references.get(slot.id) ?? [], designerRoot);
         if ("gap" in block) { gaps.push({ slot: slot.id, layer, reason: block.gap }); slot.contract = contract; continue; }
         if ("composed" in block) { composed.push({ slot: slot.id, layer, reason: block.composed }); slot.contract = contract; continue; }
         contract.props = [...block.props];

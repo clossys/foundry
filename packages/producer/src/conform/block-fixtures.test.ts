@@ -60,7 +60,10 @@ describe("section and frame fixtures from adopted references", () => {
     expect(`${footer.fixtures.file}#${footer.fixtures.export}`).toBe("mist/blocks/footer/one.tsx#default");
     // BR-RETIRE3: components.link is retired; the links region drafts components.button.
     expect(footer.fixtures.props).toEqual({ children: ["DRAFT columns", "DRAFT links (components.button)", "DRAFT legal", "DRAFT social (components.icon)"] });
-    expect((fixtureOf("frames.site-shell")!.fixtures.props.children as string[])).toContain("DRAFT consent (sections.consent)");
+    // A region that accepts sections drafts the layer it accepts.
+    expect((fixtureOf("frames.app-shell")!.fixtures.props.children as string[])).toContain("DRAFT page-module (sections.*)");
+    // SSC: frames.site-shell is composed by its named rule row (its rows are its parts' references): no package fixture.
+    expect(fixtureOf("frames.site-shell")).toBeUndefined();
     expect(row("frames.site-footer").contract.props).toEqual(["children"]);
     // FCR: frames.site-header's rows are radix-flavoured headers (asChild), so it is composed: no package fixture.
     expect(fixtureOf("frames.site-header")).toBeUndefined();

@@ -18,7 +18,7 @@ import { pinKey, type CertifyEnv } from "../constitution/certify/env.js";
 import { SCORECARD_REF_TO, SCORECARD_SCHEMA } from "../constitution/pin-gate.js";
 import type { CandidateRecord, SlotRecord } from "../constitution/types.js";
 import { composedSlots } from "../specimen/composed-slots.js";
-import { blockReferenceFixture, COMPOSED, referenceIndex } from "../specimen/reference-fixtures.js";
+import { blockReferenceFixture, COMPOSED, planReferenceFixtures, REFERENCE_FIXTURE_RULES, referenceIndex } from "../specimen/reference-fixtures.js";
 import { PROBES, type ProbeFacts } from "./dogfood.js";
 import type { AgentModel, ConformModel } from "./model.js";
 
@@ -145,7 +145,9 @@ describe("FCR (c): a slot with an adoptable reference still demands the referenc
   it("the package's derived composed list (read by the default reader) holds no slot with an adoptable reference", () => {
     const composed = composedSlots(DESIGNER);
     expect(composed.has(SLOT)).toBe(true);
-    for (const id of ["frames.site-footer", "frames.site-shell", "sections.comparison", "sections.people"]) expect(composed.has(id), id).toBe(false);
+    // SSC: frames.site-shell is composed by its one named rule row (its rows are its parts' references), not by this rule.
+    expect(composed.has("frames.site-shell")).toBe(true);
+    for (const id of ["frames.site-footer", "sections.comparison", "sections.people"]) expect(composed.has(id), id).toBe(false);
     const index = referenceIndex(DESIGNER);
     // frames.site-footer adopts the engine-neutral tailark mist footer: the derive keeps its reference fixture.
     const footer = blockReferenceFixture(index, "frames", {}, index.references.get("frames.site-footer") ?? [], DESIGNER);
@@ -162,6 +164,42 @@ describe("FCR (c): a slot with an adoptable reference still demands the referenc
     }).rows;
     expect(run("frames.site-footer")).toEqual(u27("frames.site-footer"));
     expect(run(SLOT)).toEqual(red(/it has no pin/));
+  });
+});
+
+describe("SSC: frames.site-shell is composed by one named rule row; adoptable-reference slots are not", () => {
+  const SHELL = "frames.site-shell";
+  const SHELL_WHY = "its references are its parts' references (header, footer, toast, skip link, nav); none ships a shell";
+  const plan = planReferenceFixtures(DESIGNER);
+  const derived = new Map(plan.composed.map(row => [row.slot, row]));
+
+  it("the derive names frames.site-shell composed, by its rule row, with the reason; it carries no package fixture", () => {
+    expect(REFERENCE_FIXTURE_RULES.composed).toEqual({ [SHELL]: SHELL_WHY });
+    expect(derived.get(SHELL)).toEqual({ slot: SHELL, layer: "frames", reason: `${COMPOSED} (${SHELL_WHY})` });
+    expect(plan.gaps.some(gap => gap.slot === SHELL)).toBe(false);
+    const frames = JSON.parse(plan.files.find(file => file.path.endsWith("src/catalog/slots/frames.json"))!.after) as { id: string; contract: Record<string, unknown> }[];
+    const shell = frames.find(row => row.id === SHELL)!.contract;
+    expect(shell.fixture).toBeUndefined();
+    expect(shell.props).toBeUndefined();
+    // Its references stay in the contract (they feed its theme reads); none is mounted as the shell's fixture.
+    expect((referenceIndex(DESIGNER).references.get(SHELL) ?? []).length).toBeGreaterThan(0);
+  });
+
+  it("sections.people and sections.comparison keep their adoptable reference fixture; neither is composed", () => {
+    for (const id of ["sections.people", "sections.comparison", "frames.site-footer"]) {
+      expect(derived.has(id), id).toBe(false);
+      expect(plan.gaps.some(gap => gap.slot === id), id).toBe(false);
+    }
+  });
+
+  it("refused: frames.site-shell under the package's composed list, unpinned or uncertified; green once pinned and certified", () => {
+    const composed = [...composedSlots(DESIGNER)];
+    expect(probe({ id: SHELL, composed })).toEqual([]);
+    expect(probe({ id: SHELL, composed, pin: null })).toEqual(red(/it has no pin/, SHELL));
+    expect(probe({ id: SHELL, composed, certified: { certified: false } })).toEqual(red(/its pinned candidate site-header-v1\.json has no passing verdict \(submitted and certified\) on its scorecard/, SHELL));
+    // The same certified composition on people or comparison is red with the U27 message: they still need their reference
+    // (a section's fixture is also judged on its DRAFT copy, so only the fixture row is asserted here).
+    for (const id of ["sections.people", "sections.comparison"]) expect(probe({ id, composed }).filter(row => row.includes("contract.fixture mounts")), id).toEqual(u27(id));
   });
 });
 

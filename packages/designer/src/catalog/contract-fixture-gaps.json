@@ -56,9 +56,12 @@
           }
         ]
       }
+    },
+    "composed": {
+      "frames.site-shell": "its references are its parts' references (header, footer, toast, skip link, nav); none ships a shell"
     }
   },
-  "fixtures": 91,
+  "fixtures": 90,
   "gaps": [
     {
       "slot": "components.chart-area",
@@ -892,6 +895,11 @@
       "slot": "sections.wizard",
       "layer": "sections",
       "reason": "no adoptable reference in the selected style and engine: the contract fixture is the file and export of the slot's own pinned, certified composition (diceui/stepper is new-york and ui/stepper.tsx names a headless engine; the selected style is aria-nova)"
+    },
+    {
+      "slot": "frames.site-shell",
+      "layer": "frames",
+      "reason": "no adoptable reference in the selected style and engine: the contract fixture is the file and export of the slot's own pinned, certified composition (its references are its parts' references (header, footer, toast, skip link, nav); none ships a shell)"
     },
     {
       "slot": "frames.site-header",
