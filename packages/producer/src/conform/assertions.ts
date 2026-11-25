@@ -36,8 +36,11 @@ export const KIND_FAMILY: Readonly<Record<string, string>> = {
   page: "page", layout: "page", chrome: "page", publication: "publication", release: "publication",
 };
 
-/** Each held kind's certifier (certify/<certifier>.ts), where it is not the kind's family: a release manifest has its own (K3). */
-export const KIND_CERTIFIER: Readonly<Record<string, string>> = { release: "release" };
+/**
+ * Each held kind's certifier (certify/<certifier>.ts), where it is not the kind's family (K3): a release manifest has its
+ * own, and a publication is certified by certify/page.ts (certifyPublication).
+ */
+export const KIND_CERTIFIER: Readonly<Record<string, string>> = { release: "release", publication: "page" };
 
 /** A rule check is enforced for an agent when its status is enforced, or its enforcedFor names the agent. */
 export function enforcedFor(model: ConformModel, id: string, agent: string): boolean {

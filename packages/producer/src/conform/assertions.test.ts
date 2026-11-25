@@ -16,9 +16,12 @@ vi.mock("../records/slot-model/foundry-ia.js", async importOriginal => ({
   studioDesignerSlots: () => [{ id: "themes.studio" }],
 }));
 
-const { ASSERTIONS } = await import("./assertions.js");
+const { ASSERTIONS, KIND_CERTIFIER } = await import("./assertions.js");
 const { cellOf } = await import("./run.js");
 import type { AgentModel, ConformModel } from "./model.js";
+import { existsSync } from "node:fs";
+import { fileURLToPath } from "node:url";
+import { certifyPublication } from "../constitution/certify/page.js";
 
 /** A Designer with package leaves a.x, a.y, a.z, placing `placed`, whose consumer consumes `reach`. */
 function judge(placed: string[], reach: string[], agentName = "designer") {
@@ -76,5 +79,32 @@ describe("S1 judges the leaves sync places (S1-PLACED)", () => {
     const result = judge(["a.x"], [], "publisher");
     expect(result.red).toBe(true);
     expect(result.rows[0]).toBe("package tree has 3 leaves, the placed tree has 1 of them");
+  });
+});
+
+/**
+ * R4B: K3 finds a publication's certifier where it lives. certify/publication.ts does not exist; certifyPublication is in
+ * certify/page.ts, so KIND_CERTIFIER maps publication to page, as it maps release to its own certify/release.ts.
+ */
+describe("K3 counts the existing certifier of every held kind (R4B)", () => {
+  // The certifier set conform reads: the certify/<name>.ts files that exist (model.ts readMachinery).
+  const certifyDir = fileURLToPath(new URL("../constitution/certify/", import.meta.url));
+  const certifiers = new Set(["element", "brief", "strings", "page", "publication", "release", "seat"].filter(name => existsSync(`${certifyDir}${name}.ts`)));
+  const k3 = (kinds: string[]) => ASSERTIONS.K3!(
+    { agent: "publisher", adapter: { kinds } } as unknown as AgentModel,
+    { machinery: { rules: new Map([["R05.1", { status: "enforced", enforcedFor: [] }]]), certifiers } } as unknown as ConformModel,
+  );
+
+  it("maps a publication to certify/page.ts, which holds certifyPublication", () => {
+    expect(KIND_CERTIFIER).toEqual({ release: "release", publication: "page" });
+    expect(certifiers.has("publication")).toBe(false);
+    expect(certifiers.has("page")).toBe(true);
+    expect(typeof certifyPublication).toBe("function");
+  });
+  it("is green for Publisher's held kinds, publication included", () => {
+    expect(k3(["page", "layout", "chrome", "publication", "release"])).toEqual({ rows: [], evidence: 5 });
+  });
+  it("stays red for a held kind with no certifier", () => {
+    expect(k3(["publication", "invented"]).rows).toEqual(["invented: no certifier"]);
   });
 });
