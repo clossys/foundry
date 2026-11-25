@@ -58,7 +58,7 @@
       }
     }
   },
-  "fixtures": 100,
+  "fixtures": 91,
   "gaps": [
     {
       "slot": "components.chart-area",
@@ -266,11 +266,6 @@
       "reason": "retired in place (src/catalog/retired.json): not live, so no fixture is derived"
     },
     {
-      "slot": "sections.account-summary",
-      "layer": "sections",
-      "reason": "no adopted reference"
-    },
-    {
       "slot": "sections.article",
       "layer": "sections",
       "reason": "tailwindcss-typography/typography ships 3 code files and no registry:page entry or typography file"
@@ -281,29 +276,9 @@
       "reason": "retired in place (src/catalog/retired.json): not live, so no fixture is derived"
     },
     {
-      "slot": "sections.candidate-preview",
-      "layer": "sections",
-      "reason": "no adopted reference"
-    },
-    {
       "slot": "sections.cards",
       "layer": "sections",
       "reason": "retired in place (src/catalog/retired.json): not live, so no fixture is derived"
-    },
-    {
-      "slot": "sections.column-mapper",
-      "layer": "sections",
-      "reason": "no adopted reference"
-    },
-    {
-      "slot": "sections.consent",
-      "layer": "sections",
-      "reason": "no adopted reference"
-    },
-    {
-      "slot": "sections.explorer",
-      "layer": "sections",
-      "reason": "no adopted reference"
     },
     {
       "slot": "sections.legal-prose",
@@ -326,16 +301,6 @@
       "reason": "retired in place (src/catalog/retired.json): not live, so no fixture is derived"
     },
     {
-      "slot": "sections.question-packet",
-      "layer": "sections",
-      "reason": "no adopted reference"
-    },
-    {
-      "slot": "sections.queue-list",
-      "layer": "sections",
-      "reason": "no adopted reference"
-    },
-    {
       "slot": "sections.record-detail",
       "layer": "sections",
       "reason": "retired in place (src/catalog/retired.json): not live, so no fixture is derived"
@@ -346,24 +311,9 @@
       "reason": "tailwindcss-typography/typography ships 3 code files and no registry:page entry or typography file"
     },
     {
-      "slot": "sections.slot-detail",
-      "layer": "sections",
-      "reason": "no adopted reference"
-    },
-    {
-      "slot": "sections.slot-gallery",
-      "layer": "sections",
-      "reason": "no adopted reference"
-    },
-    {
       "slot": "frames.document",
       "layer": "frames",
       "reason": "retired in place (src/catalog/retired.json): not live, so no fixture is derived"
-    },
-    {
-      "slot": "frames.deck",
-      "layer": "frames",
-      "reason": "no adopted reference"
     },
     {
       "slot": "themes.accent",
@@ -855,6 +805,103 @@
       "layer": "components",
       "source": "studio",
       "reason": "the contract installs its own file (@clossys/designer-ui components/specimen-document.tsx), which no adopted reference ships"
+    }
+  ],
+  "composed": [
+    {
+      "slot": "sections.account-summary",
+      "layer": "sections",
+      "reason": "no adoptable reference in the selected style and engine: the contract fixture is the file and export of the slot's own pinned, certified composition (no adopted reference)"
+    },
+    {
+      "slot": "sections.call-to-action",
+      "layer": "sections",
+      "reason": "no adoptable reference in the selected style and engine: the contract fixture is the file and export of the slot's own pinned, certified composition (tailark-oss/mist-call-to-action-1 is radix and mist/blocks/call-to-action/one.tsx names a headless engine; the selected style is aria-nova)"
+    },
+    {
+      "slot": "sections.candidate-preview",
+      "layer": "sections",
+      "reason": "no adoptable reference in the selected style and engine: the contract fixture is the file and export of the slot's own pinned, certified composition (no adopted reference)"
+    },
+    {
+      "slot": "sections.column-mapper",
+      "layer": "sections",
+      "reason": "no adoptable reference in the selected style and engine: the contract fixture is the file and export of the slot's own pinned, certified composition (no adopted reference)"
+    },
+    {
+      "slot": "sections.consent",
+      "layer": "sections",
+      "reason": "no adoptable reference in the selected style and engine: the contract fixture is the file and export of the slot's own pinned, certified composition (no adopted reference)"
+    },
+    {
+      "slot": "sections.explorer",
+      "layer": "sections",
+      "reason": "no adoptable reference in the selected style and engine: the contract fixture is the file and export of the slot's own pinned, certified composition (no adopted reference)"
+    },
+    {
+      "slot": "sections.filter-builder",
+      "layer": "sections",
+      "reason": "no adoptable reference in the selected style and engine: the contract fixture is the file and export of the slot's own pinned, certified composition (diceui/faceted is new-york and ui/faceted.tsx names a headless engine; the selected style is aria-nova)"
+    },
+    {
+      "slot": "sections.hero",
+      "layer": "sections",
+      "reason": "no adoptable reference in the selected style and engine: the contract fixture is the file and export of the slot's own pinned, certified composition (tailark-oss/mist-hero-section-1 is radix and mist/blocks/hero-section/one/hero-section.tsx names a headless engine; the selected style is aria-nova)"
+    },
+    {
+      "slot": "sections.pricing",
+      "layer": "sections",
+      "reason": "no adoptable reference in the selected style and engine: the contract fixture is the file and export of the slot's own pinned, certified composition (tailark-oss/mist-pricing-1 is radix and mist/blocks/pricing/one.tsx names a headless engine; the selected style is aria-nova)"
+    },
+    {
+      "slot": "sections.question-packet",
+      "layer": "sections",
+      "reason": "no adoptable reference in the selected style and engine: the contract fixture is the file and export of the slot's own pinned, certified composition (no adopted reference)"
+    },
+    {
+      "slot": "sections.queue-list",
+      "layer": "sections",
+      "reason": "no adoptable reference in the selected style and engine: the contract fixture is the file and export of the slot's own pinned, certified composition (no adopted reference)"
+    },
+    {
+      "slot": "sections.slot-detail",
+      "layer": "sections",
+      "reason": "no adoptable reference in the selected style and engine: the contract fixture is the file and export of the slot's own pinned, certified composition (no adopted reference)"
+    },
+    {
+      "slot": "sections.slot-gallery",
+      "layer": "sections",
+      "reason": "no adoptable reference in the selected style and engine: the contract fixture is the file and export of the slot's own pinned, certified composition (no adopted reference)"
+    },
+    {
+      "slot": "sections.steps",
+      "layer": "sections",
+      "reason": "no adoptable reference in the selected style and engine: the contract fixture is the file and export of the slot's own pinned, certified composition (diceui/timeline is new-york and ui/timeline.tsx names a headless engine; the selected style is aria-nova)"
+    },
+    {
+      "slot": "sections.table-of-contents",
+      "layer": "sections",
+      "reason": "no adoptable reference in the selected style and engine: the contract fixture is the file and export of the slot's own pinned, certified composition (diceui/scroll-spy is new-york and ui/scroll-spy.tsx names a headless engine; the selected style is aria-nova)"
+    },
+    {
+      "slot": "sections.timeline",
+      "layer": "sections",
+      "reason": "no adoptable reference in the selected style and engine: the contract fixture is the file and export of the slot's own pinned, certified composition (diceui/timeline is new-york and ui/timeline.tsx names a headless engine; the selected style is aria-nova)"
+    },
+    {
+      "slot": "sections.wizard",
+      "layer": "sections",
+      "reason": "no adoptable reference in the selected style and engine: the contract fixture is the file and export of the slot's own pinned, certified composition (diceui/stepper is new-york and ui/stepper.tsx names a headless engine; the selected style is aria-nova)"
+    },
+    {
+      "slot": "frames.site-header",
+      "layer": "frames",
+      "reason": "no adoptable reference in the selected style and engine: the contract fixture is the file and export of the slot's own pinned, certified composition (tailark-oss/mist-hero-section-1-header is radix and mist/blocks/hero-section/one/header.tsx names a headless engine; the selected style is aria-nova)"
+    },
+    {
+      "slot": "frames.deck",
+      "layer": "frames",
+      "reason": "no adoptable reference in the selected style and engine: the contract fixture is the file and export of the slot's own pinned, certified composition (no adopted reference)"
     }
   ]
 }

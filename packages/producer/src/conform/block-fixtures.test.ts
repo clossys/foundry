@@ -3,6 +3,8 @@
  * gives every live section and frame slot a fixture mounting its adopted reference's block (block-fixtures.ts),
  * with DRAFT copy that satisfies the generated props type, or names it in the gaps file. The DF.CREATE probe is
  * red on a section or frame fixture no reference ships, and on DRAFT copy that does not satisfy the contract.
+ * FCR: a section or frame with no reference adoptable in the selected style and engine is composed instead (its
+ * fixture is its own pinned, certified composition's; composed-fixture.test.ts), so it carries no package fixture.
  */
 import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
@@ -11,7 +13,7 @@ import { describe, expect, it } from "vitest";
 import { contractFixtureIssues } from "../records/slot-model/contract-fixture.js";
 import { fixtureShapeIssues } from "../records/slot-model/validate.js";
 import { BLOCK_FIXTURE_RULES, draftCopy, draftCopyIssues, frameChildren, hasDefaultExport, type CopyField } from "../specimen/block-fixtures.js";
-import { GAPS_FILE, NO_REFERENCE, referenceIndex, slotReferenceShips } from "../specimen/reference-fixtures.js";
+import { COMPOSED, GAPS_FILE, NO_REFERENCE, referenceIndex, slotReferenceShips } from "../specimen/reference-fixtures.js";
 import { PROBES, type ProbeFacts } from "./dogfood.js";
 import type { AgentModel, ConformModel } from "./model.js";
 
@@ -20,7 +22,8 @@ const DESIGNER = join(here, "../../../designer");
 type Fixture = { schema: string; fixtures: { file: string; export: string; props: Record<string, unknown> } };
 type Row = { id: string; contract: Record<string, unknown> };
 const catalog = (layer: string): Row[] => JSON.parse(readFileSync(join(DESIGNER, "src/catalog/slots", `${layer}.json`), "utf8")) as Row[];
-const gaps = () => (JSON.parse(readFileSync(join(DESIGNER, GAPS_FILE), "utf8")) as { gaps: { slot: string; layer: string; reason: string }[] }).gaps;
+const gapsDoc = () => JSON.parse(readFileSync(join(DESIGNER, GAPS_FILE), "utf8")) as { gaps: { slot: string; layer: string; reason: string }[]; composed: { slot: string; layer: string; reason: string }[] };
+const gaps = () => gapsDoc().gaps;
 const retired = new Set((JSON.parse(readFileSync(join(DESIGNER, "src/catalog/retired.json"), "utf8")) as { id: string }[]).map(entry => entry.id));
 const row = (id: string) => [...catalog("sections"), ...catalog("frames")].find(slot => slot.id === id)!;
 const fixtureOf = (id: string) => row(id).contract.fixture as Fixture | undefined;
@@ -29,20 +32,22 @@ const index = referenceIndex(DESIGNER);
 
 describe("section and frame fixtures from adopted references", () => {
   it("a section mounts its reference block with DRAFT copy typed by its generated props", () => {
-    const hero = fixtureOf("sections.hero")!;
-    // tailark mist-hero-section-1 ships one file and exports its block as the module default.
-    expect(`${hero.fixtures.file}#${hero.fixtures.export}`).toBe("mist/blocks/hero-section/one/hero-section.tsx#default");
-    expect(hero.fixtures.props).toEqual({
+    const people = fixtureOf("sections.people")!;
+    // tailark mist-team-1 ships one file and exports its block as the module default.
+    expect(`${people.fixtures.file}#${people.fixtures.export}`).toBe("mist/blocks/team/one.tsx#default");
+    expect(people.fixtures.props).toEqual({
       copy: {
-        header: { heading: "DRAFT heading", eyebrow: "DRAFT eyebrow", description: "DRAFT lead" },
-        actions: { primary: { label: "DRAFT action" }, secondary: { label: "DRAFT action" } },
-        media: { title: "DRAFT heading", series: [{ name: "DRAFT label" }] },
+        header: { eyebrow: "DRAFT eyebrow", heading: "DRAFT heading", description: "DRAFT lead" },
+        people: [{ name: "DRAFT label", role: "DRAFT label", initials: "DRAFT label" }],
       },
     });
-    // HeroProps is { copy: HeroCopy; variant?: HeroVariant } (src/generated/props/sections.hero.ts).
-    expect(row("sections.hero").contract.props).toEqual(["copy", "variant"]);
-    const props = readFileSync(join(DESIGNER, "src/generated/props/sections.hero.ts"), "utf8");
-    expect(props).toMatch(/export interface HeroProps \{\n  copy: HeroCopy;\n  variant\?: HeroVariant;\n\}/);
+    // PeopleProps is { copy: PeopleCopy; variant?: PeopleVariant } (src/generated/props/sections.people.ts).
+    expect(row("sections.people").contract.props).toEqual(["copy", "variant"]);
+    const props = readFileSync(join(DESIGNER, "src/generated/props/sections.people.ts"), "utf8");
+    expect(props).toMatch(/export interface PeopleProps \{\n  copy: PeopleCopy;\n  variant\?: PeopleVariant;\n\}/);
+    // FCR: sections.hero's only rows are radix-flavoured, so it is composed and carries no package fixture.
+    expect(fixtureOf("sections.hero")).toBeUndefined();
+    expect(row("sections.hero").contract.props).toBeUndefined();
   });
 
   it("a block reference with a registry:page entry mounts that entry", () => {
@@ -51,20 +56,31 @@ describe("section and frame fixtures from adopted references", () => {
   });
 
   it("a frame mounts its reference with one DRAFT placeholder per region, naming the section it accepts", () => {
-    const header = fixtureOf("frames.site-header")!;
-    expect(`${header.fixtures.file}#${header.fixtures.export}`).toBe("mist/blocks/hero-section/one/header.tsx#HeroHeader");
-    // BR-RETIRE3: components.link is retired; the nav region now drafts components.button.
-    expect(header.fixtures.props).toEqual({ children: ["DRAFT brand (components.logo)", "DRAFT nav (components.button)", "DRAFT actions (components.button)"] });
+    const footer = fixtureOf("frames.site-footer")!;
+    expect(`${footer.fixtures.file}#${footer.fixtures.export}`).toBe("mist/blocks/footer/one.tsx#default");
+    // BR-RETIRE3: components.link is retired; the links region drafts components.button.
+    expect(footer.fixtures.props).toEqual({ children: ["DRAFT columns", "DRAFT links (components.button)", "DRAFT legal", "DRAFT social (components.icon)"] });
     expect((fixtureOf("frames.site-shell")!.fixtures.props.children as string[])).toContain("DRAFT consent (sections.consent)");
-    expect(row("frames.site-header").contract.props).toEqual(["children"]);
+    expect(row("frames.site-footer").contract.props).toEqual(["children"]);
+    // FCR: frames.site-header's rows are radix-flavoured headers (asChild), so it is composed: no package fixture.
+    expect(fixtureOf("frames.site-header")).toBeUndefined();
   });
 
   it("every live section and frame has a valid fixture its own reference ships, or is a named gap; retired ones are gaps", () => {
     const named = new Map(gaps().map(gap => [gap.slot, gap.reason]));
+    const composed = new Map(gapsDoc().composed.map(row => [row.slot, row.reason]));
     let fixtures = 0;
     for (const layer of ["sections", "frames"]) for (const slot of catalog(layer)) {
       const fixture = slot.contract.fixture as Fixture | undefined;
       if (retired.has(slot.id)) { expect(fixture, slot.id).toBeUndefined(); expect(named.get(slot.id), slot.id).toBe(BLOCK_FIXTURE_RULES.retired); continue; }
+      if (composed.has(slot.id)) {
+        // FCR: a composed slot is no gap, and the package gives it neither a fixture nor the props that type one.
+        expect(composed.get(slot.id), slot.id).toContain(COMPOSED);
+        expect(named.has(slot.id), slot.id).toBe(false);
+        expect(fixture, slot.id).toBeUndefined();
+        expect(slot.contract.props, slot.id).toBeUndefined();
+        continue;
+      }
       if (fixture === undefined) { expect(named.get(slot.id), slot.id).toMatch(/\S/); continue; }
       fixtures++;
       expect(named.has(slot.id), slot.id).toBe(false);
@@ -73,10 +89,13 @@ describe("section and frame fixtures from adopted references", () => {
       expect(slotReferenceShips(index, slot.id, fixture.fixtures.file, fixture.fixtures.export), slot.id).toBe(true);
       if (layer === "sections") expect(draftCopyIssues(fieldsOf(slot.id), fixture.fixtures.props.copy), slot.id).toEqual([]);
     }
-    expect(fixtures).toBeGreaterThan(40);
-    // No reference row is a gap, never an invented path.
-    expect(named.get("sections.consent")).toBe(NO_REFERENCE);
-    expect(named.get("frames.deck")).toBe(NO_REFERENCE);
+    // FCR moved nine former fixtures to composed (judged against their own pinned composition); together they
+    // still cover more than 40 slots, and every derived fixture is counted in the gaps file.
+    expect(fixtures + [...composed.keys()].filter(id => id.startsWith("sections.") || id.startsWith("frames.")).length).toBeGreaterThan(40);
+    expect(fixtures).toBeGreaterThan(30);
+    // No reference row is composed (FCR), never an invented path.
+    expect(composed.get("sections.consent")).toBe(`${COMPOSED} (${NO_REFERENCE})`);
+    expect(composed.get("frames.deck")).toBe(`${COMPOSED} (${NO_REFERENCE})`);
   });
 
   it("draftCopy nests dotted keys and arrays, and stays within maxLength", () => {
@@ -101,28 +120,29 @@ describe("DF.CREATE probe covers sections and frames (strengthened)", () => {
   const model = (id: string, fixture: unknown) => ({ agent: "designer", live: [{ id, source: "placed", contract: { ...row(id).contract, fixture }, inputs: [], uses: [] }] }) as unknown as AgentModel;
   const facts: ProbeFacts = { emptyL2Detected: {}, requestVerb: true, critiqueMonorepoPath: false };
   const probe = (id: string, fixture: unknown) => PROBES["contract-fixture"]!(model(id, fixture), {} as ConformModel, facts).rows;
-  const hero = () => structuredClone(fixtureOf("sections.hero")!);
+  const people = () => structuredClone(fixtureOf("sections.people")!);
 
   it("green on the derived section and frame fixtures", () => {
-    expect(probe("sections.hero", hero())).toEqual([]);
-    expect(probe("frames.site-header", fixtureOf("frames.site-header"))).toEqual([]);
+    expect(probe("sections.people", people())).toEqual([]);
+    expect(probe("frames.site-footer", fixtureOf("frames.site-footer"))).toEqual([]);
   });
 
   it("mutation: red on an invented section or frame path, or a named export where the block is the default", () => {
-    expect(probe("sections.hero", { ...hero(), fixtures: { ...hero().fixtures, file: "registry/default/blocks/hero.tsx" } })).toEqual(["sections.hero: contract.fixture mounts registry/default/blocks/hero.tsx#default, which none of its adopted references ships in the selected style"]);
-    expect(probe("sections.hero", { ...hero(), fixtures: { ...hero().fixtures, export: "Hero" } })).toHaveLength(1);
+    expect(probe("sections.people", { ...people(), fixtures: { ...people().fixtures, file: "registry/default/blocks/team.tsx" } })).toEqual(["sections.people: contract.fixture mounts registry/default/blocks/team.tsx#default, which none of its adopted references ships in the selected style"]);
+    expect(probe("sections.people", { ...people(), fixtures: { ...people().fixtures, export: "Team" } })).toHaveLength(1);
     // another slot's reference file is not this slot's
-    expect(probe("frames.site-header", { ...fixtureOf("frames.site-header")!, fixtures: { ...fixtureOf("frames.site-header")!.fixtures, file: "mist/blocks/footer/one.tsx", export: "default" } })).toHaveLength(1);
+    expect(probe("frames.site-footer", { ...fixtureOf("frames.site-footer")!, fixtures: { ...fixtureOf("frames.site-footer")!.fixtures, file: "mist/blocks/hero-section/one/header.tsx", export: "HeroHeader" } })).toHaveLength(1);
   });
 
   it("mutation: red on DRAFT copy that does not satisfy the contract's copy fields", () => {
-    const missing = hero(); delete (missing.fixtures.props.copy as { header: Record<string, unknown> }).header.heading;
-    expect(probe("sections.hero", missing)).toEqual(["sections.hero: contract.fixture props.copy is missing the required field header.heading"]);
-    const extra = hero(); (extra.fixtures.props.copy as Record<string, unknown>).invented = "DRAFT x";
-    expect(probe("sections.hero", extra)).toEqual(["sections.hero: contract.fixture props.copy sets invented, which no contract copy field declares"]);
-    const empty = hero(); (empty.fixtures.props.copy as { header: Record<string, unknown> }).header.heading = "";
-    expect(probe("sections.hero", empty)).toEqual(["sections.hero: contract.fixture props.copy header.heading must be non-empty text"]);
-    const none = hero(); delete none.fixtures.props.copy;
-    expect(probe("sections.hero", none)).toEqual(["sections.hero: contract.fixture props.copy must be an object"]);
+    // sections.people's header fields are optional; each person's name is required.
+    const missing = people(); delete (missing.fixtures.props.copy as { people: Record<string, unknown>[] }).people[0].name;
+    expect(probe("sections.people", missing)).toEqual(["sections.people: contract.fixture props.copy is missing the required field people[].name"]);
+    const extra = people(); (extra.fixtures.props.copy as Record<string, unknown>).invented = "DRAFT x";
+    expect(probe("sections.people", extra)).toEqual(["sections.people: contract.fixture props.copy sets invented, which no contract copy field declares"]);
+    const empty = people(); (empty.fixtures.props.copy as { people: Record<string, unknown>[] }).people[0].name = "";
+    expect(probe("sections.people", empty)).toEqual(["sections.people: contract.fixture props.copy people[].name must be non-empty text"]);
+    const none = people(); delete none.fixtures.props.copy;
+    expect(probe("sections.people", none)).toEqual(["sections.people: contract.fixture props.copy must be an object"]);
   });
 });

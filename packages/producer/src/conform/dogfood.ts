@@ -8,16 +8,21 @@
  * pick, verdict, and the Writer's owner pin) on a temporary copy with a hand-placed and a submitted, uncertified candidate; the rest
  * read files.
  */
+import { createHash } from "node:crypto";
 import { cpSync, existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, realpathSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join, posix } from "node:path";
+import { basename, join, posix } from "node:path";
 import { standardTastePath } from "../cli/critique.js";
+import { SCORECARD_REF_TO, SCORECARD_SCHEMA } from "../constitution/pin-gate.js";
+import { CRITIQUES_DIR, critiqueFileName, critiqueRecordIssues } from "../records/critique-record.js";
 import { candidateLineage, globMatch } from "../constitution/certify/source.js";
 import { runConstitution } from "../constitution/run.js";
 import { resolveAgent } from "../agents.js";
+import { slotFamily } from "../records/slot-current.js";
 import { readCandidate } from "../records/slots.js";
+import { designerComposedSlots } from "../specimen/composed-slots.js";
 import { CODE, exportedNames, referenceIndex, slotReferenceShips, type ReferenceIndex } from "../specimen/reference-fixtures.js";
-import { draftCopyIssues, type CopyField } from "../specimen/block-fixtures.js";
+import { draftCopyIssues, hasDefaultExport, type CopyField } from "../specimen/block-fixtures.js";
 import { ASSERTIONS, KIND_FAMILY, type Judgement } from "./assertions.js";
 import type { AgentModel, ConformModel, LiveSlot } from "./model.js";
 import { probeRecipePages, type RecipePageFacts } from "./recipe-page.js";
@@ -44,6 +49,10 @@ export interface ProbeFacts {
   readonly consumerAssets?: readonly string[];
   /** The raw bytes of a slot's pinned candidate file (default: the one slot-model reader, records/slots.ts readCandidate); throws when absent or unreadable. */
   readonly candidateText?: (slot: string, name: string) => string;
+  /** FCR: the composed section and frame slots (default: the installed Designer package's derived gaps document). */
+  readonly composedSlots?: ReadonlySet<string> | string;
+  /** The bytes of a file under the consumer folder, by its consumer-relative path (default: read from disk); throws when absent. */
+  readonly consumerText?: (path: string) => string;
 }
 
 export interface PinGateResult { readonly target: string; readonly candidate: string; readonly accepted: boolean; readonly message: string; readonly verbs?: readonly VerbProbe[] }
@@ -143,8 +152,10 @@ export const GATE_REFUSAL = /no submit record|no passing verdict|pinned only thr
 
 /** A schema-valid candidate that certifies against no contract (no keys, no derived source): submitted, never passing. */
 function uncertifiedBytes(slot: { readonly id: string; readonly kind?: string }, ext: string): unknown {
-  // A Publisher page (the placed probe slot): schema-valid, but no frame, no sections and an inline title (page.assembled).
-  if (ext === "json" && slot.kind === "page") return { schema: "clossys.page/1", path: `/${PIN_PROBE_NAME}`, title: "Conform probe page", frame: null, sections: [], copy: {}, meta: { source: { kind: "original", ref: [] } } };
+  // A Publisher page record for every slot the page record rules judge: the reader's kind family `page` (page, layout and
+  // chrome; records/slot-current.ts slotFamily, the kind the candidate validator applies). Schema-valid, but no frame, no
+  // sections and an inline title (page.assembled), so it reaches the CHOOSE gate and certifies against nothing.
+  if (ext === "json" && slotFamily(slot.kind) === "page") return { schema: "clossys.page/1", path: `/${PIN_PROBE_NAME}`, title: "Conform probe page", frame: null, sections: [], copy: {}, meta: { source: { kind: "original", ref: [] } } };
   if (ext === "json") return { name: PIN_PROBE_NAME, type: "registry:file", files: [{ path: `${PIN_PROBE_NAME}.svg`, type: "registry:file", content: "<svg/>" }], meta: { source: { kind: "original", ref: [] } } };
   const head = `---\nslot: "${slot.id}"\n`;
   return slot.kind === "brief"
@@ -382,10 +393,67 @@ function pinnedConsumerMiss(slot: LiveSlot, file: string, name: string, read: (s
   return undefined;
 }
 
+/** The Designer package's composed slots (FCR), read once per process, or why they cannot be read. */
+function defaultComposedSlots(): ReadonlySet<string> | string {
+  try { return designerComposedSlots(); }
+  catch (error) { return `the Designer composed slots cannot be read: ${error instanceof Error ? error.message : String(error)}`; }
+}
+
+const sha256 = (bytes: string) => createHash("sha256").update(bytes).digest("hex");
+
+/**
+ * FCR: why a composed section or frame slot's fixture (no reference row adoptable in the selected style and engine,
+ * the Designer package's derived `composed` list) is not the file and value export of its own pinned, certified
+ * candidate; undefined when it is. Certified means all of: the slot/2 reader takes the pin (pinRejection absent);
+ * the pin went through the CHOOSE gate, so it cites the scorecard the gate wrote and that file is the one cited
+ * (sha256); the scorecard picks the pinned candidate and its row is submitted and certified (`certify` verdict) at
+ * the pinned bytes; a valid critique record (critique-record.ts, the writer's own validation) critiques it; and the
+ * candidate ships `file` as a code file with the value export `name`. Nothing else stands in for any of these.
+ */
+function composedPinMiss(slot: LiveSlot, file: string, name: string, read: (slot: string, name: string) => string, consumerText: (path: string) => string, consumerName: string): string | undefined {
+  if (slot.pin === undefined) return "it has no pin";
+  if (slot.pinRejection !== undefined) return `the slot/2 reader refuses its pin (${slot.pinRejection})`;
+  const candidate = slot.pin.candidate;
+  if (typeof candidate !== "string") return "its pin names no candidate";
+  const refs = Array.isArray(slot.pin.refs) ? slot.pin.refs : [];
+  const cite = refs.find(ref => object(ref) && ref.to === SCORECARD_REF_TO) as Record<string, unknown> | undefined;
+  if (!cite) return `its pin cites no scorecard (${SCORECARD_REF_TO}), so it was not pinned through the CHOOSE gate`;
+  const scorecardPath = `.state/checks/designer/${slot.id}/scorecard.json`;
+  let bytes: string;
+  try { bytes = consumerText(scorecardPath); }
+  catch (error) { return `its scorecard ${scorecardPath} cannot be read: ${error instanceof Error ? error.message : String(error)}`; }
+  if (typeof cite.sha256 !== "string" || sha256(bytes) !== cite.sha256) return `its scorecard ${scorecardPath} is not the one its pin cites (sha256 ${sha256(bytes).slice(0, 12)}, cited ${String(cite.sha256).slice(0, 12)})`;
+  let card: { schema?: unknown; slot?: unknown; pick?: unknown; candidates?: unknown };
+  try { card = JSON.parse(bytes) as typeof card; }
+  catch (error) { return `its scorecard ${scorecardPath} cannot be read: ${error instanceof Error ? error.message : String(error)}`; }
+  if (!object(card) || card.schema !== SCORECARD_SCHEMA || card.slot !== `designer/${slot.id}`) return `its scorecard ${scorecardPath} is no ${SCORECARD_SCHEMA} scorecard of designer/${slot.id}`;
+  if (card.pick !== candidate) return `its scorecard picks ${JSON.stringify(card.pick ?? null)}, not its pinned candidate ${candidate}`;
+  const row = (Array.isArray(card.candidates) ? card.candidates : []).find(entry => object(entry) && entry.candidate === candidate) as Record<string, unknown> | undefined;
+  if (!row || row.verdict !== "certify" || row.certified !== true || row.submitted !== true) return `its pinned candidate ${candidate} has no passing verdict (submitted and certified) on its scorecard`;
+  if (typeof slot.pin.sha256 !== "string" || row.sha256 !== slot.pin.sha256) return `its scorecard judged ${candidate} at other bytes than its pin names`;
+  const critiquePath = `agents/designer/${slot.id}/${CRITIQUES_DIR}/${critiqueFileName(candidate)}`;
+  let critique: unknown;
+  try { critique = JSON.parse(consumerText(critiquePath)); }
+  catch (error) { return `its pinned candidate ${candidate} has no readable critique record ${critiquePath}: ${error instanceof Error ? error.message : String(error)}`; }
+  const issues = critiqueRecordIssues(critique, { slot: slot.id, agent: "designer", slotDir: `${consumerName}/agents/designer/${slot.id}`, candidate });
+  if (issues.length) return `its critique record ${critiquePath} is invalid (${issues.join("; ")})`;
+  let doc: { content?: { files?: unknown } };
+  try { doc = JSON.parse(read(slot.id, candidate)) as typeof doc; }
+  catch (error) { return `its pinned candidate ${candidate} cannot be read: ${error instanceof Error ? error.message : String(error)}`; }
+  const files = Array.isArray(doc?.content?.files) ? doc.content.files as { path?: unknown; content?: unknown }[] : [];
+  const shipped = files.find(entry => typeof entry?.path === "string" && posix.normalize(entry.path) === posix.normalize(file));
+  if (!shipped) return `its pinned candidate ${candidate} ships no file ${file}`;
+  if (!CODE.test(shipped.path as string)) return `its pinned candidate's ${file} is not a code file`;
+  const content = typeof shipped.content === "string" ? shipped.content : "";
+  if (!(name === "default" ? hasDefaultExport(content) : exportedNames(content).includes(name))) return `its pinned candidate's ${file} has no value export ${name}`;
+  return undefined;
+}
+
 /**
  * Live Designer component, section and frame fixtures that mount a file or export none of the slot's own adopted
  * references ships, and, for a consumer-asset component slot (provenance consumerAssets), that its accepted pinned
- * consumer-owned candidate does not ship either; and section fixtures whose `props.copy` does not satisfy the
+ * consumer-owned candidate does not ship either, and, for a composed section or frame slot (FCR), that is not its own
+ * pinned, certified candidate's (`composedPinMiss`); and section fixtures whose `props.copy` does not satisfy the
  * contract's copy fields (U28).
  */
 function unshippedComponentFixtures(agent: AgentModel, model: ConformModel, facts: ProbeFacts): string[] {
@@ -396,13 +464,20 @@ function unshippedComponentFixtures(agent: AgentModel, model: ConformModel, fact
   const assets = facts.consumerAssets ?? defaultConsumerAssets();
   if (typeof assets === "string") return [assets];
   const read = facts.candidateText ?? ((slot: string, name: string) => readCandidate(model.consumer, "designer", slot, name).raw);
+  const composed = facts.composedSlots ?? defaultComposedSlots();
+  if (typeof composed === "string") return [composed];
+  const consumerText = facts.consumerText ?? ((path: string) => readFileSync(join(model.consumer, path), "utf8"));
   const rows: string[] = [];
   for (const slot of live) {
     const fixture = slot.contract.fixture as { fixtures?: { file?: unknown; export?: unknown } } | undefined;
     const file = fixture?.fixtures?.file, name = fixture?.fixtures?.export;
     if (typeof file !== "string" || typeof name !== "string" || !ships(slot.id, file, name)) {
       const consumerAsset = slot.id.startsWith("components.") && assets.some(pattern => globMatch(pattern, slot.id));
-      if (!consumerAsset) rows.push(`${slot.id}: contract.fixture mounts ${String(file)}#${String(name)}, which none of its adopted references ships in the selected style`);
+      const composition = (slot.id.startsWith("sections.") || slot.id.startsWith("frames.")) && composed.has(slot.id);
+      if (composition) {
+        const miss = typeof file !== "string" || typeof name !== "string" ? "the fixture names no file or export" : composedPinMiss(slot, file, name, read, consumerText, basename(model.consumer ?? "clossys"));
+        if (miss !== undefined) rows.push(`${slot.id}: contract.fixture mounts ${String(file)}#${String(name)}, which neither its adopted references ship in the selected style nor its pinned, certified composition ships (${miss})`);
+      } else if (!consumerAsset) rows.push(`${slot.id}: contract.fixture mounts ${String(file)}#${String(name)}, which none of its adopted references ships in the selected style`);
       else {
         const miss = typeof file !== "string" || typeof name !== "string" ? "the fixture names no file or export" : pinnedConsumerMiss(slot, file, name, read);
         if (miss !== undefined) rows.push(`${slot.id}: contract.fixture mounts ${String(file)}#${String(name)}, which neither its adopted references ship in the selected style nor its accepted pinned consumer-owned candidate ships (${miss})`);

@@ -7,6 +7,7 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { loadBuildCatalog, type PlacementNode } from "@clossys/designer/catalog";
 import { resolveAgent } from "../../agents.js";
+import { composedSlots } from "../../specimen/composed-slots.js";
 import { PRODUCER_ROOT } from "../../package-path.js";
 import { isAbsent } from "../../errors.js";
 import { DESIGN_BRIEF_INPUTS } from "./design-brief-inputs.js";
@@ -32,6 +33,12 @@ export interface FoundrySlot {
   readonly targetKind?: TargetSlotKind;
   /** The package tree's own refs (`<agent>/<id>`, rel, key), in order: a clossys.slot/2 slot takes them as written. */
   readonly refs?: readonly { readonly to: string; readonly rel: string; readonly key?: string }[];
+  /**
+   * Contract keys the package leaves to the consumer (FCR): a composed Designer section or frame slot (no reference
+   * adoptable in the selected style and engine) takes its `fixture`, and the `props` that type it, from its own pinned,
+   * certified composition, so `ia sync` keeps them and compares the rest.
+   */
+  readonly consumerOwned?: readonly string[];
 }
 /** One slot's row in a package's `@clossys/<agent>/src/catalog/slot-defaults.json` (schema clossys.slot-defaults/1). */
 export interface SlotDefaults {
@@ -137,6 +144,9 @@ export function producerIa(): FoundryIa {
   return { agent: "producer", ia: { schema: IA_SCHEMA, source: PRODUCER_IA_SOURCE, extensions: [], nodes }, slots };
 }
 
+/** The contract keys a composed Designer slot's consumer owns (FoundrySlot `consumerOwned`, FCR). */
+export const COMPOSED_CONSUMER_OWNED = ["fixture", "props"] as const;
+
 /** Designer: the build catalog placements (themes, assets, components, sections, frames). */
 export function designerIa(): FoundryIa {
   const catalog = loadBuildCatalog();
@@ -173,12 +183,13 @@ export function designerIa(): FoundryIa {
   const brief = DESIGN_BRIEF_INPUTS.map(([, id]) => id as string);
   const slots = new Map<string, FoundrySlot>();
   const defaults = readSlotDefaults(root, "designer");
+  const composed = composedSlots(root);
   for (const node of nodes) for (const child of node.children) for (const id of child.slots) {
     const slot = contracts.get(id) as { contract?: Record<string, unknown>; requires?: readonly string[] } | undefined;
     const contract = (slot?.contract ?? {}) as Record<string, unknown>;
     const composes = [...strings(contract.allowedComposes), ...strings(contract.composes)];
     const declaredInputs = [...new Set([...brief, ...(reads.get(id) ?? []).filter(input => input !== id)])].sort();
-    slots.set(id, { id, kind: "element", contract, declaredInputs, declaredUses: [...strings(slot?.requires), ...composes], feeds: [], defaults: defaults.get(id) ?? {} });
+    slots.set(id, { id, kind: "element", contract, declaredInputs, declaredUses: [...strings(slot?.requires), ...composes], feeds: [], defaults: defaults.get(id) ?? {}, ...(composed.has(id) ? { consumerOwned: COMPOSED_CONSUMER_OWNED } : {}) });
   }
   for (const extra of studioDesignerSlots()) {
     let node = nodes.find(candidate => candidate.id === extra.l1.id);

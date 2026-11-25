@@ -37,6 +37,7 @@ export { ADAPTATION_KINDS, adaptationHash };
 import { loadTypeScript } from "./ref-verbatim/typescript.mjs";
 import { designerPins, designerSlotRecords } from "./slot-pins.mjs";
 import { diffSources, isEngineNeutral, tokenSwapAllowed } from "./ref-verbatim/diff.mjs";
+export { isEngineNeutral };
 import { compositionStructure, DS_COMPONENT_LAYER, DS_FRAME_LANDMARKS, dsOnlyEvents, scriptKind } from "./ref-verbatim/ds-only.mjs";
 export { DS_COMPONENT_LAYER, DS_FRAME_LANDMARKS, dsOnlyEvents, scriptKind };
 export { DESIGNER_SHADCN_FLAVOR, shadcnComponentsJson, shadcnComponentsJsonText } from "./ref-verbatim/flavor.mjs";

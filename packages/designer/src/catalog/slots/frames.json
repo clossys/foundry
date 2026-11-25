@@ -715,23 +715,6 @@
             "dir": "auto"
           }
         ]
-      },
-      "props": [
-        "children"
-      ],
-      "fixture": {
-        "schema": "clossys.element-preview/1",
-        "fixtures": {
-          "file": "mist/blocks/hero-section/one/header.tsx",
-          "export": "HeroHeader",
-          "props": {
-            "children": [
-              "DRAFT brand (components.logo)",
-              "DRAFT nav (components.button)",
-              "DRAFT actions (components.button)"
-            ]
-          }
-        }
       }
     },
     "requires": [],

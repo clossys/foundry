@@ -15,6 +15,7 @@
       "params": {
         "layers": [
           "components",
+          "frames",
           "sections"
         ]
       }
