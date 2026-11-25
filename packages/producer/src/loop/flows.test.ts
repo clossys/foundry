@@ -3,7 +3,7 @@
  * holds structure only: slot ids from the real package IA trees, placeholder candidates, no names, brands or prices.
  * The stub stands in for every agent skill and for the CLI verbs a code step runs; no model is called.
  */
-import { cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, realpathSync, rmSync, unlinkSync, writeFileSync } from "node:fs";
+import { cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, realpathSync, rmSync, statSync, unlinkSync, writeFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
@@ -739,6 +739,8 @@ describe("review rulings (foundry-build-0013 fix r1)", () => {
     const ledger = w.ledger("loop.fill")[0]!;
     expect(ledger).toMatchObject({ status: "stopped", outcome: expect.stringMatching(/^pick failed 3 rounds \(maxRounds\); raised queue\.clarify#/) });
     expect(ledger.checks["pins.resolve"]).toBe("fail");
+    // GF2 fix round 1: the failing step's reason stays in the stop message, after the route taken.
+    expect(ledger.outcome).toMatch(/; why: pins\.resolve: designer\/components\.button /);
     expect(stepLine(ledger).at(-1)).toBe("pick:agent/stub-model:1");
     // Each failed round raised one kind fix on the slot, naming the failing check: the failure lands in a queue.
     const fixes = run.state!.raised.filter(name => name.startsWith("queue.fix#"));
@@ -778,7 +780,7 @@ describe("review rulings (foundry-build-0013 fix r1)", () => {
     expect(ledger.status).not.toBe("pinned-ready");
     expect(ledger.checks["release.ready"]).toBe("fail");
     // GF2: the pin step's failure routes as the gates step's does: a kind fix on the release slot, then loop.refine.
-    expect(ledger.outcome).toMatch(/^pin failed; raised (queue\.fix#\S+); loop\.refine runs from \1/);
+    expect(ledger.outcome).toMatch(/^pin failed; raised (queue\.fix#\S+); loop\.refine runs from \1; why: release\.ready/);
     const fix = /raised (queue\.fix#\S+);/.exec(ledger.outcome)![1]!;
     expect(readRequest(join(w.root, "clossys"), fix.split("#")[1]!)).toMatchObject({ kind: "fix", target: "publisher/release.site", findings: [expect.stringMatching(/release\.ready failed$/)] });
   });
@@ -1483,5 +1485,138 @@ describe("DET-STEPS: loop.slot's match step answers an exact need in code; a nea
     expect(exactReuseOf(join(w.root, "clossys"), readRequest(join(w.root, "clossys"), id))).toBe("writer/narratives.faq");
     decideRequest(join(w.root, "clossys"), id, { decision: "reuse", slot: "writer/narratives.faq", by: "producer", at });
     expect(readRequest(join(w.root, "clossys"), id)).toMatchObject({ decision: "reuse" });
+  });
+});
+
+/**
+ * GF2 fix round 1 (both blind passes, P1): a run with no subject (loop.scope, loop.audit) raised nothing on a failed
+ * step, so its declared route landed in no queue. Each failed step now writes exactly one queue entry about the run
+ * itself (its loop's ledger), the run's raised list names it, and the audit counts what its interview step files.
+ */
+describe("GF2 fix round 1: subject-less runs route every failed step into a queue", () => {
+  /** Every queue entry file in the world, as `queue.<kind>#<id>`. */
+  function queueEntries(root: string): string[] {
+    const producer = join(root, "clossys", "agents", "producer");
+    if (!existsSync(producer)) return [];
+    return readdirSync(producer).filter(dir => dir.startsWith("queue.")).flatMap(dir => {
+      const entries = join(producer, dir, "entries");
+      return existsSync(entries) && statSync(entries).isDirectory() ? readdirSync(entries).filter(name => name.endsWith(".json")).map(name => `${dir}#${name.slice(0, -".json".length)}`) : [];
+    }).sort();
+  }
+  /** A code hook that fails `step` once (exit 1), then passes it. */
+  const failOnce = (step: string) => {
+    let failed = false;
+    return (call: CodeCall): CodeOutcome | undefined => {
+      if (call.step !== step || failed) return undefined;
+      failed = true;
+      return { exit: 1 };
+    };
+  };
+  const scopeAgents = (): AgentOutcome => ({ exit: 0, model: MODEL });
+  const clarifyOnTheRun = (w: ReturnType<typeof world>, name: string, loop: LoopName, runId: string) => {
+    expect(name).toMatch(/^queue\.clarify#/);
+    const entry = w.entry(name);
+    expect(entry).toMatchObject({ queue: "queue.clarify", decider: "owner", status: "open", subject: { to: `producer/ledger.${loop.slice("loop.".length)}`, rel: "input" } });
+    expect(entry.subject.record).toBeUndefined();
+    expect(entry.ask).toContain(`(run ${runId})`);
+    // The subject is the loop's ledger folder: it exists, so the entry never dangles while the run waits.
+    expect(existsSync(ledgerDir(w.root, loop))).toBe(true);
+  };
+
+  // loop.scope and loop.audit run one round (maxRounds 1): a failed step's route raises its entry and the run stops there.
+  it("loop.scope demand: a failed demand step writes exactly one queue entry on the run, the raised list names it, and the stop keeps the reason", async () => {
+    const w = world([]);
+    const hooks = stub(w.root, { codeFor: failOnce("demand"), agentFor: scopeAgents });
+    const run = await startRun(w.root, { loop: "loop.scope" }, hooks, { now: clock() });
+    expect(run.exitCode, run.message).toBe(1);
+    const entries = queueEntries(w.root);
+    expect(entries).toHaveLength(1);
+    expect(run.state!.raised).toEqual(entries);
+    clarifyOnTheRun(w, entries[0]!, "loop.scope", run.state!.runId);
+    const ledger = w.ledger("loop.scope")[0]!;
+    expect(stepLine(ledger)).toEqual(["demand:code:1"]);
+    expect(ledger.outcome).toBe(`demand failed 1 rounds (maxRounds); raised ${entries[0]}`);
+  });
+
+  it("loop.scope scope-<agent>: a failed agent step raises one clarify on the run, the run waits on it, and the raised list names it", async () => {
+    const w = world([]);
+    for (const agent of ["director", "designer", "writer", "publisher"]) {
+      const skill = join(w.root, "packages", agent, "actions", `${agent}.scope`, "skill.md");
+      mkdirSync(dirname(skill), { recursive: true });
+      writeFileSync(skill, "# placeholder skill\n");
+    }
+    const hooks = stub(w.root, { agentFor: packet => packet.step === "scope-designer" ? { exit: 1, model: MODEL } : { exit: 0, model: MODEL } });
+    const run = await startRun(w.root, { loop: "loop.scope" }, hooks, { now: clock() });
+    expect(run.exitCode, run.message).toBe(0);
+    expect(run.state!.status).toBe("waiting");
+    const entries = queueEntries(w.root);
+    expect(entries).toHaveLength(1);
+    expect(run.state!.raised).toEqual(entries);
+    expect(run.entry).toBe(entries[0]);
+    expect(run.state!.waiting).toMatchObject({ step: "scope-designer", on: "entry", entry: entries[0], then: "retry" });
+    clarifyOnTheRun(w, entries[0]!, "loop.scope", run.state!.runId);
+    expect(run.message).not.toMatch(/no clarify entry could be raised/);
+  });
+
+  it("loop.audit route: a route that cannot raise fails its step, raises exactly one entry on the run, names it, and keeps the reason", async () => {
+    const w = world(["writer/narratives.legal-document"]);
+    const findings = [{ check: "constitution.strict", subject: "writer/narratives.legal-document/slot.json", detail: "placeholder finding" }];
+    // queue.fix/entries is a file, so the route's kind fix cannot be written: the route step fails (exit 1), not the run.
+    const blocker = join(w.root, "clossys", "agents", "producer", "queue.fix", "entries");
+    mkdirSync(dirname(blocker), { recursive: true });
+    writeFileSync(blocker, "not a folder\n");
+    const run = await startRun(w.root, { loop: "loop.audit" }, stub(w.root, { codeFor: call => call.step === "strict" ? { exit: 1, findings } : undefined }), { now: clock() });
+    expect(run.exitCode, run.message).toBe(1);
+    const entries = queueEntries(w.root);
+    expect(entries).toHaveLength(1);
+    expect(run.state!.raised).toEqual(entries);
+    clarifyOnTheRun(w, entries[0]!, "loop.audit", run.state!.runId);
+    const ledger = w.ledger("loop.audit")[0]!;
+    expect(stepLine(ledger)).toEqual(["strict:code:1", "route:code:1"]);
+    expect(ledger.outcome).toMatch(new RegExp(`^route failed 1 rounds \\(maxRounds\\); raised ${entries[0]!.replace(/[.#]/g, "\\$&")}; why: clossys check --route: ENOTDIR`));
+    expect(ledger.outcome).not.toMatch(/raised nothing/);
+  });
+
+  it("loop.audit interview: a failed interview step writes exactly one queue entry on the run and the raised list names it", async () => {
+    const w = world([]);
+    const run = await startRun(w.root, { loop: "loop.audit" }, stub(w.root, { codeFor: failOnce("interview") }), { now: clock() });
+    expect(run.exitCode, run.message).toBe(1);
+    const entries = queueEntries(w.root);
+    expect(entries).toHaveLength(1);
+    expect(run.state!.raised).toEqual(entries);
+    clarifyOnTheRun(w, entries[0]!, "loop.audit", run.state!.runId);
+    const ledger = w.ledger("loop.audit")[0]!;
+    expect(stepLine(ledger)).toEqual(["strict:code:0", "route:code:0", "interview:code:1"]);
+    expect(ledger.outcome).toBe(`interview failed 1 rounds (maxRounds); raised ${entries[0]}`);
+  });
+
+  it("loop.audit runs the real interview (clossys next --owner): the entries it files are counted in the raised list and the outcome, then a rerun raises no new entry", { timeout: 60_000 }, async () => {
+    // The conform fixture with its interview-filed queue.change entries left out (a temp copy): the interview files them again.
+    const root = realpathSync(mkdtempSync(join(tmpdir(), "loop-audit-interview-")));
+    roots.push(root);
+    const fixture = fileURLToPath(new URL("../../test-fixtures/consumer/clossys", import.meta.url));
+    const changes = join(fixture, "agents", "producer", "queue.change");
+    cpSync(fixture, join(root, "clossys"), { recursive: true, filter: source => source !== changes && !source.startsWith(`${changes}/`) });
+    expect(existsSync(join(root, "clossys", "agents", "producer", "queue.change"))).toBe(false);
+    const before = new Set(queueEntries(root));
+    const real = cliHooks(root);
+    // Only the interview runs for real; strict, route (no findings) and e2e pass, so every new entry is the interview's.
+    const hooks: RunHooks = { agent: () => "wait", code: call => call.step === "interview" ? real.code(call) : { exit: 0 } };
+    const now = clock();
+    const first = await startRun(root, { loop: "loop.audit" }, hooks, { now });
+    expect(first.state!.status, first.message).toBe("done");
+    const filed = queueEntries(root).filter(name => !before.has(name));
+    expect(filed.length).toBeGreaterThan(0);
+    expect(filed.some(name => name.startsWith("queue.change#"))).toBe(true);
+    expect([...first.state!.raised].sort()).toEqual(filed);
+    const ledgers = () => { const dir = ledgerDir(root, "loop.audit"); return readdirSync(dir).sort().map(name => JSON.parse(readFileSync(join(dir, name), "utf8")) as LedgerEntry); };
+    expect(ledgers()[0]!.outcome).toBe(`raised ${first.state!.raised.join(", ")}`);
+    const interview = ledgers()[0]!.steps.find(step => step.id === "interview")!;
+    expect(interview.exit).toBe(0);
+    // The audit exit ("a run raises no new entry") is true: the interview files each need once, so a rerun raises none.
+    const second = await startRun(root, { loop: "loop.audit" }, hooks, { now });
+    expect(second.state!.status).toBe("done");
+    expect(second.state!.raised).toEqual([]);
+    expect(ledgers().map(entry => entry.outcome)).toEqual([`raised ${first.state!.raised.join(", ")}`, "no new entry"]);
   });
 });

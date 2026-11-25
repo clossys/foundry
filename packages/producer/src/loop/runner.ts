@@ -662,6 +662,7 @@ async function advance(root: string, state: RunState, version: LoopVersion, hook
     }
 
     let exit: Exit; let wrote: readonly string[] | undefined; let findings: readonly Finding[] = []; let raisedByStep = false; let ledgerDecider: Decider; let cli = filled.text;
+    let failedWhy: string | undefined;
     let ran: readonly string[] | undefined; let couldNot: string | undefined;
     /** LOOP-STEPS: the upstream requests this agent step raised through its skill's own verb (judged by stepRaises). */
     let raisedHere: string[] = [];
@@ -752,11 +753,16 @@ async function advance(root: string, state: RunState, version: LoopVersion, hook
         for (const entry of builtIn.raised ?? []) state.raised.push(entryName(entry));
         raisedByStep = !!builtIn.raised?.length;
         couldNot = builtIn.why;
+        failedWhy = builtIn.failed;
       }
       else if (filled.unfilled.length) { exit = 2; wrote = []; }
       else {
+        const filedBefore = LOOP_SUBJECT[state.loop] === "none" ? declaredQueueEntries(root, step) : undefined;
         const outcome = await hooks.code({ runId: state.runId, step: step.id, cli: filled.text, argv: filled.argv, ...(subject ? { ref: refOf(subject) } : {}), ...(state.publication ? { publication: state.publication } : {}) });
         exit = outcome.exit; wrote = outcome.wrote; findings = outcome.findings ?? []; ran = outcome.ran;
+        // GF2 fix round 1: a subject-less run (loop.scope, loop.audit) counts the entries its code step filed in the
+        // queue folders the step declares (the audit interview's queue.slot and queue.change), so its outcome is true.
+        if (filedBefore) for (const name of declaredQueueEntries(root, step)) if (!filedBefore.has(name) && !state.raised.includes(name)) state.raised.push(name);
       }
     }
     delete state.waiting;
@@ -774,7 +780,7 @@ async function advance(root: string, state: RunState, version: LoopVersion, hook
     // resumes the step once it closes (readRetry), never stops on it.
     if (raisedHere.length && recorded.exit !== 0) return waitOnRaised(ctx, step, raisedHere[0]!);
     if (recorded.why && !step.onFail) return stop(ctx, `step ${step.id} failed: ${recorded.why}`, 1);
-    const result = await afterStep(ctx, step, recorded.exit, findings, subject, raisedByStep);
+    const result = await afterStep(ctx, step, recorded.exit, findings, subject, raisedByStep, recorded.why ?? (recorded.exit === 1 ? failedWhy : undefined));
     if (result) return result;
   }
   return finish(ctx);
@@ -793,13 +799,17 @@ function manifestOf(root: string, publication: string, wrote: readonly string[] 
 }
 
 /** The code steps the runner runs itself. */
-type BuiltIn = { exit: Exit; wrote: string[]; findings?: readonly Finding[]; raised?: readonly Raised[]; why?: string };
+type BuiltIn = { exit: Exit; wrote: string[]; findings?: readonly Finding[]; raised?: readonly Raised[]; why?: string; failed?: string };
 function codeBuiltIn(ctx: Context, step: LoopStep, subject: SlotSubject | undefined): BuiltIn | undefined {
   const { root, state } = ctx;
   const settle = settleStep(ctx, step, subject);
   if (settle) return settle;
   if (step.cli === "clossys check --route") {
-    const raised = routeFindings(root, state.findings, iso(ctx.now()), state.loop, `found by ${state.loop} run ${state.runId}`);
+    // GF2 fix round 1: a route that cannot raise an entry fails the step (exit 1) with its reason, so the step's
+    // failure route runs, instead of the run throwing.
+    let raised: Raised[];
+    try { raised = routeFindings(root, state.findings, iso(ctx.now()), state.loop, `found by ${state.loop} run ${state.runId}`); }
+    catch (error) { return { exit: 1, wrote: [], failed: `clossys check --route: ${error instanceof Error ? error.message : String(error)}` }; }
     for (const entry of raised) state.raised.push(entryName(entry));
     return { exit: 0, wrote: raised.map(entry => `producer/${entry.queue}/entries/${entry.id}.json`) };
   }
@@ -1165,8 +1175,22 @@ export function undeclaredWrites(root: string, state: RunState, step: LoopStep, 
   });
 }
 
+const QUEUE_WRITE = /^producer\/(queue\.[a-z]+)\/entries\/\*?$/;
+/** The entries now in the Producer queue folders a step declares it writes, as `queue.<kind>#<id>`. */
+function declaredQueueEntries(root: string, step: LoopStep): Set<string> {
+  const out = new Set<string>();
+  for (const pattern of step.writes ?? []) {
+    const match = QUEUE_WRITE.exec(pattern);
+    if (!match) continue;
+    const dir = join(agentsDir(root), "producer", match[1]!, "entries");
+    if (!existsSync(dir)) continue;
+    for (const name of readdirSync(dir)) if (name.endsWith(".json")) out.add(`${match[1]!}#${name.slice(0, -".json".length)}`);
+  }
+  return out;
+}
+
 /** onFail and exit 2 (null: go on). */
-async function afterStep(ctx: Context, step: LoopStep, exit: Exit, findings: readonly Finding[], subject: SlotSubject | undefined, raisedByStep = false): Promise<RunResult | null> {
+async function afterStep(ctx: Context, step: LoopStep, exit: Exit, findings: readonly Finding[], subject: SlotSubject | undefined, raisedByStep = false, why?: string): Promise<RunResult | null> {
   const { root, state, version } = ctx;
   if (exit === 0) { state.cursor++; saveState(root, state); return null; }
   if (exit === 2) return stop(ctx, `step ${step.id} could not run (exit 2)`, 2);
@@ -1178,6 +1202,8 @@ async function afterStep(ctx: Context, step: LoopStep, exit: Exit, findings: rea
   }
   const at = iso(ctx.now());
   const label = `${state.loop} ${step.id}`;
+  // GF2 fix round 1: the failing step's reason stays in the stop message, after the route taken.
+  const because = why ? `; why: ${why}` : "";
   if (step.onFail.then !== "retry") {
     // A step that raised its own entries (the cascade's queue.clarify) needs no fallback entry.
     // The cascade's breakage is the repin it re-verdicts after (its subject); any other step's is the run step itself.
@@ -1188,14 +1214,14 @@ async function afterStep(ctx: Context, step: LoopStep, exit: Exit, findings: rea
       : [step.onFail.raise === "queue.clarify" ? raiseFor(ctx, subject, ask, at) : raiseStepFix(ctx, step, subject, ask, at)].filter((e): e is Raised => e !== undefined);
     for (const entry of raised) state.raised.push(entryName(entry));
     const names = raised.map(entryName);
-    return stop(ctx, `${step.id} failed; ${names.length ? `raised ${names.join(", ")}; ` : ""}${step.onFail.then} runs from ${names[0] ?? "the open entry"}`, 1);
+    return stop(ctx, `${step.id} failed; ${names.length ? `raised ${names.join(", ")}; ` : ""}${step.onFail.then} runs from ${names[0] ?? "the open entry"}${because}`, 1);
   }
   if (step.onFail.raise === "queue.clarify") return waitOnClarify(ctx, step, subject);
   state.round++;
   if (state.round > version.maxRounds) {
     const entry = raiseFor(ctx, subject, `${version.maxRounds} rounds of ${state.loop} did not pass ${step.id}${subject ? ` for ${refOf(subject)}` : ""}`, at, false);
     if (entry) state.raised.push(entryName(entry));
-    return stop(ctx, `${step.id} failed ${version.maxRounds} rounds (maxRounds); raised ${entry ? entryName(entry) : "nothing"}`, 1);
+    return stop(ctx, `${step.id} failed ${version.maxRounds} rounds (maxRounds); raised ${entry ? entryName(entry) : "nothing"}${because}`, 1);
   }
   const fix = raiseStepFix(ctx, step, subject, `${label} failed${subject ? ` for ${refOf(subject)}` : ""}; round ${state.round} of ${version.maxRounds}`, at, state.round - 1);
   if (fix && !state.raised.includes(entryName(fix))) state.raised.push(entryName(fix));
@@ -1222,6 +1248,13 @@ function raiseOf(ctx: Context, subject: SlotSubject | undefined, ask: string): R
   const to = subjectRef(ctx, subject);
   // A request run (loop.slot) has no slot yet: its clarify is about the request entry itself.
   if (!to && ctx.state.request) return { queue: "queue.clarify", subject: { to: "producer/queue.slot" as Ref["to"], record: ctx.state.request, rel: "input" }, decider: "owner", ask, slug: ctx.state.request };
+  // GF2 fix round 1: a run with no subject (loop.scope, loop.audit) asks about the loop run itself: its loop's ledger
+  // folder (made here, so the ref never dangles while the run waits), with the run id in the ask.
+  if (!to && LOOP_SUBJECT[ctx.state.loop] === "none") {
+    mkdirSync(ledgerDir(ctx.root, ctx.state.loop), { recursive: true });
+    const ledger = `producer/${ledgerOf(ctx.state.loop)}`;
+    return { queue: "queue.clarify", subject: { to: ledger as Ref["to"], rel: "input" }, decider: "owner", ask: `${ask} (run ${ctx.state.runId})`, slug: ledgerOf(ctx.state.loop) };
+  }
   if (!to) return undefined;
   return { queue: "queue.clarify", subject: { to: to as Ref["to"], rel: "input" }, decider: "owner", ask, slug: to.split("/")[1]! };
 }
@@ -1254,7 +1287,8 @@ const slotVarsOf = (ctx: Context): Record<string, string> => {
  */
 function raiseStepFix(ctx: Context, step: LoopStep, subject: SlotSubject | undefined, ask: string, at: Iso, round = ctx.state.round): Raised | undefined {
   const target = subjectRef(ctx, subject);
-  if (!target) return undefined;
+  // GF2 fix round 1: a subject-less run (loop.scope, loop.audit) has no slot to take the fix, so it asks the owner.
+  if (!target) return LOOP_SUBJECT[ctx.state.loop] === "none" ? raiseFor(ctx, subject, ask, at) : undefined;
   const failing = step.checks.map(check => fillNames(check, { ...slotVarsOf(ctx), ...ctx.state.vars }).text).filter(name => ctx.state.checks[name] === "fail");
   try {
     return raisedOf(raiseFix(ctx.root, {
