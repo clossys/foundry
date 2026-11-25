@@ -16,14 +16,14 @@
     "version": "0.1.0"
   },
   "createdAt": "2026-11-19T00:00:00Z",
-  "updatedAt": "2026-11-25T00:00:00Z",
+  "updatedAt": "2026-11-19T00:00:00Z",
   "refs": [
     {
-      "to": "writer/page.about.meta",
+      "to": "publisher/layout.about",
       "rel": "input"
     },
     {
-      "to": "publisher/layout.about",
+      "to": "writer/page.about.meta",
       "rel": "input"
     }
   ],
@@ -34,11 +34,11 @@
     "mustDo": [],
     "inputs": [
       {
-        "to": "writer/page.about.meta",
+        "to": "publisher/layout.about",
         "rel": "input"
       },
       {
-        "to": "publisher/layout.about",
+        "to": "writer/page.about.meta",
         "rel": "input"
       }
     ],
