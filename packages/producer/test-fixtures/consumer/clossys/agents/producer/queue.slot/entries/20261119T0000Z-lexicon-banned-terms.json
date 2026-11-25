@@ -1,0 +1,106 @@
+{
+  "schema": "clossys.queue-entry/2",
+  "id": "20261119T0000Z-lexicon-banned-terms",
+  "kind": "slot",
+  "from": "writer/lexicon.preferred-terms",
+  "assignee": "writer",
+  "target": "writer/lexicon.banned-terms",
+  "status": "closed",
+  "opened": "20261119T0000Z-lexicon-banned-terms#1",
+  "rel": "input",
+  "why": "writer/lexicon.preferred-terms names lexicon.banned-terms as an input; no slot holds it",
+  "source": "ia",
+  "createdBy": {
+    "actor": "code",
+    "cli": "clossys ia",
+    "version": "0.1.0"
+  },
+  "createdAt": "2026-11-19T00:00:00Z",
+  "refs": [
+    {
+      "to": "writer/lexicon.preferred-terms",
+      "rel": "raisedBy"
+    }
+  ],
+  "route": {
+    "row": "slot.home",
+    "table": "ceb9890678db86be17bc2e25ad19bc226db227b875fcd858a3a354bd3b9d34c7",
+    "delegated": true,
+    "assignee": "writer",
+    "handler": {
+      "skill": "packages/writer/actions/writer.slot/skill.md",
+      "loop": "loop.slot"
+    }
+  },
+  "options": [
+    {
+      "id": "handoff",
+      "label": "Hand it to writer to answer by its skill",
+      "then": {
+        "verb": "handoff",
+        "args": [
+          "writer"
+        ]
+      }
+    }
+  ],
+  "events": [
+    {
+      "id": "20261119T0000Z-lexicon-banned-terms#1",
+      "at": "2026-11-19T00:00:00Z",
+      "op": "raised",
+      "by": "planner",
+      "via": "cli",
+      "detail": "writer/lexicon.preferred-terms names lexicon.banned-terms as an input; no slot holds it"
+    },
+    {
+      "id": "20261119T0000Z-lexicon-banned-terms#2",
+      "at": "2026-11-19T00:00:00Z",
+      "op": "routed",
+      "by": "producer",
+      "detail": "row owner.class -> owner (queue.approve from loop.choose/choose-v1#confirm)"
+    },
+    {
+      "id": "20261119T0000Z-lexicon-banned-terms#3",
+      "at": "2026-11-19T00:00:00Z",
+      "op": "answered",
+      "by": "owner",
+      "option": "handoff",
+      "via": "cli",
+      "quote": "Made-up fixture answer: hand it to writer to answer by its skill."
+    },
+    {
+      "id": "20261119T0000Z-lexicon-banned-terms#4",
+      "at": "2026-11-19T00:00:00Z",
+      "op": "routed",
+      "by": "producer",
+      "detail": "row slot.home -> writer (loop.slot, packages/writer/actions/writer.slot/skill.md), delegated by the owner's handoff"
+    },
+    {
+      "id": "20261119T0000Z-lexicon-banned-terms#5",
+      "at": "2026-11-19T00:00:00Z",
+      "op": "decided",
+      "by": "writer",
+      "detail": "reuse writer/lexicon.avoid-terms"
+    },
+    {
+      "id": "20261119T0000Z-lexicon-banned-terms#6",
+      "at": "2026-11-19T00:00:00Z",
+      "op": "closed",
+      "by": "producer",
+      "detail": "linked writer/lexicon.preferred-terms to writer/lexicon.avoid-terms"
+    }
+  ],
+  "overlaps": [],
+  "decision": "reuse",
+  "reuse": "writer/lexicon.avoid-terms",
+  "link": "writer/lexicon.avoid-terms",
+  "outcome": "reused",
+  "result": "writer/lexicon.avoid-terms",
+  "notified": {
+    "to": "writer/lexicon.preferred-terms",
+    "at": "2026-11-19T00:00:00Z"
+  },
+  "closedAt": "2026-11-19T00:00:00Z",
+  "closed": "20261119T0000Z-lexicon-banned-terms#6"
+}

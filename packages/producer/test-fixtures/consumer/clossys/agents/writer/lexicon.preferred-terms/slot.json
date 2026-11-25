@@ -33,6 +33,10 @@
     {
       "to": "director/focus.category.definition",
       "rel": "input"
+    },
+    {
+      "to": "writer/lexicon.avoid-terms",
+      "rel": "input"
     }
   ],
   "base": null,
@@ -55,6 +59,10 @@
       },
       {
         "to": "director/focus.category.definition",
+        "rel": "input"
+      },
+      {
+        "to": "writer/lexicon.avoid-terms",
         "rel": "input"
       }
     ],
