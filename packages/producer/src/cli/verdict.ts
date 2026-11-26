@@ -35,13 +35,14 @@ import { discoverRoot } from "./root.js";
 
 /**
  * One complete, valid verdict file per rung, as `clossys verdict --help` prints them (verdict.test.ts proves each
- * validates against verdict.schema.json). Adopt needs no verdict; a pick is P1 on a held candidate; adapt and create
+ * validates against verdict.schema.json and holds for the fixture components.button slot's contract keys and its
+ * component standard). Adopt needs no verdict; a pick is P1 on a held candidate; adapt and create
  * (P2) both need a create verdict before `clossys next --submit --rung adapt|create`.
  */
 export const VERDICT_EXAMPLES = {
   pick: { schema: "clossys.verdict/1", slot: "components.button", pick: "button-v1.json", reason: "button-v1 meets every taste criterion of the standard.", criteria: ["fidelity", "polish"] },
   adapt: { schema: "clossys.verdict/1", slot: "components.button", create: true, reason: "No held candidate has the loading state; adapt the stock button seed to add it.", gaps: [{ id: "fidelity", class: "missing-behavior" }] },
-  create: { schema: "clossys.verdict/1", slot: "components.button", create: true, reason: "No seed can be adapted: the contract's variant is missing and the stock item fails keyboard focus.", gaps: [{ id: "brief:variant", class: "missing-behavior" }, { id: "polish", class: "a11y-failure" }] },
+  create: { schema: "clossys.verdict/1", slot: "components.button", create: true, reason: "No seed can be adapted: the contract's members are missing and the stock item fails keyboard focus.", gaps: [{ id: "brief:members", class: "missing-behavior" }, { id: "polish", class: "a11y-failure" }] },
 } as const;
 
 export const VERDICT_USAGE = "Usage: clossys verdict <agent>/<slot> --record <verdict.json> --model <id> --tier low|mid|high --by agent:<seat> [--at <iso>] [--root <dir>] [--json]\n"

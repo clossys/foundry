@@ -10,6 +10,7 @@ import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { sha256Hex } from "../records/hash.js";
+import { readStandard } from "../records/standards.js";
 import { jsonBytes, slotPositions, type IaDoc } from "../records/slot-model/index.js";
 import { STEPS } from "../pipeline/steps/index.js";
 import "./main.js";
@@ -138,11 +139,22 @@ describe("clossys verdict explains itself: an example per rung, and a refusal th
     const help = await runVerdictCli(["--help"], workspace);
     expect(help.message).toBe(VERDICT_USAGE);
     expect(help.message).toMatch(/rung adopt .*no verdict is needed/);
-    const component = { taste: new Set(["fidelity", "composition", "polish"]), requirements: new Set<string>(), brief: new Set(["variant"]) };
+    // The ids `clossys verdict` builds for the real slot the help names: the fixture slot's contract keys and its standard.
+    const real = load(join(PACKAGES, "producer", "test-fixtures", "consumer", "clossys", "agents", "designer", ID, "slot.json")) as { id: string; standard: string; contract: Record<string, unknown> };
+    expect(real.standard).toBe("component");
+    const std = readStandard(join(PACKAGES, ".."), "designer", real.standard);
+    expect(std.issues).toEqual([]);
+    const ids = {
+      taste: new Set(std.taste!.criteria.map(criterion => criterion.id)),
+      requirements: new Set((std.doc!.requirements ?? []).map(requirement => (requirement as { check: string }).check)),
+      brief: new Set(Object.keys(real.contract)),
+    };
+    const meta = { id: std.id, ...(std.doc!.mode ? { mode: std.doc!.mode } : {}), ...(std.doc!.createGaps ? { createGaps: std.doc!.createGaps } : {}) };
     for (const [rung, example] of Object.entries(VERDICT_EXAMPLES)) {
       expect(help.message, rung).toContain(JSON.stringify(example));
+      expect(example.slot, rung).toBe(real.id);
       expect(verdictSchemaIssues(example), rung).toEqual([]);
-      expect(verdictIssues(example as unknown as Record<string, unknown>, component, { id: "component", mode: "adopt-first" }), rung).toEqual([]);
+      expect(verdictIssues(example as unknown as Record<string, unknown>, ids, meta), rung).toEqual([]);
     }
   });
 
