@@ -28,7 +28,7 @@ import { candidateHeaderOf, candidateIssues, isCurrentSlot, readSlotValue, slotR
 import { recutCandidateBytes } from "./candidate-codec.js";
 import { SlotFormatError, serializeSlot, validateSlot } from "./slot.js";
 import { SeatRefusal, assertActor, assertSeat } from "./seat-owner.js";
-import type { Actor, AgentId, CandidateHeader, Iso, Slot } from "./types.js";
+import type { Actor, AgentId, CandidateHeader, Iso, Ref, Slot } from "./types.js";
 import { buildCandidateHeader, CandidateRefusal, candidateHeaderIssues, serializeCandidate } from "./candidate.js";
 import { cliActor, confirmableBasis, toIsoZ } from "./pin.js";
 import { CODE_ADOPT, codeAdoptRefusal } from "./code-adopt.js";
@@ -119,6 +119,7 @@ function replaceFile(path: string, bytes: string): void {
  * - writeSlotSeed, rewriteCitationsInPlace: migrations, `by` fixed by the migration;
  * - writeSlotOptions: `clossys options`, takes no `by` at all;
  * - writeSyncedSlot: `clossys ia sync`, takes no `by` (the event is by `producer`);
+ * - writeSlotUses: the `derive.uses` step (records/derived-uses.ts), takes no `by` (the event is by `producer`);
  * - appendIaEvent, appendSlotDocEvent: the event of a verb that judged its actor already (`clossys ia`, retire after
  *   its actor guard, a request link written by the request writer under its seat check, `clossys loop` adoption
  *   after loop/agent-loop-adopt.ts assertActor; `clossys migrate placement`, `by` fixed to producer by the migration).
@@ -130,6 +131,7 @@ export const PRODUCER_INTERNAL_WRITERS: readonly { readonly writer: string; read
   { writer: "appendIaEvent", callers: ["cli/owner.ts", "loop/agent-loop-adopt.ts"] },
   { writer: "appendSlotDocEvent", callers: ["cli/owner.ts", "loop/agent-loop-adopt.ts", "migrate/placement.ts", "records/request.ts"] },
   { writer: "writeSyncedSlot", callers: ["cli/ia-sync.ts"] },
+  { writer: "writeSlotUses", callers: ["records/derived-uses.ts"] },
 ];
 
 /** Replace a slot-model file atomically, creating its parent folder. */
@@ -1445,6 +1447,49 @@ export function writeSlotSeed(consumer: string, agent: ModelAgent, id: string, c
     readLedger(entry.dir, "slot");
     replaceFile(slotFile(entry.dir), current.after);
     appendEvent(entry.dir, "slot", ledgerEvent("slot", input.at, who, { ...input.fields }, [recordState(entry.dir, "slot.json")]));
+    return true;
+  });
+}
+
+/**
+ * `derive.uses`' one slot.json write (CP1-USES, R14.1): the clossys.slot/2 doc's `uses` refs become exactly `uses`
+ * (each `<agent>/<id>`; a kept ref keeps its place and keys, a new one is appended), every other ref is kept, and a
+ * stray top-level `uses` key (not a slot/2 field; an earlier raw write left it) is dropped. One `slot` event (verb ia,
+ * by producer, citing the plumb action's action.json) records the bytes, under the slot lock. False, with no write and
+ * no event, when the bytes are already there. Refuses a slot/1 doc and a package-synced slot (`base` not null) whose
+ * refs would change. The slot is found by its IA position only, so a doc the reader refuses (the stray key) is
+ * repaired rather than refused.
+ */
+export function writeSlotUses(consumer: string, agent: ModelAgent, id: string, uses: readonly Ref["to"][], input: { readonly at: string; readonly fields?: Readonly<Record<string, unknown>> }, given?: WriteProvenance): boolean {
+  const entry = readSlotEntry(consumer, agent, id);
+  if (!entry) throw new Error(`derive.uses refused: ${agent} slot ${id} is not in ia.json`);
+  const wanted = [...new Set(uses)];
+  const change = (slot: Slot): Slot => {
+    const kept = slot.refs.filter(ref => ref.rel !== "uses" || wanted.includes(ref.to));
+    const held = new Set(kept.filter(ref => ref.rel === "uses").map(ref => ref.to));
+    const next: Slot = { ...slot, refs: [...kept, ...wanted.filter(to => !held.has(to)).map(to => ({ to, rel: "uses" as const }))] };
+    delete (next as { uses?: unknown }).uses;
+    return next;
+  };
+  return slotLocked(entry.dir, () => {
+    const file = slotFile(entry.dir);
+    const current = currentSlotWrite(file, "derive.uses", input.at, change);
+    if (!current) throw new Error(`derive.uses refused: ${agent}/${id} slot.json is not a clossys.slot/2 (clossys migrate slot-1-to-2 first)`);
+    const stray = Object.hasOwn(JSON.parse(current.before) as object, "uses");
+    let after = current.after;
+    if (after === current.before) {
+      if (!stray) return false;
+      // Only the stray key differs: serializeSlot drops it, so the canonical bytes are the repair.
+      const next: Slot = { ...change(structuredClone(current.slot)), updatedAt: input.at };
+      const issues = slotReadIssues(next, file);
+      if (issues.length) throw new Error(`derive.uses refused: ${issues.map(issue => issue.message).join("; ")}`);
+      after = serializeSlot(next);
+    }
+    const who = provenance({ verb: "ia", by: "producer", skill: actionContractPath("producer", "derive.uses") }, given);
+    const fields = { step: "derive.uses", uses: wanted, ...(stray ? { strayUses: "removed" } : {}), ...input.fields };
+    readLedger(entry.dir, "slot");
+    replaceFile(file, after);
+    appendEvent(entry.dir, "slot", ledgerEvent("slot", input.at, who, fields, [recordState(entry.dir, "slot.json")]));
     return true;
   });
 }

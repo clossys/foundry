@@ -164,13 +164,16 @@ export function lockedPackages(root: string): Record<string, string> {
   return out;
 }
 
-interface StockFiles {
+export interface StockFiles {
   readonly row: ManifestRow; readonly ref: string; readonly doc: ReturnType<typeof readSlot>; readonly manifest: { items: ManifestRow[] };
   readonly files: readonly { path: string; type: string; content: string }[]; readonly reader: DeclaredFallbackReader;
 }
 
-/** The stock row of `designer/<slotId>` and its .tsx files normalized to the consumer (stockItemOf, before the lockfile). */
-function stockFilesOf(root: string, slotId: string): StockFiles | { readonly none: string } {
+/**
+ * The stock row of `designer/<slotId>` and its .tsx files normalized to the consumer (stockItemOf, before the lockfile).
+ * Also the source `derive.uses` reads for a slot with no pin (scripts/check-generated-derived.mjs deriveUses).
+ */
+export function stockFilesOf(root: string, slotId: string): StockFiles | { readonly none: string } {
   const at = `designer/${slotId}`;
   const doc = readSlot(join(root, "clossys"), "designer", slotId);
   const file = ((doc.contract as { fixture?: { fixtures?: { file?: unknown } } }).fixture?.fixtures?.file);
