@@ -31,6 +31,8 @@ export type CellType = DtcgType | AssetValueKind;
 export interface AssetContract {
   kind: "asset";
   valueKind: AssetValueKind;
+  /** The glyph a `glyph` asset slot names (its icon identity), so two icon slots never share one contract. */
+  glyph?: string;
   memberKinds?: Readonly<Record<string, AssetValueKind>>;
   members: TokenContract["members"];
   optional?: readonly string[];

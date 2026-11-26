@@ -81,7 +81,15 @@
         "shape": "voice.formality",
         "value": "register enum per locale + address form",
         "check": "address deterministic; register owner rubric",
-        "defaults": "defaults/lexicon.formality/"
+        "defaults": "defaults/lexicon.formality/",
+        "fixture": {
+          "keys": [
+            "byLocale"
+          ],
+          "locales": [
+            "en"
+          ]
+        }
       }
     },
     {
@@ -102,7 +110,15 @@
         "shape": "voice.warmth",
         "value": "1-5 anchored scale",
         "check": "owner rubric",
-        "defaults": "defaults/lexicon.warmth/"
+        "defaults": "defaults/lexicon.warmth/",
+        "fixture": {
+          "keys": [
+            "level"
+          ],
+          "locales": [
+            "en"
+          ]
+        }
       }
     },
     {
@@ -123,7 +139,16 @@
         "shape": "voice.energy",
         "value": "1-5 scale + max ! per 1k words",
         "check": "proxy deterministic",
-        "defaults": "defaults/lexicon.energy/"
+        "defaults": "defaults/lexicon.energy/",
+        "fixture": {
+          "keys": [
+            "level",
+            "maxExclamationsPer1k"
+          ],
+          "locales": [
+            "en"
+          ]
+        }
       }
     },
     {
@@ -140,7 +165,15 @@
         "shape": "voice.person",
         "value": "we-you, you-only or third",
         "check": "pronoun scan",
-        "defaults": "defaults/lexicon.person/"
+        "defaults": "defaults/lexicon.person/",
+        "fixture": {
+          "keys": [
+            "point"
+          ],
+          "locales": [
+            "en"
+          ]
+        }
       }
     },
     {
@@ -157,7 +190,15 @@
         "shape": "voice.mood",
         "value": "per field role: imperative, declarative or question",
         "check": "deterministic",
-        "defaults": "defaults/lexicon.mood/"
+        "defaults": "defaults/lexicon.mood/",
+        "fixture": {
+          "keys": [
+            "byRole"
+          ],
+          "locales": [
+            "en"
+          ]
+        }
       }
     },
     {
@@ -178,7 +219,15 @@
         "shape": "voice.sentence-length",
         "value": "max and mean words per sentence, per locale and role",
         "check": "deterministic",
-        "defaults": "defaults/lexicon.sentence-length/"
+        "defaults": "defaults/lexicon.sentence-length/",
+        "fixture": {
+          "keys": [
+            "byLocale"
+          ],
+          "locales": [
+            "en"
+          ]
+        }
       }
     },
     {
@@ -199,7 +248,15 @@
         "shape": "voice.reading-level",
         "value": "max grade per locale",
         "check": "deterministic where a formula exists",
-        "defaults": "defaults/lexicon.reading-level/"
+        "defaults": "defaults/lexicon.reading-level/",
+        "fixture": {
+          "keys": [
+            "maxGrade"
+          ],
+          "locales": [
+            "en"
+          ]
+        }
       }
     },
     {
@@ -220,7 +277,16 @@
         "shape": "voice.capitalization",
         "value": "case per role; exceptions from Director naming.name:Casing",
         "check": "deterministic",
-        "defaults": "defaults/lexicon.capitalization/"
+        "defaults": "defaults/lexicon.capitalization/",
+        "fixture": {
+          "keys": [
+            "byRole",
+            "exceptionsFrom"
+          ],
+          "locales": [
+            "en"
+          ]
+        }
       }
     },
     {
@@ -241,7 +307,15 @@
         "shape": "voice.punctuation",
         "value": "rule set per locale",
         "check": "deterministic",
-        "defaults": "defaults/lexicon.punctuation/"
+        "defaults": "defaults/lexicon.punctuation/",
+        "fixture": {
+          "keys": [
+            "byLocale"
+          ],
+          "locales": [
+            "en"
+          ]
+        }
       }
     },
     {
@@ -266,7 +340,15 @@
         "shape": "voice.preferred-terms",
         "value": "map avoid to use",
         "check": "deterministic",
-        "defaults": "defaults/lexicon.preferred-terms/"
+        "defaults": "defaults/lexicon.preferred-terms/",
+        "fixture": {
+          "keys": [
+            "terms"
+          ],
+          "locales": [
+            "en"
+          ]
+        }
       }
     },
     {
@@ -287,7 +369,15 @@
         "shape": "voice.avoid-terms",
         "value": "term list (absorbs the quoted words from Director voice Never)",
         "check": "deterministic",
-        "defaults": "defaults/lexicon.avoid-terms/"
+        "defaults": "defaults/lexicon.avoid-terms/",
+        "fixture": {
+          "keys": [
+            "terms"
+          ],
+          "locales": [
+            "en"
+          ]
+        }
       }
     },
     {
@@ -304,7 +394,15 @@
         "shape": "voice.avoid-patterns",
         "value": "regex list",
         "check": "deterministic",
-        "defaults": "defaults/lexicon.avoid-patterns/"
+        "defaults": "defaults/lexicon.avoid-patterns/",
+        "fixture": {
+          "keys": [
+            "patterns"
+          ],
+          "locales": [
+            "en"
+          ]
+        }
       }
     }
   ]

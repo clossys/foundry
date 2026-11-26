@@ -43,7 +43,7 @@
   ],
   "recipes": [
     {
-      "dir": "recipes/create.app-section", "fixture": {"output": "recipes/create.app-section/fixture/sections.band.json", "slot": "sections.band"}
+      "dir": "recipes/create.app-section", "fixture": {"output": "recipes/create.app-section/fixture/sections.empty-state.json", "slot": "sections.empty-state"}
     },
     {
       "dir": "recipes/create.component", "fixture": {"output": "recipes/create.component/fixture/components.button.json", "slot": "components.button"}

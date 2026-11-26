@@ -1,0 +1,98 @@
+{
+  "layers": [
+    {
+      "id": "themes",
+      "label": "Themes",
+      "nodes": [
+        "themes.colors",
+        "themes.typography",
+        "themes.layout",
+        "themes.motion"
+      ]
+    },
+    {
+      "id": "assets",
+      "label": "Assets",
+      "nodes": [
+        "assets.logos",
+        "assets.imagery",
+        "assets.icons"
+      ]
+    },
+    {
+      "id": "components",
+      "label": "Components",
+      "nodes": [
+        "components.components"
+      ]
+    },
+    {
+      "id": "sections",
+      "label": "Sections",
+      "nodes": [
+        "sections.sections"
+      ]
+    },
+    {
+      "id": "frames",
+      "label": "Frames",
+      "nodes": [
+        "frames.frames"
+      ]
+    }
+  ],
+  "axes": {
+    "L0": {
+      "name": "Composition layer",
+      "values": [
+        "Themes",
+        "Assets",
+        "Components",
+        "Sections",
+        "Frames"
+      ]
+    },
+    "L1": {
+      "themes": {
+        "name": "Domain",
+        "values": [
+          "Colors",
+          "Typography",
+          "Layout",
+          "Motion"
+        ]
+      },
+      "assets": {
+        "name": "Asset type",
+        "values": [
+          "Logos",
+          "Imagery",
+          "Icons"
+        ]
+      },
+      "components": {
+        "name": "Interaction role",
+        "values": [
+          "Components"
+        ]
+      },
+      "sections": {
+        "name": "User purpose",
+        "values": [
+          "Sections"
+        ]
+      },
+      "frames": {
+        "name": "Shell type",
+        "values": [
+          "Frames"
+        ]
+      }
+    },
+    "shared": [
+      "Components",
+      "Sections",
+      "Frames"
+    ]
+  }
+}
