@@ -204,7 +204,7 @@ export interface DeclaredSources {
 const TAILWIND_SUPPORTS_RE = /@supports\s*\(\s*([a-z-]+)\s*:\s*var\(\s*--tw\s*\)\s*\)/g;
 
 /** Runtime-only fallback: computes the same as a read of an unset variable. */
-const RUNTIME_ONLY_FALLBACK = "unset";
+export const RUNTIME_ONLY_FALLBACK = "unset";
 
 /** The declared value of each token, by source precedence: tokens.css, theme.css, the package default theme, the output, Tailwind's default theme. */
 export function declaredTokenValues(sources: DeclaredSources, outputCss: string): Map<string, string> {
