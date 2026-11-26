@@ -132,6 +132,7 @@ Each wired writer keeps its on-disk record and adds one event per write.
 | `request.create / request.write` | `packages/producer/src/records/request.ts` | request:<id> |
 | `queue.create / queue.replace` | `packages/producer/src/queue/entry.ts` | <queue>/<entry id>: every queue entry write, the chat answer path included |
 | `library.version` | `packages/producer/src/records/library.ts` | library:<slot>/<element>/v<n> |
+| `dependency.add` | `packages/producer/src/records/adopt-dependencies.ts` | designer/<slot>: the code adopt's package.json and package-lock.json after it declared and installed its stock item's dependencies |
 | `run.state / run.record / run.settle / pin.revert` | `packages/producer/src/loop/runner.ts` | loop:<loop>/<run id>: run state, the run's ledger record, a settle record (a fixed-rule code step that settled or passed on an agent step), a reverted pin |
 | `state.migrate` | `packages/producer/src/engine/migrate-state.ts` | state:<state dir>: a legacy root state folder moved into the state folder, its logged records named at both paths |
 | `run.queue` | `packages/producer/src/loop/runner.ts` | loop:loop.fill/<run id>: one fill queue entry of the T1 init, the leaf's slot.json its input (FILL-PRELUDE D1) |
