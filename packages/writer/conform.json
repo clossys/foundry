@@ -25,7 +25,7 @@
   ],
   "recipes": [
     {
-      "dir": "recipes/create.copy", "fixture": {"output": "recipes/create.copy/fixture/components.command.copy.json", "slot": "components.command.copy"}
+      "dir": "recipes/create.copy", "fixture": {"output": "recipes/create.copy/fixture/components.sidebar.copy.json", "slot": "components.sidebar.copy"}
     },
     {
       "dir": "recipes/create.headline", "fixture": {"output": "recipes/create.headline/fixture/sections.hero.copy.json", "slot": "sections.hero.copy"}

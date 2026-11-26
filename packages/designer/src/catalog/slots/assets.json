@@ -247,6 +247,7 @@
     "contract": {
       "kind": "asset",
       "valueKind": "glyph",
+      "glyph": "chevron-down",
       "members": {
         "mode": "closed",
         "names": [
@@ -267,6 +268,7 @@
     "contract": {
       "kind": "asset",
       "valueKind": "glyph",
+      "glyph": "chevron-up",
       "members": {
         "mode": "closed",
         "names": [
@@ -287,6 +289,7 @@
     "contract": {
       "kind": "asset",
       "valueKind": "glyph",
+      "glyph": "chevron-left",
       "members": {
         "mode": "closed",
         "names": [
@@ -307,6 +310,7 @@
     "contract": {
       "kind": "asset",
       "valueKind": "glyph",
+      "glyph": "chevron-right",
       "members": {
         "mode": "closed",
         "names": [
@@ -327,6 +331,7 @@
     "contract": {
       "kind": "asset",
       "valueKind": "glyph",
+      "glyph": "arrow-right",
       "members": {
         "mode": "closed",
         "names": [
@@ -347,6 +352,7 @@
     "contract": {
       "kind": "asset",
       "valueKind": "glyph",
+      "glyph": "external-link",
       "members": {
         "mode": "closed",
         "names": [
@@ -367,6 +373,7 @@
     "contract": {
       "kind": "asset",
       "valueKind": "glyph",
+      "glyph": "home",
       "members": {
         "mode": "closed",
         "names": [
@@ -387,6 +394,7 @@
     "contract": {
       "kind": "asset",
       "valueKind": "glyph",
+      "glyph": "search",
       "members": {
         "mode": "closed",
         "names": [
@@ -407,6 +415,7 @@
     "contract": {
       "kind": "asset",
       "valueKind": "glyph",
+      "glyph": "close",
       "members": {
         "mode": "closed",
         "names": [
@@ -427,6 +436,7 @@
     "contract": {
       "kind": "asset",
       "valueKind": "glyph",
+      "glyph": "check",
       "members": {
         "mode": "closed",
         "names": [
@@ -447,6 +457,7 @@
     "contract": {
       "kind": "asset",
       "valueKind": "glyph",
+      "glyph": "settings",
       "members": {
         "mode": "closed",
         "names": [
@@ -467,6 +478,7 @@
     "contract": {
       "kind": "asset",
       "valueKind": "glyph",
+      "glyph": "list-view",
       "members": {
         "mode": "closed",
         "names": [
@@ -487,6 +499,7 @@
     "contract": {
       "kind": "asset",
       "valueKind": "glyph",
+      "glyph": "grid-view",
       "members": {
         "mode": "closed",
         "names": [
@@ -507,6 +520,7 @@
     "contract": {
       "kind": "asset",
       "valueKind": "glyph",
+      "glyph": "theme-light",
       "members": {
         "mode": "closed",
         "names": [
@@ -527,6 +541,7 @@
     "contract": {
       "kind": "asset",
       "valueKind": "glyph",
+      "glyph": "theme-dark",
       "members": {
         "mode": "closed",
         "names": [
@@ -547,6 +562,7 @@
     "contract": {
       "kind": "asset",
       "valueKind": "glyph",
+      "glyph": "theme-system",
       "members": {
         "mode": "closed",
         "names": [
@@ -567,6 +583,7 @@
     "contract": {
       "kind": "asset",
       "valueKind": "glyph",
+      "glyph": "success",
       "members": {
         "mode": "closed",
         "names": [
@@ -587,6 +604,7 @@
     "contract": {
       "kind": "asset",
       "valueKind": "glyph",
+      "glyph": "warning",
       "members": {
         "mode": "closed",
         "names": [
@@ -607,6 +625,7 @@
     "contract": {
       "kind": "asset",
       "valueKind": "glyph",
+      "glyph": "danger",
       "members": {
         "mode": "closed",
         "names": [
@@ -627,6 +646,7 @@
     "contract": {
       "kind": "asset",
       "valueKind": "glyph",
+      "glyph": "info",
       "members": {
         "mode": "closed",
         "names": [
@@ -647,6 +667,7 @@
     "contract": {
       "kind": "asset",
       "valueKind": "glyph",
+      "glyph": "user",
       "members": {
         "mode": "closed",
         "names": [
@@ -667,6 +688,7 @@
     "contract": {
       "kind": "asset",
       "valueKind": "glyph",
+      "glyph": "team",
       "members": {
         "mode": "closed",
         "names": [
@@ -687,6 +709,7 @@
     "contract": {
       "kind": "asset",
       "valueKind": "glyph",
+      "glyph": "organization",
       "members": {
         "mode": "closed",
         "names": [
@@ -713,6 +736,7 @@
     "contract": {
       "kind": "asset",
       "valueKind": "glyph",
+      "glyph": "website",
       "members": {
         "mode": "closed",
         "names": [
@@ -733,6 +757,7 @@
     "contract": {
       "kind": "asset",
       "valueKind": "glyph",
+      "glyph": "institution",
       "members": {
         "mode": "closed",
         "names": [
@@ -753,6 +778,7 @@
     "contract": {
       "kind": "asset",
       "valueKind": "glyph",
+      "glyph": "guide",
       "members": {
         "mode": "closed",
         "names": [
@@ -773,6 +799,7 @@
     "contract": {
       "kind": "asset",
       "valueKind": "glyph",
+      "glyph": "document",
       "members": {
         "mode": "closed",
         "names": [
@@ -793,6 +820,7 @@
     "contract": {
       "kind": "asset",
       "valueKind": "glyph",
+      "glyph": "document-approved",
       "members": {
         "mode": "closed",
         "names": [
@@ -813,6 +841,7 @@
     "contract": {
       "kind": "asset",
       "valueKind": "glyph",
+      "glyph": "folder",
       "members": {
         "mode": "closed",
         "names": [
@@ -833,6 +862,7 @@
     "contract": {
       "kind": "asset",
       "valueKind": "glyph",
+      "glyph": "date",
       "members": {
         "mode": "closed",
         "names": [
@@ -853,6 +883,7 @@
     "contract": {
       "kind": "asset",
       "valueKind": "glyph",
+      "glyph": "time",
       "members": {
         "mode": "closed",
         "names": [
@@ -873,6 +904,7 @@
     "contract": {
       "kind": "asset",
       "valueKind": "glyph",
+      "glyph": "payment",
       "members": {
         "mode": "closed",
         "names": [
@@ -893,6 +925,7 @@
     "contract": {
       "kind": "asset",
       "valueKind": "glyph",
+      "glyph": "receipt",
       "members": {
         "mode": "closed",
         "names": [
@@ -913,6 +946,7 @@
     "contract": {
       "kind": "asset",
       "valueKind": "glyph",
+      "glyph": "business",
       "members": {
         "mode": "closed",
         "names": [
@@ -933,6 +967,7 @@
     "contract": {
       "kind": "asset",
       "valueKind": "glyph",
+      "glyph": "security",
       "members": {
         "mode": "closed",
         "names": [
@@ -953,6 +988,7 @@
     "contract": {
       "kind": "asset",
       "valueKind": "glyph",
+      "glyph": "locked",
       "members": {
         "mode": "closed",
         "names": [
@@ -973,6 +1009,7 @@
     "contract": {
       "kind": "asset",
       "valueKind": "glyph",
+      "glyph": "legal",
       "members": {
         "mode": "closed",
         "names": [
@@ -993,6 +1030,7 @@
     "contract": {
       "kind": "asset",
       "valueKind": "glyph",
+      "glyph": "package",
       "members": {
         "mode": "closed",
         "names": [
@@ -1013,6 +1051,7 @@
     "contract": {
       "kind": "asset",
       "valueKind": "glyph",
+      "glyph": "layers",
       "members": {
         "mode": "closed",
         "names": [
@@ -1033,6 +1072,7 @@
     "contract": {
       "kind": "asset",
       "valueKind": "glyph",
+      "glyph": "integration",
       "members": {
         "mode": "closed",
         "names": [
@@ -1053,6 +1093,7 @@
     "contract": {
       "kind": "asset",
       "valueKind": "glyph",
+      "glyph": "panel-left",
       "members": {
         "mode": "closed",
         "names": [
