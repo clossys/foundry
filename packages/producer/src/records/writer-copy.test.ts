@@ -1,11 +1,14 @@
 import { createHash } from 'node:crypto';
-import { appendFileSync, mkdirSync, mkdtempSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
+import { appendFileSync, cpSync, mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { afterEach, describe, expect, it } from 'vitest';
 import { serializeFrontmatter } from './slot-model/index.js';
 import { writerKeysUnapproved } from '../pipeline/status.js';
 import { writerCopy, writerCopyDuplicates } from './writer-copy.js';
+import { writeTargetPin } from './pin-map.js';
+import { writeCandidate } from './slot-write.js';
 
 const roots: string[] = [];
 afterEach(() => { for (const root of roots.splice(0)) rmSync(root, { recursive: true, force: true }); });
@@ -86,5 +89,41 @@ describe('pinned Writer copy row keys (BR-E2E5 option A)', () => {
     const copy = writerCopy(metaConsumer({ 'strings.probe': { 'studio.probe.held': 'Held' } }));
     expect(copy.text('studio.probe.held')).toBe('Held');
     expect(copy.has('strings.probe.studio.probe.held')).toBe(false);
+  });
+});
+
+const FIXTURE = fileURLToPath(new URL('../../test-fixtures/consumer/', import.meta.url));
+const AT = '2026-11-26T00:00:00Z';
+
+/** A mktemp copy of the fixture consumer: its `clossys/` folder. */
+function fixtureConsumer(): string {
+  const root = realpathSync(mkdtempSync(join(tmpdir(), 'writer-copy-key-'))); roots.push(root);
+  cpSync(FIXTURE, root, { recursive: true });
+  return join(root, 'clossys');
+}
+
+/**
+ * Submit and pin a `frames.site-footer.copy` candidate through the record writers (writeCandidate,
+ * writeTargetPin): the header's own candidate with the footer's slot and the given `### <row>` texts.
+ */
+function pinFooter(clossys: string, rows: Record<string, string>): string {
+  const header = readFileSync(join(clossys, 'agents/writer/frames.site-header.copy/candidates/copy-v1.md'), 'utf8');
+  const head = header.slice(0, header.indexOf('## en')).replaceAll('frames.site-header.copy', 'frames.site-footer.copy');
+  const body = Object.entries(rows).map(([id, text]) => `### ${id}\n<!-- {"id":${JSON.stringify(id)},"bindings":[]} -->\n${text}\n`).join('\n');
+  const { name } = writeCandidate(clossys, 'writer', 'frames.site-footer.copy', 'copy', `${head}## en\n\n${body}`);
+  writeTargetPin(join(clossys, '..'), { agent: 'writer', slotId: 'frames.site-footer.copy', record: 'copy', candidate: name, decidedBy: 'planner', basis: 'planner', at: AT, createdBy: { actor: 'code', cli: 'clossys pin', version: '0.1.0' } });
+  return name;
+}
+
+describe('a contract key is its own slot\'s key (CP1-COPYKEY)', () => {
+  it('loads one contract key from two pinned copy slots under each slot\'s id', () => {
+    const clossys = fixtureConsumer();
+    pinFooter(clossys, { 'navigation.label': 'Footer navigation', 'legal.notice': 'All rights reserved' });
+    const copy = writerCopy(clossys);
+    expect(copy.text('frames.site-header.copy.navigation.label')).toBe('Main navigation');
+    expect(copy.text('frames.site-footer.copy.navigation.label')).toBe('Footer navigation');
+    expect(copy.text('frames.site-footer.copy.legal.notice')).toBe('All rights reserved');
+    expect(copy.has('navigation.label')).toBe(false);
+    expect(writerCopyDuplicates(clossys)).toEqual([]);
   });
 });
