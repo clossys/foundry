@@ -5,6 +5,7 @@
     "asset.media-rule"
   ],
   "rung": "create",
+  "tier": "mid",
   "axes": [
     "structure",
     "density",

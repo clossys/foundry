@@ -8,6 +8,7 @@
     "lexicon.voice-rule"
   ],
   "rung": "create",
+  "tier": "mid",
   "axes": [
     "strictness",
     "coverage",

@@ -5,6 +5,7 @@
     "brief.statement"
   ],
   "rung": "create",
+  "tier": "high",
   "axes": [
     "stance",
     "scope",

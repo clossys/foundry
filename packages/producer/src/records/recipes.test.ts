@@ -1,4 +1,4 @@
-import { cpSync, mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
+import { cpSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -16,7 +16,7 @@ function workspace(): string {
   return root;
 }
 const recipeJson = (root: string, value: unknown) => put(join(root, "packages", "writer", "recipes", "fixture-headline-craft", "recipe.json"), `${JSON.stringify(value)}\n`);
-const BASE = { schema: "clossys.recipe/1", id: "fixture-headline-craft", produces: ["fixture-headline"], rung: "create", axes: ["tone", "length", "structure"] };
+const BASE = { schema: "clossys.recipe/1", id: "fixture-headline-craft", produces: ["fixture-headline"], rung: "create", tier: "mid", axes: ["tone", "length", "structure"] };
 
 describe("records/recipes", () => {
   it("reads the fixture recipe clean and pairs it with its standard", () => {
@@ -61,7 +61,7 @@ describe("records/recipes", () => {
   });
   it("a plumb recipe reads its plumb action and pairs only with the standards that action lists", () => {
     const root = workspace();
-    recipeJson(root, { ...BASE, rung: "plumb", axes: [], action: "fixture.plumb" });
+    recipeJson(root, { ...BASE, rung: "plumb", tier: undefined, axes: [], action: "fixture.plumb" });
     put(join(root, "packages", "writer", "recipes", "fixture-headline-craft", "craft.md"), "# plumb\n\n### 1. compute (deterministic)\n\n```sh\nclossys produce writer/<slot>\n```\n");
     put(join(root, "packages", "producer", "actions", "fixture.plumb", "action.json"), `${JSON.stringify({ schema: "clossys.action/1", id: "fixture.plumb", kind: "plumb", standards: ["writer/fixture-headline"] })}\n`);
     const recipe = readRecipe(root, "writer", "fixture-headline-craft");
@@ -151,5 +151,37 @@ describe("records/recipes", () => {
     expect(craftRunRecipe(run(undefined, "fixture-headline-craft"), all, "writer", "")).toBeUndefined();
     expect(craftRunRecipeIssues(run(), [own, twin], "writer", "fixture-headline")).toEqual(["recipes fixture-headline-craft, twin all produce for fixture-headline; a standard has exactly one producing recipe"]);
     expect(craftRunRecipeIssues([], all, "writer", "fixture-headline")).toEqual([]);
+  });
+
+  it("tier: every crafted recipe in this repository declares the tier its craft.md Tier: line states, plumb declares none, and the schema requires it", () => {
+    const repo = fileURLToPath(new URL("../../../../", import.meta.url));
+    const recipes = loadRecipes(repo);
+    const crafted = recipes.filter(recipe => recipe.doc?.rung !== "plumb");
+    expect(crafted.length).toBeGreaterThanOrEqual(15);
+    for (const recipe of recipes) expect(recipe.issues, `${recipe.agent}/${recipe.id}`).toEqual([]);
+    for (const recipe of crafted) {
+      const stated = /^- Tier: (low|mid|high)\./m.exec(readFileSync(join(repo, recipe.dir, "craft.md"), "utf8"))?.[1];
+      expect(stated, `${recipe.agent}/${recipe.id} craft.md Tier: line`).toBeDefined();
+      expect(recipe.doc?.tier, `${recipe.agent}/${recipe.id} recipe.json tier`).toBe(stated);
+    }
+    for (const recipe of recipes.filter(item => item.doc?.rung === "plumb")) expect(recipe.doc?.tier, `${recipe.agent}/${recipe.id}`).toBeUndefined();
+    expect(recipes.find(recipe => recipe.id === "create.component")?.doc?.tier).toBe("high");
+    const root = workspace();
+    const schemaRefused = (why: string) => {
+      const read = readRecipe(root, "writer", "fixture-headline-craft");
+      expect(read.doc, why).toBeUndefined();
+      expect(read.issues.length, why).toBeGreaterThan(0);
+      for (const issue of read.issues) expect(issue, why).toMatch(/^recipe\.json( \S+)?: /);
+    };
+    for (const rung of ["adopt", "adapt", "create"]) {
+      recipeJson(root, { ...BASE, rung, tier: undefined });
+      schemaRefused(`${rung} with no tier`);
+    }
+    recipeJson(root, { ...BASE, tier: "top" });
+    schemaRefused("an unknown tier");
+    recipeJson(root, { ...BASE, rung: "plumb", axes: [], action: "fixture.plumb" });
+    schemaRefused("plumb with a tier");
+    recipeJson(root, BASE);
+    expect(readRecipe(root, "writer", "fixture-headline-craft").issues).toEqual([]);
   });
 });

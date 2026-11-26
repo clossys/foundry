@@ -15,6 +15,7 @@ import { loadSchema, validateValue } from "../pipeline/schema.js";
 import { sha256Hex } from "./hash.js";
 import type { ModelAgent } from "./slot-model/index.js";
 import { STANDARD_AGENTS, type Standard } from "./standards.js";
+import type { Tier } from "./types.js";
 
 export const RECIPE_SCHEMA = "clossys.recipe/1";
 /** Files a recipe never holds: a rubric is the judge's (R15.5, R16). */
@@ -26,6 +27,12 @@ export interface RecipeDoc {
   readonly produces: readonly string[];
   readonly rung: "adopt" | "adapt" | "create" | "plumb";
   readonly axes: readonly string[];
+  /**
+   * The lowest tier a craft run under this recipe runs at (RECIPE_TIERS order), as its craft.md "Tier:" line states;
+   * required for a crafted rung, absent for plumb (recipe.schema.json oneOf). `next --stage --recipe` and `next --submit`
+   * refuse a lower `--tier` (recipeTierIssue).
+   */
+  readonly tier?: Tier;
   readonly generator?: string;
   /** The plumb action that computes the candidates (rung plumb only). */
   readonly action?: string;
@@ -185,6 +192,21 @@ export function recipeSourceIssue(recipe: Recipe, kind: string | undefined): str
   if (!sources) return undefined;
   if (kind !== undefined && sources.includes(kind)) return undefined;
   return `recipe ${recipe.id} crafts ${sources.join(" or ")} candidates; this one's meta.source.kind is ${kind ?? "(none)"}`;
+}
+
+/** The tier order a recipe's `tier` is judged on: low < mid < high. */
+export const RECIPE_TIERS: readonly Tier[] = Object.freeze(["low", "mid", "high"] as const);
+
+/**
+ * Why a craft stage or submission at `tier` under `recipe` is refused: the recipe declares a higher tier (RECIPE_TIERS
+ * order), or `tier` is none of the tiers. The refusal names the recipe, both tiers and the fix. Undefined when the recipe
+ * declares no tier (plumb: no craft run) or `tier` is at or above it.
+ */
+export function recipeTierIssue(recipe: Recipe, tier: string): string | undefined {
+  const needed = recipe.doc?.tier;
+  if (!needed) return undefined;
+  if (RECIPE_TIERS.indexOf(tier as Tier) >= RECIPE_TIERS.indexOf(needed)) return undefined;
+  return `recipe-tier: recipe ${recipe.id} is tier ${needed}, and this run is at tier ${tier} (low < mid < high); fix: run it at --tier ${needed} or above, with a model seated at that tier`;
 }
 
 /** Reads one recipe folder. */

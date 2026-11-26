@@ -193,7 +193,7 @@ describe("craft under a plumb recipe: the writer refuses what R15.7 rejects (one
   const REPO = fileURLToPath(new URL("../../../../", import.meta.url));
   const plumbRecipe = () => {
     const path = join(workspace, "packages", "designer", "recipes", RECIPE, "recipe.json");
-    writeFileSync(path, jsonBytes({ ...(JSON.parse(readFileSync(path, "utf8")) as Record<string, unknown>), rung: "plumb", axes: [], action: "fixture.plumb" }));
+    writeFileSync(path, jsonBytes({ ...(JSON.parse(readFileSync(path, "utf8")) as Record<string, unknown>), rung: "plumb", tier: undefined, axes: [], action: "fixture.plumb" }));
     // A valid plumb recipe (its deterministic clossys stages and the plumb action producing for the standard): an
     // invalid one produces nothing, so code would choose no recipe for fixture-headline at all.
     writeFileSync(join(path, "..", "craft.md"), "# fixture plumb\n\n### 1. build (deterministic)\n\n```sh\nclossys release fixture --build\n```\n");

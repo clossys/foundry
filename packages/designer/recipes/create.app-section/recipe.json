@@ -6,6 +6,7 @@
     "section.adaptive"
   ],
   "rung": "create",
+  "tier": "mid",
   "axes": [
     "layout",
     "density",

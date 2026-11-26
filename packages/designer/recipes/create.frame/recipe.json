@@ -5,6 +5,7 @@
     "frame"
   ],
   "rung": "create",
+  "tier": "mid",
   "axes": [
     "navigation",
     "chrome",

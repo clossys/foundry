@@ -5,6 +5,7 @@
     "seat"
   ],
   "rung": "create",
+  "tier": "mid",
   "axes": [
     "holder",
     "tier",

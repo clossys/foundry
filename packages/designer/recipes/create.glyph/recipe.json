@@ -5,6 +5,7 @@
     "asset.glyph"
   ],
   "rung": "create",
+  "tier": "mid",
   "axes": [
     "metaphor",
     "construction",

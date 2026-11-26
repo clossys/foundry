@@ -114,12 +114,16 @@ let runCli;
 let STEPS;
 let readSlot;
 let readStandard;
+let loadRecipes;
+let craftRunRecipe;
+let RECIPE_TIERS;
 export async function load() {
   globalThis.Date = SeedDate;
   ({ runCli } = await import("../dist/cli/main.js"));
   ({ STEPS } = await import("../dist/pipeline/steps/index.js"));
   ({ readSlot } = await import("../dist/records/slots.js"));
   ({ readStandard } = await import("../dist/records/standards.js"));
+  ({ loadRecipes, craftRunRecipe, RECIPE_TIERS } = await import("../dist/records/recipes.js"));
 }
 
 class Refused extends Error {
@@ -955,6 +959,17 @@ export function blockedIn(consumer, order) {
 
 const TIER = "mid";
 
+/**
+ * The tier a crafted (P2) slot runs at: the higher of its standard's craftTier and the tier of the recipe code chooses
+ * for the standard (recipe.json tier, the one next --stage and next --submit refuse a run below), ranked
+ * low < mid < high by RECIPE_TIERS, the guard's own order.
+ */
+function craftTierOf(root, agent, standardId, standard) {
+  const own = standard.doc.craftTier ?? TIER;
+  const recipe = craftRunRecipe([], loadRecipes(root), agent, standardId)?.doc?.tier;
+  return recipe && RECIPE_TIERS.indexOf(recipe) > RECIPE_TIERS.indexOf(own) ? recipe : own;
+}
+
 async function seedSlot(w, ref) {
   const [agent, id] = ref.split("/");
   let doc = readSlot(w.consumer, agent, id);
@@ -972,8 +987,8 @@ async function seedSlot(w, ref) {
   const skill = w.skillOf(agent);
   const leaf = id.split(".").at(-1);
   const candidate = `${leaf}-v1.${made.ext}`;
-  const tier = standard.doc.craftTier ?? TIER;
   const create = made.rung === "create" || made.rung === "L4" || made.rung === "adapt" || made.rung === "L3";
+  const tier = create ? craftTierOf(w.root, agent, String(doc.standard ?? ""), standard) : standard.doc.craftTier ?? TIER;
   if (create) {
     const criterion = standard.taste.criteria[0].id;
     const gap = standard.doc.mode === "adopt-first" ? { id: criterion, class: standard.doc.createGaps?.[0] ?? "missing-behavior" } : { id: criterion };

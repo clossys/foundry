@@ -31,7 +31,7 @@ import { CandidateRefusal } from "../records/candidate.js";
 import { readCandidateText, submissionSources, viewSourceKind } from "../records/slot-current.js";
 import type { Actor, AgentId, Tier } from "../records/types.js";
 import { appendCraftEvent, CRAFT_STAGES, GuardRefusal, openCraftEvents, submittedBytes, writeCandidate, type CraftStage, type WriteGuard } from "../records/slot-write.js";
-import { craftRunRecipe, craftRunRecipeIssues, loadRecipes, recipeSourceIssue } from "../records/recipes.js";
+import { craftRunRecipe, craftRunRecipeIssues, loadRecipes, recipeSourceIssue, recipeTierIssue } from "../records/recipes.js";
 import "../constitution/guard.js"; // registers the write guard's runner
 import { nextPacket, openItems, openPackets, skillFile } from "../pipeline/chain.js";
 import type { Packet } from "../pipeline/chain.js";
@@ -303,7 +303,7 @@ export async function runNextSubmitCli(argv: readonly string[], cwd: string, ste
   // The recipe code chooses for the slot's standard decides the source kinds a P2 candidate may carry (recipe.json
   // sources), judged on the kind of the view the guard reads (the probe's view, the bytes writeCandidate writes).
   const p2Rung = ["adapt", "create"].includes(String(rungKind(agent, ladder!.rung)));
-  const recipeRefused = craftRecipeRefusal(root, entry.dir, agent, String(readSlot(consumer, agent as SlotAgent, slot).standard ?? ""), viewSourceKind(probe, probeRead.view), p2Rung);
+  const recipeRefused = craftRecipeRefusal(root, entry.dir, agent, String(readSlot(consumer, agent as SlotAgent, slot).standard ?? ""), viewSourceKind(probe, probeRead.view), flags.tier!, p2Rung);
   if (recipeRefused) return reject(recipeRefused);
   // The guard is absolute (section 4): the writer runs every constitution check whose rules.json
   // guard lists submit on the tree with the new file and its event in place, and refuses on any
@@ -343,10 +343,11 @@ type LedgerRow = Record<string, unknown>;
  * undefined. Code chooses the recipe (records/recipes.ts standardRecipe: the one recipe producing for the slot's
  * `standardId`), never the events: an open run whose events name another recipe, an unknown one or one not producing
  * the standard is refused (craftRunRecipeIssues); then the candidate's source `kind` (the view's, viewSourceKind) must
- * be one of that recipe's `sources` (recipeSourceIssue). A P2 rung with no open run on a slot whose standard has no
- * one recipe refuses nothing here: R15.5 reports the standard.
+ * be one of that recipe's `sources` (recipeSourceIssue), and the submission's `tier` at or above the recipe's `tier`
+ * (recipeTierIssue). A P2 rung with no open run on a slot whose standard has no one recipe refuses nothing here: R15.5
+ * reports the standard.
  */
-export function craftRecipeRefusal(root: string, slotDir: string, agent: string, standardId: string, kind: string | undefined, p2Rung = false): string | undefined {
+export function craftRecipeRefusal(root: string, slotDir: string, agent: string, standardId: string, kind: string | undefined, tier: string, p2Rung = false): string | undefined {
   const open = openCraftEvents((readLedger(slotDir, "slot")?.events ?? []) as unknown as LedgerRow[]);
   if (!open.length && !p2Rung) return undefined;
   const recipes = loadRecipes(root);
@@ -354,7 +355,8 @@ export function craftRecipeRefusal(root: string, slotDir: string, agent: string,
   if (runIssues.length) return `craft-recipe: ${runIssues.join("; ")}; fix: craft the run under the recipe that produces for the slot's standard (clossys next --stage brief records it), naming no other`;
   const recipe = craftRunRecipe(open, recipes, agent, standardId);
   const issue = recipe && recipeSourceIssue(recipe, kind);
-  return issue && `${issue}; fix: submit a ${recipe!.doc!.sources!.join(" or ")} candidate (meta.source.kind) that the recipe's checks (${(recipe!.doc!.checks ?? []).join(", ") || "none named"}) judge`;
+  if (issue) return `${issue}; fix: submit a ${recipe!.doc!.sources!.join(" or ")} candidate (meta.source.kind) that the recipe's checks (${(recipe!.doc!.checks ?? []).join(", ") || "none named"}) judge`;
+  return recipe && recipeTierIssue(recipe, tier);
 }
 
 const isCreate = (event: LedgerRow | undefined) => !!event && (event.create === true || event.verdict === "create" || event.kind === "create");
@@ -429,6 +431,14 @@ export async function runNextStageCli(flags: Flags, cwd: string, steps: readonly
     const made = assembleBrief(root, consumer, agent as SlotAgent, slot, flags.recipe);
     if ("refusal" in made) return refuse(`craft:brief refused: ${made.refusal}`);
     fields = { ...fields, assembled: made.brief };
+  }
+  // A --recipe naming the recipe code chooses for the slot's standard binds the stage's tier (recipeTierIssue), judged
+  // after the brief's own refusals and before the event is written. A --recipe naming any other recipe is refused as
+  // before (the brief's assembly, or craftRunRecipeIssues at the write).
+  if (flags.recipe !== undefined) {
+    const chosen = craftRunRecipe([], loadRecipes(root), agent, String(readSlot(consumer, agent as SlotAgent, slot).standard ?? ""));
+    const belowTier = chosen?.id === flags.recipe ? recipeTierIssue(chosen, flags.tier!) : undefined;
+    if (belowTier) return refuse(belowTier);
   }
   let event;
   try {
