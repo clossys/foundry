@@ -125,6 +125,32 @@ export function slotAcceptedTypes(layer: string | undefined, contract: Readonly<
 }
 
 /**
+ * Whether the element certifier mounts the slot's contract fixture for an item held to `check` (owner D1): the render
+ * and the code checks (hook, lib) start from the fixture (element.ts `fixtureStart`); `none` mounts nothing. The one
+ * predicate the certifier (element.ts `certifyElement`) and R01.3 (element.ts `elementMountsFixture`) share.
+ */
+export function checkMountsFixture(check: ElementCheck): check is Exclude<ElementCheck, "none"> {
+  return check !== "none";
+}
+
+/**
+ * Whether every item a slot of `layer` with `contract` accepts is held to a check that mounts its fixture: every
+ * registry type it accepts, and an item with no registry type (an SVG, a record kind), which its layer decides. A
+ * component, section or frame slot, and a hook or lib slot, mount it for any candidate; a token or asset slot mounts it
+ * only for a candidate whose type is rendered there (`registry:ui` in an asset slot), never for a theme or a file.
+ */
+export function slotAlwaysMountsFixture(layer: string | undefined, contract: Readonly<Record<string, unknown>> | undefined): boolean {
+  const slotClass = slotClassOf(layer, contract);
+  const checks: ElementCheck[] = [];
+  for (const type of [...Object.keys(REGISTRY_TYPE_CHECKS), undefined]) {
+    let check: ElementCheck;
+    try { check = typeCheckOf(type ?? "untyped", type, layer); } catch { continue; } // the certifier refuses it: nothing mounts
+    if (accepts(slotClass, check)) checks.push(check);
+  }
+  return checks.length > 0 && checks.every(checkMountsFixture);
+}
+
+/**
  * The check for an item of registry `type` in a slot of `layer` whose contract is `contract`. A `registry:*` type reads
  * the table and fails closed when it has no row; any other value (none, or a library record kind) is mapped by
  * Publisher's `specimenKindOf`, as before this table, which throws on a kind it does not know either. Then the slot

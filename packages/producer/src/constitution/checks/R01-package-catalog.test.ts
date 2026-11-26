@@ -13,13 +13,12 @@ import { contractDedupe, contractFixture } from "./R01-catalog.js";
 
 /**
  * R01.3, R01.6 and R01.12 over the catalogs the Designer and Writer packages ship (CP1-U1): a fresh consumer adopts
- * the package IA through the verbs, and the checks read what the adopt wrote. The R01.3 rows on token and asset
- * contracts wait on an owner ruling (CP1 diagnosis D1), and a composed slot's fixture is the consumer's (FCR), so
- * R01.3 is read on every other slot: the scope comes from the contract kind and the package's composed list, not
- * from a slot list.
+ * the package IA through the verbs, and the checks read what the adopt wrote. R01.3 itself asks a token or asset
+ * contract for a preview only where the element certifier mounts one (owner D1), so no contract kind is set aside
+ * here; a composed slot's fixture is the consumer's (FCR), so R01.3 is read on every other slot: the scope comes from
+ * the package's composed list, not from a slot list.
  */
 const AGENTS = ["designer", "writer"] as const;
-const OWNER_RULING_KINDS = new Set(["token", "asset"]);
 
 let root = "";
 let ctx: ConstitutionContext;
@@ -46,15 +45,9 @@ describe("the shipped Designer and Writer catalogs (R01 data rows)", () => {
     }
   });
 
-  it("R01.3: every Writer slot and every Designer slot outside the owner-ruling kinds carries a preview fixture", () => {
+  it("R01.3: every Writer slot and every Designer slot whose certifier mounts a preview carries one (composed slots are the consumer's)", () => {
     const composed = composedSlots(resolveAgent("designer").packageRoot);
-    const kindOf = (agent: string, slot: string): unknown => {
-      const record = ctx.agents.find(each => each.agent === agent)?.slots.get(slot);
-      const doc = record?.slot?.value as { contract?: { kind?: unknown } } | undefined;
-      return doc?.contract?.kind;
-    };
-    const rows = ours(contractFixture(ctx)).filter(each => each.agent === "writer"
-      || (!composed.has(each.slot) && !OWNER_RULING_KINDS.has(String(kindOf(each.agent, each.slot)))));
+    const rows = ours(contractFixture(ctx)).filter(each => each.agent === "writer" || !composed.has(each.slot));
     expect(show(rows)).toBe("");
   });
 

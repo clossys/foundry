@@ -182,10 +182,15 @@ export function seatContractIssues(contract: unknown, id: string, path = "slot.j
  * `fixtures {file, export, props}` (contract-fixture.ts); brief: the required `headings`; strings:
  * the required `keys` and `locales`; page and publication: a sample `route` entry `{path}`; seat:
  * the `step` id only (the sample seat is package data). Empty when the fixture has the kind's shape.
+ *
+ * An element contract needs its preview only where the element certifier mounts one (owner D1): `mounts` is that
+ * answer, which the caller reads from the certifier (constitution/certify/element.ts `elementMountsFixture`). Where it
+ * mounts none (a token or asset slot holding no rendered candidate) a missing fixture is no issue; a fixture that is
+ * there is judged by its shape all the same. Every other kind needs its fixture whatever `mounts` says.
  */
-export function fixtureShapeIssues(kind: SlotKind, contract: Readonly<Record<string, unknown>>): string[] {
+export function fixtureShapeIssues(kind: SlotKind, contract: Readonly<Record<string, unknown>>, mounts = true): string[] {
   const fixture = contract.fixture;
-  if (fixture === undefined) return ["is missing"];
+  if (fixture === undefined) return kind === "element" && !mounts ? [] : ["is missing"];
   if (!object(fixture)) return ["must be an object"];
   const list = (key: string) => (Array.isArray(fixture[key]) && (fixture[key] as unknown[]).length > 0 && (fixture[key] as unknown[]).every(nonEmpty) ? [] : [`${key} must be a non-empty list of strings`]);
   switch (kind) {

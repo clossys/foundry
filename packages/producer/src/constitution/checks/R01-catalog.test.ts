@@ -147,6 +147,51 @@ describe("R01.3 every contract carries a fixture of its kind's shape", () => {
     expect(text).toMatch(/producer:seat\.director: contract\.fixture seat is package data/);
   });
 
+  // Owner D1: an element contract needs its preview only where the element certifier mounts one (certify/element.ts
+  // elementMountsFixture, over the certifier's own checkMountsFixture). The slot's layer and candidates decide, no list.
+  const designerSlot = (id: string, candidates: Record<string, unknown>, contract?: Record<string, unknown>) => {
+    const doc = without("designer", id);
+    return { slot: contract ? { ...doc, contract: { ...doc.contract, ...contract } } : doc, candidates };
+  };
+  const rowsFor = (ctx: ConstitutionContext, id: string) => reasons(contractFixture(ctx)).filter(text => text.startsWith(`designer:${id}:`));
+  const THEME = { name: "palette", type: "registry:theme", cssVars: { light: { primary: "oklch(0.2 0 0)" } } };
+  const UI = { name: "mark", type: "registry:ui", files: [{ path: "ui/mark.tsx", type: "registry:ui", content: "export const Mark = 1;\n" }] };
+
+  it("(a) a token slot whose certifier mounts no fixture shows no R01.3 row, and needs no preview", () => {
+    const ctx = broken(spec => { spec.designer!["themes.palette"] = designerSlot("themes.palette", { "palette-v1.json": THEME }); });
+    expect(rowsFor(ctx, "themes.palette")).toEqual([]);
+    expect(contractFixture(ctx)).toEqual([]);
+  });
+
+  it("(a) an asset slot holding only an SVG mounts no fixture either, but a fixture it does carry is still judged by its shape", () => {
+    const svg = broken(spec => { spec.designer!["assets.mark"] = designerSlot("assets.mark", { "mark-v1.svg": "<svg xmlns=\"http://www.w3.org/2000/svg\"/>\n" }); });
+    expect(rowsFor(svg, "assets.mark")).toEqual([]);
+    const shaped = broken(spec => { spec.designer!["themes.palette"] = designerSlot("themes.palette", { "palette-v1.json": THEME }, { fixture: { schema: "clossys.element-preview/1" } }); });
+    expect(rowsFor(shaped, "themes.palette").join("\n")).toMatch(/^designer:themes\.palette: contract\.fixture .+ \(element\)$/);
+  });
+
+  it("(b) a component slot whose certifier mounts one, but which has no fixture, still shows the R01.3 row (candidates or none)", () => {
+    const rows = expectCatches(contractFixture, clean(), broken(spec => {
+      spec.designer!["components.badge"] = designerSlot("components.badge", {});
+      spec.designer!["sections.hero"] = designerSlot("sections.hero", { "hero-v1.json": THEME });
+    }));
+    expect(reasons(rows)).toEqual([
+      "designer:components.badge: contract.fixture is missing (element)",
+      "designer:sections.hero: contract.fixture is missing (element)",
+    ]);
+  });
+
+  it("(b) a token or asset slot holding a candidate the certifier renders keeps today's requirement", () => {
+    const rows = expectCatches(contractFixture, clean(), broken(spec => {
+      spec.designer!["assets.mark"] = designerSlot("assets.mark", { "mark-v1.json": UI });
+      spec.designer!["themes.palette"] = designerSlot("themes.palette", { "palette-v1.json": THEME, "swatch-v1.json": { ...UI, name: "swatch" } });
+    }));
+    expect(reasons(rows)).toEqual([
+      "designer:assets.mark: contract.fixture is missing (element)",
+      "designer:themes.palette: contract.fixture is missing (element)",
+    ]);
+  });
+
   it("mutation proof: a disabled R01.3 fails the failing-first contract", () => {
     const bad = broken(spec => { spec.director!["brand.voice"]!.slot = without("director", "brand.voice"); });
     expect(() => expectCatches(() => [], clean(), bad)).toThrow(/silent on the broken workspace/);
