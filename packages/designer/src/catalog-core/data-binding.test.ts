@@ -38,6 +38,16 @@ describe("the data-bound section contract", () => {
     expect(slotContractFindings(committed, context)).toEqual([]);
   });
 
+  // CP1-G1: the record sections stay copy-less. Their labels (column heads, headings, empty text, status names) come
+  // with the records the host injects, from the pinned Writer strings slot writer/sections.records.copy, never as copy fields.
+  it("keeps each admin record section copy-less: one required records slot, no copy fields, no Writer passage", () => {
+    const shapes = Object.fromEntries(ADMIN.map(slot => {
+      const contract = (sectionSlots as unknown as { id: string; contract: { slots?: { name: string; type: string; required?: boolean }[]; copy?: { fields?: unknown[] }; passageSchema?: unknown } }[]).find(row => row.id === slot)!.contract;
+      return [slot, { records: (contract.slots ?? []).filter(port => port.type === "records" && port.required === true).length, copyFields: contract.copy?.fields?.length ?? 0, passage: contract.passageSchema ?? null }];
+    }));
+    expect(shapes).toEqual(Object.fromEntries(ADMIN.map(slot => [slot, { records: 1, copyFields: 0, passage: null }])));
+  });
+
   it("reads the record schemas, a parenthesised qualifier included", () => {
     expect(readRecords("clossys.queue-entry/1 (queue.pick, queue.approve, queue.clarify)")).toEqual({ ok: true, schemas: ["clossys.queue-entry/1"] });
     expect(readRecords("clossys.ia/1, clossys.slot/2")).toEqual({ ok: true, schemas: ["clossys.ia/1", "clossys.slot/2"] });

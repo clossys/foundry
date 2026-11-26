@@ -337,7 +337,8 @@ export async function writeSubstrateHost(substrate: string, selection: PageHostS
  * the substrate) and, per data-bound Designer slot id the page places, the port its records fill and the route
  * parameters its scope keys on. The module's `records.ports[port][key]` is that section's prop `port`, `key` being the
  * scope's route parameter values joined by `/` (`""` for workspace scope); a key the records lack is empty (`null` for
- * the one-record `slot` port, `[]` otherwise), so the section renders its own empty state.
+ * the one-record `slot` port, `[]` otherwise), so the section renders its own empty state. A module that exports
+ * `records.labels` (the pinned `writer/sections.records.copy` labels) also gives each data-bound section its prop `labels`.
  */
 export interface PageModuleRecords { readonly module: string; readonly reads: Readonly<Record<string, { readonly port: string; readonly scope: readonly string[] }>> }
 
@@ -421,7 +422,11 @@ export function pageModule(page: BoundPage, substrate: string, options: { readon
     `  const component = slot.export ? mod[slot.export] : ${firstComponentSource("mod")};`,
     '  if (typeof component !== "function" && typeof component !== "object") throw new Error(`clossys page: ${slot.id} exports no component ${slot.export ?? ""}`);',
     "  const props = resolve(slot.props, mod) as Record<string, unknown>;",
-    ...(records ? ["  if (Object.hasOwn(reads, name)) props[reads[name]!.port] = recordsOf(name);"] : []),
+    ...(records ? [
+      "  if (Object.hasOwn(reads, name)) props[reads[name]!.port] = recordsOf(name);",
+      "  // A data-bound section's labels travel with its records (writer/sections.records.copy); absent records hold none.",
+      '  if (Object.hasOwn(reads, name) && Object.hasOwn(records, "labels")) props.labels = (records as unknown as { labels: Record<string, string> }).labels;',
+    ] : []),
     "  if (slot.copyKeys) {",
     "    // A dotted copyKeys name (`legalCopyKeys.terms`) is a path into the module's exports.",
     '    const map = slot.copyKeys.split(".").reduce<any>((value, key) => value == null ? undefined : value[key], mod);',

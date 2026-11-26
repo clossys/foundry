@@ -35,7 +35,7 @@ const contentMapPath = (entry: { readonly path?: string; readonly slug?: string 
 import { libraryRecordSource } from "../specimen/library-source.js";
 import { specimenRoots } from "./publish.js";
 import { dataBoundReads, scopeParams } from "../cli/admin-plan.js";
-import { ADMIN_RECORD_PORTS, adminRouteParams, readAdminRecords, type AdminRecords } from "./admin-records.js";
+import { ADMIN_LABELS_SLOT, ADMIN_RECORD_PORTS, adminRouteParams, readAdminRecords, type AdminRecords } from "./admin-records.js";
 import { designerPins, pageModule, pageRecordFromCell, shadcnRunner, SUBSTRATE_HOST_FILE, writerCopy, type PageModuleRecords } from "./install.js";
 import { writerLocaleCopy } from "./install-outputs.js";
 
@@ -298,11 +298,16 @@ export async function planNextBind(options: { root: string; site: string; map: C
   let snapshot: AdminRecords | undefined;
   const routeParams: Record<string, Record<string, string>[]> = {};
   if (injected.size || dynamic.length) {
-    snapshot = readAdminRecords(root);
+    snapshot = readAdminRecords(root, { routes: paths });
     for (const entry of dynamic) {
       const values = adminRouteParams(snapshot, contentMapPath(entry), paths);
       if (values) routeParams[entry.id] = values;
     }
+  }
+  // The record sections are copy-less: their labels come with the records from the pinned Writer strings slot. Unpinned,
+  // the sections render without labels and the install says so (never a literal label in their place).
+  if (injected.size && snapshot && !snapshot.labels) {
+    findings.push({ code: "unbound-copy-slot", severity: "info", slot: `writer/${ADMIN_LABELS_SLOT}`, detail: `${map.publicationId}: writer/${ADMIN_LABELS_SLOT} is not pinned and readable, so the data-bound record sections have no labels (${snapshot.issues.find(issue => issue.startsWith(`writer/${ADMIN_LABELS_SLOT}:`)) ?? "no labels"})` });
   }
   if (findings.some(isBlocking)) return empty();
 
