@@ -210,7 +210,7 @@ export function checkCopyAgainstDesigner(tree: GroupTree, input: DesignerCopyInp
   const isMeta = (slot: GroupSlot) => String(slot.contract?.unit ?? "").startsWith("publisher/");
   const isRecordLabel = (slot: GroupSlot) => RECORD_LABEL_LEAVES.some(leaf => leaf.id === slot.id);
   findings.push(...checkPageMetadata(tree, input.directory));
-  findings.push(...checkRecordLabels(tree));
+  findings.push(...checkRecordLabels(tree, input));
   for (const slot of tree.slots) {
     if (isMeta(slot) || isRecordLabel(slot)) continue;
     const unit = unitOf(slot);
@@ -240,11 +240,21 @@ export function checkCopyAgainstDesigner(tree: GroupTree, input: DesignerCopyInp
 /**
  * Record labels both ways: each declared leaf has exactly one Copy slot, with the declared unit and fields, placed in
  * its declared L2. A Copy slot that no Designer unit and no declaration owns stays refused by the Designer check.
+ * A declared leaf never belongs to a Designer unit: its id's unit and its declared unit are no Designer slot or
+ * placed (or retired) unit, and its unit is never `designer/`; otherwise the declaration would replace that unit's copy.
  */
-export function checkRecordLabels(tree: GroupTree, leaves: readonly RecordLabelLeaf[] = RECORD_LABEL_LEAVES): WriterTreeFinding[] {
+export function checkRecordLabels(tree: GroupTree, input: DesignerCopyInput, leaves: readonly RecordLabelLeaf[] = RECORD_LABEL_LEAVES): WriterTreeFinding[] {
   const findings: WriterTreeFinding[] = [];
   const fail = (message: string) => { findings.push({ code: "COPY", group: "copy", message: `COPY: ${message}` }); };
+  const designerUnits = new Set([
+    ...input.slots.map(slot => slot.id),
+    ...input.placements.flatMap(placement => [...placement.nodes.flatMap(l1 => l1.children.flatMap(l2 => l2.leaves)), ...(placement.retired ?? [])]),
+    ...input.retired,
+  ]);
   for (const leaf of leaves) {
+    const own = leaf.id.endsWith(".copy") ? leaf.id.slice(0, -".copy".length) : leaf.id;
+    if (designerUnits.has(own) || designerUnits.has(leaf.unit)) fail(`${leaf.id} is declared in record-label-fields.json but belongs to Designer unit designer/${designerUnits.has(own) ? own : leaf.unit}; a record-label leaf has no Designer unit`);
+    if (leaf.unit.startsWith("designer/")) fail(`${leaf.id} declares unit ${leaf.unit} in record-label-fields.json; a record-label leaf's unit is never a Designer unit`);
     const found = tree.slots.filter(slot => slot.id === leaf.id);
     if (found.length !== 1) { fail(`${leaf.id} is a declared record-label leaf (record-label-fields.json) with ${found.length} Copy slots`); continue; }
     const slot = found[0]!;

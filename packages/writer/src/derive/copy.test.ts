@@ -169,9 +169,27 @@ describe("Record labels are a declared Copy leaf Writer owns (CP1-WREC)", () => 
     l2.leaves = l2.leaves.filter(id => id !== ID);
     expect(messages(tree)).toContain(`COPY: ${ID} is a declared record-label leaf (record-label-fields.json) with 0 Copy slots`);
     const extra = { ...clone(RECORD_LABEL_LEAVES[0]!), id: "sections.more-records.copy" };
-    expect(checkRecordLabels(committed, [...RECORD_LABEL_LEAVES, extra]).map(finding => finding.message)).toEqual([
+    expect(checkRecordLabels(committed, input, [...RECORD_LABEL_LEAVES, extra]).map(finding => finding.message)).toEqual([
       "COPY: sections.more-records.copy is a declared record-label leaf (record-label-fields.json) with 0 Copy slots",
     ]);
+  });
+
+  it("(d) a declared leaf that belongs to a Designer unit is refused (fix round 1)", () => {
+    const breadcrumbs = committed.slots.find((entry: { id: string }) => entry.id === "components.breadcrumbs.copy");
+    const hijack = { id: "components.breadcrumbs.copy", placement: "copy/component-text/navigation", unit: "designer/components.breadcrumbs", fields: breadcrumbs.contract.copy.fields };
+    expect(checkRecordLabels(committed, input, [hijack]).map(finding => finding.message)).toEqual([
+      "COPY: components.breadcrumbs.copy is declared in record-label-fields.json but belongs to Designer unit designer/components.breadcrumbs; a record-label leaf has no Designer unit",
+      "COPY: components.breadcrumbs.copy declares unit designer/components.breadcrumbs in record-label-fields.json; a record-label leaf's unit is never a Designer unit",
+    ]);
+    const disguised = { ...clone(RECORD_LABEL_LEAVES[0]!), id: "sections.hero.copy", unit: "producer/admin-records" };
+    expect(checkRecordLabels(committed, input, [disguised]).map(finding => finding.message)).toContain(
+      "COPY: sections.hero.copy is declared in record-label-fields.json but belongs to Designer unit designer/sections.hero; a record-label leaf has no Designer unit",
+    );
+    const unitOnly = { ...clone(RECORD_LABEL_LEAVES[0]!), id: "sections.more-records.copy", unit: "sections.faq" };
+    expect(checkRecordLabels(committed, input, [unitOnly]).map(finding => finding.message)).toContain(
+      "COPY: sections.more-records.copy is declared in record-label-fields.json but belongs to Designer unit designer/sections.faq; a record-label leaf has no Designer unit",
+    );
+    expect(checkRecordLabels(committed, input)).toEqual([]);
   });
 
   it("mutation: a declared leaf with the wrong unit, stale fields or the wrong L2 fails", () => {
