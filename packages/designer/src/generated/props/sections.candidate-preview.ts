@@ -1,5 +1,5 @@
 // Generated from sections.candidate-preview by src/generated/props/generate.ts; do not edit.
-export const candidatePreviewContractSha256 = "0773e09fdd48768ccf00c6cdd6266768640c40ba7e2ca23a65e6d79e07a63c3f";
+export const candidatePreviewContractSha256 = "7c8762878a2693e9f9722096e966fb301af1c424a1e64b162b6e922e3cdcab44";
 
 export type CandidatePreviewCopy = Record<string, never>;
 export type CandidatePreviewVariant = Record<string, never>;
