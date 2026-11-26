@@ -64,8 +64,10 @@ traceability, not visual taste.
 Run `clossys design --check` before and after pinning and report actual findings.
 The check measures **pinned** candidates: an unpinned candidate cannot make the
 pinned result clean. Preserve expected findings until the requested pin occurs.
-Pin only within the session's decision authority, with
-`clossys pin designer/<slot> <candidate-id> --by <who> --basis <picked|bulk|planner>`.
+Pin only within the session's decision authority, by a form in the Designer
+skill's Who picks and pins, for example
+`clossys pin designer/<slot> <candidate file> --by owner:queue.<kind>#<id>` for an owner's
+pick or `clossys pin designer/<slot> <candidate file> --by planner:<ref>` for a planner pin.
 Then `clossys design --root <consumer>` prints the pinned set (written only to
 `--out`); it neither generates creative proposals nor pins them. Never hand-edit
 a `pin.json` or a generated projection.

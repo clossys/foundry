@@ -1,6 +1,6 @@
 ---
 name: clossys-designer
-description: Designer loop. For one L3 slot, reads its contract and references, picks, adopts or creates a shadcn-format registry item, shows the options, and pins the owner-approved one in the slot's pin.json. Invoke with @clossys-designer to fill or change a slot.
+description: Designer loop. For one L3 slot, reads its contract and references, picks, adopts or creates a shadcn-format registry item, shows the options, and pins the chosen one through `clossys pin`. Invoke with @clossys-designer to fill or change a slot.
 disable-model-invocation: true
 ---
 # clossys-designer
@@ -66,14 +66,17 @@ change is `v<N+1>`. The pin is the only selection; its history is git.
    `url`, `stars`, `weeklyDownloads`, `licence`), at most 2 `rejected` with the
    same numbers and a one-line `reason` each, `slotNeeded` (L4 only),
    `category` and `reason`. `npm run check:source-ladder` fails without it.
-2. **Read the contract.** Find the slot's row in `<layer>.json` under
-   `src/catalog/slot-contracts/` of the installed `@clossys/designer` (one file per layer: themes, assets, components, sections, frames; every Designer slot has a row).
+2. **Read the slot through the verbs.** `npx clossys slot designer/<slot>`
+   shows the slot: its brief, every candidate with its check summary, the pin
+   and who uses it. `npx clossys brief designer/<slot>` prints the resolved
+   brief, and `npx clossys options designer/<slot> --more` prints the brief for
+   fresh candidates with the reference's sources.
    Note every required input: copy keys (`kind: copy`), theme variables
    (`themes.*`) and assets. Read the Director brief:
    `npx clossys design --brief --root clossys --json` (exit 1 names each
    missing Director input). A missing input blocks the slot; ask the Director
    for it instead of guessing.
-3. **Read the references.** Each `references[]` row names a registry, item and
+3. **Read the references.** Each reference row names a registry, item and
    version (shadcn, Magic UI, Tailark and other trusted free registries). Read
    that item before building anything.
 4. **Choose a path** for each option:
@@ -101,14 +104,40 @@ change is `v<N+1>`. The pin is the only selection; its history is git.
    never invent an item. Stock shadcn first. Read every copy input from props, never hard-coded
    text; mark each copy element with `data-copy="<key>"`; use only the
    contract's theme variables.
-5. **Submit each option as a candidate** through the candidates verb (the packet
+5. **Record the verdict.** List the slot's candidates first:
+   `npx clossys options designer/<slot>`. Then judge them in a verdict file and
+   record it. When a held candidate fits, the verdict picks it, and the pick is
+   pinned as an agent pick (see Who picks and pins):
+   ```json
+   {"schema":"clossys.verdict/1","slot":"sections.hero","pick":"hero-v2.json","reason":"Binds every hero copy key and keeps the band rhythm.","criteria":["hierarchy","rhythm"]}
+   ```
+   When none fits, the verdict says create, and names each gap:
+   ```json
+   {"schema":"clossys.verdict/1","slot":"sections.hero","create":true,"reason":"No held candidate composes the pinned band.","gaps":[{"id":"compose.layers"}]}
+   ```
+   ```sh
+   npx clossys verdict designer/<slot> --record verdict.json --model <id> --tier <tier> --by agent:designer
+   ```
+   `criteria` and gap ids come from the slot's standard (its taste criteria, such
+   as `hierarchy`, and its requirement checks, such as `compose.layers`) or name a
+   brief key as `brief:<key>`. A component slot also gives each gap a `class`,
+   and at least one is `missing-behavior`, `a11y-failure` or `foundry-signature`,
+   for example `{"id":"composes.allowed","class":"missing-behavior"}`. An L1 or
+   L2 adopt needs no verdict. An L3 adapt or L4 create needs the slot's latest
+   verdict to be create, and the craft stages run in order before it is
+   submitted: `npx clossys craft brief designer/<slot> --model <id> --tier <tier> --skill <packet skill path>`,
+   then `diverge` (with `--file` holding 3 to 4 directions), `render`,
+   `critique` and at most 2 `refine` rounds, each with the same flags. The
+   `brief` stage needs the slot's inputs pinned; it names any that are missing.
+6. **Submit each option as a candidate** through the candidates verb (the packet
    from `npx clossys next --json` names the skill path):
    ```sh
-   npx clossys next designer/<slot> --submit option.json --name <element id> \
+   npx clossys next designer/<slot> --submit option.json \
      --model <id> --tier <tier> --basis agent --skill <packet skill path> \
      --rung <L1|L2|L3|L4> --seed <shadcn@aria/<item> or the reference id> [--reason <why no seed fit>]
    ```
-   `option.json` is the registry item: `name` (the element id), `type`
+   The CLI names the candidate after the slot leaf: `<leaf>-v<N>.json`, for
+   example `hero-v3.json`. `option.json` is the registry item: `name` (the element id), `type`
    (`registry:block` for a frame or section), `files[]` (`path`, `type`,
    `content`: every code file in full) and `meta`: `source` (`kind`
    `registry` for a pick, `derived` for an adopt or create, `original` only in a
@@ -119,29 +148,37 @@ change is `v<N+1>`. The pin is the only selection; its history is git.
    `creator`, `reason`, `createdAt`, `checks`, `deps`, `reads.copyKeys`,
    `reads.themeVars`) and `preview` (`fixtures`, sample `copy`, `container`,
    `theme`, `width`).
-6. **Show the options.** Snapshot each one at desktop and narrow widths:
+7. **Show the options.** Snapshot each one at desktop and narrow widths:
    ```sh
    npx clossys specimen snapshot --records clossys --element <id> --v <N> --width 1280,390
    ```
    or browse them all in Studio with `npx clossys produce`
    (`/designer/<slot>`). Give the owner the image paths, the path taken (pick,
    adopt or create) and one line on each trade-off. Do not pin anything yet.
-7. **Pin the approved option** only after the owner's explicit yes, and only
-   when its provenance and its code pass. Pin it, then run the gate over every
-   pin; a non-zero exit means unpin it (restore the previous `pin.json`), then
-   re-source the item from a trusted reference, cut the failing hunks, or file a request:
+8. **Pin the approved option** by one of the forms in Who picks and pins, and
+   only when its provenance and its code pass. For an owner's pick:
    ```sh
-   npx clossys pin designer/<slot> <element>-v<N> --by "owner:queue.pick#<entry id>"
+   npx clossys pin designer/<slot> <element>-v<N>.json --by "owner:queue.pick#<entry id>"
    npx designer-ref-verbatim --root clossys --pinned
    ```
-   `--by` names the owner's approval message; never pin without it, and never
-   hand-edit `pin.json`. To go back, pin the earlier candidate again.
-8. **Check and commit.**
+   The second line runs the gate over every pin. A non-zero exit means pin the
+   previous candidate again, then re-source the item from a trusted reference,
+   cut the failing hunks, or file a request. Pin in dependency order: themes,
+   then assets, then components, then sections, then frames. A slot can be
+   pinned only after the slots it reads are pinned.
+9. **Check and commit.** A pin also writes engine state under `clossys/`, so
+   commit the whole folder:
    ```sh
    npx clossys check --suites
-   git add clossys/agents/designer/<slot>   # consumer files, not shipped
+   git add clossys/   # consumer files, not shipped
    git commit -m "designer: pin <slot> <element> v<N>"
    ```
+
+While the chain is held upstream (`clossys run` or `clossys next` stops at
+another agent's step), you can still work your own slot:
+`npx clossys run loop.fill --slot designer/<slot>`, or the verbs above in order.
+Submitting a candidate does not wait for upstream pins. The craft `brief` stage
+and the pin do, and each names the slot it is waiting on.
 
 ## Cascade
 
@@ -245,6 +282,33 @@ Before choosing a leaf for a parent that composes other slots, read
 stays draft. For the older consumer-library commands see
 [Agent library commands](library-commands.md).
 
+## Who picks and pins
+
+This rule is the same in every Clossys skill. A pin chooses one candidate for a slot. The CLI accepts
+the forms below and refuses every other one.
+
+- **The owner picks.** The owner's answer is recorded in a queue entry first (an Interview round,
+  `clossys answer`, or `clossys request <id> --answer`). The pin then names that entry:
+  `clossys pin <agent>/<slot> <candidate file> --by owner:queue.<kind>#<id>`. Add `--basis bulk` when
+  the owner approved a whole group at once. A bare `--by owner` is refused.
+- **The planner pins.** `clossys pin <agent>/<slot> <candidate file> --by planner:<ref>`, where
+  `<ref>` says where the planner's decision is written down.
+- **The agent picks and the owner confirms.** The slot's own agent picks with
+  `clossys pick <agent>/<slot> <candidate file> --by agent:<agent>`, or with a pick verdict
+  (`clossys verdict`). An agent picks only on its own agent's slots, and never over an owner's pick.
+  The owner confirms it later with
+  `clossys pin <agent>/<slot> <candidate file> --confirm --by owner:queue.<kind>#<id>`.
+
+`<candidate file>` is the candidate's file name with its extension, such as `hero-v2.json` or
+`meta-v1.md`. A slot can be pinned only after every slot it reads is pinned. The loops can also pin
+by code (`--by code:scorecard`) on a slot with no owner step; you never type that form. Never write
+`pin.json` by hand.
+
+What counts as done: in `clossys status`, a slot the owner picked shows as `pinned`. A planner, bulk,
+agent or code pin shows as `confirm`: the slot is filled, and the owner can still confirm or change
+it. A slot shown as `sample` (still on the package default), `unresolved`, `failing` or
+`needsRefresh` is not done.
+
 ## Interview
 
 Run the Producer skill's Interview contract (`clossys-producer`, section Interview) for agent
@@ -260,9 +324,12 @@ no pin, stale citations of Director cells, and failing checks.
 - `designer-ref-verbatim --pinned` passed for the pinned candidate.
 - Every required copy input of the contract appears in `reads.copyKeys`, so
   Writer can fill it.
-- `check-section-tokens.mjs` reports nothing for the consumer, and every page
-  that mounts the slot passes `check-page-overflow.mjs` at 375, 768 and 1280.
-- The candidate and pin are committed.
+- `npx designer-section-check --root clossys` reports nothing for the
+  consumer, and every page that mounts the slot passes
+  `npx designer-overflow-check` at 375, 768 and 1280.
+- `npx clossys status --agent designer` shows the slot as `pinned` or
+  `confirm` (see Who picks and pins).
+- Everything under `clossys/` is committed.
 
 Report in plain language: the slot, the pinned candidate, the path
 taken, and the snapshot paths.

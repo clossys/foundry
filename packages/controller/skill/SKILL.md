@@ -22,6 +22,33 @@ Invoke me with `loop`: `/clossys-controller loop` in Claude Code,
 inside `judge` -- it never continues past that gate on its own, and never on
 a bare mention with no `loop` keyword.
 
+## Who picks and pins
+
+This rule is the same in every Clossys skill. A pin chooses one candidate for a slot. The CLI accepts
+the forms below and refuses every other one.
+
+- **The owner picks.** The owner's answer is recorded in a queue entry first (an Interview round,
+  `clossys answer`, or `clossys request <id> --answer`). The pin then names that entry:
+  `clossys pin <agent>/<slot> <candidate file> --by owner:queue.<kind>#<id>`. Add `--basis bulk` when
+  the owner approved a whole group at once. A bare `--by owner` is refused.
+- **The planner pins.** `clossys pin <agent>/<slot> <candidate file> --by planner:<ref>`, where
+  `<ref>` says where the planner's decision is written down.
+- **The agent picks and the owner confirms.** The slot's own agent picks with
+  `clossys pick <agent>/<slot> <candidate file> --by agent:<agent>`, or with a pick verdict
+  (`clossys verdict`). An agent picks only on its own agent's slots, and never over an owner's pick.
+  The owner confirms it later with
+  `clossys pin <agent>/<slot> <candidate file> --confirm --by owner:queue.<kind>#<id>`.
+
+`<candidate file>` is the candidate's file name with its extension, such as `hero-v2.json` or
+`meta-v1.md`. A slot can be pinned only after every slot it reads is pinned. The loops can also pin
+by code (`--by code:scorecard`) on a slot with no owner step; you never type that form. Never write
+`pin.json` by hand.
+
+What counts as done: in `clossys status`, a slot the owner picked shows as `pinned`. A planner, bulk,
+agent or code pin shows as `confirm`: the slot is filled, and the owner can still confirm or change
+it. A slot shown as `sample` (still on the package default), `unresolved`, `failing` or
+`needsRefresh` is not done.
+
 ## When this package is installed
 
 If `node_modules/@clossys/controller` is present (or this package's bins are on PATH), use the exact pin in the tree. Read `package.json` `bin` for the real command names.
