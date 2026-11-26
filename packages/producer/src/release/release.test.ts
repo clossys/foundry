@@ -104,7 +104,8 @@ describe("clossys publisher release --manifest", () => {
     const events = (readLedger(dir, "slot")?.events ?? []) as unknown as Record<string, unknown>[];
     const submits = events.filter(event => event.op === "submit");
     expect(submits).toHaveLength(1);
-    expect(submits[0]).toMatchObject({ name: "site-v1.json", sha256: manifest.sha256 });
+    // It names its ladder rung (R03.1, CP1-U2 G12): the manifest adapts the build it records, its seed.
+    expect(submits[0]).toMatchObject({ name: "site-v1.json", sha256: manifest.sha256, rung: "adapt", seed: `build:${content.build.id}` });
     expect(JSON.stringify(submits[0])).toContain("packages/producer/actions/publisher.release/action.json");
     expect(lastRecordState(events, "slot.json")?.sha256).toBe(sha256Hex(readFileSync(join(dir, "slot.json"))));
   });

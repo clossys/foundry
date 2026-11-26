@@ -159,7 +159,9 @@ export function writeManifest(root: string, publication: string, options: { now?
   // lock, so R14.1 and the pin gate find the manifest's provenance like every other candidate's. The event cites the
   // plumb action that runs the release (publisher.release), by Producer code.
   const { sha256 } = writeCandidateBytes(join(root, "clossys"), "publisher", slotId, name, serializeCandidate(name, header, content), {
-    at, fields: { reason: `clossys publisher release ${publication} --manifest: build ${build.id.slice(0, 12)}` },
+    // The selection ladder (pipeline/candidate-ladder.ts, R03.1): the manifest adapts the build it records, so the
+    // submit names rung adapt and that build as its seed.
+    at, fields: { rung: "adapt", seed: `build:${build.id}`, reason: `clossys publisher release ${publication} --manifest: build ${build.id.slice(0, 12)}` },
   }, { verb: "submit", by: "producer", skill: actionContractPath("producer", "publisher.release") });
   return { name, file, rel: rel(name), sha256, content, reused: false };
 }

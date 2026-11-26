@@ -17,8 +17,10 @@
  *   page supplies, and no agent id is a value a static admin route reserves for `<agent>`; the admin publication is fixed,
  *   so its root (the plan's, and the seated contract's) is a static prefix, never `/`, with every page route under it.
  *
- * A workspace with no slot model and no views pointer has no admin workspace to lack yet: `skip`, printed.
- * `clossys init` seats and rewires what is missing (cli/init-admin.ts).
+ * A workspace with no slot model and no views pointer has no admin workspace to lack yet: `skip`, printed. The admin
+ * starter is an opt-in (foundry-build-0048 CP1-U2: the consumer owns its pages), so a workspace that placed no slot of
+ * its plan did not opt in: `skip`, with that reason. Once any admin slot is placed, the whole starter is judged.
+ * `clossys init --starters admin` seats and rewires what is missing (cli/init-admin.ts).
  */
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
@@ -33,7 +35,10 @@ import { POINTER_START } from "../views/agents-pointer.js";
 export const ADMIN_SEATED = "publisher.admin-seated";
 
 export interface AdminSeatedFinding { readonly subject: string; readonly detail: string }
-export interface AdminSeatedResult { readonly check: typeof ADMIN_SEATED; readonly status: "pass" | "fail" | "skip"; readonly findings: readonly AdminSeatedFinding[] }
+export interface AdminSeatedResult { readonly check: typeof ADMIN_SEATED; readonly status: "pass" | "fail" | "skip"; readonly findings: readonly AdminSeatedFinding[]; readonly reason?: string }
+
+/** Why a workspace that placed no admin slot is skipped: it did not opt in to the starter. */
+export const NOT_OPTED_IN = "no admin starter slot is placed: the consumer owns its pages; clossys init --starters admin seats the starter";
 
 /** True when `clossys init` ran in the workspace at `root`: its AGENTS.md has the views pointer. */
 export function initialised(root: string): boolean {
@@ -60,13 +65,12 @@ function judgeSeat(root: string, consumer: string): AdminSeatedResult {
   try { plan = adminPlan(root); }
   catch (error) { return { check: ADMIN_SEATED, status: "fail", findings: [{ subject: "publisher/starters/admin", detail: `the admin workspace plan could not be read from the installed Publisher package (${(error as Error).message})` }] }; }
   const wanted = [...plan.pages.map(page => page.id), plan.publication];
-  const fix = "run clossys init: the admin workspace is a fixed Publisher publication";
-  if (!modelExists(iaPath(consumer, "publisher"))) {
-    return { check: ADMIN_SEATED, status: "fail", findings: [{ subject: "publisher/ia.json", detail: `missing: no Publisher IA, so no admin publication (${wanted.length} slots); ${fix}` }] };
-  }
+  const fix = "run clossys init --starters admin: the admin starter is seated whole";
+  if (!modelExists(iaPath(consumer, "publisher"))) return { check: ADMIN_SEATED, status: "skip", findings: [], reason: NOT_OPTED_IN };
   let entries: Map<string, ReturnType<typeof listSlots>[number]>;
   try { entries = new Map(listSlots(consumer, "publisher").map(entry => [entry.id, entry])); }
   catch (error) { return { check: ADMIN_SEATED, status: "fail", findings: [{ subject: "publisher/ia.json", detail: `unreadable (${(error as Error).message}), so no admin publication can be judged; ${fix}` }] }; }
+  if (!wanted.some(id => entries.has(id))) return { check: ADMIN_SEATED, status: "skip", findings: [], reason: NOT_OPTED_IN };
   // An agent IA that cannot be read leaves the wiring indeterminate: a finding, so no admin seat counts as seated.
   const unreadable: AdminSeatedFinding[] = [];
   const held = new Set(SLOT_AGENTS.flatMap(agent => {
@@ -87,7 +91,7 @@ function judgeSeat(root: string, consumer: string): AdminSeatedResult {
     const missing = Object.keys(expected).filter(key => !named.includes(key) && !Object.hasOwn(have, key));
     const differ = Object.keys(expected).filter(key => !named.includes(key) && Object.hasOwn(have, key) && !sameJson(have[key], expected[key]));
     const parts = ([["extra", extra], ["missing", missing], ["differs", differ]] as const).filter(([, keys]) => keys.length).map(([label, keys]) => `${label} ${keys.join(", ")}`);
-    return parts.length ? [`contract differs from the package contract: ${parts.join("; ")} (run clossys init to restore it)`] : [];
+    return parts.length ? [`contract differs from the package contract: ${parts.join("; ")} (run clossys init --starters admin to restore it)`] : [];
   };
   const judge = (id: string, kind: "page" | "publication", contract: (value: Readonly<Record<string, unknown>>) => string[], composition: readonly string[], named: readonly string[]) => {
     const subject = `publisher/${id}`;
@@ -97,9 +101,9 @@ function judgeSeat(root: string, consumer: string): AdminSeatedResult {
     if (entry.position.l1 !== ADMIN_L1) issues.push(`sits under the ${entry.position.l1} tab, not ${ADMIN_L1}`);
     const read = readAdminSlot(entry.dir);
     if (!read) { findings.push({ subject, detail: [...issues, "slot.json is missing or not a valid slot"].join("; ") }); return; }
-    if (!read.current) issues.push(`slot.json is ${String(read.doc.schema)}; run clossys init to rewrite it as clossys.slot/2`);
+    if (!read.current) issues.push(`slot.json is ${String(read.doc.schema)}; run clossys init --starters admin to rewrite it as clossys.slot/2`);
     if (read.doc.kind !== kind) issues.push(`kind is ${String(read.doc.kind)}, not ${kind}`);
-    if (read.doc.standard !== kind) issues.push(`standard is ${String(read.doc.standard)}, not ${kind} (run clossys init to restore it)`);
+    if (read.doc.standard !== kind) issues.push(`standard is ${String(read.doc.standard)}, not ${kind} (run clossys init --starters admin to restore it)`);
     const raw = read.doc.contract as unknown;
     issues.push(...contract(raw !== null && typeof raw === "object" ? raw as Readonly<Record<string, unknown>> : {}));
     issues.push(...closed(id, raw, named));
@@ -112,7 +116,7 @@ function judgeSeat(root: string, consumer: string): AdminSeatedResult {
     for (const field of ["uncited", "undeclared"] as const) {
       const rels = inputs[field] && inputs[field] === uses[field] ? [["inputs and uses", inputs[field]]] : [["inputs", inputs[field]], ["uses", uses[field]]].filter(([, ids]) => ids);
       for (const [rel, ids] of rels) issues.push(field === "uncited"
-        ? `${rel} cite no ${ids}, which the workspace holds (run clossys init to rewire)`
+        ? `${rel} cite no ${ids}, which the workspace holds (run clossys init --starters admin to rewire)`
         : `${rel} name ${ids}, outside its package composition (undeclared input)`);
     }
     if (issues.length) findings.push({ subject, detail: `${issues.join("; ")}; the admin seat is the Publisher package's, not the workspace's` });
@@ -149,5 +153,5 @@ function judgeSeat(root: string, consumer: string): AdminSeatedResult {
 }
 
 /** The `clossys check` line: always printed, a skip included. */
-export const adminSeatedSummary = (result: AdminSeatedResult): string => result.status === "skip" ? `${ADMIN_SEATED}: skip (no slot model and no clossys init: no admin workspace to judge)`
+export const adminSeatedSummary = (result: AdminSeatedResult): string => result.status === "skip" ? `${ADMIN_SEATED}: skip (${result.reason ?? "no slot model and no clossys init: no admin workspace to judge"})`
   : result.status === "pass" ? `${ADMIN_SEATED}: pass` : [`${ADMIN_SEATED}: fail (${result.findings.length})`, ...result.findings.map(finding => `  ${finding.subject}: ${finding.detail}`)].join("\n");

@@ -4,6 +4,7 @@
  * and its dogfood rows, prints one RED/GREEN line per assertion with every red row, and exits 1 while any
  * cell is red. Report-only: it reads, prints and records nothing, and no gate runs it.
  */
+import { existsSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { CONFORM_AGENTS, readConformModel, type ConformAgent } from "../conform/model.js";
 import { readProbeFacts } from "../conform/dogfood.js";
@@ -36,6 +37,8 @@ export async function runConformCli(argv: readonly string[], _cwd: string): Prom
     throw new CliUsageError(`Unknown option ${arg}\n${CONFORM_USAGE}`);
   }
   if (agent !== undefined && !(CONFORM_SUBJECTS as readonly string[]).includes(agent)) throw new CliUsageError(`--agent must be one of ${CONFORM_SUBJECTS.join(", ")}\n${CONFORM_USAGE}`);
+  // A consumer root holds agents/ (G18): a directory without it is no consumer, so its report would judge nothing.
+  if (consumer !== undefined && !existsSync(join(consumer, "agents"))) throw new CliUsageError(`--consumer ${consumer} is not a consumer root: it has no agents/ directory\n${CONFORM_USAGE}`);
   const root = consumer ?? join(repo, "packages/producer/test-fixtures/consumer/clossys");
   const agents = agent === "producer" ? [] : agent ? [agent as ConformAgent] : CONFORM_AGENTS;
   const model = readConformModel(repo, root, agents);

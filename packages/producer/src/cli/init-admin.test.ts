@@ -8,7 +8,7 @@ import { mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, symlinkSync
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
-import { ADMIN_SEATED, adminSeatedSummary, runAdminSeated } from "../check/admin-seated.js";
+import { ADMIN_SEATED, NOT_OPTED_IN, adminSeatedSummary, runAdminSeated } from "../check/admin-seated.js";
 import { AGENT_LOOPS } from "../loop/agent-loops-ia.js";
 import { listRequests } from "../records/request.js";
 import { resolveSlot } from "../records/resolve.js";
@@ -72,7 +72,7 @@ describe("the admin plan is the Publisher admin starter", () => {
 describe("clossys init seats the admin workspace", { timeout: 60_000 }, () => {
   it("places the five admin pages and publication.admin in the admin tab of a new Publisher IA, one group each", async () => {
     const root = workspace();
-    const result = await runInitCli(["--at", AT], root);
+    const result = await runInitCli(["--starters", "admin", "--at", AT], root);
     expect(result.exitCode, result.message).toBe(0);
     const seat = seatOf(result.output);
     expect(seat.started).toBe(true);
@@ -89,7 +89,7 @@ describe("clossys init seats the admin workspace", { timeout: 60_000 }, () => {
   it("cites only the Designer units the workspace holds and raises one Designer request for each unit it lacks", async () => {
     const root = workspace();
     const plan = adminPlan(root);
-    const seat = seatOf((await runInitCli(["--at", AT], root)).output);
+    const seat = seatOf((await runInitCli(["--starters", "admin", "--at", AT], root)).output);
     const units = [...new Set(plan.pages.flatMap(page => page.uses))];
     expect(units).toEqual(expect.arrayContaining(["frames.app-sidebar", "sections.slot-gallery", "sections.slot-detail", "sections.candidate-preview", "sections.question-packet", "sections.queue-list"]));
     expect(seat.requests.map(request => [request.from, request.target, request.created])).toEqual(units.map(unit => ["owner", `designer/${unit}`, true]));
@@ -110,7 +110,7 @@ describe("clossys init seats the admin workspace", { timeout: 60_000 }, () => {
   it("cites the frame and sections a workspace holds: with the Designer IA adopted, every page reads its whole composition and nothing is raised", async () => {
     const root = workspace();
     await adopt(root);
-    const result = await runInitCli(["--at", AT], root);
+    const result = await runInitCli(["--starters", "admin", "--at", AT], root);
     expect(result.exitCode, result.message).toBe(0);
     const seat = seatOf(result.output);
     expect(seat.placed).toEqual([...PAGES, ADMIN_PUBLICATION_SLOT]);
@@ -125,14 +125,14 @@ describe("clossys init seats the admin workspace", { timeout: 60_000 }, () => {
 
   it("rewires on a re-run: init, then the Director and Designer adopt, then init again cites every held unit and the admin row passes", async () => {
     const root = workspace();
-    expect((await runInitCli(["--at", AT], root)).exitCode).toBe(0);
+    expect((await runInitCli(["--starters", "admin", "--at", AT], root)).exitCode).toBe(0);
     await adopt(root);
     // Between the runs the pages cite nothing the workspace now holds: the check names each uncited unit.
     const stale = runAdminSeated(root);
     expect(stale.status).toBe("fail");
     expect(stale.findings.map(finding => finding.subject)).toEqual(PAGES.map(page => `publisher/${page}`));
-    for (const finding of stale.findings) expect(finding.detail, finding.subject).toMatch(/^inputs and uses cite no frames\.app-shell, frames\.app-sidebar, sections\.page-header, .*which the workspace holds \(run clossys init to rewire\)/);
-    const again = await runInitCli(["--at", "2026-11-18T10:00:00Z"], root);
+    for (const finding of stale.findings) expect(finding.detail, finding.subject).toMatch(/^inputs and uses cite no frames\.app-shell, frames\.app-sidebar, sections\.page-header, .*which the workspace holds \(run clossys init --starters admin to rewire\)/);
+    const again = await runInitCli(["--starters", "admin", "--at", "2026-11-18T10:00:00Z"], root);
     expect(again.exitCode, again.message).toBe(0);
     const seat = seatOf(again.output);
     expect(seat.placed).toEqual([]);
@@ -149,12 +149,12 @@ describe("clossys init seats the admin workspace", { timeout: 60_000 }, () => {
     // Six admin slots and Publisher's five loop slots (U20: init adopts the loops of the agents it places).
     expect(check.message).toMatch(/publisher: 11 slots .*inputs-undeclared 0/);
     // A third run on the wired workspace rewrites nothing.
-    expect(seatOf((await runInitCli(["--at", "2026-11-18T11:00:00Z"], root)).output).rewired).toEqual([]);
+    expect(seatOf((await runInitCli(["--starters", "admin", "--at", "2026-11-18T11:00:00Z"], root)).output).rewired).toEqual([]);
   }, 120_000);
 
   it("writes each admin slot as clossys.slot/2, so a fresh init passes the admin rows of clossys check", async () => {
     const root = workspace();
-    await runInitCli(["--at", AT], root);
+    await runInitCli(["--starters", "admin", "--at", AT], root);
     for (const slot of [...PAGES, ADMIN_PUBLICATION_SLOT]) expect(JSON.parse(readFileSync(slotPath(root, slot), "utf8")).schema, slot).toBe("clossys.slot/2");
     const check = await runCli(["check", "--root", root]);
     expect(check.message).toContain(`${ADMIN_SEATED}: pass`);
@@ -162,15 +162,14 @@ describe("clossys init seats the admin workspace", { timeout: 60_000 }, () => {
     expect((check as unknown as { checks?: Record<string, unknown> }).checks?.[ADMIN_SEATED]).toBeUndefined();
   });
 
-  it("pins the expected-red state of clossys check on a fresh init (unmocked): exit 1 on 6 Publisher no-pin rows (5 pages, the publication), inputs-undeclared 5, and the Director's empty cells", async () => {
+  it("pins the expected-red state of clossys check on a fresh init (unmocked): exit 1 on 6 Publisher no-candidate and no-pin rows (5 pages, the publication), inputs-undeclared 5, and the Director's empty cells", async () => {
     const root = workspace();
-    expect((await runInitCli(["--at", AT], root)).exitCode).toBe(0);
+    expect((await runInitCli(["--starters", "admin", "--at", AT], root)).exitCode).toBe(0);
     const check = await runCli(["check", "--root", root]);
-    // foundry-build-0048 U20: init seeds every admin slot with its package default (admin-v1.json) and adopts and pins
-    // Publisher's five loops. Each page waits for its frame, sections and copy to be pinned upstream (a bare workspace
-    // pins none), and the publication waits for its pages: the guarded pin refuses it over unpinned upstream (R02.2,
-    // upstream is pinned before downstream). So the default check is red on the six admin pins alone: 11 Publisher
-    // slots (6 admin, 5 loops), each with a candidate, 5 pinned (the loops).
+    // foundry-build-0048 U20, CP1-U2 (G14): init seeds an admin slot with its package default (<leaf>-v1.json) only once
+    // the slot declares every slot the record cites, and adopts and pins Publisher's five loops. A bare workspace holds
+    // none of a page's frame, sections or copy, nor the publication's meta copy, so no admin record is seeded: each admin
+    // slot waits with no candidate and no pin. 11 Publisher slots (6 admin, 5 loops), 5 with a candidate, 5 pinned (the loops).
     expect(check.exitCode).toBe(1);
     expect(check.message).toContain(`${ADMIN_SEATED}: pass`);
     expect(check.message).toContain("loop.agent-standard: pass");
@@ -178,18 +177,18 @@ describe("clossys init seats the admin workspace", { timeout: 60_000 }, () => {
     // CHAT-DIR gap 8: the init adopted the Director's whole IA (each cell empty until the interview) and pinned its five
     // loops, so each Director cell adds a no-candidate and a no-pin row.
     const cells = [...directorIa().slots.keys()];
-    expect(check.message).toContain(`Slot integrity found ${6 + 2 * cells.length} findings across ${11 + cells.length + AGENT_LOOPS.length} slots.`);
+    expect(check.message).toContain(`Slot integrity found ${12 + 2 * cells.length} findings across ${11 + cells.length + AGENT_LOOPS.length} slots.`);
     expect(check.message).toContain(`director: ${cells.length + AGENT_LOOPS.length} slots / ${AGENT_LOOPS.length} with candidate / ${AGENT_LOOPS.length} pinned; inputs-undeclared 0`);
-    expect(check.message).toContain("publisher: 11 slots / 11 with candidate / 5 pinned; inputs-undeclared 5");
+    expect(check.message).toContain("publisher: 11 slots / 5 with candidate / 5 pinned; inputs-undeclared 5");
     const rows = check.message.split("\n").filter(line => /^  [a-z]+:[a-z0-9.-]+ \[/.test(line));
-    expect(rows.filter(row => row.startsWith("  publisher:"))).toEqual([...PAGES, ADMIN_PUBLICATION_SLOT].map(slot => `  publisher:${slot} [no-pin] No candidate is pinned.`));
+    expect(rows.filter(row => row.startsWith("  publisher:")).sort()).toEqual([...PAGES, ADMIN_PUBLICATION_SLOT].flatMap(slot => [`  publisher:${slot} [no-candidate] No candidate file exists.`, `  publisher:${slot} [no-pin] No candidate is pinned.`]).sort());
     expect(rows.filter(row => !row.startsWith("  publisher:")).sort()).toEqual(cells.flatMap(cell => [`  director:${cell} [no-candidate] No candidate file exists.`, `  director:${cell} [no-pin] No candidate is pinned.`]).sort());
   }, 120_000);
 
   it("is idempotent: a second run places nothing and raises nothing new", async () => {
     const root = workspace();
-    const first = seatOf((await runInitCli(["--at", AT], root)).output);
-    const again = await runInitCli(["--at", "2026-11-18T10:00:00Z"], root);
+    const first = seatOf((await runInitCli(["--starters", "admin", "--at", AT], root)).output);
+    const again = await runInitCli(["--starters", "admin", "--at", "2026-11-18T10:00:00Z"], root);
     expect(again.exitCode, again.message).toBe(0);
     const second = seatOf(again.output);
     expect(second.started).toBe(false);
@@ -201,7 +200,7 @@ describe("clossys init seats the admin workspace", { timeout: 60_000 }, () => {
 
   it("seeds each admin page with its package default: a placed page with no pin resolves to it as a sample", async () => {
     const root = workspace();
-    await runInitCli(["--at", AT], root);
+    await runInitCli(["--starters", "admin", "--at", AT], root);
     for (const page of PAGES) {
       const resolution = resolveSlot(root, "publisher", page);
       expect(resolution.state, page).toBe("sample");
@@ -214,7 +213,7 @@ describe("clossys init seats the admin workspace", { timeout: 60_000 }, () => {
     const link = join(realpathSync(mkdtempSync(join(tmpdir(), "init-admin-link-"))), "ws");
     roots.push(dirname(link));
     symlinkSync(real, link, "dir");
-    const result = await runInitCli(["--at", AT, "--root", link], link);
+    const result = await runInitCli(["--starters", "admin", "--at", AT, "--root", link], link);
     expect(result.exitCode, result.message).toBe(0);
     expect(seatOf(result.output).placed).toEqual([...PAGES, ADMIN_PUBLICATION_SLOT]);
   });
@@ -231,29 +230,30 @@ describe("publisher.admin-seated", { timeout: 60_000 }, () => {
     expect(adminSeatedSummary(result)).toBe(`${ADMIN_SEATED}: skip (no slot model and no clossys init: no admin workspace to judge)`);
   });
 
-  it("mutation: a slot-model workspace clossys init never ran in is judged, and fails without the admin seat", async () => {
+  // CP1-U2: the admin starter is an opt-in (the consumer owns its pages), so a workspace that placed no admin slot is
+  // skipped with that reason; one that placed any admin slot is judged on the whole starter (the mutations below).
+  it("skips a slot-model workspace that placed no admin slot (not opted in), and prints why", async () => {
     const root = workspace();
     await adopt(root);
     const result = runAdminSeated(root);
-    expect(result.status).toBe("fail");
-    expect(result.findings.map(finding => finding.subject)).toEqual(["publisher/ia.json"]);
+    expect(result).toEqual({ check: ADMIN_SEATED, status: "skip", findings: [], reason: NOT_OPTED_IN });
     const check = await runCli(["check", "--root", root]);
-    expect(check.message).toContain(`${ADMIN_SEATED}: fail (1)`);
+    expect(check.message).toContain(`${ADMIN_SEATED}: skip (${NOT_OPTED_IN})`);
   }, 60_000);
 
   it("mutation: removing the views pointer after init opts nothing out (the slot model is judged)", async () => {
     const root = workspace();
-    await runInitCli(["--at", AT], root);
+    await runInitCli(["--starters", "admin", "--at", AT], root);
     rmSync(join(root, "AGENTS.md"), { force: true });
-    rmSync(join(root, "clossys", "agents", "publisher"), { recursive: true, force: true });
+    editSlot(root, "page.admin-home", doc => { doc.contract.route = "/"; });
     const result = runAdminSeated(root);
     expect(result.status).toBe("fail");
-    expect(result.findings.map(finding => finding.subject)).toEqual(["publisher/ia.json"]);
+    expect(result.findings.map(finding => finding.subject)).toEqual(["publisher/page.admin-home"]);
   });
 
   it("mutation: a hollowed publication.admin (no pages, publication site) fails", async () => {
     const root = workspace();
-    await runInitCli(["--at", AT], root);
+    await runInitCli(["--starters", "admin", "--at", AT], root);
     editSlot(root, ADMIN_PUBLICATION_SLOT, doc => { doc.contract.pages = []; });
     const empty = runAdminSeated(root);
     expect(empty.status).toBe("fail");
@@ -268,7 +268,7 @@ describe("publisher.admin-seated", { timeout: 60_000 }, () => {
 
   it("mutation: page.admin-home repointed (publication site, route /, composes nothing) fails on each", async () => {
     const root = workspace();
-    await runInitCli(["--at", AT], root);
+    await runInitCli(["--starters", "admin", "--at", AT], root);
     editSlot(root, "page.admin-home", doc => { doc.contract.publication = "site"; doc.contract.route = "/"; doc.contract.composes = []; });
     const result = runAdminSeated(root);
     expect(result.status).toBe("fail");
@@ -283,7 +283,7 @@ describe("publisher.admin-seated", { timeout: 60_000 }, () => {
 
   it("mutation: the admin tab renamed in the Publisher IA fails every admin slot", async () => {
     const root = workspace();
-    await runInitCli(["--at", AT], root);
+    await runInitCli(["--starters", "admin", "--at", AT], root);
     const iaFile = join(root, "clossys", "agents", "publisher", "ia.json");
     const ia = JSON.parse(readFileSync(iaFile, "utf8")) as { nodes: { id: string }[] };
     for (const l1 of ia.nodes) if (l1.id === "admin") l1.id = "site";
@@ -297,21 +297,21 @@ describe("publisher.admin-seated", { timeout: 60_000 }, () => {
   it("mutation: a page that cites an input outside its composition, or drops a held unit, fails", async () => {
     const root = workspace();
     await adopt(root);
-    await runInitCli(["--at", AT], root);
+    await runInitCli(["--starters", "admin", "--at", AT], root);
     editSlot(root, "page.admin-gallery", doc => { doc.refs = [...doc.refs, { to: "designer/sections.hero", rel: "input" }]; });
     editSlot(root, "page.admin-requests", doc => { doc.refs = doc.refs.filter((ref: { to: string; rel: string }) => !(ref.to === "designer/sections.queue-list" && ref.rel === "uses")); });
     const result = runAdminSeated(root);
     expect(result.status).toBe("fail");
     expect(result.findings.map(finding => [finding.subject, finding.detail.split("; the admin seat")[0]])).toEqual([
       ["publisher/page.admin-gallery", "inputs name sections.hero, outside its package composition (undeclared input)"],
-      ["publisher/page.admin-requests", "uses cite no sections.queue-list, which the workspace holds (run clossys init to rewire)"],
+      ["publisher/page.admin-requests", "uses cite no sections.queue-list, which the workspace holds (run clossys init --starters admin to rewire)"],
     ]);
   }, 60_000);
 
   it("mutation: a corrupt agent IA is indeterminate, never seated", async () => {
     const root = workspace();
     await adopt(root);
-    expect((await runInitCli(["--at", AT], root)).exitCode).toBe(0);
+    expect((await runInitCli(["--starters", "admin", "--at", AT], root)).exitCode).toBe(0);
     expect(runAdminSeated(root).status).toBe("pass");
     writeFileSync(join(root, "clossys", "agents", "designer", "ia.json"), "{ not json");
     const result = runAdminSeated(root);
@@ -326,9 +326,9 @@ describe("publisher.admin-seated", { timeout: 60_000 }, () => {
   it("mutation: clossys init on a workspace with a corrupt agent IA refuses with exit 1, naming the IA, and does not throw", async () => {
     const root = workspace();
     await adopt(root);
-    expect((await runInitCli(["--at", AT], root)).exitCode).toBe(0);
+    expect((await runInitCli(["--starters", "admin", "--at", AT], root)).exitCode).toBe(0);
     writeFileSync(join(root, "clossys", "agents", "designer", "ia.json"), "{ not json");
-    const again = await runInitCli(["--at", "2026-11-18T10:00:00Z"], root);
+    const again = await runInitCli(["--starters", "admin", "--at", "2026-11-18T10:00:00Z"], root);
     expect(again.exitCode).toBe(1);
     expect(again.message).toContain("designer/ia.json is unreadable");
   }, 60_000);
@@ -352,7 +352,7 @@ describe("publisher.admin-seated", { timeout: 60_000 }, () => {
   ];
   it.each(TAMPERS)("mutation: every admin seat tamper fails (%s)", async (_name, slot, edit, details) => {
     const root = workspace();
-    expect((await runInitCli(["--at", AT], root)).exitCode).toBe(0);
+    expect((await runInitCli(["--starters", "admin", "--at", AT], root)).exitCode).toBe(0);
     expect(runAdminSeated(root).status).toBe("pass");
     editSlot(root, slot, edit);
     const result = runAdminSeated(root);
@@ -364,21 +364,21 @@ describe("publisher.admin-seated", { timeout: 60_000 }, () => {
 
   it("mutation: a clossys.slot/1 admin seat fails (planner decision 5: admin seats are slot/2)", async () => {
     const root = workspace();
-    expect((await runInitCli(["--at", AT], root)).exitCode).toBe(0);
+    expect((await runInitCli(["--starters", "admin", "--at", AT], root)).exitCode).toBe(0);
     const read = readAdminSlot(join(root, "clossys", "agents", "publisher", "page.admin-home"))!;
     writeFileSync(slotPath(root, "page.admin-home"), `${JSON.stringify({ ...currentView(read.current!), schema: "clossys.slot/1" }, null, 2)}\n`);
     expect(readAdminSlot(join(root, "clossys", "agents", "publisher", "page.admin-home"))?.current).toBeUndefined();
     const result = runAdminSeated(root);
     expect(result.status).toBe("fail");
-    expect(result.findings.find(each => each.subject === "publisher/page.admin-home")?.detail).toContain("slot.json is clossys.slot/1; run clossys init to rewrite it as clossys.slot/2");
+    expect(result.findings.find(each => each.subject === "publisher/page.admin-home")?.detail).toContain("slot.json is clossys.slot/1; run clossys init --starters admin to rewrite it as clossys.slot/2");
   });
 
   it("re-running init restores a tampered contract", async () => {
     const root = workspace();
-    expect((await runInitCli(["--at", AT], root)).exitCode).toBe(0);
+    expect((await runInitCli(["--starters", "admin", "--at", AT], root)).exitCode).toBe(0);
     editSlot(root, "page.admin-gallery", doc => { doc.contract.reads.access = "read-write"; doc.standard = "other"; });
     expect(runAdminSeated(root).status).toBe("fail");
-    const again = await runInitCli(["--at", "2026-11-18T10:00:00Z"], root);
+    const again = await runInitCli(["--starters", "admin", "--at", "2026-11-18T10:00:00Z"], root);
     expect(again.exitCode, again.message).toBe(0);
     expect(seatOf(again.output).rewired).toEqual(["page.admin-gallery"]);
     expect(view(root, "page.admin-gallery").contract).toEqual(adminContract(adminPlan(root), "page.admin-gallery"));
@@ -388,22 +388,20 @@ describe("publisher.admin-seated", { timeout: 60_000 }, () => {
 
   it("passes once clossys init has seated the admin workspace", async () => {
     const root = workspace();
-    await runInitCli(["--at", AT], root);
+    await runInitCli(["--starters", "admin", "--at", AT], root);
     expect(runAdminSeated(root)).toEqual({ check: ADMIN_SEATED, status: "pass", findings: [] });
   });
 
-  it("mutation: an initialised consumer with no Publisher IA fails", async () => {
+  it("an initialised consumer with no Publisher IA placed no admin slot: skipped as not opted in", async () => {
     const root = workspace();
-    await runInitCli(["--at", AT], root);
+    await runInitCli(["--starters", "admin", "--at", AT], root);
     rmSync(join(root, "clossys", "agents", "publisher"), { recursive: true, force: true });
-    const result = runAdminSeated(root);
-    expect(result.status).toBe("fail");
-    expect(result.findings.map(finding => finding.subject)).toEqual(["publisher/ia.json"]);
+    expect(runAdminSeated(root)).toEqual({ check: ADMIN_SEATED, status: "skip", findings: [], reason: NOT_OPTED_IN });
   });
 
   it("mutation: an initialised consumer whose Publisher IA lacks publication.admin fails, and clossys check exits non-zero", async () => {
     const root = workspace();
-    await runInitCli(["--at", AT], root);
+    await runInitCli(["--starters", "admin", "--at", AT], root);
     const seated = await runCli(["check", "--root", root]);
     expect(seated.message).toContain(`${ADMIN_SEATED}: pass`);
     // A consumer that lost it: the slot folder gone and its group dropped from ia.json (clossys ia --remove keeps a slot with records).
@@ -414,7 +412,7 @@ describe("publisher.admin-seated", { timeout: 60_000 }, () => {
     rmSync(join(publisher, ADMIN_PUBLICATION_SLOT), { recursive: true, force: true });
     const result = runAdminSeated(root);
     expect(result.status).toBe("fail");
-    expect(result.findings).toEqual([{ subject: `publisher/${ADMIN_PUBLICATION_SLOT}`, detail: "not placed in the Publisher IA; run clossys init: the admin workspace is a fixed Publisher publication" }]);
+    expect(result.findings).toEqual([{ subject: `publisher/${ADMIN_PUBLICATION_SLOT}`, detail: "not placed in the Publisher IA; run clossys init --starters admin: the admin starter is seated whole" }]);
     // The fresh seat passed its row above (slot/2 admin seats); the exit code alone is not the assertion (no-candidate rows exit 1 too).
     const check = await runCli(["check", "--root", root]);
     expect(check.exitCode).not.toBe(0);

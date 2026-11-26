@@ -10,7 +10,7 @@ import { cpSync, existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, 
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
-import { ADMIN_SEATED, adminSeatedSummary, runAdminSeated } from "../check/admin-seated.js";
+import { ADMIN_SEATED, adminSeatedSummary, NOT_OPTED_IN, runAdminSeated } from "../check/admin-seated.js";
 import { recutCandidateBytes } from "../migrate/recut.js";
 import { PRODUCER_ROOT } from "../package-path.js";
 import { writeTargetPin } from "../records/pin-map.js";
@@ -121,31 +121,33 @@ describe("init --publication submits through the guarded candidates verb (slot/2
     expect(again.message).toMatch(/^init --publication refused: .*byte-identical/);
   }, 300_000);
 
-  it("seats the admin workspace first on a fresh consumer, so publisher.admin-seated passes (owner A1; U18 x U19 merge)", async () => {
+  it("runs plain init first and seats no admin starter, so publisher.admin-seated skips (CP1-U2: the consumer owns its pages)", async () => {
     const s = await store();
-    // Fresh: the store was never through clossys init, so the admin row is red.
-    expect(adminSeatedSummary(runAdminSeated(s.root))).toMatch(new RegExp(`^${ADMIN_SEATED}: fail`));
+    const skip = `${ADMIN_SEATED}: skip (${NOT_OPTED_IN})`;
+    // Fresh: the store holds no admin starter slot, and plain init places none.
+    expect(adminSeatedSummary(runAdminSeated(s.root))).toBe(skip);
     const result = await s.run(...INIT, "--at", AT);
-    expect(result.output).toMatchObject({ slot: "publication.site", candidate: "site-v2.json", init: { outcome: "added", admin: { placed: expect.arrayContaining([ADMIN_PUBLICATION_SLOT]) } } });
-    expect(result.message).toMatch(/^seated the admin workspace: 6 Publisher slots placed\n/);
+    expect(result.output).toMatchObject({ slot: "publication.site", candidate: "site-v2.json", init: { outcome: "added", admin: { seated: false } } });
+    expect(result.message).toMatch(/^seated no admin page, publication or release: the consumer owns its pages\./);
     expect(result.message).toContain("submitted publisher/publication.site/site-v2.json");
     expect(existsSync(join(s.root, "AGENTS.md"))).toBe(true);
-    expect(runAdminSeated(s.root)).toEqual({ check: ADMIN_SEATED, status: "pass", findings: [] });
+    expect(existsSync(s.agent("publisher", ADMIN_PUBLICATION_SLOT))).toBe(false);
+    expect(adminSeatedSummary(runAdminSeated(s.root))).toBe(skip);
     const check = await runCli(["check", "--root", s.root]);
-    expect(check.message).toContain(`${ADMIN_SEATED}: pass`);
-    // An outputs refusal after the seat keeps the seat, and still reports it.
+    expect(check.message).toContain(skip);
+    // An outputs refusal after plain init still reports it, and still seats nothing.
     const again = await runCli([...INIT, "--root", s.root]);
     expect(again.exitCode).toBe(1);
     expect(again.message).toMatch(/^init --publication refused: .*byte-identical/);
-    expect(again.message).toContain("the admin workspace is already seated");
-    expect(adminSeatedSummary(runAdminSeated(s.root))).toBe(`${ADMIN_SEATED}: pass`);
+    expect(again.message).toContain("seated no admin page, publication or release");
+    expect(adminSeatedSummary(runAdminSeated(s.root))).toBe(skip);
     // A usage error writes nothing at all, seat included; and the usage documents both modes.
     const bare = await store();
     const usage = await runCli(["init", "--publication", "site", "--forms", "webhook", ...SUBMIT, "--root", bare.root]);
     expect(usage.exitCode).not.toBe(0);
     expect(usage.message).toMatch(/--forms: unknown form webhook/);
     expect(existsSync(join(bare.root, "AGENTS.md"))).toBe(false);
-    expect(adminSeatedSummary(runAdminSeated(bare.root))).toMatch(new RegExp(`^${ADMIN_SEATED}: fail`));
+    expect(adminSeatedSummary(runAdminSeated(bare.root))).toBe(`${ADMIN_SEATED}: skip (${NOT_OPTED_IN})`);
     // So does a --tier or --basis the submit refuses: checked by the submit's own rule before plain init writes (M1).
     const submits = bare.events().filter(event => event.op === "submit").length;
     for (const [flag, value, pattern] of [["--tier", "bogus", /^init --publication: --tier must be low, mid, high, got bogus\n/], ["--basis", "bogus", /^init --publication: --basis must be agent, owner, planner, got bogus\n/]] as const) {
@@ -156,7 +158,7 @@ describe("init --publication submits through the guarded candidates verb (slot/2
       expect(refused.message).toMatch(pattern);
       expect(refused.message).toContain("Usage: clossys init --publication <id>");
       expect(existsSync(join(bare.root, "AGENTS.md"))).toBe(false);
-      expect(adminSeatedSummary(runAdminSeated(bare.root))).toMatch(new RegExp(`^${ADMIN_SEATED}: fail`));
+      expect(adminSeatedSummary(runAdminSeated(bare.root))).toBe(`${ADMIN_SEATED}: skip (${NOT_OPTED_IN})`);
       expect(existsSync(bare.agent("publisher", "publication.site", "candidates", "site-v2.json"))).toBe(false);
       expect(bare.events().filter(event => event.op === "submit").length).toBe(submits);
     }
