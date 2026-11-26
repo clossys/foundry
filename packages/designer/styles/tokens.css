@@ -525,12 +525,15 @@ html:not([data-brand-bound]):not([data-suppress-brand-banner])::before {
   --ui-brandmark-gap-lg:          8px;
 
   /* ════════════════════════════════════════════════════════════════
-   * RADIUS (7 · Tailwind `--radius-*` namespace)
+   * RADIUS (9 · Tailwind `--radius-*` namespace)
    * ════════════════════════════════════════════════════════════════ */
   --radius-sharp:                 0px;
   --radius-subtle:                2px;
   --radius-default:               3px;     /* brandable — the one radius most brands change */
   --radius-control:               6px;
+  /* tokens.ts ids the stock (shadcn) items read: each aliases its previous id, so it computes the same. */
+  --radius-xs:                    var(--radius-subtle, 2px);
+  --radius-md:                    var(--radius-control, 6px);
   --radius-pill:                  999px;
   /* Content surfaces (plates, product panels) follow the brand radius,
    * while controls keep --radius-control. A role alias, not a brand lever. */
@@ -586,7 +589,7 @@ html:not([data-brand-bound]):not([data-suppress-brand-banner])::before {
   --ui-duration-overlay:          var(--ui-duration-fast, 120ms);
 
   /* ════════════════════════════════════════════════════════════════
-   * EASING (6 · Tailwind `--ease-*` namespace)
+   * EASING (7 · Tailwind `--ease-*` namespace)
    * ════════════════════════════════════════════════════════════════ */
   --ease-default:                 cubic-bezier(.2, 0, 0, 1);
   --ease-decelerate:              cubic-bezier(0, 0, .2, 1);
@@ -594,6 +597,8 @@ html:not([data-brand-bound]):not([data-suppress-brand-banner])::before {
   --ease-bounce:                  cubic-bezier(.2, .8, .2, 1);
   --ease-enter:                   var(--ease-decelerate, cubic-bezier(0, 0, .2, 1));
   --ease-exit:                    var(--ease-accelerate, cubic-bezier(.4, 0, 1, 1));
+  /* tokens.ts --ease-out, read by stock items: aliases its previous id --ease-enter. */
+  --ease-out:                     var(--ease-enter, var(--ease-decelerate, cubic-bezier(0, 0, .2, 1)));
 
   /* ════════════════════════════════════════════════════════════════
    * UI · Z-INDEX (9 · layering ladder — no Tailwind namespace)
