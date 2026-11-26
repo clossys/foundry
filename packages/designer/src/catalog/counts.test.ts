@@ -109,7 +109,7 @@ describe("Designer tree counts (3 L0)", () => {
 
   it("labels the L1s by the target tree", () => {
     const labels = DESIGNER_TREES.map(layer => layer.nodes.map(node => node.label));
-    expect(labels).toEqual([["Color", "Typography", "Layout", "Motion"], ["Logos", "Imagery", "Icons"], ["Components"], ["Sections"], ["Frames"]]);
+    expect(labels).toEqual([["Colors", "Typography", "Layout", "Motion"], ["Logos", "Imagery", "Icons"], ["Components"], ["Sections"], ["Frames"]]);
   });
 });
 

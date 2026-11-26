@@ -3,7 +3,7 @@
   "nodes": [
     {
       "id": "colors",
-      "label": "Color",
+      "label": "Colors",
       "children": [
         {
           "id": "colors-surfaces",
