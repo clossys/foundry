@@ -78,6 +78,24 @@ const stripAgent = (ref: string) => ref.replace(/^[a-z]+[:/]/, "").replace(/@\d+
 /** The package IA files an ia.json `source` names (check:ia-source resolves them). */
 const DIRECTOR_IA_FILE = "src/catalog/ia/strategy.json";
 const CATALOG_IA_DIR = "src/catalog/ia";
+/** A Designer or Writer package's owner-decided L0 layers and closed axes, beside its catalog IA (foundry-plan-0002). */
+export const PACKAGE_LEVELS_FILE = `${CATALOG_IA_DIR}/levels.json`;
+/**
+ * The `layers` and `axes` a package ships in `src/catalog/ia/levels.json`, passed through to every consumer IA as
+ * the Director's are (G6b); none when an older package build ships no such file. The layers are read against the
+ * `nodes` this IA places: a layer names only placed L1s (a levels.json L1 the catalog places no leaf under is not
+ * an L1 here), and an L1 levels.json does not name (a Studio default L1, studioDesignerSlots) sits in the layer its
+ * dotted id names, the L0 an unlayered IA implies for it (r01-ia.ts); a layer left with no L1 is dropped.
+ */
+export function packageLevels(root: string, nodes: readonly IaNode[]): Pick<IaDoc, "layers" | "axes"> {
+  const doc = readOptionalJson(root, PACKAGE_LEVELS_FILE) as { layers?: IaLayer[]; axes?: IaAxes } | undefined;
+  if (!doc?.layers) return doc?.axes ? { axes: doc.axes } : {};
+  const placed = new Set(nodes.map(node => node.id));
+  const layers = doc.layers.map(layer => ({ ...layer, nodes: layer.nodes.filter(ref => placed.has(ref.split("/")[0]!)) }));
+  const named = new Set(doc.layers.flatMap(layer => layer.nodes.map(ref => ref.split("/")[0]!)));
+  for (const node of nodes) if (!named.has(node.id)) layers.find(layer => layer.id === node.id.split(".")[0])?.nodes.push(node.id);
+  return { layers: layers.filter(layer => layer.nodes.length), ...(doc.axes ? { axes: doc.axes } : {}) };
+}
 
 export const DESIGNER_LAYERS = ["themes", "assets", "components", "sections", "frames"] as const;
 
@@ -200,7 +218,7 @@ export function designerIa(): FoundryIa {
     group.slots.splice(at === -1 ? (extra.after === null ? 0 : group.slots.length) : at + 1, 0, extra.id);
     slots.set(extra.id, { id: extra.id, kind: extra.kind, contract: extra.contract, declaredInputs: [...brief].sort(), declaredUses: [...extra.uses], feeds: [], defaults: { standard: extra.standard } });
   }
-  return { agent: "designer", ia: { schema: IA_SCHEMA, source: packageIaSource("@clossys/designer", CATALOG_IA_DIR), extensions: [], nodes }, slots };
+  return { agent: "designer", ia: { schema: IA_SCHEMA, source: packageIaSource("@clossys/designer", CATALOG_IA_DIR), extensions: [], nodes, ...packageLevels(root, nodes) }, slots };
 }
 
 /** One Designer slot the Studio publication defines (src/studio-defaults/designer-slots.json). */
@@ -261,7 +279,7 @@ export function writerIa(): FoundryIa {
       }
     }
   }
-  return { agent: "writer", ia: { schema: IA_SCHEMA, source: packageIaSource("@clossys/writer", CATALOG_IA_DIR), extensions: [], nodes }, slots };
+  return { agent: "writer", ia: { schema: IA_SCHEMA, source: packageIaSource("@clossys/writer", CATALOG_IA_DIR), extensions: [], nodes, ...packageLevels(root, nodes) }, slots };
 }
 
 /**

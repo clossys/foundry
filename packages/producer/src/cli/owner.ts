@@ -34,7 +34,7 @@ import { WORKSPACE_OWNED_SOURCE } from "../records/slot-model/ia-source.js";
 import { agentDir, candidatesDir, iaPath, jsonBytes, pinFile, seatDir, slotDir, slotFile } from "../records/slot-model/layout.js";
 import { designerIa, directorIa, slotPositions, writerIa, type FoundryIa } from "../records/slot-model/foundry-ia.js";
 import { feedsIndex } from "../records/slot-model/derive.js";
-import { PRODUCER_IA_SOURCE } from "../records/slot-model/pipeline-seats.js";
+import { PRODUCER_IA_SOURCE, readPipelineSeats } from "../records/slot-model/pipeline-seats.js";
 import { adoptedCurrentSlots, driftCounts, holdsRecord, knownSlots, RETIRED_SEATS_DIR, SYNC_AGENTS, syncPlan, syncState, syncVerdict, type SeatRetire, type SyncAgent, type SyncVerdict } from "../records/slot-model/ia-sync.js";
 import { consumedIds, consumedLeaves, filterFoundryIa, filterIa, scopedToConsumed } from "../records/slot-model/consumed.js";
 import { consumerGraph, PublisherDataError } from "../check/ia-orphans.js";
@@ -74,7 +74,8 @@ import { addGroup, assignGroup, dropGroup, followPositions, mergeGroups, moveSlo
 import type { CliResult } from "./main.js";
 import { discoverRoot } from "./root.js";
 import { RULES_FILE } from "./rules-file.js";
-import { closeRequest, isContentAgent, overlapRefusal, ownerOfNeed, placementContractIssues, placementOverlaps, raiseRequest, readRequest, RequestError, signedApproval, targetOf, type SlotRequest } from "../records/request.js";
+import { AGENT_LOOPS, isLoopAgent } from "../loop/agent-loops-ia.js";
+import { closeRequest, isContentAgent, overlapRefusal, ownerOfNeed, placementContractIssues, placementOverlaps, raiseRequest, readRequest, RequestError, rerouteOpenEntries, signedApproval, targetOf, type SlotRequest } from "../records/request.js";
 
 export const IA_USAGE = "Usage: clossys ia <agent>/<slot> --contract <file> [--standard <id>] [--under <l1>/<l2>] [--kind <kind>] [--inputs <id,...>] [--uses <id,...>] [--owner-ref <ref> [--overlap-reason <text>]] [--dry] [--root <dir>]\n"
   + "       clossys ia <agent>/<slot> --standard <id> [--owner-ref <ref>] [--dry] [--root <dir>]\n"
@@ -291,11 +292,23 @@ function atOf(flags: Flags): string {
   if (!/^\d{4}-\d{2}-\d{2}T/.test(at) || Number.isNaN(Date.parse(at))) throw new CliUsageError(`--at must be an ISO timestamp\n${IA_USAGE}`);
   return at;
 }
+/**
+ * Whether a leaf is a package leaf of the agent's installed Foundry IA (the whole catalog, not the consumed scope, plus
+ * the Producer-standard loop leaves for a loop agent, as `ia sync` and R01.5 count them), for
+ * a package-sourced IA. Undefined (every placed leaf guarded) for any other IA, or when the package IA does not read:
+ * an absent source refuses, it never lets a flip through (DECIDED D3).
+ */
+function packageLeafTest(agent: ModelAgent, ia: IaFile): ((slot: string) => boolean) | undefined {
+  if (typeof ia.source !== "string" || !ia.source.startsWith(`@clossys/${agent}#`) || !Object.hasOwn(FOUNDRY_IA, agent)) return undefined;
+  let leaves: ReadonlySet<string>;
+  try { leaves = new Set([...FOUNDRY_IA[agent as keyof typeof FOUNDRY_IA]().slots.keys(), ...(isLoopAgent(agent) ? AGENT_LOOPS : [])]); } catch { return undefined; }
+  return slot => leaves.has(slot);
+}
 /** An edit, planned (slot.json positions follow, the owner ref recorded) and committed, or printed under --dry. */
 function applyEdit(consumer: string, root: string, agent: ModelAgent, ia: IaFile, edit: Edit, op: string, ownerRef: string, at: string, dry: boolean): CliResult {
   if ("error" in edit) return refuse("ia", edit.error);
   if ("unchanged" in edit) return { exitCode: 0, root, message: `ia: ${edit.unchanged}; nothing written` };
-  const structure = packageStructureChange(ia, edit.ia);
+  const structure = packageStructureChange(ia, edit.ia, packageLeafTest(agent, ia));
   if (structure) return refuse("ia", structure);
   const plan = planIaWrite(consumer, agent, ia, edit, { op, ownerRef, at });
   if ("error" in plan) return refuse("ia", plan.error);
@@ -395,14 +408,27 @@ export function adoptIa(agent: string, root: string, dry: boolean): CliResult {
   }
   // A declared ref that names no slot is a dangling edge: refuse it rather than leave it out of the read graph.
   if (dangling.length) return refuse("ia", `${agent}: ${dangling.length} declared refs name no slot (dangling edges): ${dangling.slice(0, 8).join(", ")}${dangling.length > 8 ? ", ..." : ""}`);
+  // SLOT-CREATE (G19): the adoption records each placed slot's reuse-or-create decision with the overlaps found over the
+  // agent's placed slots, as a placement does (runIa) and `clossys migrate placement` backfills.
+  const decisions = new Map<string, Record<string, unknown>>();
+  if (isContentAgent(agent)) {
+    const positions = slotPositions(agent as SlotAgent, foundry.ia);
+    for (const { id, slot } of made) {
+      const at = positions.get(id)!, pkg = foundry.slots.get(id)!;
+      decisions.set(`${agent}/${id}`, { decision: "create", overlaps: placementOverlaps(consumer, agent, { slot: id, kind: String(slot!.kind), l1: at.l1, l2: at.l2, inputs: pkg.declaredInputs, contract: pkg.contract }).map(overlap => ({ ...overlap })) });
+    }
+  }
   const slots = writes.length - 1;
   const skipped = whole.slots.size - foundry.slots.size;
   const left = skipped ? `; ${skipped} package leaves no publication reaches stay in the package (clossys request adopts one)` : "";
   const result = commitIa(consumer, root, writes, dry, `adopt the ${agent} IA from ${foundry.ia.source} (${foundry.ia.nodes.length} L1, ${slots} slots${left})`, [],
-    `ia: adopted the ${agent} IA from ${foundry.ia.source} (${foundry.ia.nodes.length} L1, ${slots} slots with their contracts${left})`);
+    `ia: adopted the ${agent} IA from ${foundry.ia.source} (${foundry.ia.nodes.length} L1, ${slots} slots with their contracts${left})`, {}, decisions);
   // The adoption writes clossys.slot/2 only: a store it leaves all current carries the marker (U13 r2).
   if (!dry && result.exitCode === 0) markCurrentStore(root, { at: new Date().toISOString(), version: cliActor("clossys ia").version, cli: "clossys ia --adopt" });
-  return result;
+  // G20: the adopted slots change what the routing rows match, so the router re-derives the open entries' routes.
+  if (dry || result.exitCode !== 0 || !isContentAgent(agent)) return result;
+  const rerouted = rerouteOpenEntries(consumer, agent, at);
+  return rerouted.length ? { ...result, message: `${result.message}\n  re-routed ${rerouted.length} open request${rerouted.length === 1 ? "" : "s"}: ${rerouted.join(", ")}` } : result;
 }
 /**
  * Who the re-run's ledger events name (CONSISTENCY fix r1, DECIDED D10): code. Which leaves leave is computed
@@ -1115,15 +1141,18 @@ export function placeSeat(ia: { schema: string; source: string; extensions: stri
   if (ia.nodes.some(node => node.children.some(child => child.slots.includes(id)))) return ia;
   const round = roundOf(step.stage), rounds: readonly string[] = ROUNDS.map(each => each.id);
   const nodes = ia.nodes.map(node => ({ ...node, children: node.children.map(child => ({ ...child, slots: [...child.slots] })) }));
+  // The round and stage labels are the package's authored ones (pipeline/seats.json, G8) where the package tree has
+  // the round or stage; a round or stage it does not have keeps its id.
+  const authored = readPipelineSeats().nodes.find(each => each.id === round);
   let node = nodes.find(each => each.id === round);
   if (!node) {
-    node = { id: round, label: round, children: [] };
+    node = { id: round, label: authored?.label ?? round, children: [] };
     const at = nodes.findIndex(each => rounds.indexOf(each.id) > rounds.indexOf(round));
     nodes.splice(at < 0 ? nodes.length : at, 0, node);
   }
   let child = node.children.find(each => each.id === step.stage);
   if (!child) {
-    child = { id: step.stage, label: step.stage, slots: [] };
+    child = { id: step.stage, label: authored?.children.find(each => each.id === step.stage)?.label ?? step.stage, slots: [] };
     const at = node.children.findIndex(each => STAGES.indexOf(each.id as never) > STAGES.indexOf(step.stage));
     node.children.splice(at < 0 ? node.children.length : at, 0, child);
   }
