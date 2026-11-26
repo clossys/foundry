@@ -190,7 +190,10 @@ export interface StockFiles {
   readonly files: readonly { path: string; type: string; content: string }[]; readonly reader: DeclaredFallbackReader;
 }
 
-/** The stock row of `designer/<slotId>` and its .tsx files normalized to the consumer (stockItemOf, before the lockfile). */
+/**
+ * The stock row of `designer/<slotId>` and its .tsx files normalized to the consumer (stockItemOf, before the lockfile).
+ * Also the source `derive.uses` reads for a slot with no pin (scripts/check-generated-derived.mjs deriveUses).
+ */
 export function stockFilesOf(root: string, slotId: string): StockFiles | { readonly none: string } {
   const at = `designer/${slotId}`;
   const doc = readSlot(join(root, "clossys"), "designer", slotId);
