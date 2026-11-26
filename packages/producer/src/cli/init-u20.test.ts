@@ -4,16 +4,14 @@
  * the pin gate when it certifies) and adopts the loops of every agent the workspace places.
  * Synthetic: a tmp workspace (`clossys/clossys.config.ts` only), the Publisher and Designer packages as this repository ships them.
  */
-import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, realpathSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, readdirSync, realpathSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 import { pageOptionOf } from "../actions/page-option.js";
-import { checkPublisherPages } from "../actions/publisher.js";
 import { LOOP_AGENT_STANDARD, runLoopAgentStandard } from "../check/loop-connected.js";
 import { AGENT_LOOPS } from "../loop/agent-loops.js";
 import { ADMIN_PUBLICATION_SLOT, adminContract, adminPlan, adminPlanFindings, dataBoundSections, type AdminPlan } from "./admin-plan.js";
-import { ADMIN_SEED } from "./init-admin.js";
 import { runInitCli } from "./init.js";
 
 const AT = "2026-11-18T09:00:00Z";
@@ -101,52 +99,48 @@ describe("the admin plan states each data-bound binding and each dynamic route",
 });
 
 describe("clossys init seeds the admin slots and adopts the loops of the agents it places", () => {
-  it("a fresh init seeds every admin slot with its package default; on a bare workspace none pins (no page's frame, sections or copy is pinned upstream, so no page and not the publication)", async () => {
+  // CP1-U2 (G14): a record is seeded only when the slot declares every slot it cites (candidates are immutable, R08, so an
+  // inconsistent record is never written). A bare workspace holds no page's frame, sections or copy and no publication
+  // meta copy, so every admin slot waits unseeded; the seeded path is pinned on a full world (publish/install-admin.e2e).
+  it("--starters admin on a bare workspace seeds no admin record: each slot waits, its citations not yet declared", async () => {
     const root = workspace();
-    const result = await runInitCli(["--at", AT], root);
+    const result = await runInitCli(["--starters", "admin", "--at", AT], root);
     expect(result.exitCode, result.message).toBe(0);
     const { admin } = outputOf(result);
-    expect(admin.seeded).toEqual([...PAGES, ADMIN_PUBLICATION_SLOT]);
-    // Each page waits for its upstream pins, and the publication waits for its pages: the guarded pin refuses it over
-    // unpinned upstream (constitution R02.2, upstream is pinned before downstream), as cli/init-admin.test.ts pins.
+    expect(admin.seeded).toEqual([]);
     expect(admin.pinned).toEqual([]);
     expect(admin.waiting.map(item => item.slot)).toEqual([...PAGES, ADMIN_PUBLICATION_SLOT]);
-    for (const item of admin.waiting) expect(item.reason, item.slot).toMatch(/refused/);
-    expect(admin.waiting.at(-1)!.reason).toContain("R02.2");
-    const plan = adminPlan(root);
-    for (const page of plan.pages) {
-      const dir = publisherSlot(root, page.id);
-      expect(readdirSync(join(dir, "candidates")), page.id).toEqual([ADMIN_SEED]);
-      expect(JSON.parse(readFileSync(join(dir, "candidates", ADMIN_SEED), "utf8")), page.id).toEqual(page.record);
-      expect(existsSync(join(dir, "pin.json")), page.id).toBe(false);
+    for (const item of admin.waiting) expect(item.reason, item.slot).toMatch(/^not seeded: the record's citations are not the slot's declared inputs and uses \(undeclared: /);
+    expect(admin.waiting.at(-1)!.reason).toContain("publication.admin.meta");
+    for (const slot of [...PAGES, ADMIN_PUBLICATION_SLOT]) {
+      const dir = join(publisherSlot(root, slot), "candidates");
+      expect(existsSync(dir) ? readdirSync(dir) : [], slot).toEqual([]);
+      expect(existsSync(join(publisherSlot(root, slot), "pin.json")), slot).toBe(false);
     }
-    expect(existsSync(join(publisherSlot(root, ADMIN_PUBLICATION_SLOT), "pin.json"))).toBe(false);
-    expect(JSON.parse(readFileSync(join(publisherSlot(root, ADMIN_PUBLICATION_SLOT), "candidates", ADMIN_SEED), "utf8"))).toEqual(plan.record);
-    expect(result.message).toContain(`seeded 6 admin records; pinned 0; 6 wait for upstream pins: ${[...PAGES, ADMIN_PUBLICATION_SLOT].join(", ")}`);
+    expect(result.message).toContain(`seeded 0 admin records; pinned 0; 6 wait (upstream pins, or citations that are not the declared inputs and uses): ${[...PAGES, ADMIN_PUBLICATION_SLOT].join(", ")}`);
   }, 120_000);
 
-  it("a second init seeds nothing new and leaves every seeded candidate byte-identical; a slot holding another candidate is the consumer's", async () => {
+  it("a second init seeds nothing new; a slot holding another candidate is the consumer's and is not retried", async () => {
     const root = workspace();
-    expect((await runInitCli(["--at", AT], root)).exitCode).toBe(0);
-    const seed = (slot: string) => readFileSync(join(publisherSlot(root, slot), "candidates", ADMIN_SEED), "utf8");
-    const before = [...PAGES, ADMIN_PUBLICATION_SLOT].map(seed);
+    expect((await runInitCli(["--starters", "admin", "--at", AT], root)).exitCode).toBe(0);
     // The consumer's own candidate in one slot: init leaves that slot alone.
+    mkdirSync(join(publisherSlot(root, "page.admin-home"), "candidates"), { recursive: true });
     writeFileSync(join(publisherSlot(root, "page.admin-home"), "candidates", "mine-v1.json"), "{}\n");
-    const again = await runInitCli(["--at", "2026-11-18T10:00:00Z"], root);
+    const again = await runInitCli(["--starters", "admin", "--at", "2026-11-18T10:00:00Z"], root);
     expect(again.exitCode, again.message).toBe(0);
     const { admin } = outputOf(again);
     expect(admin.seeded).toEqual([]);
-    // page.admin-home holds the consumer's candidate, so it is not retried; every other seeded slot (publication.admin too, still unpinned) is.
     expect(admin.pinned).toEqual([]);
     expect(admin.waiting.map(item => item.slot)).toEqual([...PAGES.slice(1), ADMIN_PUBLICATION_SLOT]);
-    expect([...PAGES, ADMIN_PUBLICATION_SLOT].map(seed)).toEqual(before);
+    expect(readdirSync(join(publisherSlot(root, "page.admin-home"), "candidates"))).toEqual(["mine-v1.json"]);
   }, 120_000);
 
   it("a stray non-candidate file (.DS_Store) in an admin slot's candidates/ is ignored: the slot is still retried, not silently skipped", async () => {
     const root = workspace();
-    expect((await runInitCli(["--at", AT], root)).exitCode).toBe(0);
+    expect((await runInitCli(["--starters", "admin", "--at", AT], root)).exitCode).toBe(0);
+    mkdirSync(join(publisherSlot(root, "page.admin-gallery"), "candidates"), { recursive: true });
     writeFileSync(join(publisherSlot(root, "page.admin-gallery"), "candidates", ".DS_Store"), "\0\0\0\1Bud1");
-    const again = await runInitCli(["--at", "2026-11-18T10:00:00Z"], root);
+    const again = await runInitCli(["--starters", "admin", "--at", "2026-11-18T10:00:00Z"], root);
     expect(again.exitCode, again.message).toBe(0);
     expect(outputOf(again).admin.waiting.map(item => item.slot)).toEqual([...PAGES, ADMIN_PUBLICATION_SLOT]);
   }, 120_000);
@@ -159,7 +153,7 @@ describe("clossys init seeds the admin slots and adopts the loops of the agents 
         schema: "clossys.ia/1", source: `consumer#agents/${agent}/tree.json`, extensions: [], nodes: [{ id: "main", label: "Main", children: [] }],
       }, null, 2)}\n`);
     }
-    const result = await runInitCli(["--at", AT], root);
+    const result = await runInitCli(["--starters", "admin", "--at", AT], root);
     expect(result.exitCode, result.message).toBe(0);
     const { loops } = outputOf(result);
     expect([...loops.agents].sort()).toEqual(["designer", "director", "publisher", "writer"]);
@@ -168,18 +162,9 @@ describe("clossys init seeds the admin slots and adopts the loops of the agents 
     expect(runLoopAgentStandard(root)).toEqual({ check: LOOP_AGENT_STANDARD, status: "pass", findings: [] });
   }, 180_000);
 
-  it("publisher.check judges each seeded admin record with the data-bound set: no data-bound section is asked for a Writer binding", async () => {
-    const root = workspace();
-    expect((await runInitCli(["--at", AT], root)).exitCode).toBe(0);
-    const result = await checkPublisherPages(root);
-    for (const page of PAGES) expect(result.checked, page).toContain(`publisher/${page}/candidates/${ADMIN_SEED}`);
-    const asked = result.findings.filter(finding => finding.check === "page.record-key" && BOUND.some(section => finding.detail.includes(`${section} binds no Writer record`)));
-    expect(asked).toEqual([]);
-  }, 120_000);
-
   it("adopts and pins Publisher's five loops on a fresh init, so loop.agent-standard passes; a second init changes nothing", async () => {
     const root = workspace();
-    const result = await runInitCli(["--at", AT], root);
+    const result = await runInitCli(["--starters", "admin", "--at", AT], root);
     expect(result.exitCode, result.message).toBe(0);
     const { loops } = outputOf(result);
     // The init adopts the installed Director's IA too (CHAT-DIR gap 8), so the Director's loops are adopted with Publisher's.
@@ -188,7 +173,7 @@ describe("clossys init seeds the admin slots and adopts the loops of the agents 
     expect(loops.pinned).toHaveLength(2 * AGENT_LOOPS.length);
     expect(result.message).toContain(`adopted and pinned ${2 * AGENT_LOOPS.length} agent loops (director, publisher)`);
     expect(runLoopAgentStandard(root)).toEqual({ check: LOOP_AGENT_STANDARD, status: "pass", findings: [] });
-    const again = await runInitCli(["--at", "2026-11-18T10:00:00Z"], root);
+    const again = await runInitCli(["--starters", "admin", "--at", "2026-11-18T10:00:00Z"], root);
     expect(again.exitCode, again.message).toBe(0);
     expect(outputOf(again).loops.pinned).toEqual([]);
     expect(runLoopAgentStandard(root).status).toBe("pass");
@@ -196,7 +181,7 @@ describe("clossys init seeds the admin slots and adopts the loops of the agents 
 
   it("mutation: a placed agent whose loops init did not adopt is red in loop.agent-standard (the adoption is what makes it pass)", async () => {
     const root = workspace();
-    expect((await runInitCli(["--at", AT], root)).exitCode).toBe(0);
+    expect((await runInitCli(["--starters", "admin", "--at", AT], root)).exitCode).toBe(0);
     rmSync(join(root, "clossys", "agents", "publisher", "loop.scope"), { recursive: true, force: true });
     const result = runLoopAgentStandard(root);
     expect(result.status).toBe("fail");

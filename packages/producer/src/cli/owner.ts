@@ -1261,7 +1261,7 @@ export async function runSeatCli(argv: readonly string[], cwd: string, steps: re
         if (target.slot === undefined) appendIaEvent(consumer, target.agent, { by: decidedBy, at: atZ, fields: { kind: target.kind } });
         else appendSlotDocEvent(consumer, target.agent, target.slot, { by: decidedBy, at: atZ, verb: "ia", skill: skillPath("producer", "ia"), fields: { kind: target.kind } });
       }
-      writeSeatDecision(consumer, slotId, { name, bytes, pin: `${JSON.stringify(pin, null, 2)}\n`, at: atZ });
+      writeSeatDecision(consumer, slotId, { name, bytes, pin: `${JSON.stringify(pin, null, 2)}\n`, at: atZ, seed: `@clossys/producer:pipeline/seats.json#${id}` });
     });
   } catch (error) { return refuse("seat", error instanceof Error ? error.message : String(error)); }
   if (added.length) return refuse("seat", `the slot model check fails after the write: ${added.slice(0, 5).join("; ")}`);

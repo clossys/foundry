@@ -1157,7 +1157,7 @@ export function writeTargetConfirm(consumer: string, agent: SlotAgent, id: strin
  * the `pin` decision event lands as R02.3 reads it; the pin guard then runs. Any failure removes the candidate and
  * restores pin.json, slot.json and the ledger. The seat's slot.json and ia.json are the caller's (written first).
  */
-export function writeSeatDecision(consumer: string, slotId: string, input: { readonly name: string; readonly bytes: string; readonly pin: string; readonly at: string }, guard: WriteGuard = true, given?: WriteProvenance): LedgerEvent {
+export function writeSeatDecision(consumer: string, slotId: string, input: { readonly name: string; readonly bytes: string; readonly pin: string; readonly at: string; readonly seed: string }, guard: WriteGuard = true, given?: WriteProvenance): LedgerEvent {
   const agent = SEAT_AGENT as unknown as SlotAgent;
   const dir = join(consumer, "agents", SEAT_AGENT, slotId);
   const candidate = join(candidatesDir(dir), input.name);
@@ -1169,7 +1169,9 @@ export function writeSeatDecision(consumer: string, slotId: string, input: { rea
     const pin = JSON.parse(input.pin) as { candidate: string; sha256: string; decidedBy: string; basis: string; at: string };
     if (pin.candidate !== input.name || pin.sha256 !== sha256) throw new Error(`seat refused: the pin names ${pin.candidate} (${pin.sha256.slice(0, 12)}), not the written ${input.name} (${sha256.slice(0, 12)})`);
     const submitter = provenance({ verb: "submit", by: pin.decidedBy, skill: skillPath("producer", "seats") }, given);
-    appendEvent(dir, "slot", ledgerEvent("submit", input.at, submitter, { name: input.name, sha256 }));
+    appendEvent(dir, "slot", // The selection ladder (pipeline/candidate-ladder.ts, R03.1): a seat adapts the package-default seat of its step
+    // (pipeline/seats.json) to this consumer, like an adopted agent loop (loop/agent-loop-adopt.ts).
+    ledgerEvent("submit", input.at, submitter, { name: input.name, sha256, rung: "adapt", seed: input.seed }));
     replaceFile(pinFile(dir), input.pin);
     forgetSlotReads();
     return pin;

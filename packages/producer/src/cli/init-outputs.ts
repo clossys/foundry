@@ -24,7 +24,7 @@ import { discoverRoot } from "./root.js";
 export const INIT_OUTPUTS_USAGE = "Usage: clossys init --publication <id> [--forms contact,newsletter] [--share] [--meta json-ld,llms,rss|atom]\n"
   + "                    [--locales <default>,<locale>...] [--origin https://<host>] [--identity <name key>,<summary key>]\n"
   + "                    --model <id> --tier low|mid|high --basis agent|owner|planner --skill <path> [--rung adapt|create] [--seed <id>] [--reason <text>] [--root <dir>] [--at <iso>] [--json]\n"
-  + "  runs plain clossys init first (the views pointer and the admin workspace seat; --at stamps those writes), then\n"
+  + "  runs plain clossys init first (the views pointer, no admin seat: it suggests the admin starter; --at stamps those writes), then\n"
   + "  records the publication's install outputs on a new submitted candidate of publisher/publication.<id> (never pinned).\n"
   + "  The candidate goes through clossys next --submit (schema, slot model, write guard, symlink refusal, ladder): --rung\n"
   + "  defaults to adapt with --seed the pinned candidate, so the slot's latest verdict must be create (P2).\n"
@@ -138,9 +138,9 @@ export async function initPublicationOutputs(root: string, options: InitOutputsO
 const list = (value: string) => value.split(",").map(item => item.trim()).filter(Boolean);
 
 /**
- * `prepare` is plain init (init.ts: the views pointer and the admin seat). It runs once every argument is valid and
- * before the outputs are recorded, so the admin workspace is seated in every consumer first (owner A1); its refusal
- * ends the run. An outputs refusal after it leaves the seat in place, as plain init would.
+ * `prepare` is plain init (init.ts: the views pointer and the agent loops; it seats no admin starter, CP1-U2). It runs
+ * once every argument is valid and before the outputs are recorded; its refusal ends the run. An outputs refusal after
+ * it leaves plain init's writes in place, as plain init would.
  */
 export async function runInitOutputsCli(argv: readonly string[], cwd: string, prepare?: (workspace: string) => Promise<CliResult>): Promise<CliResult> {
   let root: string | undefined, publication: string | undefined;
@@ -187,7 +187,7 @@ export async function runInitOutputsCli(argv: readonly string[], cwd: string, pr
   }
   if (publication === undefined) throw new CliUsageError(`--publication is required\n${INIT_OUTPUTS_USAGE}`);
   for (const flag of ["--model", "--tier", "--basis", "--skill"] as const) if (submit[SUBMIT_FLAGS[flag]] === undefined) throw new CliUsageError(`init --publication requires ${flag} (its candidate is submitted)\n${INIT_OUTPUTS_USAGE}`);
-  // The submit's own value rule, before plain init writes the pointer and seats the admin workspace: a usage error writes nothing.
+  // The submit's own value rule, before plain init writes the pointer: a usage error writes nothing.
   const valueIssue = submitValueIssue(submit);
   if (valueIssue !== undefined) throw new CliUsageError(`init --publication: ${valueIssue}\n${INIT_OUTPUTS_USAGE}`);
   const workspace = discoverRoot(resolve(cwd, root ?? "."));

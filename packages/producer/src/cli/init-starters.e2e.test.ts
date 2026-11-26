@@ -5,11 +5,11 @@
  * A rerun is a no-op, byte for byte.
  * Synthetic fixture consumer: a tmp workspace (`clossys/clossys.config.ts` only) on the installed packages.
  */
-import { mkdirSync, mkdtempSync, readdirSync, readFileSync, realpathSync, rmSync, statSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, realpathSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, relative } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
-import { ADMIN_SEATED } from "../check/admin-seated.js";
+import { ADMIN_SEATED, NOT_OPTED_IN } from "../check/admin-seated.js";
 import { listRequests } from "../records/request.js";
 import { listSlots } from "../records/slots.js";
 import { adminPlan, readAdminSlot } from "./admin-plan.js";
@@ -82,10 +82,8 @@ describe("clossys init --starters site", () => {
     const writer = [...new Set(plan.pages.flatMap(page => page.copy))].map(id => `writer/${id}`);
     expect(seat.requests.map(request => request.target).sort()).toEqual([...designer, ...writer].sort());
     expect(seat.requests.every(request => request.from === "owner")).toBe(true);
-    // A unit the admin seat already raised (its pages compose it too) is that open entry, with the site's need merged in.
-    const shared = new Set(adminPlan(root).pages.flatMap(page => page.uses).map(id => `designer/${id}`));
-    expect(seat.requests.filter(request => !request.created).map(request => request.target)).toEqual(designer.filter(target => shared.has(target)));
-    expect(seat.requests.filter(request => !request.created).length).toBeGreaterThan(0);
+    // A default init seats no admin starter (CP1-U2), so no admin request precedes the site's: each one is new.
+    expect(seat.requests.every(request => request.created)).toBe(true);
     const consumer = join(root, "clossys");
     const entries = listRequests(consumer).map(read => read.request!).filter(request => seat.requests.some(item => item.id === request.id));
     expect(entries).toHaveLength(seat.requests.length);
@@ -103,9 +101,10 @@ describe("clossys init --starters site", () => {
     expect(result.message).toContain("seated the site publication: 8 Publisher slots placed");
     expect(result.message).toContain(`raised ${seat.requests.filter(request => request.created).length} slot requests for site units no workspace slot holds`);
     expect(result.message).toContain("held publisher/page.not-found: a status page (404) has no route");
-    // The admin seat is untouched by the site seat.
+    // The site seat does not seat the admin starter: the consumer opts in with --starters admin (CP1-U2).
     const check = await runCli(["check", "--root", root]);
-    expect(check.message).toContain(`${ADMIN_SEATED}: pass`);
+    expect(check.message).toContain(`${ADMIN_SEATED}: skip (${NOT_OPTED_IN})`);
+    expect(adminPlan(root).pages.filter(page => existsSync(join(root, "clossys", "agents", "publisher", page.id)))).toEqual([]);
 
     const before = tree(root);
     const again = await runCli(["init", "--starters", "site", "--at", "2026-11-21T10:00:00Z", "--root", root]);
@@ -132,7 +131,7 @@ describe("clossys init --starters site", () => {
       expect(view(root, page.id).doc.uses, page.id).toEqual(page.cites);
     }
     const check = await runCli(["check", "--root", root]);
-    expect(check.message).toContain(`${ADMIN_SEATED}: pass`);
+    expect(check.message).toContain(`${ADMIN_SEATED}: skip (${NOT_OPTED_IN})`);
     expect(check.message).not.toMatch(/agents\/publisher\/(page\.(home|about|pricing|contact|site-page|terms|privacy)|publication\.site)\/slot\.json \[/);
     const before = tree(root);
     const again = await runInitCli(["--starters", "site", "--at", "2026-11-21T10:00:00Z"], root);

@@ -17,6 +17,8 @@ import { build } from "esbuild";
 import { createElement, type ReactElement, type ReactNode } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { afterAll, describe, expect, it } from "vitest";
+import { checkPublisherPages } from "../actions/publisher.js";
+import { adminSeed } from "../cli/init-admin.js";
 import { runInitCli } from "../cli/init.js";
 import { raiseRequest } from "../records/request.js";
 import { listSlots } from "../records/slots.js";
@@ -79,6 +81,8 @@ const COPY: Record<string, Record<string, string>> = {
   "sections.notices.copy": { "admin-home.notices": "DRAFT Nothing needs you right now." },
   "sections.empty-state.copy": { "admin-home.first-run": "DRAFT Start by placing an agent." },
   ...Object.fromEntries(PAGES.map(page => [`${page}.meta`, { [`${page.slice("page.".length)}.meta`]: `DRAFT ${page.slice("page.admin-".length)}` }])),
+  // The publication's default cites its own meta copy (admin-plan.ts publicationCites): init seeds it only once it is held (G14).
+  "publication.admin.meta": { "admin.meta": "DRAFT Admin" },
 };
 
 function pin(dir: string, name: string, bytes: string): void {
@@ -185,9 +189,33 @@ async function render(site: string, route: string, params?: Record<string, strin
 }
 
 describe("the admin workspace renders the consumer's records (init, publish admin, build)", () => {
+  // CP1-U2 (b): --starters admin seats each admin slot whose citations the slot declares (this world holds every unit and
+  // copy slot they cite), as `<leaf>-v1.json` (R08.1), its submit at a ladder rung with the package default as the seed.
+  // The record is the default re-cut as a clossys.page/1 record, not its bytes, so the rung is adapt (R03.2 refuses an
+  // adopt whose seed names no workspace candidate). publisher.check then judges each with the data-bound set.
+  it("--starters admin seeds <leaf>-v1.json records at rung adapt, the package default the seed; publisher.check judges each", { timeout: 300_000 }, async () => {
+    const { root } = await consumer();
+    const init = await runInitCli(["--starters", "admin", "--at", AT], root);
+    expect(init.exitCode, init.message).toBe(0);
+    const seat = (init.output as { admin: { seeded: string[]; waiting: unknown[] } }).admin;
+    expect(seat.seeded).toEqual([...PAGES, "publication.admin"]);
+    expect(adminSeed("page.admin-home")).toBe("admin-home-v1.json");
+    expect(adminSeed("publication.admin")).toBe("admin-v1.json");
+    for (const slot of [...PAGES, "publication.admin"]) {
+      const dir = join(root, "clossys", "agents", "publisher", slot);
+      expect(readdirSync(join(dir, "candidates")), slot).toEqual([adminSeed(slot)]);
+      const submits = readJson<{ events: Record<string, unknown>[] }>(join(dir, "ledger.json")).events.filter(event => event.op === "submit");
+      expect(submits, slot).toEqual([expect.objectContaining({ name: adminSeed(slot), rung: "adapt", seed: slot === "publication.admin" ? "@clossys/publisher:starters/admin/publication.json" : `@clossys/publisher:defaults/${slot}/starter-v1.json` })]);
+    }
+    const checked = await checkPublisherPages(root);
+    for (const page of PAGES) expect(checked.checked, page).toContain(`publisher/${page}/candidates/${adminSeed(page)}`);
+    const asked = checked.findings.filter(finding => finding.check === "page.record-key" && BOUND.some(section => finding.detail.includes(`${section} binds no Writer record`)));
+    expect(asked).toEqual([]);
+  });
+
   it("init pins the admin pages; the bound install routes <agent> as [agent] from the records; every admin page renders records-derived text", { timeout: 300_000 }, async () => {
     const { root, site, app } = await consumer();
-    const init = await runInitCli(["--at", AT], root);
+    const init = await runInitCli(["--starters", "admin", "--at", AT], root);
     expect(init.exitCode, init.message).toBe(0);
     const seat = (init.output as { admin: { pinned: string[]; waiting: { slot: string; reason: string }[] } }).admin;
     expect(seat.waiting, JSON.stringify(seat.waiting)).toEqual([]);
@@ -240,7 +268,7 @@ describe("the admin workspace renders the consumer's records (init, publish admi
 
   it("a two-locale admin publication serves each locale its own [agent] route, carrying its locale, whose sections read the records (U18 x U20b)", { timeout: 300_000 }, async () => {
     const { root, site, app } = await consumer(true);
-    const init = await runInitCli(["--at", AT], root);
+    const init = await runInitCli(["--starters", "admin", "--at", AT], root);
     expect(init.exitCode, init.message).toBe(0);
     // The admin publication records two locales: a new candidate of the pinned record, pinned.
     const publication = join(root, "clossys", "agents", "publisher", "publication.admin");

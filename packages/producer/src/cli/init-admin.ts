@@ -1,6 +1,6 @@
 /**
- * The admin workspace `clossys init` seats in every consumer (foundry-build-0048 Amendment 2026-11-18b, A1): a fixed
- * Publisher responsibility, where websites, docs and slides stay opt-in publications. The plan is the Publisher
+ * The admin starter `clossys init --starters admin` seats on an explicit opt-in (foundry-build-0048 CP1-U2: the
+ * consumer owns its pages, so a default init seats nothing and prints the starter as a suggestion). The plan is the Publisher
  * package's own `admin` starter (@clossys/publisher) and its tree contracts, read as installed; this
  * module only places them, through `clossys ia` (the guarded IA writer), never by writing slot files itself.
  *
@@ -12,7 +12,8 @@
  *   pages. The page contract names the whole Designer composition (`composes`), held or not.
  * - The package default of each page (`defaults/<page>/starter-v1.json`) is what a placed page with no pin resolves to
  *   as a sample (records/resolve.ts). Each admin slot with no candidate is then seeded with that default as a real
- *   record (`admin-v1.json`, foundry-build-0048 U20) and pinned through the pin gate once it certifies.
+ *   record (`<leaf>-v1.json`, foundry-build-0048 U20, CP1-U2) and pinned through the pin gate once it certifies. A record
+ *   is seeded only when its citations are the slot's declared inputs and uses; otherwise the slot waits.
  * - Each used Designer unit no workspace slot holds (a workspace that has not adopted the Designer IA, or one adopted
  *   before the data-bound admin sections) is raised as one kind slot request to the Designer (from the owner, raised by
  *   Producer: the page cannot cite an unheld unit in a slot/1 store), so the queue shows the gap. The data-bound
@@ -49,15 +50,15 @@ export interface AdminSeat {
   /** Held admin slots whose inputs and uses this run rewrote to the composition units the workspace holds. */
   readonly rewired: readonly string[];
   readonly requests: readonly { readonly id: string; readonly target: string; readonly from: string; readonly created: boolean }[];
-  /** Admin slots this run wrote the seeded candidate (`admin-v1.json`) into, and the ones it pinned through the gate. */
+  /** Admin slots this run wrote the seeded candidate (`<leaf>-v1.json`) into, and the ones it pinned through the gate. */
   readonly seeded: readonly string[];
   readonly pinned: readonly string[];
   /** Seeded admin slots the pin gate refused: what each waits for (an upstream Designer or Writer pin, mostly). */
   readonly waiting: readonly { readonly slot: string; readonly reason: string }[];
 }
 
-/** The seeded candidate's name in every admin slot. */
-export const ADMIN_SEED = "admin-v1.json";
+/** The seeded candidate's name in admin slot `slot`: `<leaf>-v1.json`, its leaf the slot id's last dot segment (R08.1). */
+export const adminSeed = (slot: string): string => `${slot.slice(slot.lastIndexOf(".") + 1)}-v1.json`;
 export const ADMIN_SEED_BY = "planner:package-default";
 
 /** Seats the admin publication in the workspace at `root` (`<root>/clossys`); a refusal ends it with exit 1. */
@@ -152,23 +153,43 @@ export async function seatAdmin(root: string, at: string): Promise<{ result?: Cl
   // leaves the candidate submitted and is reported; a later init retries the seeded candidate. A slot holding any other
   // candidate, or a pin, is the consumer's and is left alone. Pages pin before the publication that orders them.
   const when = toIsoZ(at) ?? at;
-  const seeds: [string, Readonly<Record<string, unknown>>][] = [...plan.pages.map(page => [page.id, page.record] as [string, Readonly<Record<string, unknown>>]), [plan.publication, plan.record]];
-  for (const [slot, record] of seeds) {
+  // Each seed records its ladder rung (R03.1): the package default re-cut as a record (not byte-verbatim, so adapt,
+  // as R03.2 requires of a seed that names no workspace candidate), the default its seed.
+  type Seed = { readonly slot: string; readonly record: Readonly<Record<string, unknown>>; readonly cites: readonly string[] };
+  const seeds: Seed[] = [...plan.pages.map(page => ({ slot: page.id, record: page.record, cites: page.cites })), { slot: plan.publication, record: plan.record, cites: plan.publicationCites }];
+  for (const { slot, record, cites } of seeds) {
     const entry = listSlots(consumer, "publisher").find(each => each.id === slot);
     if (!entry || existsSync(join(entry.dir, "pin.json"))) continue;
+    const name = adminSeed(slot);
     // The slot's candidates are its candidate-named files only: a stray file (.DS_Store) is not a candidate.
     const held = entry.candidates;
-    if (held.some(name => name !== ADMIN_SEED)) continue;
-    if (!held.includes(ADMIN_SEED)) {
-      try { writeCandidateBytes(consumer, "publisher", slot, ADMIN_SEED, `${JSON.stringify(record, null, 2)}\n`, { at: when, fields: { reason: "clossys init: the Publisher package default, as a record" } }); }
+    if (held.some(each => each !== name)) continue;
+    if (!held.includes(name)) {
+      // Candidates are immutable (R08): a record citing a slot its slot.json does not declare (R07.1) is never written.
+      // It waits until the slot declares every citation (a later init rewires it once the workspace holds them).
+      const declared = readAdminSlot(entry.dir)?.doc;
+      const undeclared = declared ? cites.filter(id => !declared.inputs.includes(id) || !declared.uses.includes(id)) : [...cites];
+      const extra = declared ? [...new Set([...declared.inputs, ...declared.uses])].filter(id => !cites.includes(id)) : [];
+      if (undeclared.length || extra.length) {
+        waiting.push({ slot, reason: `not seeded: the record's citations are not the slot's declared inputs and uses${undeclared.length ? ` (undeclared: ${undeclared.join(", ")})` : ""}${extra.length ? ` (declared, not cited: ${extra.join(", ")})` : ""}` });
+        continue;
+      }
+      try { writeCandidateBytes(consumer, "publisher", slot, name, `${JSON.stringify(record, null, 2)}\n`, { at: when, fields: { rung: "adapt", seed: adminRecordSeed(record), reason: "clossys init --starters admin: the Publisher package default, as a record" } }); }
       catch (error) { return fail(`seed publisher/${slot}: ${(error as Error).message}`); }
       seeded.push(slot);
     }
-    const pin = await runStep(["pin", `publisher/${slot}`, ADMIN_SEED, "--by", ADMIN_SEED_BY, "--at", when, "--root", root], root);
+    const pin = await runStep(["pin", `publisher/${slot}`, name, "--by", ADMIN_SEED_BY, "--at", when, "--root", root], root);
     if (pin.exitCode === 0) pinned.push(slot);
     else waiting.push({ slot, reason: (pin.message ?? "the pin gate refused").split("\n").filter(Boolean).slice(0, 3).join(" ") });
   }
   return { seat: { started, placed, rewired, requests, seeded, pinned, waiting } };
 }
+
+/** The admin-plan record's id: the package default its meta.source cites (admin-plan.ts adminPageRecord, adminPublicationRecord). */
+const adminRecordSeed = (record: Readonly<Record<string, unknown>>): string => {
+  const ref = ((record.meta as { source?: { ref?: unknown } } | undefined)?.source?.ref as unknown[] | undefined)?.[0];
+  if (typeof ref !== "string" || !ref) throw new Error("the admin plan record names no package default (meta.source.ref)");
+  return ref;
+};
 
 const same = (a: readonly string[], b: readonly string[]): boolean => a.length === b.length && a.every((value, index) => value === b[index]);
