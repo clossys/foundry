@@ -9,14 +9,15 @@
  * designer/components.menu (empty) ships a stock item that imports only locked packages. npm is a stub that locks what package.json
  * declares, so no network or install script runs.
  */
-import { cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSync } from "node:fs";
+import { cpSync, existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, realpathSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { afterAll, describe, expect, it } from "vitest";
 import type { ShadcnRunner } from "@clossys/publisher/install";
 import { DEPENDENCY_EVENT, DEPENDENCY_INSTALL_ARGV, declareStockDependencies } from "../records/adopt-dependencies.js";
-import { REFERENCE_MANIFEST, npmNameIssue, stockDependencyPlan } from "../records/code-adopt.js";
+import { AGENT_CREATES, REFERENCE_MANIFEST, npmNameIssue, stockDependencyPlan } from "../records/code-adopt.js";
+import { runCli } from "../cli/main.js";
 import { runLoopCli } from "./cli.js";
 import { startRun, type AgentPacket, type CodeCall, type RunHooks } from "./runner.js";
 
@@ -29,7 +30,7 @@ const MENU = "components.menu";
 const PANELS = "react-resizable-panels";
 const PACKAGE = { name: "consumer-fixture", private: true, dependencies: { react: "19.2.0", "react-dom": "19.2.0" } };
 const roots: string[] = [];
-afterAll(() => { for (const root of roots) rmSync(root, { recursive: true, force: true }); });
+afterAll(() => { for (const root of roots) rmSync(root, { recursive: true, force: true }); }, 60_000);
 
 /** A fixture consumer with a root package.json; `references` edits a world-local copy of the Designer reference manifest (package-path.ts: a world with packages/ reads its own). */
 function world(references?: (items: { registry: string; name: string; dependencies?: string[] }[]) => void): string {
@@ -195,5 +196,144 @@ describe("CP1-DEPS: clossys run loop.create --dry shows the dependency change an
     expect(menu.exitCode).toBe(0);
     expect(menu.message).toMatch(/every package it imports is in the consumer lockfile; package\.json is not changed/);
     expect(await runLoopCli(["loop.create", "--resume", "--dry", "--root", root], root)).toMatchObject({ exitCode: 2 });
+  });
+});
+
+/**
+ * CP1-PKGS: the cold consumer's lockfile lacks lucide-react (the fixture lockfile holds it), so the world drops it.
+ * designer/frames.app-header ships shadcn-aria/sidebar-07 (lucide-react, declared by the shadcn-aria style row) and holds
+ * no candidate; designer/components.tag-group ships diceui/tags-input, whose rows do not declare lucide-react.
+ */
+const LUCIDE = "lucide-react";
+const APP_HEADER = "frames.app-header";
+const TAG_GROUP = "components.tag-group";
+function coldWorld(): string {
+  const root = world();
+  const lockFile = join(root, "package-lock.json");
+  const lock = JSON.parse(readFileSync(lockFile, "utf8"));
+  delete lock.packages[`node_modules/${LUCIDE}`];
+  writeFileSync(lockFile, `${JSON.stringify(lock, null, 2)}\n`);
+  return root;
+}
+/** Every file under the world's clossys/ records (candidates, slot entries), as path -> bytes, outside the run state. */
+function records(root: string): Record<string, string> {
+  const out: Record<string, string> = {};
+  const walk = (dir: string, rel: string) => {
+    for (const name of readdirSync(dir)) {
+      const path = join(dir, name), at = rel ? `${rel}/${name}` : name;
+      if (at === ".state") continue;
+      if (statSync(path).isDirectory()) walk(path, at); else out[at] = readFileSync(path, "utf8");
+    }
+  };
+  walk(join(root, "clossys"), "");
+  return out;
+}
+const manifestHash = (registry: string, name: string): string =>
+  (JSON.parse(readFileSync(join(DESIGNER, "..", "..", REFERENCE_MANIFEST), "utf8")).items as { registry: string; name: string; hash: string }[]).find(row => row.registry === registry && row.name === name)!.hash;
+
+describe("CP1-PKGS (a): options --reference tells the truth and writes nothing", () => {
+  it("options --reference prints the item, its hash and the dependency plan for an unlocked lucide-react import, and writes nothing", async () => {
+    const root = coldWorld();
+    const held = bytes(root), heldRecords = records(root);
+    const hash = manifestHash("shadcn-aria", "sidebar-07");
+    expect(hash).toMatch(/^sha256:[0-9a-f]{64}$/);
+    const text = await runCli(["options", `designer/${APP_HEADER}`, "--reference", "--root", root], root);
+    expect(text.exitCode).toBe(0);
+    expect(text.message).toContain(`designer/${APP_HEADER}: reference shadcn-aria/sidebar-07`);
+    expect(text.message).toContain(`hash ${hash}`);
+    expect(text.message).toMatch(/dependencies: shadcn-aria\/sidebar-07@4\.23\.0: package\.json dependencies \+ lucide-react@latest, then npm install --no-audit --no-fund for lucide-react/);
+    expect(text.message).toContain(`apply: clossys run loop.create --slot designer/${APP_HEADER} adds them`);
+    expect(text.message).toMatch(/--- file \S+/);
+    const json = await runCli(["options", `designer/${APP_HEADER}`, "--reference", "--root", root, "--json"], root);
+    expect(json.exitCode).toBe(0);
+    expect(json.output).toMatchObject({ reference: expect.stringMatching(/^shadcn-aria\/sidebar-07@/), hash, dependencies: { plan: { install: [LUCIDE] } }, apply: { run: `clossys run loop.create --slot designer/${APP_HEADER}`, adopts: false } });
+    expect(bytes(root)).toEqual(held);
+    expect(records(root)).toEqual(heldRecords);
+    expect(dependencyEvents(root)).toEqual([]);
+  });
+
+  it("prints the hash for a reference item that needs nothing (cold3 item 5)", async () => {
+    const root = world();
+    const text = await runCli(["options", `designer/${MENU}`, "--reference", "--root", root], root);
+    expect(text.exitCode).toBe(0);
+    expect(text.message.split("\n")[0]).toMatch(/: reference \S+ \(seed \S+\), hash sha256:[0-9a-f]{64}, \d+ file\(s\)/);
+  });
+
+  it("options --reference refuses an undeclared import and names it", async () => {
+    const root = coldWorld();
+    const held = bytes(root);
+    const cli = await runCli(["options", `designer/${TAG_GROUP}`, "--reference", "--root", root], root);
+    expect(cli.exitCode).toBe(1);
+    expect(cli.message).toMatch(/options refused: designer\/components\.tag-group's reference diceui\/tags-input@\S+ \(hash sha256:[0-9a-f]{64}\): .*imports lucide-react, which the consumer lockfile does not hold and .* do not declare/);
+    expect(cli.message).toContain(`clossys request --kind change --subject designer/${TAG_GROUP}`);
+    expect(cli.message).toContain(AGENT_CREATES);
+    expect(bytes(root)).toEqual(held);
+  });
+
+  it("no stock row refuses with what create means, the one wording the Designer skill step cites", async () => {
+    const root = world();
+    const skill = readFileSync(join(DESIGNER, "skill", "SKILL.md"), "utf8").replace(/\s+/g, " ");
+    expect(skill).toContain(AGENT_CREATES);
+    const cli = await runCli(["options", "designer/components.icon", "--reference", "--root", root], root);
+    expect(cli).toMatchObject({ exitCode: 1, message: expect.stringMatching(/^options refused: designer\/components\.icon has no reference item: no shadcn-aria or diceui stock item ships/) });
+    expect(cli.message).toContain(AGENT_CREATES);
+  });
+});
+
+describe("CP1-PKGS (b): the dependency step covers a stock-shipped frames or sections slot", () => {
+  it("loop.create on a stock-shipped frames slot adds the declared packages with one dependency.add, writes no candidate, and hands the slot to the agent", async () => {
+    const root = coldWorld();
+    const before = JSON.parse(bytes(root).manifest);
+    const heldRecords = records(root);
+    const npm = stubNpm();
+    const packets: AgentPacket[] = [];
+    const run = await startRun(root, { loop: "loop.create", slot: `designer/${APP_HEADER}` }, { ...hooks(npm), agent(packet) { packets.push(packet); return { exit: 0, model: "stub-model" }; } }, { now: clock() });
+    const after = JSON.parse(bytes(root).manifest);
+    expect(after.dependencies).toEqual({ ...before.dependencies, [LUCIDE]: "latest" });
+    expect(npm.calls).toEqual([{ args: DEPENDENCY_INSTALL_ARGV, cwd: root }]);
+    const events = dependencyEvents(root);
+    expect(events).toHaveLength(1);
+    expect(events[0]).toMatchObject({ actor: "code:adopt", kind: DEPENDENCY_EVENT, subject: `designer/${APP_HEADER}` });
+    expect(settleOf(root, run.state!.runId)).toMatchObject({ rule: "adopt", outcome: "agent", settles: [], why: expect.stringMatching(/\(dependencies: shadcn-aria\/sidebar-07@4\.23\.0: package\.json dependencies \+ lucide-react@latest/) });
+    const candidates = (r: Record<string, string>) => Object.keys(r).filter(path => path.startsWith(`agents/designer/${APP_HEADER}/`) && path.includes("candidate"));
+    expect(candidates(records(root))).toEqual(candidates(heldRecords));
+    expect(packets.some(packet => JSON.stringify(packet).includes(`designer/${APP_HEADER}`))).toBe(true);
+  });
+
+  it("a second run is a no-op", async () => {
+    const root = coldWorld();
+    await startRun(root, { loop: "loop.create", slot: `designer/${APP_HEADER}` }, hooks(stubNpm()), { now: clock() });
+    const held = bytes(root);
+    const npm = stubNpm();
+    const second = await declareStockDependencies(root, APP_HEADER, { npm });
+    expect(second).toMatchObject({ exit: 0, wrote: [], plan: { install: [], add: {} } });
+    await startRun(root, { loop: "loop.create", slot: `designer/${APP_HEADER}` }, hooks(npm), { now: clock() });
+    expect(npm.calls).toEqual([]);
+    expect(bytes(root)).toEqual(held);
+    expect(dependencyEvents(root)).toHaveLength(1);
+  });
+
+  it("--dry lists the change and writes nothing", async () => {
+    const root = coldWorld();
+    const held = bytes(root), heldRecords = records(root);
+    const cli = await runLoopCli(["loop.create", "--slot", `designer/${APP_HEADER}`, "--dry", "--root", root], root);
+    expect(cli.exitCode).toBe(0);
+    expect(cli.message).toMatch(/adopt dependencies: shadcn-aria\/sidebar-07@4\.23\.0: package\.json dependencies \+ lucide-react@latest, then npm install --no-audit --no-fund for lucide-react \(declared by shadcn-aria\/sidebar-07@4\.23\.0, [^)]*\); code adopts no candidate here/);
+    expect(bytes(root)).toEqual(held);
+    expect(records(root)).toEqual(heldRecords);
+    expect(dependencyEvents(root)).toEqual([]);
+  });
+
+  it("refuses an undeclared import on the sections path and installs nothing (mutation: let an undeclared name through)", async () => {
+    const root = coldWorld();
+    const plan = stockDependencyPlan(root, "sections.settings");
+    expect(plan).toMatchObject({ refused: expect.stringMatching(/imports input-otp, which the consumer lockfile does not hold and .* not declare; code adds only declared dependencies$/) });
+    const held = bytes(root);
+    const npm = stubNpm();
+    const run = await startRun(root, { loop: "loop.create", slot: "designer/sections.settings" }, hooks(npm), { now: clock() });
+    expect(npm.calls).toEqual([]);
+    expect(bytes(root)).toEqual(held);
+    expect(dependencyEvents(root)).toEqual([]);
+    expect(settleOf(root, run.state!.runId)).toMatchObject({ outcome: "agent", settles: [], why: expect.stringMatching(/no dependency was added: .*imports input-otp, which the consumer lockfile does not hold and .* not declare; code adds only declared dependencies$/) });
   });
 });

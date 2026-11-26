@@ -44,8 +44,8 @@ import { readSlotEntry } from "../records/slots.js";
 import { validateAgainst } from "../records/schema.js";
 import { recordSchema, writeSlot } from "../records/slot.js";
 import { SLOT_LOCK, withDirLock, writeCandidate, writeTargetConfirm, writeTargetDecision, type WriteGuard } from "../records/slot-write.js";
-import { CODE_ADOPT, CODE_ADOPT_CLI, CODE_ADOPT_RUNG, CODE_ADOPT_SKILL, REFERENCE_MANIFEST, codeAdoptSlotRefusal, stockDependencyPlan, stockItemOf, type DependencyPlan } from "../records/code-adopt.js";
-import { declareStockDependencies, dependencyPlanText } from "../records/adopt-dependencies.js";
+import { CODE_ADOPT, CODE_ADOPT_CLI, CODE_ADOPT_RUNG, CODE_ADOPT_SKILL, REFERENCE_MANIFEST, isCraftedStockSlot, stockItemOf } from "../records/code-adopt.js";
+import { adoptGate, declareStockDependencies, dependencyPlanText } from "../records/adopt-dependencies.js";
 import type { ShadcnRunner } from "@clossys/publisher/install";
 import type { SlotAgent } from "../records/slot-model/index.js";
 import "../constitution/guard.js"; // registers the write guard's runner (the confirm and revert writes are guarded)
@@ -874,7 +874,8 @@ async function codeBuiltIn(ctx: Context, step: LoopStep, subject: SlotSubject | 
  *   candidate, and a stock item ships its contract fixture with every import locked (records/code-adopt.ts); code
  *   submits that item unmodified at rung L1 (`--by code:adopt`), and the submit guard and the run's certify or check
  *   step judge it like any candidate. With no stock item the agent creates; a refused submit defers to it, and a failed
- *   certify sends the run back to the agent's create step (the retry clears the settle).
+ *   certify sends the run back to the agent's create step (the retry clears the settle). On a crafted stock slot (a
+ *   Designer frames or sections slot, CP1-PKGS) code only adds the packages the stock item imports, and the agent crafts.
  * - `pick <ref>` (loop.choose, loop.fill, loop.refine, before pick; round 2, planner D5 Pick = A): the pin gate's
  *   scorecard has a single top row on a slot with no owner-pick or confirm step and no owner or planner pin
  *   (loop/code-pin.ts); code pins it through the pin gate (`clossys pin --by code:scorecard`, basis scorecard). A tie,
@@ -958,28 +959,6 @@ function settlePick(ctx: Context, subject: SlotSubject | undefined): SettleVerdi
   };
 }
 
-/**
- * What the code adopt of `<agent>/<slotId>` would change in the consumer's package.json (CP1-DEPS), by the adopt
- * step's own rules and writing nothing: `skip` when code adopts nothing there (not an adopt slot, a held candidate, no
- * stock item), else the dependency plan or its refusal. `clossys run loop.create --dry` prints it.
- */
-export function adoptDependencyPreview(root: string, agent: AgentId, slotId: string): { readonly skip: string } | { readonly plan: DependencyPlan } | { readonly refused: string } {
-  const gate = adoptGate(root, agent, slotId);
-  if (gate !== undefined) return { skip: gate.why };
-  const found = stockDependencyPlan(root, slotId);
-  return "none" in found ? { skip: `${found.none}; the agent creates` } : found;
-}
-
-/** Why code adopts nothing into `<agent>/<slotId>` (not a byte-exact adopt slot, or a held candidate), or undefined. */
-function adoptGate(root: string, agent: AgentId, slotId: string): { readonly why: string; readonly cites: readonly string[] } | undefined {
-  const slotFile = `clossys/agents/${agent}/${slotId}/slot.json`;
-  const notCode = codeAdoptSlotRefusal(root, agent, slotId);
-  if (notCode !== undefined) return { why: `${notCode}; the agent creates`, cites: [slotFile] };
-  const held = readSlotEntry(join(root, "clossys"), agent, slotId)?.candidates ?? [];
-  if (held.length) return { why: `${agent}/${slotId} holds ${held.join(", ")}; code adopts only into a slot with no candidate, so the agent creates`, cites: [slotFile, `clossys/agents/${agent}/${slotId}/ledger.json`] };
-  return undefined;
-}
-
 async function settleAdopt(ctx: Context, subject: SlotSubject | undefined): Promise<SettleVerdict> {
   if (!subject) return { refused: `the run has no slot` };
   const { root } = ctx;
@@ -987,6 +966,7 @@ async function settleAdopt(ctx: Context, subject: SlotSubject | undefined): Prom
   const slotFile = `clossys/agents/${refOf(subject)}/slot.json`;
   const ledgerFile = `clossys/agents/${refOf(subject)}/ledger.json`;
   const gate = adoptGate(root, agent, slotId);
+  if (gate !== undefined && isCraftedStockSlot(agent, slotId)) return craftedStockDependencies(ctx, slotId, gate);
   if (gate !== undefined) return { settled: false, why: gate.why, cites: gate.cites };
   // CP1-DEPS: the packages the stock item imports go into the consumer's package.json and lockfile first (the one
   // dependency writer, records/adopt-dependencies.ts); a refused or failed change writes nothing and the agent creates.
@@ -1007,6 +987,22 @@ async function settleAdopt(ctx: Context, subject: SlotSubject | undefined): Prom
     settled: true, why: `${stock.ref} ships ${refOf(subject)}'s contract fixture and the slot adopts byte-exact: code submits it unmodified at rung ${CODE_ADOPT_RUNG}, and certify judges it${deps.wrote.length && deps.plan ? ` (dependencies: ${dependencyPlanText(deps.plan)})` : ""}`,
     answer: `adopt ${stock.ref}`, cites: [slotFile, REFERENCE_MANIFEST], wrote: [`clossys/agents/${refOf(subject)}/candidates/${written.name}`, ledgerFile],
   };
+}
+
+/**
+ * CP1-PKGS: the adopt step on a crafted stock slot (a Designer frames or sections slot, records/code-adopt.ts
+ * isCraftedStockSlot). Code adopts nothing there, because its candidates are crafted, but it adds the packages the
+ * stock item of the slot's contract fixture imports, by the one dependency writer and its rules (declared names only,
+ * the publish argv, one dependency.add event, put back on failure). It writes no candidate: the agent crafts, and the
+ * settle says what changed or why nothing was added.
+ */
+async function craftedStockDependencies(ctx: Context, slotId: string, gate: { readonly why: string; readonly cites: readonly string[] }): Promise<SettleVerdict> {
+  let deps: Awaited<ReturnType<typeof declareStockDependencies>>;
+  try { deps = await declareStockDependencies(ctx.root, slotId, ctx.hooks.npm ? { npm: ctx.hooks.npm } : {}); }
+  catch (error) { return { settled: false, why: `${gate.why}; its stock item's dependencies could not be planned: ${error instanceof Error ? error.message : String(error)}`, cites: [...gate.cites, REFERENCE_MANIFEST] }; }
+  if (deps.exit !== 0) return { settled: false, why: `${gate.why}; no dependency was added: ${deps.refused}`, cites: [...gate.cites, REFERENCE_MANIFEST] };
+  if (!deps.plan) return { settled: false, why: gate.why, cites: gate.cites };
+  return { settled: false, why: `${gate.why} (dependencies: ${dependencyPlanText(deps.plan)})`, cites: [...gate.cites, REFERENCE_MANIFEST] };
 }
 
 const SETTLE_JUDGES: Record<SettleRule, (ctx: Context, subject: SlotSubject | undefined) => SettleVerdict | Promise<SettleVerdict>> = {

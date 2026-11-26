@@ -78,7 +78,24 @@ change is `v<N+1>`. The pin is the only selection; its history is git.
    for it instead of guessing.
 3. **Read the references.** Each reference row names a registry, item and
    version (shadcn, Magic UI, Tailark and other trusted free registries). Read
-   that item before building anything.
+   that item before building anything:
+   `npx clossys options designer/<slot> --reference` prints the stock item, its
+   manifest hash (the value `meta.source.hash` takes on a registry ref), its
+   files and the step skill. It writes nothing. When the item imports a package
+   the consumer lockfile lacks, it also prints the dependency change and the
+   one verb that applies it, `npx clossys run loop.create --slot designer/<slot>`
+   (add `--dry` to see the change first). That run adds only the packages the
+   item's manifest rows declare, for a components, frames or sections slot, and
+   then hands a frame or section to you to craft. A package no manifest row
+   declares exits 1: file a `clossys request` for the reference manifest. When
+   no stock item ships the slot, the agent creates it: an L4 create after a
+   verdict that says create, built from the slot contract and the pinned slots
+   it reads.
+   How this fits the rule: every consumer change comes from a clossys verb or
+   the harness pack and install steps. The `package.json` and lockfile change
+   happens only inside a `clossys run` step, as a logged `dependency.add` event
+   with input hashes, so hand-edits stays 0. The agent never runs npm, and
+   `options` writes nothing.
 4. **Choose a path** for each option:
    - **pick**: the reference item as is (`meta.source.kind: registry`, with
      `meta.source.ref` = the reference row);

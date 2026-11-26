@@ -31,8 +31,8 @@ import type { CliResult } from "../cli/main.js";
 import { discoverRoot } from "../cli/root.js";
 import { isLoopName, LOOP_NAMES, RUN_ID, type LoopName } from "./names.js";
 import type { Finding } from "./route.js";
-import { SLOT_INTEGRITY, adoptDependencyPreview, fillAll, planRun, readRunState, resumeRun, runInit, startRun, waitingRuns, wroteFile, type AgentOutcome, type AgentPacket, type CodeCall, type CodeOutcome, type Exit, type RunHooks, type RunResult, type StartInput } from "./runner.js";
-import { dependencyPlanText } from "../records/adopt-dependencies.js";
+import { SLOT_INTEGRITY, fillAll, planRun, readRunState, resumeRun, runInit, startRun, waitingRuns, wroteFile, type AgentOutcome, type AgentPacket, type CodeCall, type CodeOutcome, type Exit, type RunHooks, type RunResult, type StartInput } from "./runner.js";
+import { adoptDependencyPreview, dependencyPlanText } from "../records/adopt-dependencies.js";
 import type { AgentId } from "../records/types.js";
 
 export const LOOP_RUN_USAGE = "Usage: clossys run loop.<fill|refine|create|choose|scope|slot|release|audit|cascade> [--slot <agent>/<slot-id>] [--request <id>] [--from <entry>] [--publication <id>] [--agent <agent>] [--trigger <Tn>] [--init] [--root <dir>] [--json]\n"
@@ -257,13 +257,14 @@ function dryRun(root: string, flags: LoopFlags, now: () => Date): CliResult {
   const dependencies = loaded.content.steps.filter(step => step.decider.by === "code" && SETTLE_ADOPT.test(step.cli)).map(step => {
     if (!subject) return { step: step.id, skip: "the run has no slot" };
     const preview = adoptDependencyPreview(root, subject.agent as AgentId, subject.slotId);
-    return "plan" in preview ? { step: step.id, plan: preview.plan, change: dependencyPlanText(preview.plan) } : { step: step.id, ...preview };
+    if (!("plan" in preview)) return { step: step.id, ...preview };
+    return { step: step.id, plan: preview.plan, change: dependencyPlanText(preview.plan), ...(preview.adopts ? {} : { crafted: preview.crafted }) };
   });
   const refused = dependencies.some(row => "refused" in row);
   const lines = [
     `run ${state.loop} --dry: would run ${state.version.ref}${subject ? ` for ${subject.agent}/${subject.slotId}` : ""} (trigger ${state.trigger.code}); nothing ran, nothing was written`,
     ...steps.map(step => `  step ${step.id}  ${step.by}  ${step.cli}`),
-    ...dependencies.map(row => `  ${row.step} dependencies: ${"change" in row ? row.change : "refused" in row ? `refused: ${row.refused}` : `none (${row.skip})`}`),
+    ...dependencies.map(row => `  ${row.step} dependencies: ${"change" in row ? `${row.change}${"crafted" in row && row.crafted ? `; code adopts no candidate here (${row.crafted})` : ""}` : "refused" in row ? `refused: ${row.refused}` : `none (${row.skip})`}`),
   ];
   return { exitCode: refused ? 1 : 0, root, output: { dry: true, loop: state.loop, runs: state.version.ref, ...(subject ? { subject: `${subject.agent}/${subject.slotId}` } : {}), steps, dependencies }, message: lines.join("\n") };
 }

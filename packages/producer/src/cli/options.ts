@@ -29,7 +29,8 @@ import { checkSlotOptions, classCounts, classify, slotOptions, type SlotOptions 
 import { inspectSlot, listSlots, modelExists, readCandidate, readSlotEntry } from "../records/slots.js";
 import { writeSlotOptions } from "../records/slot-write.js";
 import { readPinFile } from "../records/pin-map.js";
-import { CODE_ADOPT_CLI, CODE_ADOPT_RUNG, CODE_ADOPT_SKILL, codeAdoptSlotRefusal, stockItemOf } from "../records/code-adopt.js";
+import { AGENT_CREATES, CODE_ADOPT_CLI, CODE_ADOPT_RUNG, CODE_ADOPT_SKILL, agentCreatesText, codeAdoptSlotRefusal, stockFilesOf, stockItemOf } from "../records/code-adopt.js";
+import { adoptDependencyPreview, dependencyPlanText } from "../records/adopt-dependencies.js";
 import { skillFor } from "../loop/slots.js";
 import { packagePath } from "../package-path.js";
 import { pinRecordStatus } from "../records/pin.js";
@@ -48,9 +49,12 @@ export const OPTIONS_USAGE = "Usage: clossys options [<agent>/<slot> [--more | -
   + "  --redraft the brief for one re-drafted candidate that may cite new evidence (the owning agent submits each with clossys next --submit).\n"
   + "  <agent>/<slot> --check certifies every candidate and exits 1 unless the submitted, certified ones hold the options\n"
   + "  the slot's family owes (loop.create's certify step); it writes clossys/.state/checks/<agent>/<slot>/certify.json.\n"
-  + "  --reference prints what a Designer slot's candidate is built from: the reference (stock) item's files exactly as the\n"
-  + "  adopt path writes them (loop.create's step " + CODE_ADOPT_CLI + ", run with clossys run loop.create --slot designer/<slot>,\n"
-  + "  installs it unmodified into an empty byte-exact adopt slot) and the text of the step skill; no stock item refuses.\n"
+  + "  --reference prints what a Designer slot's candidate is built from: the reference (stock) item, its manifest hash (the\n"
+  + "  meta.source.hash a registry ref needs), its files exactly as the adopt path writes them (loop.create's step " + CODE_ADOPT_CLI + ",\n"
+  + "  run with clossys run loop.create --slot designer/<slot>, installs it unmodified into an empty byte-exact adopt slot) and\n"
+  + "  the text of the step skill. When the item imports a package the consumer lockfile lacks, it prints the dependency change\n"
+  + "  that run makes and exits 0; a package no manifest row declares exits 1 (request the reference manifest). It writes\n"
+  + "  nothing. No stock item refuses: " + AGENT_CREATES + ".\n"
   + "  --classes writes slot.json options/varyOn from the committed option-class mapping; --check only reports drift.";
 export const PICK_USAGE = "Usage: clossys pick <agent>/<slot> <candidate-id> --by agent:<seat> [--at <iso timestamp>] [--root <dir>] [--json]\n"
   + "  a judge seat picks one candidate (pin basis agent); Studio shows it as confirm until the owner pins. An agent's seat\n"
@@ -133,8 +137,14 @@ export function optionsBrief(consumer: string, view: SlotOptions, mode: "more" |
 /**
  * `--reference`: what `designer/<id>`'s candidate is built from, read through the verb alone: the stock item the adopt
  * path installs (records/code-adopt.ts stockItemOf, the same call loop.create's `clossys settle adopt` step writes
- * from), its files exactly as that path writes them, and the text of the step skill a candidate cites. No stock item,
- * or a slot of another agent, refuses: there is no fallback reference.
+ * from), its manifest hash (the `meta.source.hash` a cited registry ref needs), its files exactly as that path writes
+ * them, and the text of the step skill a candidate cites. Read-only: it writes nothing and runs nothing.
+ *
+ * CP1-PKGS: when the item's only bar is a package the consumer lockfile does not hold, it prints the item, its hash,
+ * the adopt step's dependency change (records/adopt-dependencies.ts adoptDependencyPreview, the step's own read) and
+ * the one verb that applies it, `clossys run loop.create --slot designer/<id>`, exit 0. A change the step refuses (an
+ * import no manifest row of the item declares) exits 1, names the package and says to request the reference manifest.
+ * No stock item, or a slot of another agent, refuses: there is no fallback reference.
  */
 export function optionsReference(root: string, agent: SlotAgent, id: string): CliResult {
   const at = `${agent}/${id}`;
@@ -142,22 +152,59 @@ export function optionsReference(root: string, agent: SlotAgent, id: string): Cl
   let found: ReturnType<typeof stockItemOf>;
   try { found = stockItemOf(root, id); }
   catch (error) { return { exitCode: 1, message: `options refused: ${at} has no reference item: ${errorMessage(error)}` }; }
-  if ("none" in found) return { exitCode: 1, message: `options refused: ${at} has no reference item: ${found.none}; the agent creates from the slot contract (clossys slot ${at} --full)` };
-  const { stock } = found;
   const skillPath = skillFor(root, CODE_ADOPT_SKILL, agent)!;
   const skill = { path: skillPath, text: readFileSync(packagePath(root, skillPath), "utf8") };
+  const run = `clossys run loop.create --slot ${at}`;
+  if ("none" in found) return unlockedReference(root, at, id, found.none, run, skill);
+  const { stock } = found;
   const notCode = codeAdoptSlotRefusal(root, agent, id);
   const held = readSlotEntry(join(root, "clossys"), agent, id)?.candidates ?? [];
   const byCode = notCode === undefined && held.length === 0;
   const adopt = {
-    step: CODE_ADOPT_CLI, run: `clossys run loop.create --slot ${at}`, rung: CODE_ADOPT_RUNG, seed: stock.seed, byCode,
+    step: CODE_ADOPT_CLI, run, rung: CODE_ADOPT_RUNG, seed: stock.seed, byCode,
     why: notCode ?? (held.length ? `${at} holds ${held.join(", ")}; code adopts only into a slot with no candidate` : `code installs ${stock.ref} unmodified at rung ${CODE_ADOPT_RUNG}`),
   };
-  const output = { slot: at, reference: stock.ref, seed: stock.seed, item: stock.item, adopt, skill };
+  const output = { slot: at, reference: stock.ref, seed: stock.seed, hash: stock.row.hash, item: stock.item, adopt, skill };
   const lines = [
-    `${at}: reference ${stock.ref} (seed ${stock.seed}), ${stock.item.files.length} file(s); dependencies ${stock.item.dependencies.join(", ") || "none"}`,
+    `${at}: reference ${stock.ref} (seed ${stock.seed}), hash ${stock.row.hash}, ${stock.item.files.length} file(s); dependencies ${stock.item.dependencies.join(", ") || "none"}`,
     `adopt: ${byCode ? `${adopt.run} installs it unmodified (${CODE_ADOPT_CLI}, rung ${CODE_ADOPT_RUNG})` : `code does not adopt here (${adopt.why}); submit it yourself at rung ${CODE_ADOPT_RUNG} --seed ${stock.seed}`}`,
     ...stock.item.files.flatMap(file => [`--- file ${file.path}`, file.content]),
+    `--- skill ${skill.path}`, skill.text,
+  ];
+  return { exitCode: 0, message: lines.join("\n"), output };
+}
+
+/**
+ * `--reference` when stockItemOf finds no item (`none`): a stock row that ships the slot's fixture but imports a package
+ * the consumer lockfile does not hold prints its item, hash, the adopt step's dependency change and the verb that
+ * applies it (exit 0), or the step's refusal (exit 1); no stock row refuses with what create means (AGENT_CREATES).
+ */
+function unlockedReference(root: string, at: string, id: string, none: string, run: string, skill: { path: string; text: string }): CliResult {
+  let files: ReturnType<typeof stockFilesOf>;
+  try { files = stockFilesOf(root, id); }
+  catch (error) { return { exitCode: 1, message: `options refused: ${at} has no reference item: ${errorMessage(error)}` }; }
+  if ("none" in files) return { exitCode: 1, message: `options refused: ${at} has no reference item: ${none}; ${agentCreatesText(at)}` };
+  const { row, ref } = files;
+  let preview: ReturnType<typeof adoptDependencyPreview>;
+  try { preview = adoptDependencyPreview(root, "designer", id); }
+  catch (error) { return { exitCode: 1, message: `options refused: ${at}'s reference ${ref} cannot be planned: ${errorMessage(error)}` }; }
+  if ("refused" in preview) {
+    const request = `clossys request --kind change --subject ${at} --from ${at} --want contract --why "${ref}: its reference manifest rows do not declare a package it imports"`;
+    return { exitCode: 1, message: `options refused: ${at}'s reference ${ref} (hash ${row.hash}): ${preview.refused}. No clossys step installs an undeclared package: file a request for the reference manifest (${request}); ${agentCreatesText(at)}`, output: { slot: at, reference: ref, hash: row.hash, refused: preview.refused, request } };
+  }
+  if ("skip" in preview) return { exitCode: 1, message: `options refused: ${at} has no reference item: ${none}, and no clossys step adds it here (${preview.skip})` };
+  const change = dependencyPlanText(preview.plan);
+  const then = preview.adopts
+    ? `then installs ${ref} unmodified (${CODE_ADOPT_CLI}, rung ${CODE_ADOPT_RUNG}, seed ${row.registry}/${row.name})`
+    : `and adopts no candidate (${preview.crafted}): craft it from this reference after the run`;
+  const apply = `${run} adds them (one logged dependency.add event), ${then}; options writes nothing, and you never run npm`;
+  const item = { name: id.split(".").at(-1)!, type: row.type, files: files.files };
+  const output = { slot: at, reference: ref, seed: `${row.registry}/${row.name}`, hash: row.hash, item, dependencies: { plan: preview.plan, change }, apply: { run, adopts: preview.adopts }, skill };
+  const lines = [
+    `${at}: reference ${ref} (seed ${row.registry}/${row.name}), hash ${row.hash}, ${files.files.length} file(s); ${none}`,
+    `dependencies: ${change}`,
+    `apply: ${apply}`,
+    ...files.files.flatMap(file => [`--- file ${file.path}`, file.content]),
     `--- skill ${skill.path}`, skill.text,
   ];
   return { exitCode: 0, message: lines.join("\n"), output };

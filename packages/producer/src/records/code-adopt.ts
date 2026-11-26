@@ -18,6 +18,9 @@
  * declares (the item row's `dependencies`, plus its registry's `registry:style` rows at the same version, the base
  * every item of that registry is written against), each a valid npm package name, at the range the publish collector
  * (`substrateDependencies`) gives. An import the entry does not declare, or an invalid name, refuses the change.
+ * CP1-PKGS: the same step runs for a crafted stock slot (isCraftedStockSlot: a Designer frames or sections slot, which
+ * code does not adopt only because its candidates are crafted, not byte-exact): code adds the packages the stock item
+ * of its contract fixture imports and writes no candidate; the agent still crafts the frame or section.
  *
  * The writer (records/slot-write.ts writeCandidate) accepts `--by code:adopt` only when codeAdoptRefusal finds
  * nothing: the slot rule, then the item is the stock item exactly (registry lineage, rung L1 with its seed, every
@@ -72,6 +75,24 @@ const sha256 = (text: string): string => createHash("sha256").update(text, "utf8
 const readJson = (file: string): unknown => JSON.parse(readFileSync(file, "utf8")) as unknown;
 const manifestOf = (root: string): { items: ManifestRow[] } => readJson(packagePath(root, REFERENCE_MANIFEST)) as { items: ManifestRow[] };
 const referencesDirOf = (root: string): string => dirname(packagePath(root, REFERENCE_MANIFEST));
+
+/**
+ * What "the agent creates" means wherever code adopts nothing (CP1-PKGS, the one wording; the Designer skill's loop step
+ * 4 cites it verbatim): rung L4 of the source ladder, after the slot's latest verdict says create, crafted from the
+ * slot contract and the pinned slots it reads. It is not an item invented from nothing.
+ */
+export const AGENT_CREATES = "the agent creates it: an L4 create after a verdict that says create, built from the slot contract and the pinned slots it reads";
+/** {@link AGENT_CREATES} for one slot, with the verbs that read the contract and record the verdict. */
+export const agentCreatesText = (at: string): string => `${AGENT_CREATES} (clossys slot ${at} --full; clossys verdict ${at} --record <file>)`;
+
+/**
+ * CP1-PKGS: whether `<agent>/<slotId>` is a crafted stock slot, a Designer frames or sections slot: code adopts nothing
+ * there only because its candidates are crafted rather than byte-exact (ref-verbatim byteExactAdoption), so the adopt
+ * step still adds the packages its stock item imports (when a stock row ships its contract fixture) and the agent crafts.
+ */
+export function isCraftedStockSlot(agent: string, slotId: string): boolean {
+  return agent === "designer" && /^(?:frames|sections)\./.test(slotId) && byteExactAdoption(slotId, undefined) === undefined;
+}
 
 /** Why `designer/<slotId>` is not a byte-exact adopt slot code may author into, or undefined when it is one. */
 export function codeAdoptSlotRefusal(root: string, agent: string, slotId: string): string | undefined {
@@ -164,13 +185,13 @@ export function lockedPackages(root: string): Record<string, string> {
   return out;
 }
 
-interface StockFiles {
+export interface StockFiles {
   readonly row: ManifestRow; readonly ref: string; readonly doc: ReturnType<typeof readSlot>; readonly manifest: { items: ManifestRow[] };
   readonly files: readonly { path: string; type: string; content: string }[]; readonly reader: DeclaredFallbackReader;
 }
 
 /** The stock row of `designer/<slotId>` and its .tsx files normalized to the consumer (stockItemOf, before the lockfile). */
-function stockFilesOf(root: string, slotId: string): StockFiles | { readonly none: string } {
+export function stockFilesOf(root: string, slotId: string): StockFiles | { readonly none: string } {
   const at = `designer/${slotId}`;
   const doc = readSlot(join(root, "clossys"), "designer", slotId);
   const file = ((doc.contract as { fixture?: { fixtures?: { file?: unknown } } }).fixture?.fixtures?.file);
