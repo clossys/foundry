@@ -64,24 +64,9 @@
   "fixtures": 90,
   "gaps": [
     {
-      "slot": "components.chart-area",
-      "layer": "components",
-      "reason": "registry/aria-nova/ui/chart.tsx exports no Chart and 6 other components"
-    },
-    {
-      "slot": "components.chart-bar",
-      "layer": "components",
-      "reason": "registry/aria-nova/ui/chart.tsx exports no Chart and 6 other components"
-    },
-    {
       "slot": "components.chart-heatmap",
       "layer": "components",
       "reason": "no adopted reference"
-    },
-    {
-      "slot": "components.chart-line",
-      "layer": "components",
-      "reason": "registry/aria-nova/ui/chart.tsx exports no Chart and 6 other components"
     },
     {
       "slot": "components.chart-range",
@@ -109,42 +94,12 @@
       "reason": "no adopted reference"
     },
     {
-      "slot": "components.date-field",
-      "layer": "components",
-      "reason": "no adopted reference"
-    },
-    {
-      "slot": "components.icon",
-      "layer": "components",
-      "reason": "no adopted reference"
-    },
-    {
-      "slot": "components.logo",
-      "layer": "components",
-      "reason": "no adopted reference"
-    },
-    {
       "slot": "components.native-action",
       "layer": "components",
       "reason": "no adopted reference"
     },
     {
       "slot": "components.number-field",
-      "layer": "components",
-      "reason": "no adopted reference"
-    },
-    {
-      "slot": "components.semantic-content",
-      "layer": "components",
-      "reason": "no adopted reference"
-    },
-    {
-      "slot": "components.tree",
-      "layer": "components",
-      "reason": "registry/magicui/file-tree.tsx exports no FileTree and 4 other components"
-    },
-    {
-      "slot": "components.rich-text",
       "layer": "components",
       "reason": "no adopted reference"
     },
@@ -269,11 +224,6 @@
       "reason": "retired in place (src/catalog/retired.json): not live, so no fixture is derived"
     },
     {
-      "slot": "sections.article",
-      "layer": "sections",
-      "reason": "tailwindcss-typography/typography ships 3 code files and no registry:page entry or typography file"
-    },
-    {
       "slot": "sections.boundary-message",
       "layer": "sections",
       "reason": "retired in place (src/catalog/retired.json): not live, so no fixture is derived"
@@ -307,11 +257,6 @@
       "slot": "sections.record-detail",
       "layer": "sections",
       "reason": "retired in place (src/catalog/retired.json): not live, so no fixture is derived"
-    },
-    {
-      "slot": "sections.sectioned-document",
-      "layer": "sections",
-      "reason": "tailwindcss-typography/typography ships 3 code files and no registry:page entry or typography file"
     },
     {
       "slot": "frames.document",
@@ -812,9 +757,59 @@
   ],
   "composed": [
     {
+      "slot": "components.chart-area",
+      "layer": "components",
+      "reason": "no adopted reference mounts as the slot's fixture: the contract fixture is the file and export of the slot's own pinned, certified composition (registry/aria-nova/ui/chart.tsx exports no Chart and 6 other components)"
+    },
+    {
+      "slot": "components.chart-bar",
+      "layer": "components",
+      "reason": "no adopted reference mounts as the slot's fixture: the contract fixture is the file and export of the slot's own pinned, certified composition (registry/aria-nova/ui/chart.tsx exports no Chart and 6 other components)"
+    },
+    {
+      "slot": "components.chart-line",
+      "layer": "components",
+      "reason": "no adopted reference mounts as the slot's fixture: the contract fixture is the file and export of the slot's own pinned, certified composition (registry/aria-nova/ui/chart.tsx exports no Chart and 6 other components)"
+    },
+    {
+      "slot": "components.date-field",
+      "layer": "components",
+      "reason": "no adopted reference mounts as the slot's fixture: the contract fixture is the file and export of the slot's own pinned, certified composition (no adopted reference)"
+    },
+    {
+      "slot": "components.icon",
+      "layer": "components",
+      "reason": "no adopted reference mounts as the slot's fixture: the contract fixture is the file and export of the slot's own pinned, certified composition (no adopted reference)"
+    },
+    {
+      "slot": "components.logo",
+      "layer": "components",
+      "reason": "no adopted reference mounts as the slot's fixture: the contract fixture is the file and export of the slot's own pinned, certified composition (no adopted reference)"
+    },
+    {
+      "slot": "components.semantic-content",
+      "layer": "components",
+      "reason": "no adopted reference mounts as the slot's fixture: the contract fixture is the file and export of the slot's own pinned, certified composition (no adopted reference)"
+    },
+    {
+      "slot": "components.tree",
+      "layer": "components",
+      "reason": "no adopted reference mounts as the slot's fixture: the contract fixture is the file and export of the slot's own pinned, certified composition (registry/magicui/file-tree.tsx exports no FileTree and 4 other components)"
+    },
+    {
+      "slot": "components.rich-text",
+      "layer": "components",
+      "reason": "no adopted reference mounts as the slot's fixture: the contract fixture is the file and export of the slot's own pinned, certified composition (no adopted reference)"
+    },
+    {
       "slot": "sections.account-summary",
       "layer": "sections",
       "reason": "no adoptable reference in the selected style and engine: the contract fixture is the file and export of the slot's own pinned, certified composition (no adopted reference)"
+    },
+    {
+      "slot": "sections.article",
+      "layer": "sections",
+      "reason": "no adopted reference mounts as the slot's fixture: the contract fixture is the file and export of the slot's own pinned, certified composition (tailwindcss-typography/typography ships 3 code files and no registry:page entry or typography file)"
     },
     {
       "slot": "sections.call-to-action",
@@ -865,6 +860,11 @@
       "slot": "sections.queue-list",
       "layer": "sections",
       "reason": "no adoptable reference in the selected style and engine: the contract fixture is the file and export of the slot's own pinned, certified composition (no adopted reference)"
+    },
+    {
+      "slot": "sections.sectioned-document",
+      "layer": "sections",
+      "reason": "no adopted reference mounts as the slot's fixture: the contract fixture is the file and export of the slot's own pinned, certified composition (tailwindcss-typography/typography ships 3 code files and no registry:page entry or typography file)"
     },
     {
       "slot": "sections.slot-detail",
