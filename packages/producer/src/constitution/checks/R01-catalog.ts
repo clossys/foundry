@@ -9,7 +9,9 @@
  *   schema of its kind family; a `clossys.slot/1` file by pipeline/schemas/slot.schema.json and
  *   validateSlotDoc, its kind in AGENT_KIND[agent]. A kind with no such schema yet is one agent-level row.
  * - R01.3 every contract carries a fixture of its kind's shape (validate.ts fixtureShapeIssues); a slot/2
- *   kind is read as its family (the slot.json view in shared.ts slotDoc, used by R01.3 and R01.6 alike).
+ *   kind is read as its family (the slot.json view in shared.ts slotDoc, used by R01.3 and R01.6 alike). An element
+ *   contract needs its preview only where the element certifier mounts one (owner D1, certify/element.ts
+ *   `elementMountsFixture`, the certifier's own predicate): a token or asset slot holding no rendered candidate needs none.
  * - R01.4 an agent tree holds only ia.json, ledger.json, policy.json, live slot folders and
  *   tombstones (a folder holding only a ledger.json whose last event is retire-slot); a live slot
  *   folder holds only slot.json, pin.json, candidates/, ledger.json and retired/. The `retired/`
@@ -33,6 +35,7 @@ import { join } from "node:path";
 import { isModelDir } from "../../records/slots.js";
 import { CRITIQUES_DIR } from "../../records/slot-write.js";
 import { isAgentLoopRecord } from "../certify/loop.js";
+import { elementMountsFixture } from "../certify/element.js";
 
 const AGENT_FILES = new Set(["ia.json", "ledger.json", "policy.json"]);
 const SLOT_ENTRIES = new Set(["slot.json", "pin.json", "candidates", "ledger.json", "retired"]);
@@ -105,7 +108,7 @@ export function contractFixture(ctx: ConstitutionContext): Row[] {
     const doc = slotDocOf(record);
     const kind = doc && kindOf(doc);
     if (!doc || !kind || !isObject(doc.contract)) continue; // R01.2 reports a slot.json with no kind or contract.
-    const issues = fixtureShapeIssues(kind, doc.contract);
+    const issues = fixtureShapeIssues(kind, doc.contract, kind !== "element" || elementMountsFixture(record!, doc.contract));
     if (issues.length) rows.push(row("R01", "R01.3", { agent: agent.agent, id }, `contract.fixture ${listed(issues, 3)} (${kind})`, record!.slot!.path));
   }
   return rows;

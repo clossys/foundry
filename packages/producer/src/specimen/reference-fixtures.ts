@@ -64,6 +64,17 @@ export const NO_REFERENCE = "no adopted reference";
  * verdict, critique, scorecard) and pinned through the CHOOSE gate (conform/dogfood.ts `composedPinMiss`, certify/element.ts `composedFixtureFit`).
  */
 export const COMPOSED = "no adoptable reference in the selected style and engine: the contract fixture is the file and export of the slot's own pinned, certified composition";
+/**
+ * Owner D1 (c), consumer fill: a live component, section or frame slot whose reference rows yield no mountable
+ * reference (the derive determines no fixture from them) is composed the same way as FCR: the package gives it no
+ * contract fixture, and the consumer supplies it, the file and export of the slot's own pinned, certified composition.
+ */
+export const NO_MOUNTABLE_REFERENCE = "no adopted reference mounts as the slot's fixture: the contract fixture is the file and export of the slot's own pinned, certified composition";
+/** Whether a derive outcome determined no fixture from the slot's reference rows (owner D1 (c)): the consumer fills it. */
+export function noMountableReference(result: object): result is { gap: string } {
+  return "gap" in result;
+}
+const consumerFill = (result: object) => `${NO_MOUNTABLE_REFERENCE} (${(result as { gap?: unknown }).gap})`;
 const LAYERS = Object.keys(REFERENCE_FIXTURE_RULES.layers) as (keyof typeof REFERENCE_FIXTURE_RULES.layers)[];
 /** The layers whose slot contracts carry adopted reference rows. */
 const REFERENCE_LAYERS = ["components", "sections", "frames"] as const;
@@ -258,8 +269,8 @@ export function richer(existing: unknown, derived: ContractFixture): boolean {
 }
 
 export interface FixtureGap { readonly slot: string; readonly layer: string; readonly reason: string; readonly source?: "studio" }
-/** A composed section or frame slot (FCR): no adoptable reference, so its fixture is its pinned composition's. */
-export interface ComposedSlot { readonly slot: string; readonly layer: "sections" | "frames"; readonly reason: string }
+/** A composed slot (FCR, owner D1 (c)): no adoptable or mountable reference, so its fixture is its pinned composition's. */
+export interface ComposedSlot { readonly slot: string; readonly layer: "components" | "sections" | "frames"; readonly reason: string }
 export interface ReferenceFixturePlan {
   readonly files: readonly { readonly path: string; readonly before: string; readonly after: string }[];
   readonly fixtures: number;
@@ -301,8 +312,9 @@ export function planReferenceFixtures(designerRoot: string, studioSlots: readonl
         const block = retired.has(slot.id) ? { gap: BLOCK_FIXTURE_RULES.retired }
           : named !== undefined ? { composed: `${COMPOSED} (${named})` }
           : blockReferenceFixture(index, layer, contract, references.get(slot.id) ?? [], designerRoot);
-        if ("gap" in block) { gaps.push({ slot: slot.id, layer, reason: block.gap }); slot.contract = contract; continue; }
         if ("composed" in block) { composed.push({ slot: slot.id, layer, reason: block.composed }); slot.contract = contract; continue; }
+        if (!retired.has(slot.id) && noMountableReference(block)) { composed.push({ slot: slot.id, layer, reason: consumerFill(block) }); slot.contract = contract; continue; }
+        if ("gap" in block) { gaps.push({ slot: slot.id, layer, reason: block.gap }); slot.contract = contract; continue; }
         contract.props = [...block.props];
         contract.fixture = block.fixture;
         fixtures++;
@@ -310,6 +322,7 @@ export function planReferenceFixtures(designerRoot: string, studioSlots: readonl
         continue;
       }
       const result = rule.determined ? referenceFixture(index, slot.id, references.get(slot.id) ?? []) : { gap: rule.reason };
+      if (layer === "components" && rule.determined && !retired.has(slot.id) && noMountableReference(result)) { composed.push({ slot: slot.id, layer, reason: consumerFill(result) }); slot.contract = contract; continue; }
       if ("gap" in result) { gaps.push({ slot: slot.id, layer, reason: result.gap }); slot.contract = contract; continue; }
       if (!Array.isArray(contract.props)) { gaps.push({ slot: slot.id, layer, reason: "the contract declares no props list, so no typed fixture can be written" }); slot.contract = contract; continue; }
       const keep = richer(existing, result.fixture);

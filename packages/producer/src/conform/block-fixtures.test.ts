@@ -13,7 +13,7 @@ import { describe, expect, it } from "vitest";
 import { contractFixtureIssues } from "../records/slot-model/contract-fixture.js";
 import { fixtureShapeIssues } from "../records/slot-model/validate.js";
 import { BLOCK_FIXTURE_RULES, draftCopy, draftCopyIssues, frameChildren, hasDefaultExport, type CopyField } from "../specimen/block-fixtures.js";
-import { COMPOSED, GAPS_FILE, NO_REFERENCE, referenceIndex, slotReferenceShips } from "../specimen/reference-fixtures.js";
+import { COMPOSED, GAPS_FILE, NO_MOUNTABLE_REFERENCE, NO_REFERENCE, referenceIndex, slotReferenceShips } from "../specimen/reference-fixtures.js";
 import { PROBES, type ProbeFacts } from "./dogfood.js";
 import type { AgentModel, ConformModel } from "./model.js";
 
@@ -77,8 +77,10 @@ describe("section and frame fixtures from adopted references", () => {
       const fixture = slot.contract.fixture as Fixture | undefined;
       if (retired.has(slot.id)) { expect(fixture, slot.id).toBeUndefined(); expect(named.get(slot.id), slot.id).toBe(BLOCK_FIXTURE_RULES.retired); continue; }
       if (composed.has(slot.id)) {
-        // FCR: a composed slot is no gap, and the package gives it neither a fixture nor the props that type one.
-        expect(composed.get(slot.id), slot.id).toContain(COMPOSED);
+        // FCR: a composed slot is no gap, and the package gives it neither a fixture nor the props that type one; it is
+        // composed by the FCR rule or (owner D1 (c)) because none of its references mounts as its fixture.
+        const reason = composed.get(slot.id)!;
+        expect(reason.startsWith(COMPOSED) || reason.startsWith(NO_MOUNTABLE_REFERENCE), slot.id).toBe(true);
         expect(named.has(slot.id), slot.id).toBe(false);
         expect(fixture, slot.id).toBeUndefined();
         expect(slot.contract.props, slot.id).toBeUndefined();

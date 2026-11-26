@@ -31,7 +31,7 @@ import { dependencyPart } from "../../specimen/specimen-tree.js";
 import { installPathOf, isObject, registryFiles, slotDoc, stringList } from "../checks/shared.js";
 import type { CandidateRecord, SlotRecord } from "../types.js";
 import { pinKey, type CertifyEnv } from "./env.js";
-import { CODE_ITEM_FILE_TYPES, elementCheckOf, HOOK_NAME, RegistryTypeError, type ElementCheck } from "./registry-types.js";
+import { checkMountsFixture, CODE_ITEM_FILE_TYPES, elementCheckOf, HOOK_NAME, RegistryTypeError, slotAlwaysMountsFixture, type ElementCheck } from "./registry-types.js";
 import { reason, type Reason } from "./types.js";
 
 const HOST_MODULES = new Set(["react", "react-dom", "react-dom/server", "react/jsx-runtime", "react/jsx-dev-runtime"]);
@@ -289,8 +289,22 @@ function figureAltFit(slot: SlotRecord, candidate: CandidateRecord, contract: Re
  */
 export function certifyElement(slot: SlotRecord, candidate: CandidateRecord, contract: Readonly<Record<string, unknown>>, env: CertifyEnv): Reason[] {
   const check = elementCheck(slot, candidate, contract);
-  const fit = typeof check !== "string" ? [check] : check === "render" ? renderFit(slot, candidate, contract, env) : check === "none" ? [] : codeFit(slot.id, usesOf(slot), candidate, contract, env, check);
+  const fit = typeof check !== "string" ? [check] : !checkMountsFixture(check) ? [] : check === "render" ? renderFit(slot, candidate, contract, env) : codeFit(slot.id, usesOf(slot), candidate, contract, env, check);
   return [...backdropFit(slot, candidate, contract), ...figureAltFit(slot, candidate, contract), ...fit];
+}
+
+/**
+ * Whether the element certifier mounts `slot`'s contract fixture (owner D1, R01.3): for any candidate when every item
+ * the slot accepts is held to a check that mounts it (`slotAlwaysMountsFixture`: component, section, frame, hook and lib
+ * slots), else when one of the slot's own candidates is (`elementCheck`, the certifier's own choice, read through the
+ * same `checkMountsFixture`). A token or asset slot holding only themes, fonts, files or SVGs mounts none, so needs none.
+ */
+export function elementMountsFixture(slot: SlotRecord, contract: Readonly<Record<string, unknown>>): boolean {
+  if (slotAlwaysMountsFixture(slot.id.split(".")[0], contract)) return true;
+  return slot.candidates.some(candidate => {
+    const check = elementCheck(slot, candidate, contract);
+    return typeof check === "string" && checkMountsFixture(check);
+  });
 }
 
 /** What every fixture-held check (the render and the code check) starts from: the fixture, its inputs and the file it names. */

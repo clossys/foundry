@@ -15,7 +15,7 @@ import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
 import { contractFixtureIssues } from "../records/slot-model/contract-fixture.js";
 import { fixtureShapeIssues } from "../records/slot-model/validate.js";
 import { isAgentLoop } from "../loop/agent-loops.js";
-import { COMPOSED, exportedNames, GAPS_FILE, NO_REFERENCE, planReferenceFixtures, REFERENCE_FIXTURE_RULES, referenceFixture, referenceIndex, referenceShips, richer, slotReferenceShips } from "../specimen/reference-fixtures.js";
+import { COMPOSED, exportedNames, GAPS_FILE, NO_MOUNTABLE_REFERENCE, NO_REFERENCE, planReferenceFixtures, REFERENCE_FIXTURE_RULES, referenceFixture, referenceIndex, referenceShips, richer, slotReferenceShips } from "../specimen/reference-fixtures.js";
 import { PROBES, type ProbeFacts } from "./dogfood.js";
 import type { AgentModel, ConformModel } from "./model.js";
 
@@ -94,8 +94,13 @@ describe("Designer contract fixtures from adopted references", () => {
     }
     expect(fixtures).toBe(gaps.fixtures);
     expect(fixtures + gaps.gaps.filter(gap => gap.source !== "studio").length + composed.size).toBe(total);
-    // Only a frame or section with no adoptable reference is composed; it carries the COMPOSED reason.
-    for (const row of gaps.composed) { expect(["frames", "sections"], row.slot).toContain(row.layer); expect(row.reason, row.slot).toContain(COMPOSED); }
+    // A frame or section with no adoptable reference is composed with the COMPOSED reason (FCR); a live component,
+    // section or frame whose references mount no fixture is composed with the NO_MOUNTABLE_REFERENCE reason (owner D1 (c)).
+    for (const row of gaps.composed) {
+      expect(["components", "frames", "sections"], row.slot).toContain(row.layer);
+      expect(row.reason.startsWith(COMPOSED) || row.reason.startsWith(NO_MOUNTABLE_REFERENCE), row.slot).toBe(true);
+      if (row.layer === "components") expect(row.reason, row.slot).toContain(NO_MOUNTABLE_REFERENCE);
+    }
     // U28: sections and frames carry fixtures too (block-fixtures.test.ts); themes and assets mount nothing.
     for (const layer of ["themes", "assets"]) expect(catalog(layer).filter(slot => slot.contract.fixture !== undefined), layer).toEqual([]);
   });
@@ -159,7 +164,8 @@ describe("a richer existing fixture is kept", () => {
     expect(rows[0]!.contract.fixture).toEqual(rich);
     expect(rows[1]!.contract.fixture).toEqual(derived);
     expect(rows[2]!.contract.fixture).toBeUndefined();
-    expect(plan).toMatchObject({ fixtures: 2, kept: 1, gaps: [{ slot: "components.logo", layer: "components", reason: NO_REFERENCE }] });
+    // Owner D1 (c): a live slot whose references mount no fixture is the consumer's to fill (composed), not a gap.
+    expect(plan).toMatchObject({ fixtures: 2, kept: 1, gaps: [], composed: [{ slot: "components.logo", layer: "components", reason: `${NO_MOUNTABLE_REFERENCE} (${NO_REFERENCE})` }] });
   });
 });
 
