@@ -171,7 +171,7 @@ describe("R16.4 a verdict is a pure function of candidate, standard, contract an
         }
       };
       walk(dir);
-      put(join(dir, "recipe.json"), { schema: "clossys.recipe/1", id: recipe.id, produces: [STANDARD_ID], rung: "adapt", axes: ["mood"], generator: "generate.mjs" });
+      put(join(dir, "recipe.json"), { schema: "clossys.recipe/1", id: recipe.id, produces: [STANDARD_ID], rung: "adapt", tier: "mid", axes: ["mood"], generator: "generate.mjs" });
       put(join(dir, "generate.mjs"), "export default input => `${input} (generated)`;\n");
       put(join(dir, "craft.md"), "# rewritten\n\nA different recipe entirely.\n");
     }

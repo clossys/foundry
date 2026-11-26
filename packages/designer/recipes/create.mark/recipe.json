@@ -5,6 +5,7 @@
     "asset.logo-mark"
   ],
   "rung": "create",
+  "tier": "high",
   "axes": [
     "construction",
     "reduction",

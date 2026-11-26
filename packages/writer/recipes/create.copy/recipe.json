@@ -8,6 +8,7 @@
     "narrative"
   ],
   "rung": "create",
+  "tier": "mid",
   "axes": [
     "angle",
     "register",

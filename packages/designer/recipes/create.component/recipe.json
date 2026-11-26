@@ -5,6 +5,7 @@
     "component"
   ],
   "rung": "create",
+  "tier": "high",
   "axes": [
     "composition",
     "interaction",

@@ -147,7 +147,7 @@ const PLUMB_CRAFT = "# fixture-headline-craft\n\nPlumb: the fixture plumb action
 const plumbAction = (fields: Record<string, unknown> = {}): Edit => root => put(join(root, "packages", "producer", "actions", PLUMB_ACTION, "action.json"), { schema: "clossys.action/1", id: PLUMB_ACTION, kind: "plumb", standards: [`writer/${STANDARD_ID}`], ...fields });
 function plumb(recipe: Record<string, unknown> = {}, craft = PLUMB_CRAFT, action: Edit | null = plumbAction()): Edit {
   return (root, consumer) => {
-    editRecipe(doc => { doc.rung = "plumb"; doc.axes = []; doc.action = PLUMB_ACTION; Object.assign(doc, recipe); for (const [key, value] of Object.entries(recipe)) if (value === undefined) delete doc[key]; })(root, consumer);
+    editRecipe(doc => { doc.rung = "plumb"; doc.axes = []; doc.action = PLUMB_ACTION; delete doc.tier; Object.assign(doc, recipe); for (const [key, value] of Object.entries(recipe)) if (value === undefined) delete doc[key]; })(root, consumer);
     put(join(recipeDir(root), "craft.md"), craft);
     action?.(root, consumer);
   };

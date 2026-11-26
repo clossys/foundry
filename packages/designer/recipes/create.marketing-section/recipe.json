@@ -5,6 +5,7 @@
     "section.site"
   ],
   "rung": "create",
+  "tier": "high",
   "axes": [
     "layout",
     "emphasis",

@@ -5,6 +5,7 @@
     "copy.headline"
   ],
   "rung": "create",
+  "tier": "high",
   "axes": [
     "angle",
     "register",

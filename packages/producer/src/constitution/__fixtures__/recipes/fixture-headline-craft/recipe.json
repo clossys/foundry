@@ -3,5 +3,6 @@
   "id": "fixture-headline-craft",
   "produces": ["fixture-headline"],
   "rung": "create",
+  "tier": "mid",
   "axes": ["tone", "length", "structure"]
 }
