@@ -432,8 +432,12 @@ export function planIaWrite(consumer: string, agent: ModelAgent, before: IaFile,
  * of the groups that hold one, the L0 layers and the axes come from the package catalog, which
  * `clossys ia sync` writes. A consumer regroups its declared extensions only; a package regroup lands
  * in the package catalog. A workspace-owned IA (`workspace#owner`) is the consumer's to regroup.
+ *
+ * The extension flag of a package leaf is the package's; a leaf the consumer placed in the adopted IA (a Writer page
+ * meta under its own `copy.page-metadata` group) is the consumer's to declare an extension (CP1-U3). `isPackageLeaf`
+ * says which a leaf is, read from the installed package IA; without it every placed leaf is guarded.
  */
-export function packageStructureChange(before: IaFile, after: IaFile): string | undefined {
+export function packageStructureChange(before: IaFile, after: IaFile, isPackageLeaf?: (slot: string) => boolean): string | undefined {
   if (typeof before.source !== "string" || !before.source.startsWith("@clossys/")) return undefined;
   const skeleton = (ia: IaFile, extensions: ReadonlySet<string>) => {
     const leaves: string[] = [], labels: string[] = [];
@@ -447,7 +451,8 @@ export function packageStructureChange(before: IaFile, after: IaFile): string | 
   const declared = new Set(before.extensions ?? []);
   const was = skeleton(before, declared), now = skeleton(after, declared);
   const nowExtensions = new Set(after.extensions ?? []);
-  const flipped = [...declared].filter(slot => !nowExtensions.has(slot)).concat([...nowExtensions].filter(slot => !declared.has(slot) && was.leaves.some(row => row.endsWith(`/${slot}`))));
+  const guarded = (slot: string) => isPackageLeaf === undefined || isPackageLeaf(slot);
+  const flipped = [...declared].filter(slot => !nowExtensions.has(slot) && guarded(slot)).concat([...nowExtensions].filter(slot => !declared.has(slot) && was.leaves.some(row => row.endsWith(`/${slot}`)) && guarded(slot)));
   const what = flipped.length ? `the extension flag of ${flipped.join(", ")}`
     : JSON.stringify(was.leaves) !== JSON.stringify(now.leaves) ? "the placement of a package leaf"
     : JSON.stringify(was.labels) !== JSON.stringify(now.labels) ? "a group that holds package leaves"

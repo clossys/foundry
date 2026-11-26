@@ -21,7 +21,7 @@ import { dirname, join } from "node:path";
 import { loadSchema, validateValue } from "../pipeline/schema.js";
 import { queueEntryChangeIssues } from "../queue/append-only.js";
 import { findQueueEntry, readQueueEntry } from "../queue/entry.js";
-import { consumerFacts, placedSlots, readDeclarations, routeEntry, RoutingError, WORK_KINDS, type RoutingFacts, type WorkKind } from "../queue/routing.js";
+import { consumerFacts, placedSlots, readDeclarations, rederive, routeEntry, RoutingError, WORK_KINDS, type RoutingFacts, type WorkKind } from "../queue/routing.js";
 import { FIX_CHECKS, fixCheck, requesterCheck, requesterPinSets, requesterSlots } from "../queue/requester-check.js";
 import { PRODUCER_ROOT, skillPath } from "./ledger.js";
 import { resolveOwnerRef } from "./owner-decisions.js";
@@ -505,6 +505,34 @@ function routeOf(consumer: string, entry: { readonly kind: WorkKind; readonly ta
 const routeDetail = (route: EntryRoute): string =>
   `row ${route.row} -> ${route.assignee}${route.handler ? ` (${route.handler.loop}, ${route.handler.skill})` : ""}${route.packet ? ` (${route.packet.queue}${route.packet.step ? ` from ${route.packet.step}` : ""})` : ""}${route.escalate ? ", escalate package" : ""}${route.delegated ? ", delegated by the owner's handoff" : ""}`;
 const routedEvent = (id: string, n: number, at: string, route: EntryRoute): RequestEvent => ({ id: `${id}#${n}`, at, op: "routed", by: "producer", detail: routeDetail(route) });
+
+/**
+ * G20: the router re-derives the route of every open entry whose target is one of `agent`'s slots, and writes its route
+ * (one producer `routed` event) where the recorded one no longer equals the table: an adoption or placement changes the
+ * facts a row matches (`home`, `live`). The router alone writes a route. Returns the ids re-routed.
+ */
+export function rerouteOpenEntries(consumer: string, agent: ContentAgent, at: string): string[] {
+  const facts = consumerFacts(consumer);
+  const routable = (request: SlotRequest) => ({ kind: request.kind as WorkKind, target: request.target, assignee: request.assignee, ...(request.route ? { route: request.route } : {}) });
+  const rerouted: string[] = [];
+  for (const kind of WORK_KINDS) for (const read of listRequests(consumer, kind)) {
+    const listed = read.request;
+    if (listed?.status !== "open" || targetOf(listed)?.agent !== agent || rederive(facts, routable(listed)) === undefined) continue;
+    withRequestLock(consumer, listed.id, () => {
+      const request = readRequest(consumer, listed.id);
+      if (request.status !== "open" || rederive(facts, routable(request)) === undefined) return;
+      let route: EntryRoute;
+      try { route = routeEntry(facts, { kind: request.kind as WorkKind, target: request.target, assignee: request.assignee }, { delegated: request.route?.delegated === true }); } catch (error) {
+        if (error instanceof RoutingError) throw new RequestError(`the router refuses ${request.kind} ${request.target}: ${error.message}; ${request.id} keeps its route`);
+        throw error;
+      }
+      const next = withEvent({ ...request, assignee: route.assignee as SlotRequest["assignee"], route }, "routed", at, "producer", routeDetail(route)).request;
+      writeRequest(consumer, next);
+      rerouted.push(request.id);
+    });
+  }
+  return rerouted;
+}
 
 /** An option id from a verb and a name: `pin-` and the candidate file name, lower-case, every other character a dash. */
 const optionId = (verb: string, name: string) => `${verb}-${name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "")}`;

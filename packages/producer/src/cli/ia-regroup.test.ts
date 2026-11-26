@@ -501,7 +501,7 @@ describe("a package-sourced IA: package regroups land in the package catalog, a 
     packaged([]);
     const before = tree();
     expect(await owned("designer", "--rename", "assets.logo/logo-artwork", "--label", "Marks")).toMatchObject({ exitCode: 1, message: expect.stringMatching(/group that holds package leaves/) });
-    expect(await owned("designer/frames.workspace", "--extension", "true")).toMatchObject({ exitCode: 1, message: expect.stringMatching(/extension flag of frames.workspace/) });
+    expect(await owned("designer/assets.favicon", "--extension", "true")).toMatchObject({ exitCode: 1, message: expect.stringMatching(/extension flag of assets.favicon/) });
     expect(tree()).toEqual(before);
   });
 
