@@ -1,6 +1,6 @@
 ---
 name: clossys-writer
-description: Writer loop. For one Writer slot, reads the copy keys the Designer candidates expose and the Director brief, writes the copy as a new immutable candidate in the slot model, and shows it to the owner, who pins. Invoke with @clossys-writer to write or change copy.
+description: Writer loop. For one Writer slot, reads the copy keys the Designer candidates expose and the Director brief, writes the copy as a new immutable candidate in the slot model, and shows it to the owner. Invoke with @clossys-writer to write or change copy.
 disable-model-invocation: true
 ---
 # clossys-writer
@@ -10,7 +10,7 @@ you make traces to the Director brief. You do not invent facts, choose
 components or assemble pages.
 
 The CLI is deterministic: it validates and reports. Writing the words is your
-work, done through this loop. You write candidates only; the owner pins.
+work, done through this loop. Who may pin a candidate is the rule in Who picks and pins.
 
 ## The slot tree
 
@@ -37,7 +37,7 @@ clossys/agents/writer/ia.json                                  the IA: L1/L2 gro
 clossys/agents/writer/<slot>/slot.json                         clossys.slot/1 (kind: strings)
 clossys/agents/writer/<slot>/candidates/<name>-v<N>.md
                                                                one option: the copy records, per locale
-clossys/agents/writer/<slot>/pin.json                          { candidate, sha256, decidedBy, at }; the owner decides, `clossys pin` writes it
+clossys/agents/writer/<slot>/pin.json                          { candidate, sha256, decidedBy, at }; written by `clossys pin`
 ```
 
 The slot's leaf rule (length, kind) is in `slot.json` `contract`, copied from
@@ -45,35 +45,57 @@ the installed Writer contracts (`src/slot-contracts/contracts/*.json` of
 `@clossys/writer`). Candidates are immutable: a change is `v<N+1>`, never an
 edit. The pin is the only selection, and its history is git.
 
-A candidate is Markdown with flat frontmatter (each line `key: <JSON value>`;
-only `slot`, `locales` and `source`) and one `## <locale>` section per
-locale, in the order of `locales`. Each record is a `### ` heading (its
-context), one metadata comment and the text:
+A candidate is Markdown with flat frontmatter (each line `key: <JSON value>`)
+and one `## <locale>` section per locale, in the order of `locales`. You write
+these keys; the CLI adds its own `clossys:` header line when it records the
+candidate:
+
+- `slot`: the slot id, such as `"publication.site.meta"`.
+- `locales`: such as `["en"]`.
+- `source`: `{"kind":"derived","ref":[...]}`. Each ref is an input the slot
+  declares, named `director:<slot>` or `writer:<slot>`, with no version.
+- `provenance`: `{"voice":"director:identity.verbal.voice"}`, the pinned voice
+  every Writer candidate derives from. It is required, and it never goes in
+  `source.ref`.
+- `reason`: one line naming the Director slot the copy realises.
+
+Each record is a `### <key>` heading, one metadata comment whose `id` is the
+same key, and the text:
 
 ```markdown
 ---
-slot: "<slot id>"
+slot: "publication.site.meta"
 locales: ["en"]
-source: {"kind":"derived","ref":["director:<brief slot>@<N>"]}
+source: {"kind":"derived","ref":["director:identity.naming.name","director:advantage.proposition.promise"]}
+provenance: {"voice":"director:identity.verbal.voice"}
+reason: "Realises director:advantage.proposition.promise in the site's share text."
 ---
-
 ## en
-### Home hero heading
-<!-- {"id":"home.hero.heading","bindings":[]} -->
-The heading text.
+
+### siteName
+<!-- {"id":"siteName","bindings":[]} -->
+Fixture Works
+
+### share.title
+<!-- {"id":"share.title","bindings":[]} -->
+Fixture Works keeps small business sites current
 ```
 
-`id` is the Writer copy key a Publisher page binds; name it
-`<page>.<section>.<copy key>`, for example `home.hero.heading`. The slot is the
-leaf, so a record never carries `leaf`. `source.ref` names the Director brief
-slots the claims rest on. Pin state (`status`, `active`, `pinned`) never lives
-in a candidate.
+The keys are the slot contract's copy field keys (`copy.fields[].key`). The
+text is finished plain text: no Markdown, HTML, `TODO` or other placeholder.
+The slot is the leaf, so a record never carries `leaf`. Pin state (`status`,
+`active`, `pinned`) never lives in a candidate.
 
 ## Loop (one slot)
 
-1. **List the copy keys.** Read the Designer candidates of every frame and
-   section the page uses (`clossys/agents/designer/<slot>/candidates/`);
-   each one's `meta.element.reads.copyKeys` lists the copy it renders (a
+1. **Read the slot through the verbs.** `npx clossys slot writer/<slot>`
+   shows its brief, candidates, pin and who uses it;
+   `npx clossys brief writer/<slot>` prints the resolved brief and
+   `npx clossys options writer/<slot>` lists the candidates you can choose
+   from. The copy keys you write are the contract's copy fields. Read the
+   Designer candidates of every frame and section the page uses
+   (`clossys/agents/designer/<slot>/candidates/`); each one's
+   `meta.element.reads.copyKeys` lists the copy it renders (a
    `{ "slot", "prop", "previewKey" }` entry is a copy slot a page binds to one of
    your keys; its `previewKey` is the key its preview shows). Work from
    the candidates; you do not wait for Designer pins. The Publisher page
@@ -81,19 +103,45 @@ in a candidate.
    mount which sections.
 2. **Read the facts.** `npx clossys write --brief` prints the Director brief
    (brand essence, voice, audience, position, wont-claim) with slot ids and
-   versions. A missing fact blocks that claim: raise a Director NEED naming the
-   fact rather than inventing it, and leave a visible `TODO-OWNER` placeholder.
+   versions. A missing fact blocks that claim: never invent it, and never leave a
+   placeholder in the copy. Ask the Director for it with
+   `npx clossys request --kind change --subject director/<slot> --from writer/<slot> --why "<the missing fact>" --want candidate`.
 3. **Draft.** Write one record per copy key, within the slot's leaf limits.
-   Every factual claim traces to a brief slot named in `source.ref`. Carry
+   Every factual claim traces to a slot named in `source.ref`. Carry
    wont-claim into the words: never claim what the brief rules out. Offer
-   options as separate candidates (`<name>-v1`, `<name>-v2`), never as edits.
-4. **Submit the candidate** through the candidates verb (the Producer skill lists what it refuses):
+   options as separate candidates, never as edits.
+4. **Choose the rung and record the verdict.** There is no Writer seed
+   registry. When the slot's package default or a held candidate fits, adopt it:
+   `--rung adopt --seed <slot>/<candidate>`. When none fits, record a create
+   verdict first, then craft and submit with `--rung create --reason "<why no
+   seed fit>"`. List the candidates with `npx clossys options writer/<slot>`, then
+   write the verdict. A pick verdict pins that candidate as an agent pick (see
+   Who picks and pins):
+   ```json
+   {"schema":"clossys.verdict/1","slot":"publication.site.meta","pick":"meta-v1.md","reason":"Fits the voice and every limit.","criteria":["voice-fit","clarity"]}
+   ```
+   A create verdict names each gap:
+   ```json
+   {"schema":"clossys.verdict/1","slot":"publication.site.meta","create":true,"reason":"No held candidate states the pinned promise.","gaps":[{"id":"copy.entries"}]}
+   ```
    ```sh
-   npx clossys next writer/<slot> --submit draft.md --name <name> \
+   npx clossys verdict writer/<slot> --record verdict.json --model <id> --tier <tier> --by agent:writer
+   ```
+   Criteria are the taste criteria (`voice-fit`, `clarity`, `economy`,
+   `task-fit`); gaps are the requirement checks (such as `copy.entries`,
+   `copy.within-limits` or `lexicon.clean`) or a brief key as `brief:<key>`.
+   After a create verdict, run the craft stages in order:
+   `npx clossys craft brief writer/<slot> --model <id> --tier <tier> --skill <packet skill path>`,
+   then `diverge` (with `--file` holding 3 to 4 directions), `render`,
+   `critique` and at most 2 `refine` rounds, each with the same flags.
+5. **Submit the candidate** through the candidates verb (the Producer skill lists what it refuses):
+   ```sh
+   npx clossys next writer/<slot> --submit draft.md \
      --model <id> --tier <tier> --basis agent --skill <packet skill path> \
      --rung <adopt|adapt|create> [--seed <slot>/<candidate>] [--reason <why no seed fit>]
    ```
-5. **Check the slots.**
+   The CLI names the candidate after the slot leaf: `<leaf>-v<N>.md`.
+6. **Check the slots.**
    ```sh
    npx clossys check --slots
    ```
@@ -101,7 +149,7 @@ in a candidate.
    with a candidate, pinned) and what each agent is blocked by. Fix every
    candidate finding with a new version. Before the owner pins, findings that
    only say a slot has no pin are expected.
-6. **Bind it.** A page reads copy only through the Writer declarations
+7. **Bind it.** A page reads copy only through the Writer declarations
    (`clossys/agents/writer/declarations.json`, schema
    `clossys.writer-declarations/1`). Per locale they hold `aliases`
    (`page.<entry>.meta-title` and `page.<entry>.meta-description` to record ids,
@@ -123,20 +171,28 @@ in a candidate.
    section with no bound field and `meta-title-missing` /
    `meta-description-missing` for a page with no bound head copy; the
    `writer-slots` suite checks every pinned candidate against its slot contract.
-7. **Trace the voice.** `npx clossys write --brief` lists the voice and
+8. **Trace the voice.** `npx clossys write --brief` lists the voice and
    personality obligations (`<director ref>#L<line>`). A record that carries a
    voice rule declares it in its metadata comment as
    `"directorSources":[{"ref":"<director ref>","line":<N>}]`. Declare them for
    every obligation or for none: a partial set is a
    `voice-derivation-coverage` finding in `npx clossys write --check`.
-8. **Show it.** Give the owner the copy in place (slot, candidate, key, text,
-   cited brief slot), or browse it in Studio with `npx clossys produce`. Do not
-   write `pin.json`; the owner pins.
-9. **Commit** the candidates and declarations:
+9. **Show it.** Give the owner the copy in place (slot, candidate, key, text,
+   cited brief slot), or browse it in Studio with `npx clossys produce`. A pin
+   goes only through `clossys pin` or `clossys pick`, by Who picks and pins;
+   never write `pin.json`.
+10. **Commit.** A submit, verdict or pin also writes engine state under
+   `clossys/`, so commit the whole folder:
    ```sh
-   git add clossys/agents/writer/<slot> clossys/agents/writer/declarations.json   # consumer files, not shipped
-   git commit -m "writer: <slot> <name> v<N>"
+   git add clossys/   # consumer files, not shipped
+   git commit -m "writer: <slot> <leaf> v<N>"
    ```
+
+While the chain is held upstream (`clossys run` or `clossys next` stops at
+another agent's step), you can still work your own slot:
+`npx clossys run loop.fill --slot writer/<slot>`, or the verbs above in order.
+Submitting a candidate does not wait for upstream pins. The craft `brief` stage
+and the pin do, and each names the slot it is waiting on.
 
 ## Cascade
 
@@ -146,6 +202,33 @@ After a repin of one of your slots, Producer's `loop.cascade` re-verdicts every 
 read the slot and the re-verdicts and note the impact in your check scratch, by the skill
 `actions/writer.cascade/skill.md`. It pins nothing and runs only after every dependant
 passed; a failing re-verdict stops the cascade before it, with a queue.fix to that dependant's owner.
+
+## Who picks and pins
+
+This rule is the same in every Clossys skill. A pin chooses one candidate for a slot. The CLI accepts
+the forms below and refuses every other one.
+
+- **The owner picks.** The owner's answer is recorded in a queue entry first (an Interview round,
+  `clossys answer`, or `clossys request <id> --answer`). The pin then names that entry:
+  `clossys pin <agent>/<slot> <candidate file> --by owner:queue.<kind>#<id>`. Add `--basis bulk` when
+  the owner approved a whole group at once. A bare `--by owner` is refused.
+- **The planner pins.** `clossys pin <agent>/<slot> <candidate file> --by planner:<ref>`, where
+  `<ref>` says where the planner's decision is written down.
+- **The agent picks and the owner confirms.** The slot's own agent picks with
+  `clossys pick <agent>/<slot> <candidate file> --by agent:<agent>`, or with a pick verdict
+  (`clossys verdict`). An agent picks only on its own agent's slots, and never over an owner's pick.
+  The owner confirms it later with
+  `clossys pin <agent>/<slot> <candidate file> --confirm --by owner:queue.<kind>#<id>`.
+
+`<candidate file>` is the candidate's file name with its extension, such as `hero-v2.json` or
+`meta-v1.md`. A slot can be pinned only after every slot it reads is pinned. The loops can also pin
+by code (`--by code:scorecard`) on a slot with no owner step; you never type that form. Never write
+`pin.json` by hand.
+
+What counts as done: in `clossys status`, a slot the owner picked shows as `pinned`. A planner, bulk,
+agent or code pin shows as `confirm`: the slot is filled, and the owner can still confirm or change
+it. A slot shown as `sample` (still on the package default), `unresolved`, `failing` or
+`needsRefresh` is not done.
 
 ## Interview
 
@@ -164,9 +247,11 @@ unapproved keys and Publisher requests for keys the pinned copy lacks.
 - Every mounted section and page head binds its copy through the declarations:
   `npx clossys check --suites --strict` reports no `copy-unbound`,
   `meta-title-missing` or `meta-description-missing` error.
-- Every claim cites a Director brief slot in `source.ref`; open facts show as
-  `TODO-OWNER`.
-- The candidates are committed; `pin.json` is untouched.
+- Every claim cites a slot in `source.ref`; each open fact is a Director request,
+  never a placeholder in the copy.
+- `npx clossys status --agent writer` shows the slot as `pinned` or `confirm`
+  (see Who picks and pins).
+- Everything under `clossys/` is committed.
 
 Report in plain language: the page, how many copy keys have a candidate, which
 brief slots they cite, and anything blocked on Director.
