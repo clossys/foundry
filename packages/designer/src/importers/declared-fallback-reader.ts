@@ -20,7 +20,8 @@
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { compiledCssDeclaredSources } from "../compiled-css/generate.js";
-import { globalDeclaredFallback, UndeclaredTokenFallbackError } from "../compiled-css/declared-fallbacks.js";
+import { globalDeclaredFallback, RUNTIME_ONLY_FALLBACK, UndeclaredTokenFallbackError } from "../compiled-css/declared-fallbacks.js";
+import { runtimeSetNames, scanRuntimeSetters } from "../compiled-css/runtime-setters.js";
 
 export { UndeclaredTokenFallbackError };
 
@@ -155,15 +156,39 @@ function inClass(text: string, at: number): boolean {
 }
 
 /**
+ * `reader`, plus the runtime-only rule (`runtime-setters.ts`) for one source `text`: a name the reader does not
+ * declare but `text` itself sets inline (stock shadcn's `"--sidebar-width-icon": SIDEBAR_WIDTH_ICON`) reads
+ * `unset`, as the package's generated stylesheet does. A declared value always wins; any other undeclared name is
+ * still refused.
+ */
+function withInlineSetters(reader: DeclaredFallbackReader, text: string): DeclaredFallbackReader {
+  let inline: ReadonlySet<string> | undefined;
+  return {
+    source: reader.source,
+    fallback(name: string): string {
+      try { return reader.fallback(name); }
+      catch (error) {
+        if (!(error instanceof UndeclaredTokenFallbackError)) throw error;
+        inline ??= runtimeSetNames(scanRuntimeSetters(text));
+        if (inline.has(name)) return RUNTIME_ONLY_FALLBACK;
+        throw error;
+      }
+    },
+  };
+}
+
+/**
  * `text` (an emitted `.ts`/`.tsx` source) with every bare `var(--x)` outside comments given the
  * reader's value: Tailwind form inside a class, CSS form elsewhere. Reads that already carry a
- * fallback are left as written. A name the reader does not declare is refused.
+ * fallback are left as written. A name the reader does not declare is refused, unless `text` sets
+ * it inline at run time (then `unset`).
  */
 export function alignImportedReads(text: string, reader: DeclaredFallbackReader): string {
   const comments = commentSpans(text);
+  const own = withInlineSetters(reader, text);
   return text.replace(BARE_READ, (whole, name: string, offset: number) =>
     comments.some(([start, end]) => offset >= start && offset < end) ? whole
-      : inClass(text, offset) ? classRead(reader, name) : cssRead(reader, name));
+      : inClass(text, offset) ? classRead(own, name) : cssRead(own, name));
 }
 
 /** Every bare `var(--x)` left outside comments in `text`. */

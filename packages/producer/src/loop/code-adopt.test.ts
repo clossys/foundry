@@ -9,7 +9,7 @@
  */
 import { spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
-import { cpSync, existsSync, mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSync } from "node:fs";
+import { cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -257,4 +257,40 @@ describe("a consumer adoption writes the consumer's pinned theme values as its t
     const rows = r03_4(buildContext(root, consumer)).filter(row => row.slot === TOAST).map(row => row.reason).join("\n");
     expect(rows).toMatch(/is not byte-exact .*; its files are unchanged since adoption, so a pinned theme value changed after it: re-adopt it/);
   }, 60_000);
+});
+
+/** Pin `themes.<name>` with a copy of the pinned `themes.<like>` candidate, renamed: the stock sidebar's theme reads pinned. */
+function pinThemeLike(consumer: string, like: string, name: string): void {
+  const from = join(consumer, "agents", "designer", `themes.${like}`);
+  const pin = JSON.parse(readFileSync(join(from, "pin.json"), "utf8"));
+  const rename = (text: string) => text.split(like).join(name);
+  const bytes = rename(readFileSync(join(from, "candidates", pin.candidate), "utf8"));
+  const dir = join(consumer, "agents", "designer", `themes.${name}`);
+  mkdirSync(join(dir, "candidates"), { recursive: true });
+  writeFileSync(join(dir, "candidates", rename(pin.candidate)), bytes);
+  writeFileSync(join(dir, "pin.json"), `${JSON.stringify({ ...pin, id: rename(pin.id), candidate: rename(pin.candidate), sha256: sha256(bytes) }, null, 2)}\n`);
+}
+
+describe("CP1-G5: stock shadcn sidebar adopts with its inline-set --sidebar-width-icon", () => {
+  for (const slot of ["components.sidebar", "components.navigation-tree"]) {
+    it(`${slot}'s stock item keeps --sidebar-width-icon as a runtime-only read and certifies through the submit guard`, () => {
+      const { root, consumer } = world();
+      for (const name of ["sidebar-border", "sidebar-accent"]) pinThemeLike(consumer, "sidebar-foreground", name);
+      expect(codeAdoptSlotRefusal(root, "designer", slot)).toBeUndefined();
+      const found = stockItemOf(root, slot);
+      if (!("stock" in found)) throw new Error(found.none);
+      expect(found.stock.ref).toMatch(/^shadcn-aria\/sidebar@/);
+      const content = found.stock.item.files.map(file => file.content).join("\n");
+      expect(content).toContain("var(--sidebar-width-icon,unset)");
+      expect(content).toContain("var(--sidebar-width,unset)");
+      expect(content).not.toMatch(/var\(--[a-zA-Z0-9_-]+\)/);
+      expect(codeAdoptRefusal(root, "designer", slot, found.stock.item, adoptFields(found.stock.seed))).toBeUndefined();
+      const written = writeCandidate(consumer, "designer", slot, found.stock.item.name, found.stock.item, {
+        at: "2026-11-21T12:00:00Z", provenance: { verb: "submit", by: CODE_ADOPT }, fields: adoptFields(found.stock.seed),
+      });
+      // R03.4 proves the written adoption byte-exact through the same reader (the full submit guard also needs the
+      // sidebar's imported slots pinned, R05.1: not this world's).
+      expect(r03_4(buildContext(root, consumer)).filter(row => row.slot === slot && row.candidate === written.name)).toEqual([]);
+    }, 120_000);
+  }
 });
