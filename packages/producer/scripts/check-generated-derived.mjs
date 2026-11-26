@@ -47,13 +47,13 @@ import { tmpdir } from 'node:os';
 import { dirname, join, relative, resolve, sep } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { tags } from '../dist/constitution/criteria/core/lib.js';
+// The adopt path's source ladder (the stock reference item a slot with no pin will adopt) and the step's logged writer.
+import { stockFilesOf } from '../dist/records/code-adopt.js';
+import { repairStrayUses, writeDerivedUses } from '../dist/records/derived-uses.js';
 // The consumer's flavor file, from the Designer's flavor generator (one writer for every components.json): the functions
 // `clossys config --init` writes it with; the check regenerates it with them and the fixture seeder writes it with them.
 import { CONSUMER_STYLESHEET, consumerStylesheet, flavorJson, writeFlavor } from '../dist/records/consumer-flavor.js';
 import { readCandidate, readPin } from '../dist/records/slots.js';
-// The adopt path's source ladder (the stock reference item a slot with no pin will adopt) and the step's logged writer.
-import { stockFilesOf } from '../dist/records/code-adopt.js';
-import { repairStrayUses, writeDerivedUses } from '../dist/records/derived-uses.js';
 import { consumerPath, consumerUnder } from './consumer-root.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
