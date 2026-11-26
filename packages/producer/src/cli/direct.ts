@@ -1,6 +1,7 @@
 import { join } from "node:path";
 import { completion, discoverBriefContracts, openStrategy, readStrategyRoot, type Brief, type Cell, type CompletionReport, type FactsGateResult, type WontClaimResult } from "@clossys/director";
 import { agentModule } from "../read/cells.js";
+import { isAgentLoop } from "../loop/agent-loops-ia.js";
 import { directorRef, pinnedStrategyModel, readDirectorEvidence, readPinnedDirector } from "../records/director-pinned.js";
 import { readPinned } from "../records/pinned.js";
 import { directorStoreReader, hasSlotModel, readIa } from "../records/slots.js";
@@ -98,7 +99,9 @@ export async function runDirect(args: CliArgs, root: string): Promise<DirectResu
   const consumer = join(root, "clossys");
   try {
     if (!hasSlotModel(consumer) || !readIa(consumer, "director")) throw new Error("clossys/agents/director/ia.json is missing");
-    const director = await readPinnedDirector(consumer);
+    const pinned = await readPinnedDirector(consumer);
+    // The agent's loop slots hold JSON loop versions, not cells: loop.agent-standard validates them (directorSuite, CONSISTENCY C3).
+    const director = { ...pinned, cells: pinned.cells.filter(cell => !isAgentLoop(cell.id)), unreadable: pinned.unreadable.filter(row => !isAgentLoop(row.slot)) };
     const todoOwner = director.cells.flatMap(cell => bullets(cell).filter(bullet => OWNER.test(`${bullet.key ?? ""} ${bullet.text}`))
       .map(bullet => ({ id: cell.id, version: cell.version, file: cell.path, line: bullet.line })));
     const summary: DirectSummary = { slots: director.set.pinned.length + director.set.unpinned.length + director.set.issues.length,
