@@ -2788,7 +2788,8 @@
       "allowedComposes": [
         "components.button",
         "components.badge",
-        "components.semantic-content"
+        "components.semantic-content",
+        "components.card"
       ],
       "parts": [
         "sections.band"
@@ -10300,7 +10301,8 @@
       "allowedComposes": [
         "components.button",
         "components.badge",
-        "components.semantic-content"
+        "components.semantic-content",
+        "components.card"
       ],
       "parts": [
         "sections.band"
@@ -10354,7 +10356,8 @@
       "allowedComposes": [
         "components.button",
         "components.badge",
-        "components.semantic-content"
+        "components.semantic-content",
+        "components.navigation-tree"
       ],
       "parts": [
         "sections.band"

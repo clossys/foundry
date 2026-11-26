@@ -47,6 +47,10 @@ The six Producer loops run one step at a time from the loop version the consumer
   `clossys run loop.choose --slot <ref>` then pins one through the pin gate (`clossys pin`, which refuses a
   hand-placed or uncertified candidate and cites the slot's ranked scorecard).
 - `clossys run loop.release --publication <id>` (T8) ends only at the owner-signed ready-pin.
+- While `clossys run` or `clossys next` stops at another agent's step, an agent can still work its own
+  slot: `clossys run loop.fill --slot <agent>/<slot-id>`, or that agent's skill loop through the verbs.
+  Submitting a candidate does not wait for upstream pins; the craft `brief` stage and the pin do, and
+  each names the slot it is waiting on.
 - `clossys run loop.audit` runs the strict checks and routes each finding: a `queue.fix` to the slot's
   agent, a `queue.clarify` to the owner, one open entry per subject.
 - `clossys run loop.cascade --slot <ref>` (T7, after `<ref>` repinned) judges again, by the one certifier,
@@ -69,6 +73,12 @@ The six Producer loops run one step at a time from the loop version the consumer
   `packages/<agent>/actions/<action-id>/skill.md`): run that skill, then
   `clossys run loop.<name> --resume --run <run-id> --step-exit <0|1|2> --model <serving model> [--wrote <file>]...`.
   The version names only the tier; the ledger records the model that served the step.
+  `--step-exit 0` means the step did its work, and the run moves on to the next step. `--step-exit 1`
+  means the step ran and found a problem: the step's own failure rule runs (it raises a `queue.fix` or
+  `queue.clarify` entry and the run waits on it, or tries again after a clarify), and a step with no
+  such rule stops the run. `--step-exit 2` means the step could not run at all (a missing tool, input
+  or permission): the run stops and its ledger entry ends `stopped`. To close a run you cannot finish,
+  resume it with `--step-exit 2 --model <serving model>` and report the cause.
   DRAFT (U26): name every file the step changed with `--wrote`. The run compares the tree before and after an agent
   step of an agent loop, Producer's standard version included, and stops on an unreported change or a write the step
   does not declare.
@@ -90,9 +100,10 @@ The six Producer loops run one step at a time from the loop version the consumer
 - `--rung`, `--seed` and `--reason` record the selection ladder the packet's skill states (see
   Rules).
 - An agent pick (a `pick.<agent>` seat with an llm) is recorded with
-  `clossys pick <agent>/<slot> <candidate> --by agent:<agent>`; the owner confirms it with
-  `clossys pin <agent>/<slot> <candidate> --confirm --ref <where their words are>` (the pick keeps
-  basis `agent` and gains `confirmed`), or re-pins it with `--basis picked`.
+  `clossys pick <agent>/<slot> <candidate file> --by agent:<agent>`; the owner confirms it with
+  `clossys pin <agent>/<slot> <candidate file> --confirm --by owner:queue.<kind>#<id>` (the pick keeps
+  basis `agent` and gains `confirmed`), or pins another candidate as the owner's pick with
+  `clossys pin <agent>/<slot> <candidate file> --by owner:queue.<kind>#<id>` (see Who picks and pins).
 
 ## Rules
 
@@ -122,6 +133,33 @@ Each rule is stated once, here or in the one place named, and the named check or
   `request.addressee`).
 - **Agent work is submitted only through `clossys next --submit`** from the step's seat (Answer
   the open decide step lists what it refuses).
+
+## Who picks and pins
+
+This rule is the same in every Clossys skill. A pin chooses one candidate for a slot. The CLI accepts
+the forms below and refuses every other one.
+
+- **The owner picks.** The owner's answer is recorded in a queue entry first (an Interview round,
+  `clossys answer`, or `clossys request <id> --answer`). The pin then names that entry:
+  `clossys pin <agent>/<slot> <candidate file> --by owner:queue.<kind>#<id>`. Add `--basis bulk` when
+  the owner approved a whole group at once. A bare `--by owner` is refused.
+- **The planner pins.** `clossys pin <agent>/<slot> <candidate file> --by planner:<ref>`, where
+  `<ref>` says where the planner's decision is written down.
+- **The agent picks and the owner confirms.** The slot's own agent picks with
+  `clossys pick <agent>/<slot> <candidate file> --by agent:<agent>`, or with a pick verdict
+  (`clossys verdict`). An agent picks only on its own agent's slots, and never over an owner's pick.
+  The owner confirms it later with
+  `clossys pin <agent>/<slot> <candidate file> --confirm --by owner:queue.<kind>#<id>`.
+
+`<candidate file>` is the candidate's file name with its extension, such as `hero-v2.json` or
+`meta-v1.md`. A slot can be pinned only after every slot it reads is pinned. The loops can also pin
+by code (`--by code:scorecard`) on a slot with no owner step; you never type that form. Never write
+`pin.json` by hand.
+
+What counts as done: in `clossys status`, a slot the owner picked shows as `pinned`. A planner, bulk,
+agent or code pin shows as `confirm`: the slot is filled, and the owner can still confirm or change
+it. A slot shown as `sample` (still on the package default), `unresolved`, `failing` or
+`needsRefresh` is not done.
 
 ## Interview
 

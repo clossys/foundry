@@ -159,7 +159,7 @@ export function producerIa(): FoundryIa {
     const step = id.slice("seat.".length);
     slots.set(id, { id, kind: "seat", contract: { step, fixture: { step } }, declaredInputs: [], declaredUses: [], feeds: [], defaults: { standard: "seat" } });
   }
-  return { agent: "producer", ia: { schema: IA_SCHEMA, source: PRODUCER_IA_SOURCE, extensions: [], nodes }, slots };
+  return { agent: "producer", ia: { schema: IA_SCHEMA, source: PRODUCER_IA_SOURCE, extensions: [], nodes, ...packageLevels(PRODUCER_ROOT, nodes) }, slots };
 }
 
 /** The contract keys a composed Designer slot's consumer owns (FoundrySlot `consumerOwned`, FCR). */

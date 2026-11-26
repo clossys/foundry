@@ -103,7 +103,8 @@
             "sections.activity-feed.copy",
             "sections.audit-log.copy",
             "sections.explorer.copy",
-            "sections.filter-builder.copy"
+            "sections.filter-builder.copy",
+            "sections.records.copy"
           ]
         },
         {
@@ -9592,6 +9593,437 @@
           ]
         },
         "fieldsSha256": "36f4dea89d80b12150baab9049b4b6ee87da7f9349218054f9f7772f7189674b",
+        "candidate": "clossys.copy-candidate/1"
+      }
+    },
+    {
+      "id": "sections.records.copy",
+      "kind": "copy",
+      "mark": "starter",
+      "inputs": [
+        {
+          "to": "writer/lexicon.formality",
+          "rel": "input"
+        },
+        {
+          "to": "writer/lexicon.warmth",
+          "rel": "input"
+        },
+        {
+          "to": "writer/lexicon.energy",
+          "rel": "input"
+        },
+        {
+          "to": "writer/lexicon.person",
+          "rel": "input"
+        },
+        {
+          "to": "writer/lexicon.mood",
+          "rel": "input"
+        },
+        {
+          "to": "writer/lexicon.sentence-length",
+          "rel": "input"
+        },
+        {
+          "to": "writer/lexicon.reading-level",
+          "rel": "input"
+        },
+        {
+          "to": "writer/lexicon.capitalization",
+          "rel": "input"
+        },
+        {
+          "to": "writer/lexicon.punctuation",
+          "rel": "input"
+        },
+        {
+          "to": "writer/lexicon.preferred-terms",
+          "rel": "input"
+        },
+        {
+          "to": "writer/lexicon.avoid-terms",
+          "rel": "input"
+        },
+        {
+          "to": "writer/lexicon.avoid-patterns",
+          "rel": "input"
+        },
+        {
+          "to": "director/advantage.proposition.promise",
+          "key": "Promise"
+        },
+        {
+          "to": "director/advantage.proposition.proof",
+          "key": "Proof"
+        },
+        {
+          "to": "director/advantage.proposition.proof",
+          "key": "Never-claim"
+        },
+        {
+          "to": "director/identity.naming.name",
+          "key": "Name"
+        }
+      ],
+      "contract": {
+        "unit": "producer/admin-records",
+        "copy": {
+          "sourceLocale": "en",
+          "fields": [
+            {
+              "key": "slot",
+              "kind": "plain",
+              "role": "label",
+              "required": true,
+              "maxLength": {
+                "en": 60
+              },
+              "dir": "auto"
+            },
+            {
+              "key": "kind",
+              "kind": "plain",
+              "role": "label",
+              "required": true,
+              "maxLength": {
+                "en": 60
+              },
+              "dir": "auto"
+            },
+            {
+              "key": "status",
+              "kind": "plain",
+              "role": "label",
+              "required": true,
+              "maxLength": {
+                "en": 60
+              },
+              "dir": "auto"
+            },
+            {
+              "key": "group",
+              "kind": "plain",
+              "role": "label",
+              "required": true,
+              "maxLength": {
+                "en": 60
+              },
+              "dir": "auto"
+            },
+            {
+              "key": "name",
+              "kind": "plain",
+              "role": "label",
+              "required": true,
+              "maxLength": {
+                "en": 60
+              },
+              "dir": "auto"
+            },
+            {
+              "key": "version",
+              "kind": "plain",
+              "role": "label",
+              "required": true,
+              "maxLength": {
+                "en": 60
+              },
+              "dir": "auto"
+            },
+            {
+              "key": "rung",
+              "kind": "plain",
+              "role": "label",
+              "required": true,
+              "maxLength": {
+                "en": 60
+              },
+              "dir": "auto"
+            },
+            {
+              "key": "source",
+              "kind": "plain",
+              "role": "label",
+              "required": true,
+              "maxLength": {
+                "en": 60
+              },
+              "dir": "auto"
+            },
+            {
+              "key": "created-by",
+              "kind": "plain",
+              "role": "label",
+              "required": true,
+              "maxLength": {
+                "en": 60
+              },
+              "dir": "auto"
+            },
+            {
+              "key": "specimen",
+              "kind": "plain",
+              "role": "label",
+              "required": true,
+              "maxLength": {
+                "en": 60
+              },
+              "dir": "auto"
+            },
+            {
+              "key": "gallery-heading",
+              "kind": "plain",
+              "role": "heading",
+              "required": true,
+              "maxLength": {
+                "en": 60
+              },
+              "dir": "auto"
+            },
+            {
+              "key": "contract",
+              "kind": "plain",
+              "role": "heading",
+              "required": true,
+              "maxLength": {
+                "en": 60
+              },
+              "dir": "auto"
+            },
+            {
+              "key": "pin-heading",
+              "kind": "plain",
+              "role": "heading",
+              "required": true,
+              "maxLength": {
+                "en": 60
+              },
+              "dir": "auto"
+            },
+            {
+              "key": "candidates-heading",
+              "kind": "plain",
+              "role": "heading",
+              "required": true,
+              "maxLength": {
+                "en": 60
+              },
+              "dir": "auto"
+            },
+            {
+              "key": "purpose",
+              "kind": "plain",
+              "role": "label",
+              "required": true,
+              "maxLength": {
+                "en": 60
+              },
+              "dir": "auto"
+            },
+            {
+              "key": "standard",
+              "kind": "plain",
+              "role": "label",
+              "required": true,
+              "maxLength": {
+                "en": 60
+              },
+              "dir": "auto"
+            },
+            {
+              "key": "inputs",
+              "kind": "plain",
+              "role": "label",
+              "required": true,
+              "maxLength": {
+                "en": 60
+              },
+              "dir": "auto"
+            },
+            {
+              "key": "uses",
+              "kind": "plain",
+              "role": "label",
+              "required": true,
+              "maxLength": {
+                "en": 60
+              },
+              "dir": "auto"
+            },
+            {
+              "key": "rules",
+              "kind": "plain",
+              "role": "label",
+              "required": true,
+              "maxLength": {
+                "en": 60
+              },
+              "dir": "auto"
+            },
+            {
+              "key": "none",
+              "kind": "plain",
+              "role": "label",
+              "required": true,
+              "maxLength": {
+                "en": 60
+              },
+              "dir": "auto"
+            },
+            {
+              "key": "pin-candidate",
+              "kind": "plain",
+              "role": "label",
+              "required": true,
+              "maxLength": {
+                "en": 60
+              },
+              "dir": "auto"
+            },
+            {
+              "key": "pin-decided-by",
+              "kind": "plain",
+              "role": "label",
+              "required": true,
+              "maxLength": {
+                "en": 60
+              },
+              "dir": "auto"
+            },
+            {
+              "key": "pin-at",
+              "kind": "plain",
+              "role": "label",
+              "required": true,
+              "maxLength": {
+                "en": 60
+              },
+              "dir": "auto"
+            },
+            {
+              "key": "pin-none",
+              "kind": "plain",
+              "role": "label",
+              "required": true,
+              "maxLength": {
+                "en": 60
+              },
+              "dir": "auto"
+            },
+            {
+              "key": "pinned",
+              "kind": "plain",
+              "role": "label",
+              "required": true,
+              "maxLength": {
+                "en": 60
+              },
+              "dir": "auto"
+            },
+            {
+              "key": "no-specimen",
+              "kind": "plain",
+              "role": "label",
+              "required": true,
+              "maxLength": {
+                "en": 60
+              },
+              "dir": "auto"
+            },
+            {
+              "key": "gallery-empty",
+              "kind": "plain",
+              "role": "body",
+              "required": true,
+              "maxLength": {
+                "en": 480
+              },
+              "dir": "auto"
+            },
+            {
+              "key": "candidates-empty",
+              "kind": "plain",
+              "role": "body",
+              "required": true,
+              "maxLength": {
+                "en": 480
+              },
+              "dir": "auto"
+            },
+            {
+              "key": "status-starter",
+              "kind": "plain",
+              "role": "label",
+              "required": true,
+              "maxLength": {
+                "en": 60
+              },
+              "dir": "auto"
+            },
+            {
+              "key": "status-live",
+              "kind": "plain",
+              "role": "label",
+              "required": true,
+              "maxLength": {
+                "en": 60
+              },
+              "dir": "auto"
+            },
+            {
+              "key": "status-parked",
+              "kind": "plain",
+              "role": "label",
+              "required": true,
+              "maxLength": {
+                "en": 60
+              },
+              "dir": "auto"
+            },
+            {
+              "key": "status-retired",
+              "kind": "plain",
+              "role": "label",
+              "required": true,
+              "maxLength": {
+                "en": 60
+              },
+              "dir": "auto"
+            },
+            {
+              "key": "status-needs-refresh",
+              "kind": "plain",
+              "role": "label",
+              "required": true,
+              "maxLength": {
+                "en": 60
+              },
+              "dir": "auto"
+            },
+            {
+              "key": "status-draft",
+              "kind": "plain",
+              "role": "label",
+              "required": true,
+              "maxLength": {
+                "en": 60
+              },
+              "dir": "auto"
+            },
+            {
+              "key": "status-submitted",
+              "kind": "plain",
+              "role": "label",
+              "required": true,
+              "maxLength": {
+                "en": 60
+              },
+              "dir": "auto"
+            }
+          ]
+        },
+        "fieldsSha256": "6a56433dfea18584d3612162d95618b053bedc86dcedc07407eac0812bf9db5f",
         "candidate": "clossys.copy-candidate/1"
       }
     },

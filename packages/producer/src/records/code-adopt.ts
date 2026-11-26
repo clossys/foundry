@@ -9,8 +9,15 @@
  * asset (Designer provenance.json consumerAssets: the consumer's own original) and whose family offers one option.
  * Its stock item (stockItemOf) is the reference-manifest row of registry shadcn-aria or diceui that ships the slot's
  * contract fixture file; code installs only into a slot that holds no live candidate, and only when every package the
- * item imports is in the consumer's lockfile (code never edits the lockfile). With no stock item, a held candidate or
- * an unlocked import, the agent creates.
+ * item imports is in the consumer's lockfile. With no stock item, a held candidate or an unlocked import, the agent
+ * creates.
+ *
+ * Dependencies (CP1-DEPS): before it installs the item, the adopt step adds the npm packages the item imports and the
+ * lockfile lacks to the consumer's root package.json and runs npm install there (records/adopt-dependencies.ts), as
+ * `publish --install` does for its substrate. stockDependencyPlan names them: only packages the pinned registry entry
+ * declares (the item row's `dependencies`, plus its registry's `registry:style` rows at the same version, the base
+ * every item of that registry is written against), each a valid npm package name, at the range the publish collector
+ * (`substrateDependencies`) gives. An import the entry does not declare, or an invalid name, refuses the change.
  *
  * The writer (records/slot-write.ts writeCandidate) accepts `--by code:adopt` only when codeAdoptRefusal finds
  * nothing: the slot rule, then the item is the stock item exactly (registry lineage, rung L1 with its seed, every
@@ -24,7 +31,9 @@
  */
 import { createHash } from "node:crypto";
 import { existsSync, readFileSync } from "node:fs";
+import { isBuiltin } from "node:module";
 import { dirname, join } from "node:path";
+import { substrateDependencies } from "@clossys/publisher/install";
 import { byteExactAdoption, normalizedSeedFile, type DeclaredFallbackReader } from "@clossys/designer/ref-verbatim";
 import { packagePath } from "../package-path.js";
 import { pinnedThemeReader } from "../read/theme-pins.js";
@@ -48,6 +57,8 @@ interface ManifestFile { readonly path: string; readonly sha256?: string }
 export interface ManifestRow {
   readonly registry: string; readonly name: string; readonly version: string; readonly type: string; readonly dir: string;
   readonly hash: string; readonly license: string; readonly files: readonly ManifestFile[]; readonly slots?: readonly string[];
+  /** The npm packages the registry entry declares (`name` or `name@range`, as shadcn lists them). */
+  readonly dependencies?: readonly string[];
 }
 export interface StockItem {
   readonly row: ManifestRow;
@@ -113,6 +124,53 @@ function reasonOf(root: string, doc: ReturnType<typeof readSlot>, what: string):
  * locked versions.
  */
 export function stockItemOf(root: string, slotId: string): { readonly stock: StockItem } | { readonly none: string } {
+  const found = stockFilesOf(root, slotId);
+  if ("none" in found) return found;
+  const { row, ref, doc, files, reader } = found;
+  const locked = lockedPackages(root);
+  const imports = [...new Set(files.flatMap(each => importedPackages(each.content)))].sort();
+  const unlocked = imports.filter(name => locked[name] === undefined);
+  if (unlocked.length) return { none: `${ref} imports ${unlocked.join(", ")}, which the consumer lockfile does not hold` };
+  const item = {
+    name: slotId.split(".").at(-1)!,
+    type: row.type,
+    dependencies: imports.map(name => `${name}@${locked[name]!}`),
+    files,
+    meta: {
+      slot: slotId,
+      source: { kind: "registry", ref: [ref], hash: row.hash, license: row.license },
+      refVerbatim: {
+        files: Object.fromEntries(files.map(each => [each.path, each.path])),
+        reader: reader.source,
+        outputSha256: Object.fromEntries(files.map(each => [each.path, sha256(each.content)])),
+      },
+      element: { slot: slotId, reason: reasonOf(root, doc, `stock ${ref}, adopted unmodified by code`) },
+    },
+  };
+  return { stock: { row, ref, seed: `${row.registry}/${row.name}`, item } };
+}
+
+/** The version the consumer's root package-lock.json holds for each package it installs (`packages["node_modules/<name>"]`). */
+export function lockedPackages(root: string): Record<string, string> {
+  const lockFile = join(root, "package-lock.json");
+  const packages = existsSync(lockFile) ? ((readJson(lockFile) as { packages?: Record<string, { version?: unknown }> }).packages ?? {}) : {};
+  const out: Record<string, string> = {};
+  for (const [path, entry] of Object.entries(packages)) {
+    if (!path.startsWith("node_modules/") || typeof entry?.version !== "string") continue;
+    const name = path.slice("node_modules/".length);
+    // Only a top-level install (node_modules/<name>), never one nested under another package.
+    if (!name.includes("/node_modules/")) out[name] = entry.version;
+  }
+  return out;
+}
+
+interface StockFiles {
+  readonly row: ManifestRow; readonly ref: string; readonly doc: ReturnType<typeof readSlot>; readonly manifest: { items: ManifestRow[] };
+  readonly files: readonly { path: string; type: string; content: string }[]; readonly reader: DeclaredFallbackReader;
+}
+
+/** The stock row of `designer/<slotId>` and its .tsx files normalized to the consumer (stockItemOf, before the lockfile). */
+function stockFilesOf(root: string, slotId: string): StockFiles | { readonly none: string } {
   const at = `designer/${slotId}`;
   const doc = readSlot(join(root, "clossys"), "designer", slotId);
   const file = ((doc.contract as { fixture?: { fixtures?: { file?: unknown } } }).fixture?.fixtures?.file);
@@ -134,28 +192,69 @@ export function stockItemOf(root: string, slotId: string): { readonly stock: Sto
   const files = row.files.filter(each => each.path.endsWith(".tsx")).map(each => ({
     path: each.path, type: row.type, content: normalizedSeedFile(consumer, ref, each.path, { manifest, referencesDir: referencesDirOf(root), reader }),
   }));
-  const lockFile = join(root, "package-lock.json");
-  const locked = existsSync(lockFile) ? ((readJson(lockFile) as { packages?: Record<string, { version?: string }> }).packages ?? {}) : {};
+  return { row, ref, doc, manifest, files, reader };
+}
+
+/** What the adopt step changes in the consumer's root package.json before it installs the stock item. */
+export interface DependencyPlan {
+  /** The pinned registry entry whose files import the packages. */
+  readonly ref: string;
+  /** The manifest rows whose `dependencies` declare what may be added: the entry, then its registry's style rows. */
+  readonly declaredBy: readonly string[];
+  /** The entries added to package.json `dependencies` (name to range, from substrateDependencies): imported, unlocked, not yet declared there. */
+  readonly add: Readonly<Record<string, string>>;
+  /** Every imported package the lockfile lacks: npm install runs in the consumer root when there is one. */
+  readonly install: readonly string[];
+}
+
+/** npm's rule for a new package name (validate-npm-package-name): lowercase, url-safe, at most 214 characters, no leading `.`, `_` or `-`, not a Node builtin. */
+const NPM_NAME = /^(?:@[a-z0-9~][a-z0-9._~-]*\/)?[a-z0-9~][a-z0-9._~-]*$/;
+/** A range code writes: what the collector gives a bare entry (`latest`) or one exact, caret or tilde version. Never a URL, path, git or tag spec. */
+const NPM_RANGE = /^(?:latest|[~^]?\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?)$/;
+/** Why `name` is not a valid npm package name, or undefined. */
+export function npmNameIssue(name: string): string | undefined {
+  if (!name.length || name.length > 214) return `${JSON.stringify(name)} is not an npm package name (1 to 214 characters)`;
+  if (!NPM_NAME.test(name)) return `${JSON.stringify(name)} is not an npm package name (lowercase, url-safe, no leading . _ or -)`;
+  if (isBuiltin(name) || name === "node_modules" || name === "favicon.ico") return `${JSON.stringify(name)} is not an npm package name (a reserved or Node builtin name)`;
+  return undefined;
+}
+
+/**
+ * The package.json change the adopt of `designer/<slotId>`'s stock item needs: every package its normalized files
+ * import that the consumer lockfile lacks, each declared by the pinned registry entry (the row's `dependencies`, or its
+ * registry's `registry:style` rows at the same version), each a valid npm name at the publish collector's range. An
+ * undeclared import or an invalid name refuses, as does a needed change with no root package.json. `none`: no stock
+ * item, so nothing to install for.
+ */
+export function stockDependencyPlan(root: string, slotId: string): { readonly plan: DependencyPlan } | { readonly refused: string } | { readonly none: string } {
+  const found = stockFilesOf(root, slotId);
+  if ("none" in found) return found;
+  const { row, ref, manifest, files } = found;
+  const styles = manifest.items.filter(each => each.registry === row.registry && each.version === row.version && each.type === "registry:style" && each !== row);
+  const declaring = [row, ...styles];
+  // The one collector `publish --install` uses: a registry entry's `name@range` keeps its range, a bare name is `latest`.
+  const declared = substrateDependencies(declaring.map(each => ({ dependencies: each.dependencies ?? [] })));
+  const locked = lockedPackages(root);
   const imports = [...new Set(files.flatMap(each => importedPackages(each.content)))].sort();
-  const unlocked = imports.filter(name => typeof locked[`node_modules/${name}`]?.version !== "string");
-  if (unlocked.length) return { none: `${ref} imports ${unlocked.join(", ")}, which the consumer lockfile does not hold; code never edits the lockfile` };
-  const item = {
-    name: slotId.split(".").at(-1)!,
-    type: row.type,
-    dependencies: imports.map(name => `${name}@${locked[`node_modules/${name}`]!.version!}`),
-    files,
-    meta: {
-      slot: slotId,
-      source: { kind: "registry", ref: [ref], hash: row.hash, license: row.license },
-      refVerbatim: {
-        files: Object.fromEntries(files.map(each => [each.path, each.path])),
-        reader: reader.source,
-        outputSha256: Object.fromEntries(files.map(each => [each.path, sha256(each.content)])),
-      },
-      element: { slot: slotId, reason: reasonOf(root, doc, `stock ${ref}, adopted unmodified by code`) },
-    },
-  };
-  return { stock: { row, ref, seed: `${row.registry}/${row.name}`, item } };
+  const install = imports.filter(name => locked[name] === undefined);
+  const declaredBy = declaring.map(refIdOf);
+  const plan = { ref, declaredBy };
+  if (!install.length) return { plan: { ...plan, add: {}, install } };
+  const undeclared = install.filter(name => !Object.hasOwn(declared, name));
+  if (undeclared.length) return { refused: `${ref} imports ${undeclared.join(", ")}, which the consumer lockfile does not hold and ${declaredBy.join(", ")} do${declaredBy.length === 1 ? "es" : ""} not declare; code adds only declared dependencies` };
+  const invalid = install.flatMap(name => {
+    const issue = npmNameIssue(name);
+    if (issue) return [issue];
+    return NPM_RANGE.test(declared[name]!) ? [] : [`${name}@${declared[name]} is not a version code writes (latest, or one exact, ^ or ~ version)`];
+  });
+  if (invalid.length) return { refused: `${ref}: ${invalid.join("; ")}; nothing is added` };
+  const manifestFile = join(root, "package.json");
+  if (!existsSync(manifestFile)) return { refused: `${ref} imports ${install.join(", ")}, which the consumer lockfile does not hold, and the consumer has no root package.json to declare them in` };
+  let pkg: { dependencies?: Record<string, unknown>; devDependencies?: Record<string, unknown> };
+  try { pkg = readJson(manifestFile) as typeof pkg; } catch (error) { return { refused: `the consumer's package.json cannot be read: ${error instanceof Error ? error.message : String(error)}` }; }
+  const held = (name: string) => Object.hasOwn(pkg.dependencies ?? {}, name) || Object.hasOwn(pkg.devDependencies ?? {}, name);
+  const add = Object.fromEntries(install.filter(name => !held(name)).map(name => [name, declared[name]!]));
+  return { plan: { ...plan, add, install } };
 }
 
 /**

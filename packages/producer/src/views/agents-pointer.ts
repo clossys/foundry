@@ -14,7 +14,7 @@ export const AGENTS_POINTER = [
   "## Clossys views",
   "",
   "To show clossys state, run `clossys views list`, then follow `clossys views show <id>` for the view that fits.",
-  "Read the workspace only through `clossys status`, `clossys slot`, `clossys render` and `clossys preview`.",
+  "Read the workspace only through `clossys status`, `clossys slot`, `clossys brief`, `clossys options`, `clossys render` and `clossys preview`.",
   "Answers go back only through `clossys answer`, with the owner's words in `--quote`.",
   POINTER_END,
 ].join("\n");
