@@ -10,10 +10,12 @@
  * and a fail records `rejected` and refuses, so the entry stays open; a pass closes it with a notify back to `from`.
  * An entry the owner answers carries options (U7 r4): `<id> --answer <option>` records the chosen id only and Producer
  * runs that option's step (records/request.ts answerRequest); free text never closes or decides anything.
+ * CP1-L3: `<id> --receipt` writes the entry's lap metrics, `clossys.lap/1` (read/lap.ts).
  */
-import { join, resolve } from "node:path";
+import { join, relative, resolve, sep } from "node:path";
 import { readFileSync } from "node:fs";
 import { runStep } from "../pipeline/runner.js";
+import { writeLapReceipt } from "../read/lap.js";
 import {
   answerRequest, checkRequest, closeRequest, closeWork, decideRequest, isContentAgent, listWorkEntries, outcomesFor, raiseRequest, raiseWork, readRequest, REQUEST_SEATS, RequestError, slotlessNeeds, targetOf, type SlotRequest,
 } from "../records/request.js";
@@ -28,6 +30,7 @@ export const REQUEST_USAGE = "Usage: clossys request --target <agent>/<slot> --f
   + "       clossys request <id> --check | --decide reuse --slot <agent>/<slot> | --decide create --propose <slot> --under <l1>/<l2> [--kind <kind>] --inputs <ref,...> --contract <file> [--overlap-reason <text>] | --close [--approved queue.approve#<id>] [--owner-ref <ref>]\n"
   + "       clossys request <id> --close --outcome changed|declined (change) | fixed|declined (fix) --result <agent>/<slot>|<queue>#<id> --by <assignee> [--at <iso>] [--root <dir>]\n"
   + "       clossys request <id> --answer <option> --via cli|chat|app --quote <owner's words, verbatim> [--note <text>] [--at <iso>] [--root <dir>]\n"
+  + "       clossys request <id> --receipt [--changed-since <text>] [--root <dir>]\n"
   + "  --by is the seat acting (director, designer, writer, publisher, owner, planner, producer); a raise defaults to the\n"
   + "  requester slot's agent (owner for --from owner), a decide to the assignee, --scan and a slot --close to producer; a change\n"
   + "  or fix --close needs --by its agent assignee (a fix only as fixed; a declined fix, or one whose check Producer cannot\n"
@@ -46,10 +49,13 @@ export const REQUEST_USAGE = "Usage: clossys request --target <agent>/<slot> --f
   + "  and cause. Producer's routing table writes the route and assignee; a cross-agent request needs the requester's\n"
   + "  declared issuing edge (conform.json requests.issuing). A change or fix closes with --outcome and --result once its\n"
   + "  handler's work is done: code re-runs the requester's check first; a fail records rejected and the entry stays open,\n"
-  + "  a pass closes it and notifies --from.";
+  + "  a pass closes it and notifies --from.\n"
+  + "  --receipt writes the entry's lap metrics (clossys.lap/1) to clossys/.state/laps/<id>.json from the entry, the engine\n"
+  + "  log, the queues and git; it reads records only, and a value no record holds is \"unknown\". --changed-since names the\n"
+  + "  change the lap tests (free text).";
 
-const VALUED = new Set(["--target", "--from", "--why", "--rel", "--at", "--root", "--decide", "--slot", "--propose", "--under", "--kind", "--contract", "--owner-ref", "--approved", "--by", "--inputs", "--overlap-reason", "--subject", "--want", "--check", "--findings", "--cause", "--agent", "--outcome", "--result", "--answer", "--note", "--via", "--quote"]);
-const BARE = new Set(["--list", "--open", "--scan", "--dry", "--close"]);
+const VALUED = new Set(["--target", "--from", "--why", "--rel", "--at", "--root", "--decide", "--slot", "--propose", "--under", "--kind", "--contract", "--owner-ref", "--approved", "--by", "--inputs", "--overlap-reason", "--subject", "--want", "--check", "--findings", "--cause", "--agent", "--outcome", "--result", "--answer", "--note", "--via", "--quote", "--changed-since"]);
+const BARE = new Set(["--list", "--open", "--scan", "--dry", "--close", "--receipt"]);
 
 interface Flags { positional: string[]; values: Map<string, string>; bare: Set<string> }
 function parse(argv: readonly string[]): Flags | "help" {
@@ -135,6 +141,12 @@ export async function runRequestCli(argv: readonly string[], cwd: string): Promi
       return { exitCode: 0, root, output: raised.request, message: [`request: ${raised.created ? "raised" : "already open"} ${summary(raised.request)}`, ...optionLines(raised.request)].join("\n") };
     }
     if (extra.length) throw new CliUsageError(`request takes one <id>\n${REQUEST_USAGE}`);
+    if (flags.bare.has("--receipt")) {
+      const changedSince = flags.values.get("--changed-since");
+      const { receipt, file } = writeLapReceipt(root, id, changedSince !== undefined ? { changedSince } : {});
+      return { exitCode: 0, root, output: receipt, message: `request ${id} --receipt: wrote ${relative(root, file).split(sep).join("/")}` };
+    }
+    if (flags.values.has("--changed-since")) throw new CliUsageError(`--changed-since goes with --receipt\n${REQUEST_USAGE}`);
     const answer = flags.values.get("--answer");
     if (answer !== undefined) {
       if (given !== undefined && given !== "owner") throw new CliUsageError(`--answer is the owner's; it takes no --by ${given}\n${REQUEST_USAGE}`);
