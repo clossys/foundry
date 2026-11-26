@@ -38,6 +38,7 @@ import { dataBoundReads, scopeParams } from "../cli/admin-plan.js";
 import { ADMIN_RECORD_PORTS, adminRouteParams, readAdminRecords, type AdminRecords } from "./admin-records.js";
 import { designerPins, pageModule, pageRecordFromCell, shadcnRunner, SUBSTRATE_HOST_FILE, writerCopy, type PageModuleRecords } from "./install.js";
 import { writerLocaleCopy } from "./install-outputs.js";
+import { planSpecimenAssets, recordSpecimenRefs, resolveRecordSpecimens, writeSpecimenAssets, type SpecimenRefusal } from "./specimen-assets.js";
 
 /** The generated directory, relative to the site project. */
 export const NEXT_BIND_DIR = "clossys";
@@ -305,6 +306,22 @@ export async function planNextBind(options: { root: string; site: string; map: C
     }
   }
   if (findings.some(isBlocking)) return empty();
+
+  // Specimen assets (CP1-G2): each specimen PNG the records reference is checked against the render index under
+  // RENDERS_DIR and published content-addressed to `public/clossys/renders/<sha256>.png`, and the record's specimen
+  // path resolves to it. A refusal is a blocking finding and nothing is written for it; a check run writes nothing.
+  if (snapshot) {
+    const asFinding = (refusal: SpecimenRefusal): InstallFinding => ({ code: refusal.code === "specimen-sha256-mismatch" ? "hash-mismatch" : "missing-asset", slot: map.publicationId, detail: refusal.detail });
+    const specimens = planSpecimenAssets(root, recordSpecimenRefs(snapshot));
+    findings.push(...specimens.refusals.map(asFinding));
+    if (specimens.refusals.length) return empty();
+    if (!options.check) {
+      const written = await writeSpecimenAssets(site, specimens.assets);
+      findings.push(...written.refusals.map(asFinding));
+      if (written.refusals.length) return empty();
+    }
+    snapshot = resolveRecordSpecimens(snapshot, specimens.assets);
+  }
 
   const files: NextBindFile[] = [];
   const moduleOf = (id: string) => `${NEXT_BIND_PAGES}/${id}.tsx`;
