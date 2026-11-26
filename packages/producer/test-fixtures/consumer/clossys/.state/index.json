@@ -1,7 +1,7 @@
 {
   "schema": "clossys.index/1",
-  "events": 2935,
-  "head": "f3638a9f6a4f693aa9e61c87d39b9d8f7c28b9cc63761675435fa5db17de3b89",
+  "events": 2959,
+  "head": "8e60e7109754b2e8926e199d47029c3b819d56275c7558198a4379841bb15fe4",
   "subjects": {
     "designer": {
       "seq": 2476,
@@ -1696,142 +1696,142 @@
       "at": "2026-11-19T00:00:00.000Z"
     },
     "producer": {
-      "seq": 458,
+      "seq": 2935,
       "kind": "agent.ia",
       "actor": "planner",
-      "at": "2026-11-19T00:00:00.000Z"
+      "at": "2026-11-26T06:12:29.542Z"
     },
     "producer/seat.critic": {
-      "seq": 464,
+      "seq": 2956,
       "kind": "slot.slot",
       "actor": "planner",
-      "at": "2026-11-19T00:00:00.000Z"
+      "at": "2026-11-26T06:12:30.058Z"
     },
     "producer/seat.designer.candidates": {
-      "seq": 1,
-      "kind": "slot.migrate",
-      "actor": "code:clossys migrate slots",
-      "at": "2026-11-19T00:00:00.000Z"
+      "seq": 2947,
+      "kind": "slot.slot",
+      "actor": "planner",
+      "at": "2026-11-26T06:12:29.870Z"
     },
     "producer/seat.director.candidates": {
-      "seq": 2,
-      "kind": "slot.migrate",
-      "actor": "code:clossys migrate slots",
-      "at": "2026-11-19T00:00:00.000Z"
+      "seq": 2944,
+      "kind": "slot.slot",
+      "actor": "planner",
+      "at": "2026-11-26T06:12:29.801Z"
     },
     "producer/seat.evidence": {
-      "seq": 3,
-      "kind": "slot.migrate",
-      "actor": "code:clossys migrate slots",
-      "at": "2026-11-19T00:00:00.000Z"
+      "seq": 2939,
+      "kind": "slot.slot",
+      "actor": "planner",
+      "at": "2026-11-26T06:12:29.659Z"
     },
     "producer/seat.ia": {
-      "seq": 4,
-      "kind": "slot.migrate",
-      "actor": "code:clossys migrate slots",
-      "at": "2026-11-19T00:00:00.000Z"
+      "seq": 2936,
+      "kind": "slot.slot",
+      "actor": "planner",
+      "at": "2026-11-26T06:12:29.587Z"
     },
     "producer/seat.owner.decisions": {
-      "seq": 5,
-      "kind": "slot.migrate",
-      "actor": "code:clossys migrate slots",
-      "at": "2026-11-19T00:00:00.000Z"
+      "seq": 2943,
+      "kind": "slot.slot",
+      "actor": "planner",
+      "at": "2026-11-26T06:12:29.777Z"
     },
     "producer/seat.pick.designer": {
-      "seq": 6,
-      "kind": "slot.migrate",
-      "actor": "code:clossys migrate slots",
-      "at": "2026-11-19T00:00:00.000Z"
+      "seq": 2949,
+      "kind": "slot.slot",
+      "actor": "planner",
+      "at": "2026-11-26T06:12:29.910Z"
     },
     "producer/seat.pick.director": {
-      "seq": 7,
-      "kind": "slot.migrate",
-      "actor": "code:clossys migrate slots",
-      "at": "2026-11-19T00:00:00.000Z"
+      "seq": 2945,
+      "kind": "slot.slot",
+      "actor": "planner",
+      "at": "2026-11-26T06:12:29.823Z"
     },
     "producer/seat.pick.publisher": {
-      "seq": 462,
+      "seq": 2954,
       "kind": "slot.slot",
       "actor": "planner",
-      "at": "2026-11-19T00:00:00.000Z"
+      "at": "2026-11-26T06:12:30.015Z"
     },
     "producer/seat.pick.writer": {
-      "seq": 9,
-      "kind": "slot.migrate",
-      "actor": "code:clossys migrate slots",
-      "at": "2026-11-19T00:00:00.000Z"
+      "seq": 2950,
+      "kind": "slot.slot",
+      "actor": "planner",
+      "at": "2026-11-26T06:12:29.932Z"
     },
     "producer/seat.pin.designer": {
-      "seq": 459,
+      "seq": 2951,
       "kind": "slot.slot",
       "actor": "planner",
-      "at": "2026-11-19T00:00:00.000Z"
+      "at": "2026-11-26T06:12:29.953Z"
     },
     "producer/seat.pin.director": {
-      "seq": 11,
-      "kind": "slot.migrate",
-      "actor": "code:clossys migrate slots",
-      "at": "2026-11-19T00:00:00.000Z"
+      "seq": 2946,
+      "kind": "slot.slot",
+      "actor": "planner",
+      "at": "2026-11-26T06:12:29.848Z"
     },
     "producer/seat.pin.publisher": {
-      "seq": 463,
+      "seq": 2955,
       "kind": "slot.slot",
       "actor": "planner",
-      "at": "2026-11-19T00:00:00.000Z"
+      "at": "2026-11-26T06:12:30.037Z"
     },
     "producer/seat.pin.writer": {
-      "seq": 460,
+      "seq": 2952,
       "kind": "slot.slot",
       "actor": "planner",
-      "at": "2026-11-19T00:00:00.000Z"
+      "at": "2026-11-26T06:12:29.973Z"
     },
     "producer/seat.publisher.candidates": {
-      "seq": 461,
+      "seq": 2953,
       "kind": "slot.slot",
       "actor": "planner",
-      "at": "2026-11-19T00:00:00.000Z"
+      "at": "2026-11-26T06:12:29.994Z"
     },
     "producer/seat.reissue": {
-      "seq": 466,
+      "seq": 2958,
       "kind": "slot.slot",
       "actor": "planner",
-      "at": "2026-11-19T00:00:00.000Z"
+      "at": "2026-11-26T06:12:30.097Z"
     },
     "producer/seat.retire": {
-      "seq": 16,
-      "kind": "slot.migrate",
-      "actor": "code:clossys migrate slots",
-      "at": "2026-11-19T00:00:00.000Z"
-    },
-    "producer/seat.rules": {
-      "seq": 17,
-      "kind": "slot.migrate",
-      "actor": "code:clossys migrate slots",
-      "at": "2026-11-19T00:00:00.000Z"
-    },
-    "producer/seat.seats": {
-      "seq": 18,
-      "kind": "slot.migrate",
-      "actor": "code:clossys migrate slots",
-      "at": "2026-11-19T00:00:00.000Z"
-    },
-    "producer/seat.standard": {
-      "seq": 19,
-      "kind": "slot.migrate",
-      "actor": "code:clossys migrate slots",
-      "at": "2026-11-19T00:00:00.000Z"
-    },
-    "producer/seat.verdict": {
-      "seq": 465,
+      "seq": 2938,
       "kind": "slot.slot",
       "actor": "planner",
-      "at": "2026-11-19T00:00:00.000Z"
+      "at": "2026-11-26T06:12:29.634Z"
+    },
+    "producer/seat.rules": {
+      "seq": 2942,
+      "kind": "slot.slot",
+      "actor": "planner",
+      "at": "2026-11-26T06:12:29.752Z"
+    },
+    "producer/seat.seats": {
+      "seq": 2941,
+      "kind": "slot.slot",
+      "actor": "planner",
+      "at": "2026-11-26T06:12:29.725Z"
+    },
+    "producer/seat.standard": {
+      "seq": 2937,
+      "kind": "slot.slot",
+      "actor": "planner",
+      "at": "2026-11-26T06:12:29.610Z"
+    },
+    "producer/seat.verdict": {
+      "seq": 2957,
+      "kind": "slot.slot",
+      "actor": "planner",
+      "at": "2026-11-26T06:12:30.078Z"
     },
     "producer/seat.workspace.config": {
-      "seq": 21,
-      "kind": "slot.migrate",
-      "actor": "code:clossys migrate slots",
-      "at": "2026-11-19T00:00:00.000Z"
+      "seq": 2940,
+      "kind": "slot.slot",
+      "actor": "planner",
+      "at": "2026-11-26T06:12:29.699Z"
     },
     "producer/seat.writer.approve": {
       "seq": 22,
@@ -1840,10 +1840,10 @@
       "at": "2026-11-19T00:00:00.000Z"
     },
     "producer/seat.writer.candidates": {
-      "seq": 23,
-      "kind": "slot.migrate",
-      "actor": "code:clossys migrate slots",
-      "at": "2026-11-19T00:00:00.000Z"
+      "seq": 2948,
+      "kind": "slot.slot",
+      "actor": "planner",
+      "at": "2026-11-26T06:12:29.890Z"
     },
     "publisher": {
       "seq": 2425,
@@ -6380,14 +6380,14 @@
       "disk": "5decbff85ecfe67e2207efda7ff99a4a4057633d071639cbb48916e2a1738a84"
     },
     "clossys/agents/producer/ia.json": {
-      "seq": 458,
-      "logged": "dd78d517d99636ef5669bf791b3f7c8813e1d31d9f9b230c73757b7677ba4458",
-      "disk": "dd78d517d99636ef5669bf791b3f7c8813e1d31d9f9b230c73757b7677ba4458"
+      "seq": 2935,
+      "logged": "2051b6666abf490bd80fadf0267d43bd9295ad4819bfc37c32ff4d090be2c8e7",
+      "disk": "2051b6666abf490bd80fadf0267d43bd9295ad4819bfc37c32ff4d090be2c8e7"
     },
     "clossys/agents/producer/ledger.json": {
-      "seq": 458,
-      "logged": "c7767ed032baba868ef3e13a8aceae3080dd97b1dc24af9e388a39dc3445f44f",
-      "disk": "c7767ed032baba868ef3e13a8aceae3080dd97b1dc24af9e388a39dc3445f44f"
+      "seq": 2935,
+      "logged": "8a03d2f167b8b209f9ca8b1aad8a846762a616dbc324524870322f980aabb8f9",
+      "disk": "8a03d2f167b8b209f9ca8b1aad8a846762a616dbc324524870322f980aabb8f9"
     },
     "clossys/agents/producer/queue.change/entries/20261119T0000Z-change-advantage-proposition-promise.json": {
       "seq": 2890,
@@ -6485,224 +6485,224 @@
       "disk": "0f2ca2567f1fc89844cd021736d85bad912c87eaed02073ec4fddc347d461923"
     },
     "clossys/agents/producer/seat.critic/ledger.json": {
-      "seq": 464,
-      "logged": "ec6e9050b067acc48e04a05191f8c8d05e49582e27af96838f8e62b21701709a",
-      "disk": "ec6e9050b067acc48e04a05191f8c8d05e49582e27af96838f8e62b21701709a"
+      "seq": 2956,
+      "logged": "14a7a8c6aeff65065e825db40572ea72ec0460b155a232f61973429eee726590",
+      "disk": "14a7a8c6aeff65065e825db40572ea72ec0460b155a232f61973429eee726590"
     },
     "clossys/agents/producer/seat.critic/slot.json": {
-      "seq": 464,
-      "logged": "3119deb37039f07af8366b1d6864151d36487ec9691fd02e0148d515ad4d6a51",
-      "disk": "3119deb37039f07af8366b1d6864151d36487ec9691fd02e0148d515ad4d6a51"
+      "seq": 2956,
+      "logged": "feaefe3b43c9dfdb9247b0d58d029f22808628c6981b56dd8f87fbd75f746be3",
+      "disk": "feaefe3b43c9dfdb9247b0d58d029f22808628c6981b56dd8f87fbd75f746be3"
     },
     "clossys/agents/producer/seat.designer.candidates/ledger.json": {
-      "seq": 1,
-      "logged": "7d994d0bd3ff9bfb0f89a8eb7ac88b813fc32a8672ca6313efefbbc4ceb9426d",
-      "disk": "7d994d0bd3ff9bfb0f89a8eb7ac88b813fc32a8672ca6313efefbbc4ceb9426d"
+      "seq": 2947,
+      "logged": "7a061db013ad7d98393ef65941a0980cd01fe656be435b950ebda9ef1d322d8f",
+      "disk": "7a061db013ad7d98393ef65941a0980cd01fe656be435b950ebda9ef1d322d8f"
     },
     "clossys/agents/producer/seat.designer.candidates/slot.json": {
-      "seq": 1,
-      "logged": "9429b8c34bc9c0348e456c53d238f9f1a9801e79fa969ffdba304775a5ea5423",
-      "disk": "9429b8c34bc9c0348e456c53d238f9f1a9801e79fa969ffdba304775a5ea5423"
+      "seq": 2947,
+      "logged": "2d364461991db933331f835ca6746cff9d53a23786f8d044e64f28132e1fd3d6",
+      "disk": "2d364461991db933331f835ca6746cff9d53a23786f8d044e64f28132e1fd3d6"
     },
     "clossys/agents/producer/seat.director.candidates/ledger.json": {
-      "seq": 2,
-      "logged": "cbbf1aa4d3f60fbdd9465fd397e2d6a0ef3c60194e2be4412f9d7fddaae1c96f",
-      "disk": "cbbf1aa4d3f60fbdd9465fd397e2d6a0ef3c60194e2be4412f9d7fddaae1c96f"
+      "seq": 2944,
+      "logged": "2139a9f149f809f0985c9c899fe42e42d20c6ad10037bfd30b2758db25beb58f",
+      "disk": "2139a9f149f809f0985c9c899fe42e42d20c6ad10037bfd30b2758db25beb58f"
     },
     "clossys/agents/producer/seat.director.candidates/slot.json": {
-      "seq": 2,
-      "logged": "c1a1810993cedc15d67a8f5ffa4259135ba95586fe3acc0838be621fa7d2632f",
-      "disk": "c1a1810993cedc15d67a8f5ffa4259135ba95586fe3acc0838be621fa7d2632f"
+      "seq": 2944,
+      "logged": "0837ed4103cd6b4205505217da1d3a55769a7444192de7343ec6b2ecb158ec53",
+      "disk": "0837ed4103cd6b4205505217da1d3a55769a7444192de7343ec6b2ecb158ec53"
     },
     "clossys/agents/producer/seat.evidence/ledger.json": {
-      "seq": 3,
-      "logged": "997b156212492a6b45341713d094659103f4942af4eb326798664f2211bca109",
-      "disk": "997b156212492a6b45341713d094659103f4942af4eb326798664f2211bca109"
+      "seq": 2939,
+      "logged": "237ba01e0c8d044ffa94785a827085fd11ba394f0ce426c24b7d260af7a43f58",
+      "disk": "237ba01e0c8d044ffa94785a827085fd11ba394f0ce426c24b7d260af7a43f58"
     },
     "clossys/agents/producer/seat.evidence/slot.json": {
-      "seq": 3,
-      "logged": "1c6a01f8d5d9f34ca29028b23325185251df746f10cd0c5e02d6ebf2f44878e7",
-      "disk": "1c6a01f8d5d9f34ca29028b23325185251df746f10cd0c5e02d6ebf2f44878e7"
+      "seq": 2939,
+      "logged": "eeb3605204aa121d0c8976e21934ad56858bb9f40db9c4a177a6f72220d1bb19",
+      "disk": "eeb3605204aa121d0c8976e21934ad56858bb9f40db9c4a177a6f72220d1bb19"
     },
     "clossys/agents/producer/seat.ia/ledger.json": {
-      "seq": 4,
-      "logged": "514468a10226c706582f02578326f6eb28b380b5ee4fa1437e1ed74c9c5b0601",
-      "disk": "514468a10226c706582f02578326f6eb28b380b5ee4fa1437e1ed74c9c5b0601"
+      "seq": 2936,
+      "logged": "b1865810fc939f09bb9d8cdc2bdec408d7d7d2792bda72b250ab359f6f7dfb75",
+      "disk": "b1865810fc939f09bb9d8cdc2bdec408d7d7d2792bda72b250ab359f6f7dfb75"
     },
     "clossys/agents/producer/seat.ia/slot.json": {
-      "seq": 4,
-      "logged": "e9160ac856399e0fc0d183608efbd39a853d333e25872702773cc1cf1a7322a6",
-      "disk": "e9160ac856399e0fc0d183608efbd39a853d333e25872702773cc1cf1a7322a6"
+      "seq": 2936,
+      "logged": "45b40054d05c2c85cab90cc61f15034333a273af39cdbe92a85b7cf16f1cb9fc",
+      "disk": "45b40054d05c2c85cab90cc61f15034333a273af39cdbe92a85b7cf16f1cb9fc"
     },
     "clossys/agents/producer/seat.owner.decisions/ledger.json": {
-      "seq": 5,
-      "logged": "c3dcf202af3369f3eb6afc495180584ee46155b5638c3b3878fda8ae0d340c44",
-      "disk": "c3dcf202af3369f3eb6afc495180584ee46155b5638c3b3878fda8ae0d340c44"
+      "seq": 2943,
+      "logged": "41279f74f36df426125ca27b73dd401ce303abb83d0dc8579db88f221562a651",
+      "disk": "41279f74f36df426125ca27b73dd401ce303abb83d0dc8579db88f221562a651"
     },
     "clossys/agents/producer/seat.owner.decisions/slot.json": {
-      "seq": 5,
-      "logged": "f6d5814eb82c44439a1f9a275c9445b322c9ed4b46e0cd310662d8d447b28bd0",
-      "disk": "f6d5814eb82c44439a1f9a275c9445b322c9ed4b46e0cd310662d8d447b28bd0"
+      "seq": 2943,
+      "logged": "61607bc8d0f4e4390335d80cd03d11c118d6e4376833f4ad11d64f29f9690a24",
+      "disk": "61607bc8d0f4e4390335d80cd03d11c118d6e4376833f4ad11d64f29f9690a24"
     },
     "clossys/agents/producer/seat.pick.designer/ledger.json": {
-      "seq": 6,
-      "logged": "d74c8bc21fc8667d57c18459ba23e3da567703ddfb52c774480353a235e8d92f",
-      "disk": "d74c8bc21fc8667d57c18459ba23e3da567703ddfb52c774480353a235e8d92f"
+      "seq": 2949,
+      "logged": "b389fe2fa7831104c801035f2bbf2fae6a1509bb5f22183829f7422d1b9b9435",
+      "disk": "b389fe2fa7831104c801035f2bbf2fae6a1509bb5f22183829f7422d1b9b9435"
     },
     "clossys/agents/producer/seat.pick.designer/slot.json": {
-      "seq": 6,
-      "logged": "6107e06207d04cf293b4f64d7cb40900ccb34ed31ab6449e1ff6710387dc3a65",
-      "disk": "6107e06207d04cf293b4f64d7cb40900ccb34ed31ab6449e1ff6710387dc3a65"
+      "seq": 2949,
+      "logged": "c1ca3f7f8368df7a138a0263559f5ebd39602eba3f235dab7b9f995a4a82ab62",
+      "disk": "c1ca3f7f8368df7a138a0263559f5ebd39602eba3f235dab7b9f995a4a82ab62"
     },
     "clossys/agents/producer/seat.pick.director/ledger.json": {
-      "seq": 7,
-      "logged": "1bb3c752bf4eb9ea768746c0f9c3c15f362c55ed18aa637435e66ed4fe47b7c2",
-      "disk": "1bb3c752bf4eb9ea768746c0f9c3c15f362c55ed18aa637435e66ed4fe47b7c2"
+      "seq": 2945,
+      "logged": "21233f0752d8e54aac3f7b14f3741d29722204b00aabbf696db47566c12ee050",
+      "disk": "21233f0752d8e54aac3f7b14f3741d29722204b00aabbf696db47566c12ee050"
     },
     "clossys/agents/producer/seat.pick.director/slot.json": {
-      "seq": 7,
-      "logged": "3cba66462c5a72740d1d7f908b72a99e9423f1ff6323fe39936e97924a0fcf33",
-      "disk": "3cba66462c5a72740d1d7f908b72a99e9423f1ff6323fe39936e97924a0fcf33"
+      "seq": 2945,
+      "logged": "bdcc3b5bf14548f4eaeef7b48b1002729578c15f591c7b5ef96366c32f46d092",
+      "disk": "bdcc3b5bf14548f4eaeef7b48b1002729578c15f591c7b5ef96366c32f46d092"
     },
     "clossys/agents/producer/seat.pick.publisher/ledger.json": {
-      "seq": 462,
-      "logged": "f5430a1ab23fa46979b613ce944386edc6f1b200da9dda05e846a5df9faa9797",
-      "disk": "f5430a1ab23fa46979b613ce944386edc6f1b200da9dda05e846a5df9faa9797"
+      "seq": 2954,
+      "logged": "dfaef86904ec131ce323869ab7d4da836995022e7611984e6175f4f2af8384fe",
+      "disk": "dfaef86904ec131ce323869ab7d4da836995022e7611984e6175f4f2af8384fe"
     },
     "clossys/agents/producer/seat.pick.publisher/slot.json": {
-      "seq": 462,
-      "logged": "352ec25d6d1b1b97d69bc2432eab6c5537b9df4947e23f75423c871209d13915",
-      "disk": "352ec25d6d1b1b97d69bc2432eab6c5537b9df4947e23f75423c871209d13915"
+      "seq": 2954,
+      "logged": "22e0545a2519abd968aa5f70e0ffeb74dad51bc88b0d5cf958fe7bfc5e1c9745",
+      "disk": "22e0545a2519abd968aa5f70e0ffeb74dad51bc88b0d5cf958fe7bfc5e1c9745"
     },
     "clossys/agents/producer/seat.pick.writer/ledger.json": {
-      "seq": 9,
-      "logged": "e0ec047848c595640593cc0526dac36d9c6b07f948a84acecb335f747161e134",
-      "disk": "e0ec047848c595640593cc0526dac36d9c6b07f948a84acecb335f747161e134"
+      "seq": 2950,
+      "logged": "a39a4a4ef0c6cf0d4eaa7fc357ab2f4b5926919f7e66a11b9165f1b34205079d",
+      "disk": "a39a4a4ef0c6cf0d4eaa7fc357ab2f4b5926919f7e66a11b9165f1b34205079d"
     },
     "clossys/agents/producer/seat.pick.writer/slot.json": {
-      "seq": 9,
-      "logged": "3bf20463aefd40c11c5bac68f0f3110f71ce1f7028804b39556667699e394392",
-      "disk": "3bf20463aefd40c11c5bac68f0f3110f71ce1f7028804b39556667699e394392"
+      "seq": 2950,
+      "logged": "f315b1425594c04dd6d6597105d8d58a409c2202b043fa34635ef8b9c3b41db8",
+      "disk": "f315b1425594c04dd6d6597105d8d58a409c2202b043fa34635ef8b9c3b41db8"
     },
     "clossys/agents/producer/seat.pin.designer/ledger.json": {
-      "seq": 459,
-      "logged": "6fcd7a4e08f29234b1daceab9eff46bc70920f294ad512539969e07583f12002",
-      "disk": "6fcd7a4e08f29234b1daceab9eff46bc70920f294ad512539969e07583f12002"
+      "seq": 2951,
+      "logged": "ec49a3ef782c6de610345183ce33d7db47ea315f63f7e983b1699a6cf496a9dc",
+      "disk": "ec49a3ef782c6de610345183ce33d7db47ea315f63f7e983b1699a6cf496a9dc"
     },
     "clossys/agents/producer/seat.pin.designer/slot.json": {
-      "seq": 459,
-      "logged": "b5ea49c4c828608a0455b2a7ea1a03d2a2d32954d30145522e4d31286990564a",
-      "disk": "b5ea49c4c828608a0455b2a7ea1a03d2a2d32954d30145522e4d31286990564a"
+      "seq": 2951,
+      "logged": "e696d7b44d422829c79b5b86d2c8ec190fee8de70c5d6f1fe0cee04062a02f97",
+      "disk": "e696d7b44d422829c79b5b86d2c8ec190fee8de70c5d6f1fe0cee04062a02f97"
     },
     "clossys/agents/producer/seat.pin.director/ledger.json": {
-      "seq": 11,
-      "logged": "9f2146a3724db901d5f5004659cb4cd8363f0d7d36427b0ee4f88fd28bf1f23d",
-      "disk": "9f2146a3724db901d5f5004659cb4cd8363f0d7d36427b0ee4f88fd28bf1f23d"
+      "seq": 2946,
+      "logged": "d8be525e20c0b4514bcb016eb484f6f60636e0e8a699f585049ac7e78f0c7cd3",
+      "disk": "d8be525e20c0b4514bcb016eb484f6f60636e0e8a699f585049ac7e78f0c7cd3"
     },
     "clossys/agents/producer/seat.pin.director/slot.json": {
-      "seq": 11,
-      "logged": "700e320def59b88544938769ed882b113879a9d2dc1bcd27326827282610930f",
-      "disk": "700e320def59b88544938769ed882b113879a9d2dc1bcd27326827282610930f"
+      "seq": 2946,
+      "logged": "79bcc4e680632df8546f6e9cd3e620cef79e7745c93b624092e5bab0451ecffa",
+      "disk": "79bcc4e680632df8546f6e9cd3e620cef79e7745c93b624092e5bab0451ecffa"
     },
     "clossys/agents/producer/seat.pin.publisher/ledger.json": {
-      "seq": 463,
-      "logged": "81617bd2923cb1686e7e110ff09431f2e00cb53c6f7ed13dc385c4cf19c43893",
-      "disk": "81617bd2923cb1686e7e110ff09431f2e00cb53c6f7ed13dc385c4cf19c43893"
+      "seq": 2955,
+      "logged": "a87d05e86f9681d3c0bfb49e683fe62b307ac3a057b1b12048366b40d25a1848",
+      "disk": "a87d05e86f9681d3c0bfb49e683fe62b307ac3a057b1b12048366b40d25a1848"
     },
     "clossys/agents/producer/seat.pin.publisher/slot.json": {
-      "seq": 463,
-      "logged": "67a182f5c014280b97de81439a20a010322bcfe964d266df133ee46b00379875",
-      "disk": "67a182f5c014280b97de81439a20a010322bcfe964d266df133ee46b00379875"
+      "seq": 2955,
+      "logged": "2516bf68517d8a585f9b95ea175c6767ba6d06fb10a539cd82c0bd460d51c6f7",
+      "disk": "2516bf68517d8a585f9b95ea175c6767ba6d06fb10a539cd82c0bd460d51c6f7"
     },
     "clossys/agents/producer/seat.pin.writer/ledger.json": {
-      "seq": 460,
-      "logged": "afe64c93fea110c0b8969a13dd5112aebd6e489d489d98568876f9a30230c351",
-      "disk": "afe64c93fea110c0b8969a13dd5112aebd6e489d489d98568876f9a30230c351"
+      "seq": 2952,
+      "logged": "fed92644b194aa2cfd539621c16bdb73805c36d8620295006bb76274be4dc0fb",
+      "disk": "fed92644b194aa2cfd539621c16bdb73805c36d8620295006bb76274be4dc0fb"
     },
     "clossys/agents/producer/seat.pin.writer/slot.json": {
-      "seq": 460,
-      "logged": "58b3f05cd82bce331b2b054200aec9cb9b436a1ceea0bcc7bf926cefd80c7794",
-      "disk": "58b3f05cd82bce331b2b054200aec9cb9b436a1ceea0bcc7bf926cefd80c7794"
+      "seq": 2952,
+      "logged": "d20c75172b4a6f20833630d0b2b4cd36765018fdc330e21ab58fe7cbeef0b911",
+      "disk": "d20c75172b4a6f20833630d0b2b4cd36765018fdc330e21ab58fe7cbeef0b911"
     },
     "clossys/agents/producer/seat.publisher.candidates/ledger.json": {
-      "seq": 461,
-      "logged": "b3e48c1a3b75928c63f3a543a46e13f41471b223039e100aa2b91a55fd9f65b8",
-      "disk": "b3e48c1a3b75928c63f3a543a46e13f41471b223039e100aa2b91a55fd9f65b8"
+      "seq": 2953,
+      "logged": "3047a2f7570559583bb6586146e47cde9b6d29c2e2e60f8c46bf21490b7382ae",
+      "disk": "3047a2f7570559583bb6586146e47cde9b6d29c2e2e60f8c46bf21490b7382ae"
     },
     "clossys/agents/producer/seat.publisher.candidates/slot.json": {
-      "seq": 461,
-      "logged": "1cbcd2f47a2f27b4d9a14a2dcde809fdd10ca31689007e5324f312918095b532",
-      "disk": "1cbcd2f47a2f27b4d9a14a2dcde809fdd10ca31689007e5324f312918095b532"
+      "seq": 2953,
+      "logged": "e7064dcd81ef408bdf87d5ecb55e906be9bc837c648d4c9e816dd9b4468625c9",
+      "disk": "e7064dcd81ef408bdf87d5ecb55e906be9bc837c648d4c9e816dd9b4468625c9"
     },
     "clossys/agents/producer/seat.reissue/ledger.json": {
-      "seq": 466,
-      "logged": "0d7df8373c68f6daec23a0b97852a8dac1099491bf13264f51bcb189fd17db1d",
-      "disk": "0d7df8373c68f6daec23a0b97852a8dac1099491bf13264f51bcb189fd17db1d"
+      "seq": 2958,
+      "logged": "e3cd6a0c23e4203c5dad676083de5b25773f5830f51a7120e07c9a03f6e0b217",
+      "disk": "e3cd6a0c23e4203c5dad676083de5b25773f5830f51a7120e07c9a03f6e0b217"
     },
     "clossys/agents/producer/seat.reissue/slot.json": {
-      "seq": 466,
-      "logged": "93fbfa835e6477689c7b76c27e91955a63825a891f84f55c35c3dae22c3ef977",
-      "disk": "93fbfa835e6477689c7b76c27e91955a63825a891f84f55c35c3dae22c3ef977"
+      "seq": 2958,
+      "logged": "9f88c2492bb63dadb9e4ec9f742556de9df6d0c98421f82e8ded4402d110cd04",
+      "disk": "9f88c2492bb63dadb9e4ec9f742556de9df6d0c98421f82e8ded4402d110cd04"
     },
     "clossys/agents/producer/seat.retire/ledger.json": {
-      "seq": 16,
-      "logged": "e9ee2183418d9d5c6c3121b5c00af6e8d7a8ff50062a778a71f8a04f97a11dee",
-      "disk": "e9ee2183418d9d5c6c3121b5c00af6e8d7a8ff50062a778a71f8a04f97a11dee"
+      "seq": 2938,
+      "logged": "0dc86ac567356883f95f3c083a439ec0be168467778746e66ddc2e9d0f4b2050",
+      "disk": "0dc86ac567356883f95f3c083a439ec0be168467778746e66ddc2e9d0f4b2050"
     },
     "clossys/agents/producer/seat.retire/slot.json": {
-      "seq": 16,
-      "logged": "cd53a3161f689c16f39e2c20a97733d61aee292f3e1f471fb156cdd31bc04c40",
-      "disk": "cd53a3161f689c16f39e2c20a97733d61aee292f3e1f471fb156cdd31bc04c40"
+      "seq": 2938,
+      "logged": "f38f89d607d6f8e21300ea871d76171fe9804feaf218d508d382f976c2c61860",
+      "disk": "f38f89d607d6f8e21300ea871d76171fe9804feaf218d508d382f976c2c61860"
     },
     "clossys/agents/producer/seat.rules/ledger.json": {
-      "seq": 17,
-      "logged": "2019fac88c062d0eb3825536e16e3667701d94e3bf6b14dd97d611cd64e456ab",
-      "disk": "2019fac88c062d0eb3825536e16e3667701d94e3bf6b14dd97d611cd64e456ab"
+      "seq": 2942,
+      "logged": "52be2084c16467226bb42e88e9ef4fc0b251d91651554e869539bcdd77fa7a23",
+      "disk": "52be2084c16467226bb42e88e9ef4fc0b251d91651554e869539bcdd77fa7a23"
     },
     "clossys/agents/producer/seat.rules/slot.json": {
-      "seq": 17,
-      "logged": "353a76f5cc8b34a1c60efd70d6cb309ae59244567c5039eae5526134aac97916",
-      "disk": "353a76f5cc8b34a1c60efd70d6cb309ae59244567c5039eae5526134aac97916"
+      "seq": 2942,
+      "logged": "80a854e8b092611c10abadcdc0d9c98457dca452d0373ebdfc77764735972668",
+      "disk": "80a854e8b092611c10abadcdc0d9c98457dca452d0373ebdfc77764735972668"
     },
     "clossys/agents/producer/seat.seats/ledger.json": {
-      "seq": 18,
-      "logged": "2ac9fdc94b5b2c531c279121fb7efbd220abf7687e76d742eabd5f6200771d58",
-      "disk": "2ac9fdc94b5b2c531c279121fb7efbd220abf7687e76d742eabd5f6200771d58"
+      "seq": 2941,
+      "logged": "dea6b139b16ac7ce0646be5bc431f3921e9455da5075f6e3e89ce44c1f1005be",
+      "disk": "dea6b139b16ac7ce0646be5bc431f3921e9455da5075f6e3e89ce44c1f1005be"
     },
     "clossys/agents/producer/seat.seats/slot.json": {
-      "seq": 18,
-      "logged": "950cf63c1d739f523ea7e0c85b7f8ce0b15c49d72788dda82645e8d809667414",
-      "disk": "950cf63c1d739f523ea7e0c85b7f8ce0b15c49d72788dda82645e8d809667414"
+      "seq": 2941,
+      "logged": "9b1b829e2a51b4845b5148c3f60c9a8c8e08f1f55e8cfb00aa99f58b0200bd3b",
+      "disk": "9b1b829e2a51b4845b5148c3f60c9a8c8e08f1f55e8cfb00aa99f58b0200bd3b"
     },
     "clossys/agents/producer/seat.standard/ledger.json": {
-      "seq": 19,
-      "logged": "d0cc882355b3f5d1e6b3398eff1ff95183b37e0b0be8b1274113114156eb7feb",
-      "disk": "d0cc882355b3f5d1e6b3398eff1ff95183b37e0b0be8b1274113114156eb7feb"
+      "seq": 2937,
+      "logged": "a70dbb95daf4a325c7a0b94a21965499d1df7a486baf198f710462dcc156d4ff",
+      "disk": "a70dbb95daf4a325c7a0b94a21965499d1df7a486baf198f710462dcc156d4ff"
     },
     "clossys/agents/producer/seat.standard/slot.json": {
-      "seq": 19,
-      "logged": "d15648c491c7086c3ced48f06b1f623574f858daee4290c31b417c388cbc190f",
-      "disk": "d15648c491c7086c3ced48f06b1f623574f858daee4290c31b417c388cbc190f"
+      "seq": 2937,
+      "logged": "216b932d9150081a408aca59c85c43689172b9a44766b46b248a2f0c60e66d42",
+      "disk": "216b932d9150081a408aca59c85c43689172b9a44766b46b248a2f0c60e66d42"
     },
     "clossys/agents/producer/seat.verdict/ledger.json": {
-      "seq": 465,
-      "logged": "ac64fe4dfdaec225d679dacf40c00a3c12d8cba73da61bea32b9ead9deae3343",
-      "disk": "ac64fe4dfdaec225d679dacf40c00a3c12d8cba73da61bea32b9ead9deae3343"
+      "seq": 2957,
+      "logged": "916311e26d586c8232d755c2e3fda1567b6bf69c79a04c29e619d56c8f532e19",
+      "disk": "916311e26d586c8232d755c2e3fda1567b6bf69c79a04c29e619d56c8f532e19"
     },
     "clossys/agents/producer/seat.verdict/slot.json": {
-      "seq": 465,
-      "logged": "2af190d573cbdbda72ba7ce33d60abe08a60628801cc6daa653e91fd21122614",
-      "disk": "2af190d573cbdbda72ba7ce33d60abe08a60628801cc6daa653e91fd21122614"
+      "seq": 2957,
+      "logged": "4e3139777498de433d9f96307cbb07886d5dd065bcef5a666fb5318abd5ec03b",
+      "disk": "4e3139777498de433d9f96307cbb07886d5dd065bcef5a666fb5318abd5ec03b"
     },
     "clossys/agents/producer/seat.workspace.config/ledger.json": {
-      "seq": 21,
-      "logged": "6dd8391cf6e114b682c9d261f7b50f1d1592a7e6de8d5762cef580a42c3abf28",
-      "disk": "6dd8391cf6e114b682c9d261f7b50f1d1592a7e6de8d5762cef580a42c3abf28"
+      "seq": 2940,
+      "logged": "a6de42913d3966e9ed7bd5e5b36dee0735f92efe3e751947aa7792d9c3872fa5",
+      "disk": "a6de42913d3966e9ed7bd5e5b36dee0735f92efe3e751947aa7792d9c3872fa5"
     },
     "clossys/agents/producer/seat.workspace.config/slot.json": {
-      "seq": 21,
-      "logged": "2bf36f2dd559046fc6b5531cee2de62f9a591730b6572ec4014605f905a9b837",
-      "disk": "2bf36f2dd559046fc6b5531cee2de62f9a591730b6572ec4014605f905a9b837"
+      "seq": 2940,
+      "logged": "f42bd4c88c3df8195ac411139b576ff16a5b19d202323f422df89d313c14aedc",
+      "disk": "f42bd4c88c3df8195ac411139b576ff16a5b19d202323f422df89d313c14aedc"
     },
     "clossys/agents/producer/seat.writer.approve/ledger.json": {
       "seq": 22,
@@ -6715,14 +6715,14 @@
       "disk": "bcfbf3b2e75eeaeaa385fb05a6b884b0a503c6322246fca086e44bbd314ddfcc"
     },
     "clossys/agents/producer/seat.writer.candidates/ledger.json": {
-      "seq": 23,
-      "logged": "82cdf981c7b0cc0f335257020d1dbaee538acb910bb9dc095ff20ebfd734e52c",
-      "disk": "82cdf981c7b0cc0f335257020d1dbaee538acb910bb9dc095ff20ebfd734e52c"
+      "seq": 2948,
+      "logged": "62232a3f9c91f55b436777224ab013be25c85279354d4a392da38701682301ae",
+      "disk": "62232a3f9c91f55b436777224ab013be25c85279354d4a392da38701682301ae"
     },
     "clossys/agents/producer/seat.writer.candidates/slot.json": {
-      "seq": 23,
-      "logged": "4fa1696eb24f06af1e148f95eee17105fec07b048c8981efd8dac789ed19602c",
-      "disk": "4fa1696eb24f06af1e148f95eee17105fec07b048c8981efd8dac789ed19602c"
+      "seq": 2948,
+      "logged": "0b33738c969c84213546267220da4b6e29d607ef97e2a1b2f84a128bc68ee1a3",
+      "disk": "0b33738c969c84213546267220da4b6e29d607ef97e2a1b2f84a128bc68ee1a3"
     },
     "clossys/agents/publisher/chrome.admin-sidebar/ledger.json": {
       "seq": 2419,

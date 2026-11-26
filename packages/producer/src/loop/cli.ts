@@ -9,12 +9,17 @@
  *   clossys run loop.audit
  *   clossys run loop.cascade --slot <ref>
  *   clossys run loop.<name> --resume [--run <runId>] [--step-exit 0|1|2 --model <model> [--step <id>] [--wrote <file>]...]
+ *   clossys run loop.<name> --dry [--slot <ref>] ...
  *   common: [--root <dir>] [--json]
  *
  * An agent step prints its packet and waits: the agent runs its skill, then the run resumes with the step's exit, the
  * files it wrote and the model that served it (the ledger names the model; the loop version names only the tier).
  * A human step raises its queue entry and waits; `--resume` after `clossys answer` goes on.
  * Exit 0: the run ended done or pinned-ready, or waits. 1: it stopped on a failure. 2: it could not run.
+ *
+ * --dry runs nothing and writes nothing: the runner plans the run (planRun) and lists its steps, and each code adopt
+ * step (`clossys settle adopt`) shows the change it would make to the consumer's package.json (CP1-DEPS). Exit 1 when
+ * that change is refused, 2 when the run cannot be planned.
  */
 import { STATE_DIR } from "../engine/state-dir.js";
 import { existsSync, readdirSync, statSync } from "node:fs";
@@ -26,10 +31,13 @@ import type { CliResult } from "../cli/main.js";
 import { discoverRoot } from "../cli/root.js";
 import { isLoopName, LOOP_NAMES, RUN_ID, type LoopName } from "./names.js";
 import type { Finding } from "./route.js";
-import { SLOT_INTEGRITY, fillAll, readRunState, resumeRun, runInit, startRun, waitingRuns, wroteFile, type AgentOutcome, type AgentPacket, type CodeCall, type CodeOutcome, type Exit, type RunHooks, type RunResult } from "./runner.js";
+import { SLOT_INTEGRITY, adoptDependencyPreview, fillAll, planRun, readRunState, resumeRun, runInit, startRun, waitingRuns, wroteFile, type AgentOutcome, type AgentPacket, type CodeCall, type CodeOutcome, type Exit, type RunHooks, type RunResult, type StartInput } from "./runner.js";
+import { dependencyPlanText } from "../records/adopt-dependencies.js";
+import type { AgentId } from "../records/types.js";
 
 export const LOOP_RUN_USAGE = "Usage: clossys run loop.<fill|refine|create|choose|scope|slot|release|audit|cascade> [--slot <agent>/<slot-id>] [--request <id>] [--from <entry>] [--publication <id>] [--agent <agent>] [--trigger <Tn>] [--init] [--root <dir>] [--json]\n"
   + "       clossys run loop.<name> --resume [--run <runId>] [--step-exit 0|1|2 --model <model> [--step <id>] [--wrote <file>]...] [--root <dir>] [--json]\n"
+  + "       clossys run loop.<name> --dry [--slot <agent>/<slot-id>] ... [--root <dir>] [--json]: plans the run, runs and writes nothing\n"
   + "  Runs the loop version the consumer pins (else the package v1) one step at a time and writes one ledger entry per run.\n"
   + "  An agent step prints its packet and waits for --resume with its exit, files and serving model; a human step waits on its queue entry.\n"
   + "  loop.fill with no --slot fills the next slot still on a package default, in chain order, until none is left or a run waits.\n"
@@ -41,13 +49,13 @@ class LoopUsage extends Error {}
 
 interface LoopFlags {
   loop: LoopName; slot?: string; request?: string; from?: string; publication?: string; agent?: string; trigger?: string; init: boolean;
-  resume: boolean; run?: string; stepExit?: Exit; model?: string; step?: string; wrote: string[]; root?: string; json: boolean; help: boolean;
+  resume: boolean; run?: string; stepExit?: Exit; model?: string; step?: string; wrote: string[]; root?: string; json: boolean; help: boolean; dry: boolean;
 }
 
 function parse(argv: readonly string[]): LoopFlags {
   const name = argv[0]!;
   if (!isLoopName(name)) throw new LoopUsage(`${name} is not a loop (${LOOP_NAMES.join(", ")})`);
-  const flags: LoopFlags = { loop: name, init: false, resume: false, wrote: [], json: false, help: false };
+  const flags: LoopFlags = { loop: name, init: false, resume: false, wrote: [], json: false, help: false, dry: false };
   const value = (index: number, flag: string): string => {
     const next = argv[index];
     if (next === undefined || next.startsWith("--")) throw new LoopUsage(`${flag} requires a value`);
@@ -58,6 +66,7 @@ function parse(argv: readonly string[]): LoopFlags {
     if (arg === "--json") flags.json = true;
     else if (arg === "--help") flags.help = true;
     else if (arg === "--init") flags.init = true;
+    else if (arg === "--dry") flags.dry = true;
     else if (arg === "--resume") flags.resume = true;
     else if (arg === "--slot") flags.slot = value(++index, arg);
     else if (arg === "--from") flags.from = value(++index, arg);
@@ -85,6 +94,8 @@ function parse(argv: readonly string[]): LoopFlags {
   }
   if (flags.stepExit !== undefined && !flags.model) throw new LoopUsage("--step-exit records an agent step: name the model that served it with --model");
   if (flags.init && flags.loop !== "loop.fill") throw new LoopUsage("--init starts loop.fill only (flows.md F1)");
+  if (flags.dry && (flags.resume || flags.init)) throw new LoopUsage("--dry plans one new run: it takes no --resume or --init");
+  if (flags.dry && flags.loop === "loop.fill" && !flags.slot && !flags.from) throw new LoopUsage("--dry plans one run: name loop.fill's --slot or --from");
   return flags;
 }
 
@@ -224,6 +235,39 @@ function describe(result: RunResult): string {
   return lines.join("\n");
 }
 
+/** The run `clossys run` would start for these flags (the input startRun takes). */
+function startInputOf(flags: LoopFlags): StartInput {
+  return {
+    loop: flags.loop,
+    ...(flags.slot ? { slot: flags.slot } : {}), ...(flags.request ? { request: flags.request } : {}), ...(flags.from ? { from: flags.from } : {}),
+    ...(flags.publication ? { publication: flags.publication } : {}), ...(flags.trigger ? { trigger: flags.trigger } : {}),
+    ...(flags.agent ? { agent: flags.agent } : {}),
+  };
+}
+
+const SETTLE_ADOPT = /^clossys settle adopt(?:\s|$)/;
+
+/** --dry: the runner's plan of the run (writes nothing), its steps, and each code adopt step's package.json change. */
+function dryRun(root: string, flags: LoopFlags, now: () => Date): CliResult {
+  const planned = planRun(root, startInputOf(flags), now().toISOString().replace(/\.\d{3}Z$/, "Z"));
+  if (!planned.ok) return { exitCode: 2, root, message: `run --dry: ${planned.reason}` };
+  const { state, loaded } = planned;
+  const steps = loaded.content.steps.map(step => ({ id: step.id, by: step.decider.by === "agent" ? `agent:${step.decider.agent} ${step.decider.tier}` : step.decider.by, cli: step.cli }));
+  const subject = state.subject;
+  const dependencies = loaded.content.steps.filter(step => step.decider.by === "code" && SETTLE_ADOPT.test(step.cli)).map(step => {
+    if (!subject) return { step: step.id, skip: "the run has no slot" };
+    const preview = adoptDependencyPreview(root, subject.agent as AgentId, subject.slotId);
+    return "plan" in preview ? { step: step.id, plan: preview.plan, change: dependencyPlanText(preview.plan) } : { step: step.id, ...preview };
+  });
+  const refused = dependencies.some(row => "refused" in row);
+  const lines = [
+    `run ${state.loop} --dry: would run ${state.version.ref}${subject ? ` for ${subject.agent}/${subject.slotId}` : ""} (trigger ${state.trigger.code}); nothing ran, nothing was written`,
+    ...steps.map(step => `  step ${step.id}  ${step.by}  ${step.cli}`),
+    ...dependencies.map(row => `  ${row.step} dependencies: ${"change" in row ? row.change : "refused" in row ? `refused: ${row.refused}` : `none (${row.skip})`}`),
+  ];
+  return { exitCode: refused ? 1 : 0, root, output: { dry: true, loop: state.loop, runs: state.version.ref, ...(subject ? { subject: `${subject.agent}/${subject.slotId}` } : {}), steps, dependencies }, message: lines.join("\n") };
+}
+
 export async function runLoopCli(argv: readonly string[], cwd: string, options: { now?: () => Date; run?: (argv: readonly string[], cwd: string) => Promise<CliResult> } = {}): Promise<CliResult> {
   let flags: LoopFlags;
   try { flags = parse(argv); } catch (error) {
@@ -233,6 +277,10 @@ export async function runLoopCli(argv: readonly string[], cwd: string, options: 
   if (flags.help) return { exitCode: 0, message: LOOP_RUN_USAGE };
   const root = discoverRoot(resolve(cwd, flags.root ?? "."));
   const runOptions = options.now ? { now: options.now } : {};
+  if (flags.dry) {
+    try { return dryRun(root, flags, options.now ?? (() => new Date())); }
+    catch (error) { return { exitCode: 2, root, message: `run --dry: ${error instanceof Error ? error.message : String(error)}` }; }
+  }
   const results: RunResult[] = [];
   try {
     if (flags.resume) {
@@ -264,12 +312,7 @@ export async function runLoopCli(argv: readonly string[], cwd: string, options: 
         results.push(...await fillAll(root, hooks, runOptions));
         if (!results.length) return { exitCode: 0, root, message: "run: loop.fill has nothing to fill (no consumed slot is on a package default)" };
       } else {
-        results.push(await startRun(root, {
-          loop: flags.loop,
-          ...(flags.slot ? { slot: flags.slot } : {}), ...(flags.request ? { request: flags.request } : {}), ...(flags.from ? { from: flags.from } : {}),
-          ...(flags.publication ? { publication: flags.publication } : {}), ...(flags.trigger ? { trigger: flags.trigger } : {}),
-          ...(flags.agent ? { agent: flags.agent } : {}),
-        }, hooks, runOptions));
+        results.push(await startRun(root, startInputOf(flags), hooks, runOptions));
       }
     }
   } catch (error) {

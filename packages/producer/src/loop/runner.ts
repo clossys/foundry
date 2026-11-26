@@ -44,7 +44,9 @@ import { readSlotEntry } from "../records/slots.js";
 import { validateAgainst } from "../records/schema.js";
 import { recordSchema, writeSlot } from "../records/slot.js";
 import { SLOT_LOCK, withDirLock, writeCandidate, writeTargetConfirm, writeTargetDecision, type WriteGuard } from "../records/slot-write.js";
-import { CODE_ADOPT, CODE_ADOPT_CLI, CODE_ADOPT_RUNG, REFERENCE_MANIFEST, codeAdoptSlotRefusal, stockItemOf } from "../records/code-adopt.js";
+import { CODE_ADOPT, CODE_ADOPT_CLI, CODE_ADOPT_RUNG, REFERENCE_MANIFEST, codeAdoptSlotRefusal, stockDependencyPlan, stockItemOf, type DependencyPlan } from "../records/code-adopt.js";
+import { declareStockDependencies, dependencyPlanText } from "../records/adopt-dependencies.js";
+import type { ShadcnRunner } from "@clossys/publisher/install";
 import type { SlotAgent } from "../records/slot-model/index.js";
 import "../constitution/guard.js"; // registers the write guard's runner (the confirm and revert writes are guarded)
 import type { AgentId, Decider, DeciderVerb, Iso, LedgerEntry, LoopStep, LoopVersion, QueueEntry, Ref, Tier } from "../records/types.js";
@@ -114,6 +116,11 @@ export interface RunHooks {
    * consumer substitutes a registry, as runPinCli's `guard` parameter takes one.
    */
   readonly guard?: WriteGuard;
+  /**
+   * Runs npm in the consumer root for the code adopt's dependencies (records/adopt-dependencies.ts): omitted, npm
+   * itself (publish/install.ts npmRunner), as `publish --install` runs it. A test substitutes a stub.
+   */
+  readonly npm?: ShadcnRunner;
 }
 
 type LedgerStep = LedgerEntry["steps"][number];
@@ -751,7 +758,7 @@ async function advance(root: string, state: RunState, version: LoopVersion, hook
       }
     } else {
       ledgerDecider = { by: "code" };
-      const builtIn = step.cli === RERENDER_CLI ? undefined : recordedBuiltIn(ctx, step, subject, filled);
+      const builtIn = step.cli === RERENDER_CLI ? undefined : await recordedBuiltIn(ctx, step, subject, filled);
       if (step.cli === RERENDER_CLI) {
         // CP1-L1: render the reverdicted Designer dependants again, then re-install the published pages that place them.
         try {
@@ -813,9 +820,9 @@ function manifestOf(root: string, publication: string, wrote: readonly string[] 
 
 /** The code steps the runner runs itself. */
 type BuiltIn = { exit: Exit; wrote: string[]; findings?: readonly Finding[]; raised?: readonly Raised[]; why?: string; failed?: string };
-function codeBuiltIn(ctx: Context, step: LoopStep, subject: SlotSubject | undefined): BuiltIn | undefined {
+async function codeBuiltIn(ctx: Context, step: LoopStep, subject: SlotSubject | undefined): Promise<BuiltIn | undefined> {
   const { root, state } = ctx;
-  const settle = settleStep(ctx, step, subject);
+  const settle = await settleStep(ctx, step, subject);
   if (settle) return settle;
   if (step.cli === "clossys check --route") {
     // GF2 fix round 1: a route that cannot raise an entry fails the step (exit 1) with its reason, so the step's
@@ -954,16 +961,40 @@ function settlePick(ctx: Context, subject: SlotSubject | undefined): SettleVerdi
 /** The skill a code adopt's submit event cites: the step it settles (the Designer's candidates step). */
 const CODE_ADOPT_SKILL = "packages/designer/actions/designer.candidates/skill.md";
 
-function settleAdopt(ctx: Context, subject: SlotSubject | undefined): SettleVerdict {
+/**
+ * What the code adopt of `<agent>/<slotId>` would change in the consumer's package.json (CP1-DEPS), by the adopt
+ * step's own rules and writing nothing: `skip` when code adopts nothing there (not an adopt slot, a held candidate, no
+ * stock item), else the dependency plan or its refusal. `clossys run loop.create --dry` prints it.
+ */
+export function adoptDependencyPreview(root: string, agent: AgentId, slotId: string): { readonly skip: string } | { readonly plan: DependencyPlan } | { readonly refused: string } {
+  const gate = adoptGate(root, agent, slotId);
+  if (gate !== undefined) return { skip: gate.why };
+  const found = stockDependencyPlan(root, slotId);
+  return "none" in found ? { skip: `${found.none}; the agent creates` } : found;
+}
+
+/** Why code adopts nothing into `<agent>/<slotId>` (not a byte-exact adopt slot, or a held candidate), or undefined. */
+function adoptGate(root: string, agent: AgentId, slotId: string): { readonly why: string; readonly cites: readonly string[] } | undefined {
+  const slotFile = `clossys/agents/${agent}/${slotId}/slot.json`;
+  const notCode = codeAdoptSlotRefusal(root, agent, slotId);
+  if (notCode !== undefined) return { why: `${notCode}; the agent creates`, cites: [slotFile] };
+  const held = readSlotEntry(join(root, "clossys"), agent, slotId)?.candidates ?? [];
+  if (held.length) return { why: `${agent}/${slotId} holds ${held.join(", ")}; code adopts only into a slot with no candidate, so the agent creates`, cites: [slotFile, `clossys/agents/${agent}/${slotId}/ledger.json`] };
+  return undefined;
+}
+
+async function settleAdopt(ctx: Context, subject: SlotSubject | undefined): Promise<SettleVerdict> {
   if (!subject) return { refused: `the run has no slot` };
   const { root } = ctx;
   const { agent, slotId } = subject;
   const slotFile = `clossys/agents/${refOf(subject)}/slot.json`;
   const ledgerFile = `clossys/agents/${refOf(subject)}/ledger.json`;
-  const notCode = codeAdoptSlotRefusal(root, agent, slotId);
-  if (notCode !== undefined) return { settled: false, why: `${notCode}; the agent creates`, cites: [slotFile] };
-  const held = readSlotEntry(join(root, "clossys"), agent, slotId)?.candidates ?? [];
-  if (held.length) return { settled: false, why: `${refOf(subject)} holds ${held.join(", ")}; code adopts only into a slot with no candidate, so the agent creates`, cites: [slotFile, ledgerFile] };
+  const gate = adoptGate(root, agent, slotId);
+  if (gate !== undefined) return { settled: false, why: gate.why, cites: gate.cites };
+  // CP1-DEPS: the packages the stock item imports go into the consumer's package.json and lockfile first (the one
+  // dependency writer, records/adopt-dependencies.ts); a refused or failed change writes nothing and the agent creates.
+  const deps = await declareStockDependencies(root, slotId, ctx.hooks.npm ? { npm: ctx.hooks.npm } : {});
+  if (deps.exit !== 0) return { settled: false, why: `${deps.refused}; the agent creates`, cites: [slotFile, REFERENCE_MANIFEST] };
   const found = stockItemOf(root, slotId);
   if ("none" in found) return { settled: false, why: `${found.none}; the agent creates`, cites: [slotFile, REFERENCE_MANIFEST] };
   const { stock } = found;
@@ -976,12 +1007,12 @@ function settleAdopt(ctx: Context, subject: SlotSubject | undefined): SettleVerd
     header: { createdBy: cliActor(CODE_ADOPT_CLI) },
   });
   return {
-    settled: true, why: `${stock.ref} ships ${refOf(subject)}'s contract fixture and the slot adopts byte-exact: code submits it unmodified at rung ${CODE_ADOPT_RUNG}, and certify judges it`,
+    settled: true, why: `${stock.ref} ships ${refOf(subject)}'s contract fixture and the slot adopts byte-exact: code submits it unmodified at rung ${CODE_ADOPT_RUNG}, and certify judges it${deps.wrote.length && deps.plan ? ` (dependencies: ${dependencyPlanText(deps.plan)})` : ""}`,
     answer: `adopt ${stock.ref}`, cites: [slotFile, REFERENCE_MANIFEST], wrote: [`clossys/agents/${refOf(subject)}/candidates/${written.name}`, ledgerFile],
   };
 }
 
-const SETTLE_JUDGES: Record<SettleRule, (ctx: Context, subject: SlotSubject | undefined) => SettleVerdict> = {
+const SETTLE_JUDGES: Record<SettleRule, (ctx: Context, subject: SlotSubject | undefined) => SettleVerdict | Promise<SettleVerdict>> = {
   reuse: ctx => settleReuse(ctx),
   impact: settleImpact,
   brief: settleBrief,
@@ -990,7 +1021,7 @@ const SETTLE_JUDGES: Record<SettleRule, (ctx: Context, subject: SlotSubject | un
 };
 
 /** A `clossys settle <rule>` code step: judges its rule, records the settle and logs a run.settle engine event. */
-function settleStep(ctx: Context, step: LoopStep, subject: SlotSubject | undefined): BuiltIn | undefined {
+async function settleStep(ctx: Context, step: LoopStep, subject: SlotSubject | undefined): Promise<BuiltIn | undefined> {
   const match = SETTLE_CLI.exec(step.cli);
   if (!match) return undefined;
   const { root, state } = ctx;
@@ -998,7 +1029,7 @@ function settleStep(ctx: Context, step: LoopStep, subject: SlotSubject | undefin
   // The failure route: a rule that refuses or throws decides nothing; the agent step it precedes runs, and the
   // deferral is recorded like any settle. Only a settle record that cannot be written fails the step (its onFail).
   let verdict: SettleVerdict;
-  try { verdict = SETTLE_JUDGES[rule](ctx, subject); }
+  try { verdict = await SETTLE_JUDGES[rule](ctx, subject); }
   catch (error) { verdict = { refused: error instanceof Error ? error.message : String(error) }; }
   const judged = "refused" in verdict ? undefined : verdict;
   const deferred = "refused" in verdict ? verdict.refused : undefined;
@@ -1035,12 +1066,12 @@ function settleStep(ctx: Context, step: LoopStep, subject: SlotSubject | undefin
  * clossys.pipeline-run/1 record to `clossys/.state/runs/<loop>.<step>.jsonl` with every file it read and
  * wrote and their sha256, so a loop's own writes (queue entries, slot status) are on the run record.
  */
-function recordedBuiltIn(ctx: Context, step: LoopStep, subject: SlotSubject | undefined, filled: { readonly argv: readonly string[]; readonly text: string }): BuiltIn | undefined {
+async function recordedBuiltIn(ctx: Context, step: LoopStep, subject: SlotSubject | undefined, filled: { readonly argv: readonly string[]; readonly text: string }): Promise<BuiltIn | undefined> {
   const watch = observe();
   // Wall time, not ctx.now(): the run clock dates entries and pins, and a record must not move it.
   const start = new Date();
   let result: BuiltIn | undefined;
-  try { result = codeBuiltIn(ctx, step, subject); }
+  try { result = await codeBuiltIn(ctx, step, subject); }
   finally { watch.stop(); }
   if (!result) return undefined;
   // The step's own files are writes too: a queue entry is created through a file descriptor (openSync "wx"), which

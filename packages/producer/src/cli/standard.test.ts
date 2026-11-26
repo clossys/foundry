@@ -8,6 +8,7 @@ import { readStandard } from "../records/standards.js";
 import "./main.js";
 import { runIaCli, runSeatCli } from "./owner.js";
 import { positionIa } from "../records/slot.js";
+import { slotPositions, type IaDoc } from "../records/slot-model/index.js";
 import { runStandardCli, STANDARD_USAGE } from "./standard.js";
 
 const FIXTURE = fileURLToPath(new URL("../constitution/__fixtures__/standards/fixture-headline/", import.meta.url));
@@ -227,29 +228,26 @@ describe("clossys ia producer/<seat> --standard", () => {
     const root = workspace();
     const producer = join(root, "clossys", "agents", "producer");
     const position = (seat: string) => (JSON.parse(readFileSync(join(producer, seat, "slot.json"), "utf8")) as { ia: unknown }).ia;
-    const placedAt = (seat: string) => {
-      const ia = JSON.parse(readFileSync(join(producer, "ia.json"), "utf8")) as { nodes: { id: string; children: { id: string; slots: string[] }[] }[] };
-      const order = ia.nodes.flatMap(node => node.children.flatMap(child => child.slots.map(id => ({ id, l1: node.id, l2: child.id }))));
-      const at = order.findIndex(row => row.id === seat);
-      return positionIa(seat, { l1: order[at]!.l1, l2: order[at]!.l2, order: at });
-    };
+    // The position the layered producer ia.json gives a seat (its L0 layer included); `order` pins the expected order.
+    const placed = (seat: string) => slotPositions("producer", JSON.parse(readFileSync(join(producer, "ia.json"), "utf8")) as IaDoc).get(seat)!;
+    const placedAt = (seat: string, order?: number) => positionIa(seat, { ...placed(seat), ...(order === undefined ? {} : { order }) });
     const seat = (step: string) => runSeatCli([step, "--by", "owner", "--decided-by", "planner:U13-fixture", "--no-llm", "--procedure", "Compare each slot's candidates against its contract and pin one.", "--command", "clossys pin"], root);
     expect((await seat("pin.director")).exitCode).toBe(0);
-    expect(position("seat.pin.director")).toEqual(positionIa("seat.pin.director", { l1: "direct", l2: "direct.pin", order: 0 }));
+    expect(position("seat.pin.director")).toEqual(placedAt("seat.pin.director", 0));
     const earlier = await seat("owner.decisions");
     expect(earlier.exitCode, earlier.message).toBe(0);
     expect(position("seat.owner.decisions")).toEqual(placedAt("seat.owner.decisions"));
     expect(position("seat.pin.director")).toEqual(placedAt("seat.pin.director"));
-    expect(position("seat.pin.director")).toEqual(positionIa("seat.pin.director", { l1: "direct", l2: "direct.pin", order: 1 }));
+    expect(position("seat.pin.director")).toEqual(placedAt("seat.pin.director", 1));
     // A seat whose order went stale before this rule is recorded at its position when its standard is named.
     const file = join(producer, "seat.pin.director", "slot.json");
     put(file, readFileSync(file, "utf8").replace("\"order\": 1", "\"order\": 0"));
-    expect(position("seat.pin.director")).toEqual(positionIa("seat.pin.director", { l1: "direct", l2: "direct.pin", order: 0 }));
+    expect(position("seat.pin.director")).toEqual(placedAt("seat.pin.director", 0));
     cpSync(FIXTURE, seatDir(root), { recursive: true });
     const requirements = join(seatDir(root), "requirements.json");
     put(requirements, readFileSync(requirements, "utf8").replace("\"fixture-headline\"", "\"fixture-seat\"").replace("[\"strings\"]", "[\"seat\"]"));
     const named = await runIaCli(["producer/seat.pin.director", "--standard", "fixture-seat", ...AT], root);
     expect(named.exitCode, named.message).toBe(0);
-    expect(position("seat.pin.director")).toEqual(positionIa("seat.pin.director", { l1: "direct", l2: "direct.pin", order: 1 }));
+    expect(position("seat.pin.director")).toEqual(placedAt("seat.pin.director", 1));
   });
 });

@@ -362,9 +362,10 @@ export async function resolvePage(page: InstallPageRecord, pins: InstallPins, so
 /**
  * The union of every resolved item's npm dependencies, as a package.json `dependencies` map
  * (`name@range` keeps its range, a bare name is `latest`). The substrate needs all of them,
- * not only the ones shadcn happened to install for the last item.
+ * not only the ones shadcn happened to install for the last item. Any item with a `dependencies`
+ * list will do: the Producer's code adopt hands it the registry entries it adds to a consumer.
  */
-export function substrateDependencies(slots: readonly ResolvedSlot[]): Record<string, string> {
+export function substrateDependencies(slots: readonly Pick<ResolvedSlot, "dependencies">[]): Record<string, string> {
   const union: Record<string, string> = {};
   for (const slot of slots) for (const dependency of slot.dependencies) {
     const at = dependency.indexOf("@", dependency.startsWith("@") ? 1 : 0);

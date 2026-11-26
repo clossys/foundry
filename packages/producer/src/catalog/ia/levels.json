@@ -1,0 +1,31 @@
+{
+  "layers": [
+    {
+      "id": "pipeline",
+      "label": "Pipeline",
+      "nodes": [
+        "direct",
+        "design",
+        "publish"
+      ]
+    }
+  ],
+  "axes": {
+    "L0": {
+      "name": "Pipeline stage",
+      "values": [
+        "Pipeline"
+      ]
+    },
+    "L1": {
+      "pipeline": {
+        "name": "Seat round",
+        "values": [
+          "Direct",
+          "Design",
+          "Publish"
+        ]
+      }
+    }
+  }
+}

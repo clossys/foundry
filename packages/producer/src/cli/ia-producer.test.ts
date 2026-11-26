@@ -1,7 +1,8 @@
 /**
  * The Producer seat tree is package data (SOURCE-MIGRATE step 9): a consumer regroup that moves,
  * reorders or relabels a seat, or declares layers or axes, is refused (the package catalog,
- * pipeline/seats.json, is where it lands); an empty tab or group is the consumer's own. A NEW seat is
+ * pipeline/seats.json, is where it lands); an empty group under a placed round is the consumer's own. A new tab is
+ * refused under the package Pipeline layer (CP1-D7B), as designer and writer refuse one under their levels.json. A NEW seat is
  * placed only by `clossys seat <step>`: `ia producer/<seat> --under` (with or without --contract) never creates one.
  */
 import { cpSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, realpathSync, rmSync, statSync, writeFileSync } from "node:fs";
@@ -28,11 +29,8 @@ const load = (path: string) => JSON.parse(readFileSync(path, "utf8"));
 const iaDoc = () => load(join(producer, "ia.json")) as { nodes: { id: string; label: string; children: { id: string; slots: string[] }[] }[]; changes?: { op: string; ownerRef: string }[]; layers?: unknown };
 const seatAt = (seat: string) => (load(join(producer, seat, "slot.json")) as { ia: Record<string, unknown> }).ia;
 const seatEvents = (seat: string) => (load(join(producer, seat, "ledger.json")) as { events: Record<string, unknown>[] }).events;
-/** Where producer ia.json places each seat: what every seat slot.json must say. */
-function placements(): Map<string, { l1: string; l2: string; order: number }> {
-  const rows = iaDoc().nodes.flatMap(node => node.children.flatMap(child => child.slots.map(id => ({ id, l1: node.id, l2: child.id }))));
-  return new Map(rows.map((row, order) => [row.id, { l1: row.l1, l2: row.l2, order }]));
-}
+/** Where the layered producer ia.json places each seat (its L0 layer included): what every seat slot.json must say. */
+const placements = () => slotPositions("producer", iaDoc() as unknown as IaDoc);
 // A seat is a clossys.slot/2 (U13 one format): its ia is the slash path of its ia.json position.
 const followsIa = () => { for (const [seat, at] of placements()) expect(seatAt(seat), seat).toEqual(positionIa(seat, at)); };
 /** Every file under the workspace and its bytes: a refused or dry run must leave this unchanged. */
@@ -72,7 +70,7 @@ afterEach(() => rmSync(workspace, { recursive: true, force: true }));
 
 describe("clossys seat places a new seat; ia never does", () => {
   it("places seat.reissue with clossys seat reissue (its stage publish.assemble is not a step)", async () => {
-    const { l0, l1, l2 } = positionIa("seat.reissue", { l1: "publish", l2: "publish.assemble" });
+    const { l0, l1, l2 } = positionIa("seat.reissue", placements().get("seat.reissue"));
     expect(seatAt("seat.reissue")).toMatchObject({ l0, l1, l2 });
     expect((await seat("publish.assemble")).message).toMatch(/publish\.assemble is not a decide step/);
   });
@@ -124,7 +122,7 @@ describe("clossys ia producer/<seat> --move --under", () => {
 });
 
 describe("clossys ia producer --add|--reorder|--drop|--layers|--axes", () => {
-  it("refuses a consumer regroup that moves, reorders or relabels package seats; an empty group is the consumer's own", async () => {
+  it("refuses a consumer regroup that moves, reorders or relabels package seats, or adds a tab; an empty group is the consumer's own", async () => {
     await expect(ia("director-not-an-agent", "--add", "x", "--label", "X")).rejects.toThrow(/director, designer, writer, publisher, producer/);
     expect(await ia("producer", "--add", "create", "--label", "Create")).toMatchObject({ exitCode: 1, message: expect.stringMatching(/--owner-ref/) });
     const before = tree();
@@ -134,11 +132,14 @@ describe("clossys ia producer --add|--reorder|--drop|--layers|--axes", () => {
     const label = iaDoc().nodes.find(node => node.id === "direct")!.children[0]!;
     expect(await owned("producer", "--rename", `direct/${label.id}`, "--label", "Renamed")).toMatchObject({ exitCode: 1, message: expect.stringMatching(/a group that holds package leaves/) });
     expect(tree()).toEqual(before);
-    // An empty tab and group hold no package leaf: adding and dropping them is a consumer write.
-    expect((await owned("producer", "--add", "create", "--label", "Create")).exitCode).toBe(0);
-    expect((await owned("producer", "--add", "create/create.make", "--label", "Make")).exitCode).toBe(0);
-    expect(await owned("producer/seat.pin.director", "--move", "--under", "create/create.make")).toMatchObject({ exitCode: 1, message: expect.stringMatching(/the placement of a package leaf/) });
-    expect(await owned("producer", "--drop", "create/create.make")).toMatchObject({ exitCode: 0 });
+    // A new tab needs an L0 layer, and the Pipeline layer is the package's (CP1-D7B; designer and writer refuse the same).
+    expect(await owned("producer", "--add", "create", "--label", "Create")).toMatchObject({ exitCode: 1, message: expect.stringMatching(/give --layer/) });
+    expect(await owned("producer", "--add", "create", "--label", "Create", "--layer", "pipeline")).toMatchObject({ exitCode: 1, message: expect.stringMatching(/the L0 layers/) });
+    expect(tree()).toEqual(before);
+    // An empty group under a placed round holds no package leaf: adding and dropping it is a consumer write.
+    expect((await owned("producer", "--add", "direct/direct.make", "--label", "Make")).exitCode).toBe(0);
+    expect(await owned("producer/seat.pin.director", "--move", "--under", "direct/direct.make")).toMatchObject({ exitCode: 1, message: expect.stringMatching(/the placement of a package leaf/) });
+    expect(await owned("producer", "--drop", "direct/direct.make")).toMatchObject({ exitCode: 0 });
     followsIa();
     expect(checkSlotModel(join(workspace, "clossys"))).toEqual([]);
   });
