@@ -25,14 +25,14 @@
 import { createHash } from "node:crypto";
 import { existsSync, readFileSync } from "node:fs";
 import { dirname, join, relative, resolve, sep } from "node:path";
-import { packagePath } from "../package-path.js";
+import { packagePath, PRODUCER_ROOT } from "../package-path.js";
 import { checkSlotModel, RETIRED_DIR } from "../records/slot-check.js";
 import { ledgerComment, OWNER_DECISION_SCOPES, OWNER_DECISIONS_FILE, OWNER_DECISIONS_SCHEMA, resolveOwnerRef, validateOwnerDecisions, type OwnerDecision } from "../records/owner-decisions.js";
 import { AGENT_KIND, CANDIDATE_NAME, OWNER_WORDS_REF_FORM, FOUNDRY_IA_AFTER, FOUNDRY_IA_AGENTS, IA_SCHEMA, SEAT_AGENT, SLOT_AGENTS, SLOT_ID, SLOT_KINDS, SLOT_SCHEMA, STANDARD_ID, seatSlotId, seatStepOf } from "../records/slot-model/types.js";
 import type { IaDoc, SlotAgent, SlotKind } from "../records/slot-model/types.js";
 import { WORKSPACE_OWNED_SOURCE } from "../records/slot-model/ia-source.js";
 import { agentDir, candidatesDir, iaPath, jsonBytes, pinFile, seatDir, slotDir, slotFile } from "../records/slot-model/layout.js";
-import { designerIa, directorIa, slotPositions, writerIa, type FoundryIa } from "../records/slot-model/foundry-ia.js";
+import { designerIa, directorIa, packageLevels, slotPositions, writerIa, type FoundryIa } from "../records/slot-model/foundry-ia.js";
 import { feedsIndex } from "../records/slot-model/derive.js";
 import { PRODUCER_IA_SOURCE, readPipelineSeats } from "../records/slot-model/pipeline-seats.js";
 import { adoptedCurrentSlots, driftCounts, holdsRecord, knownSlots, RETIRED_SEATS_DIR, SYNC_AGENTS, syncPlan, syncState, syncVerdict, type SeatRetire, type SyncAgent, type SyncVerdict } from "../records/slot-model/ia-sync.js";
@@ -1157,7 +1157,8 @@ export function placeSeat(ia: { schema: string; source: string; extensions: stri
     node.children.splice(at < 0 ? node.children.length : at, 0, child);
   }
   child.slots.push(id);
-  return { ...ia, nodes };
+  // The seat tree's L0 layer and closed axes are package data (src/catalog/ia/levels.json), over the rounds placed so far.
+  return { ...ia, nodes, ...packageLevels(PRODUCER_ROOT, nodes) };
 }
 
 /** A seat slot's candidate stem: the last dot segment of its slot id (seat.pick.designer -> designer). */

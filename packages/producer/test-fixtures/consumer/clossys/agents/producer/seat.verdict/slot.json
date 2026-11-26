@@ -5,9 +5,9 @@
   "kind": "seat",
   "status": "starter",
   "ia": {
-    "l0": "seat",
-    "l1": "seat/publish",
-    "l2": "seat/publish/assemble",
+    "l0": "pipeline",
+    "l1": "pipeline/publish",
+    "l2": "pipeline/publish/assemble",
     "order": 21
   },
   "createdBy": {
