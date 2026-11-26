@@ -5,6 +5,8 @@
  * `publish --install --next --bind` for the admin publication writes the route files, the `[agent]` folders with
  * their static parameters and the records snapshot; the installed pages render the consumer's own records.
  * The esbuild render stands in for Next's server render; `FOUNDRY_ADMIN_NEXT_BUILD=1` also runs a real `next build`.
+ * CP1-G1: the records carry each slot's detail href and each candidate's metadata, and the copy-less record sections
+ * receive the labels of the pinned `writer/sections.records.copy` (unpinned, the install reports it).
  */
 import { execFile } from "node:child_process";
 import { createHash } from "node:crypto";
@@ -66,12 +68,14 @@ const ITEMS: Record<string, ReturnType<typeof item>> = {
   "sections.page-header": item("sections.page-header", "admin-page-header", 'export function AdminPageHeader({ title }: { title: string }) {\n  return <header data-section="page-header"><h1>{title}</h1></header>;\n}\n', [{ slot: "sections.page-header.copy", prop: "title", previewKey: "admin-home.header" }]),
   "sections.notices": item("sections.notices", "admin-notices", 'export function AdminNotices({ text }: { text: string }) {\n  return <aside data-section="notices">{text}</aside>;\n}\n', [{ slot: "sections.notices.copy", prop: "text", previewKey: "admin-home.notices" }]),
   "sections.empty-state": item("sections.empty-state", "admin-empty-state", 'export function AdminEmptyState({ text }: { text: string }) {\n  return <section data-section="empty-state">{text}</section>;\n}\n', [{ slot: "sections.empty-state.copy", prop: "text", previewKey: "admin-home.first-run" }]),
-  "sections.slot-gallery": item("sections.slot-gallery", "admin-slot-gallery", 'export function AdminSlotGallery({ slots }: { slots?: { id: string; kind: string; status: string | null }[] }) {\n  if (!slots?.length) return <section data-section="slot-gallery" data-empty="" />;\n  return <section data-section="slot-gallery"><ul>{slots.map(row => <li key={row.id} data-slot={row.id}>{row.id} ({row.kind})</li>)}</ul></section>;\n}\n'),
+  "sections.slot-gallery": item("sections.slot-gallery", "admin-slot-gallery", 'export function AdminSlotGallery({ slots, labels }: { slots?: { id: string; kind: string; status: string | null; href: string | null }[]; labels?: Record<string, string> }) {\n  if (!slots?.length) return <section data-section="slot-gallery" data-empty="" />;\n  return <section data-section="slot-gallery"><h2 data-labels={labels ? "" : "none"}>{labels?.["gallery-heading"]}</h2><ul>{slots.map(row => <li key={row.id} data-slot={row.id}>{row.href ? <a href={row.href}>{row.id}</a> : row.id} ({row.kind})</li>)}</ul></section>;\n}\n'),
   "sections.slot-detail": item("sections.slot-detail", "admin-slot-detail", 'export function AdminSlotDetail({ slot }: { slot?: { id: string; agent: string; kind: string; pin: { candidate: string } | null } | null }) {\n  if (!slot) return <section data-section="slot-detail" data-empty="" />;\n  return <section data-section="slot-detail"><p data-detail={slot.id}>{slot.agent}/{slot.id} is a {slot.kind}, pinned to {slot.pin ? slot.pin.candidate : "nothing"}</p></section>;\n}\n'),
-  "sections.candidate-preview": item("sections.candidate-preview", "admin-candidate-preview", 'export function AdminCandidatePreview({ candidates }: { candidates?: { name: string; pinned: boolean }[] }) {\n  if (!candidates?.length) return <section data-section="candidate-preview" data-empty="" />;\n  return <section data-section="candidate-preview"><ul>{candidates.map(row => <li key={row.name} data-candidate={row.name}>{row.name}{row.pinned ? " (pinned)" : ""}</li>)}</ul></section>;\n}\n'),
+  "sections.candidate-preview": item("sections.candidate-preview", "admin-candidate-preview", 'export function AdminCandidatePreview({ candidates, labels }: { candidates?: { name: string; pinned: boolean; status: string | null; rung: string | null; source: string | null; createdBy: string | null }[]; labels?: Record<string, string> }) {\n  if (!candidates?.length) return <section data-section="candidate-preview" data-empty="" />;\n  return <section data-section="candidate-preview"><ul>{candidates.map(row => <li key={row.name} data-candidate={row.name} data-status={row.status ?? ""} data-rung={row.rung ?? ""} data-source={row.source ?? ""} data-created-by={row.createdBy ?? ""}>{row.name}{row.pinned ? ` (${labels?.pinned ?? ""})` : ""}</li>)}</ul></section>;\n}\n'),
   "sections.question-packet": item("sections.question-packet", "admin-question-packet", 'export function AdminQuestionPacket({ questions }: { questions?: { id: string; ask: string; default: string | null }[] }) {\n  if (!questions?.length) return <section data-section="question-packet" data-empty="" />;\n  return <section data-section="question-packet"><ol>{questions.map(row => <li key={row.id} data-question={row.id}>{row.ask} (default {row.default ?? "none"})</li>)}</ol></section>;\n}\n'),
   "sections.queue-list": item("sections.queue-list", "admin-queue-list", 'export function AdminQueueList({ entries }: { entries?: { id: string; target: string; status: string; why: string }[] }) {\n  if (!entries?.length) return <section data-section="queue-list" data-empty="" />;\n  return <section data-section="queue-list"><ol>{entries.map(row => <li key={row.id} data-entry={row.id}>{row.target} is {row.status}: {row.why}</li>)}</ol></section>;\n}\n'),
 };
+/** The record sections' labels (DRAFT fixture strings): the pinned Writer strings slot the records carry them from. */
+const LABELS = { "sections.records.copy": { "gallery-heading": "DRAFT Slots", pinned: "DRAFT pinned" } };
 /** The admin Writer copy (DRAFT fixture strings), by Writer slot and key. */
 const COPY: Record<string, Record<string, string>> = {
   "sections.page-header.copy": {
@@ -95,7 +99,7 @@ function pin(dir: string, name: string, bytes: string): void {
  * The scratch consumer: the install-consumer fixture, every admin unit pinned, the admin copy pinned, and records to show.
  * `french` also drafts every admin Writer key in French (`FR <text>`), the copy a second locale binds to.
  */
-async function consumer(french = false): Promise<{ root: string; site: string; app: string }> {
+async function consumer(french = false, labels = true): Promise<{ root: string; site: string; app: string }> {
   // A real `next build` resolves Next, React and @clossys/* from the workspace's node_modules, so that run's consumer
   // lives inside this package (as page-host.test.ts does); the render-only run stays in the OS temp dir.
   const parent = process.env.FOUNDRY_ADMIN_NEXT_BUILD === "1" ? join(import.meta.dirname, "..", "..") : tmpdir();
@@ -119,10 +123,11 @@ async function consumer(french = false): Promise<{ root: string; site: string; a
   // The admin copy: one Writer slot per copy record the admin page defaults cite.
   const writer = join(clossys, "agents", "writer");
   const writerIa = readJson<{ nodes: { id: string; children: { id: string; slots: string[] }[] }[] }>(join(writer, "ia.json"));
-  writerIa.nodes.push({ id: "admin", label: "Admin", children: [{ id: "admin.copy", label: "Copy", slots: Object.keys(COPY) }] } as never);
+  const strings = { ...COPY, ...(labels ? LABELS : {}) };
+  writerIa.nodes.push({ id: "admin", label: "Admin", children: [{ id: "admin.copy", label: "Copy", slots: Object.keys(strings) }] } as never);
   writeFileSync(join(writer, "ia.json"), json(writerIa));
   const copyAt = new Map(listSlots(clossys, "writer").map(entry => [entry.id, entry.position]));
-  for (const [slot, keys] of Object.entries(COPY)) {
+  for (const [slot, keys] of Object.entries(strings)) {
     const dir = join(writer, slot), { l0, l1, l2, order } = copyAt.get(slot)!;
     mkdirSync(dir, { recursive: true });
     writeFileSync(join(dir, "slot.json"), json({ schema: "clossys.slot/1", id: slot, agent: "writer", kind: "strings", ia: { l0, l1, l2, order }, contract: {}, inputs: [], uses: [] }));
@@ -238,11 +243,19 @@ describe("the admin workspace renders the consumer's records (init, publish admi
     const designer = await render(site, "admin/[agent]/page", { agent: "designer" });
     expect(designer).toContain("DRAFT Agent slots");
     expect(designer).toContain('data-slot="sections.slot-gallery"');
-    expect(designer).toContain("frames.app-shell (element");
+    // CP1-G1: each slot links its detail page (the content map's <agent>/<slot> route); the labels come with the records.
+    expect(designer).toContain('<a href="/admin/designer/frames.app-shell">frames.app-shell</a> (element');
+    expect(designer).toContain("DRAFT Slots");
+    expect(result.findings.filter(finding => finding.slot === "writer/sections.records.copy")).toEqual([]);
     const detail = await render(site, "admin/[agent]/[slot]/page", { agent: "designer", slot: "sections.page-header" });
     expect(detail).toContain("designer/sections.page-header is a element");
     expect(detail).toContain("pinned to admin-page-header-v1.json");
     expect(detail).toContain('data-candidate="admin-page-header-v1.json"');
+    expect(detail).toContain("admin-page-header-v1.json (DRAFT pinned)");
+    // A seeded admin page's candidate: the rung its submit records and its source kind. The seed is a plain record
+    // (no clossys.candidate/1 header), so it has no header status or creator.
+    const page = await render(site, "admin/[agent]/[slot]/page", { agent: "publisher", slot: "page.admin-home" });
+    expect(page).toContain('data-candidate="admin-home-v1.json" data-status="" data-rung="adapt" data-source="derived" data-created-by=""');
     const questions = await render(site, "admin/questions/page");
     expect(questions).toContain("DRAFT Which hero candidate ships? (default simple-hero-v3)");
     const requests = await render(site, "admin/requests/page");
@@ -267,7 +280,8 @@ describe("the admin workspace renders the consumer's records (init, publish admi
   });
 
   it("a two-locale admin publication serves each locale its own [agent] route, carrying its locale, whose sections read the records (U18 x U20b)", { timeout: 300_000 }, async () => {
-    const { root, site, app } = await consumer(true);
+    // Without the labels slot: the sections render no labels, and the install reports it (never a literal label).
+    const { root, site, app } = await consumer(true, false);
     const init = await runInitCli(["--starters", "admin", "--at", AT], root);
     expect(init.exitCode, init.message).toBe(0);
     // The admin publication records two locales: a new candidate of the pinned record, pinned.
@@ -278,6 +292,7 @@ describe("the admin workspace renders the consumer's records (init, publish admi
 
     const result = await install(root, app);
     expect(blocking(result)).toEqual([]);
+    expect(result.findings.filter(finding => finding.slot === "writer/sections.records.copy")).toEqual([expect.objectContaining({ code: "unbound-copy-slot", severity: "info" })]);
     // One [agent] route per locale: the default's in its route group, French under its own first segment, each with its locale.
     const routes = { en: join(app, "(en)", "admin", "[agent]", "page.tsx"), fr: join(app, "fr", "admin", "[agent]", "page.tsx") };
     for (const [locale, file] of Object.entries(routes)) {
@@ -298,7 +313,8 @@ describe("the admin workspace renders the consumer's records (init, publish admi
     expect(fr).toMatch(/^<html lang="fr"/);
     expect(fr).toContain("FR DRAFT Agent slots");
     expect(fr).toContain('data-slot="sections.slot-gallery"');
-    expect(fr).toContain("frames.app-shell (element");
+    expect(fr).toContain('data-labels="none"');
+    expect(fr).toContain("frames.app-shell</a> (element");
     const en = await render(site, "(en)/admin/[agent]/page", { agent: "designer" }, "(en)/layout");
     expect(en).toMatch(/^<html lang="en"/);
     expect(en).toContain("DRAFT Agent slots");
