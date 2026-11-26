@@ -1,14 +1,22 @@
-/** `clossys slot <ref> [--candidates all|live] [--root <dir>] [--json]`: one slot in full (system.md 12.3). Read-only. */
+/** `clossys slot <ref> [--candidates all|live] [--full] [--root <dir>] [--json]`: one slot in full (system.md 12.3). Read-only. */
 import { resolve } from "node:path";
 import { RefError } from "../read/ref.js";
-import { slotView, SlotViewError, type SlotView } from "../read/slot.js";
+import { slotCandidateTexts, slotView, SlotViewError, type SlotView } from "../read/slot.js";
 import { CliUsageError } from "./args.js";
 import type { CliResult } from "./main.js";
 import { discoverRoot } from "./root.js";
 
-export const SLOT_USAGE = "Usage: clossys slot <agent>/<slot-id>[/<candidate>|/package:<name>-v<n>.<ext>][#<record>] [--candidates all|live] [--root <dir>] [--json]\n"
+export const SLOT_USAGE = "Usage: clossys slot <agent>/<slot-id>[/<candidate>|/package:<name>-v<n>.<ext>][#<record>] [--candidates all|live] [--full] [--root <dir>] [--json]\n"
   + "  shows one slot in full: its brief, every candidate with its check summary, the pin, who consumes it, open queue\n"
-  + "  items and ledger runs (clossys.slot-view/1). Read-only. Exit 1 when the ref names no slot or candidate.";
+  + "  items and ledger runs (clossys.slot-view/1). --full also prints the slot's contract and every listed candidate's\n"
+  + "  text (JSON: a `full` field outside clossys.slot-view/1). Read-only. Exit 1 when the ref names no slot or candidate.";
+
+/** The `--full` addition: the slot's contract and each listed candidate's text, as `--- <label>` blocks. */
+function fullText(full: { contract: unknown; candidates: { name: string; text: string }[] }): string {
+  const blocks = [`--- contract\n${JSON.stringify(full.contract ?? null, null, 2)}`];
+  for (const candidate of full.candidates) blocks.push(`--- candidate ${candidate.name}\n${candidate.text.replace(/\n$/, "")}`);
+  return blocks.join("\n");
+}
 
 function summary(view: SlotView): string {
   const lines = [`${view.ref}  ${view.slot.kind}  ${view.slot.status}  ${view.slot.ia.l0} > ${view.slot.ia.l1} > ${view.slot.ia.l2}`];
@@ -23,11 +31,12 @@ function summary(view: SlotView): string {
 }
 
 export async function runSlotCli(argv: readonly string[], cwd: string): Promise<CliResult> {
-  let ref: string | undefined, root: string | undefined, candidates: "all" | "live" = "live";
+  let ref: string | undefined, root: string | undefined, candidates: "all" | "live" = "live", full = false;
   for (let index = 0; index < argv.length; index++) {
     const arg = argv[index]!;
     if (arg === "--help") return { exitCode: 0, message: SLOT_USAGE };
     if (arg === "--json") continue;
+    if (arg === "--full") { full = true; continue; }
     if (arg === "--root" || arg === "--candidates") {
       const value = argv[++index];
       if (value === undefined || value.startsWith("--")) throw new CliUsageError(`${arg} requires a value\n${SLOT_USAGE}`);
@@ -43,7 +52,9 @@ export async function runSlotCli(argv: readonly string[], cwd: string): Promise<
   const workspace = discoverRoot(resolve(cwd, root ?? "."));
   try {
     const view = slotView(workspace, ref, { candidates });
-    return { exitCode: 0, root: workspace, output: view, message: summary(view) };
+    if (!full) return { exitCode: 0, root: workspace, output: view, message: summary(view) };
+    const detail = { contract: view.slot.contract, candidates: slotCandidateTexts(workspace, view) };
+    return { exitCode: 0, root: workspace, output: { ...view, full: detail }, message: `${summary(view)}\n${fullText(detail)}` };
   } catch (error) {
     if (error instanceof RefError) throw new CliUsageError(`${error.message}\n${SLOT_USAGE}`);
     if (error instanceof SlotViewError) return { exitCode: 1, root: workspace, message: error.message };

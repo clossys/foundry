@@ -1,4 +1,5 @@
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterAll, describe, expect, it, vi } from "vitest";
@@ -56,6 +57,29 @@ describe("writer-slots suite over pinned Writer candidates", () => {
     const repeated = await writerSuite(root);
     expect(repeated.findings.filter(row => row.severity === "error").map(row => `${row.code} ${row.where}`)).toEqual(["W-DUP strings.page-titles writer.title [en]"]);
     expect((await runRecordSuites(root, { strict: true })).suites[1]).toMatchObject({ suite: "writer-slots", status: "ran", totals: { error: 1 } });
+  });
+
+  it("reads a pinned copy slot's contract from its slot.json contract.copy, as pin does (frames.site-header.copy fixture)", async () => {
+    const root = consumer(), id = "frames.site-header.copy";
+    const fixture = join(fileURLToPath(new URL("../../test-fixtures/consumer/clossys/agents/writer", import.meta.url)), id);
+    const consumerDir = join(root, "clossys"), dir = join(consumerDir, "agents", "writer", id);
+    const ia: IaDoc = { schema: "clossys.ia/1", source: "synthetic#fixture", extensions: [], nodes: [{ id: "copy", label: "Copy", children: [{ id: "frames", label: "Frames", slots: [id] }] }] };
+    mkdirSync(join(dir, "candidates"), { recursive: true });
+    writeFileSync(join(consumerDir, "agents", "writer", "ia.json"), JSON.stringify(ia));
+    writeFileSync(join(dir, "slot.json"), readFileSync(join(fixture, "slot.json")));
+    const pinTo = (bytes: string) => {
+      writeFileSync(join(dir, "candidates", "copy-v1.md"), bytes);
+      writeFileSync(join(dir, "pin.json"), JSON.stringify({ candidate: "copy-v1.md", sha256: sha256Hex(bytes), decidedBy: "planner:synthetic-test-only", basis: "planner", at: "2026-11-10T00:00:00Z" }));
+    };
+    const bytes = readFileSync(join(fixture, "candidates", "copy-v1.md"), "utf8");
+    pinTo(bytes);
+    const clean = await writerSuite(root);
+    expect(clean.findings.filter(row => /No Writer slot contract/.test(row.message))).toEqual([]);
+    expect(clean).toMatchObject({ status: "ran", checked: 1, totals: { error: 0 } });
+    // The contract is read, not skipped: a value past the field's maxLength (navigation.open, en 24) is a W-LEN error.
+    pinTo(bytes.replace("Open menu", "Open the main navigation menu"));
+    const long = await writerSuite(root);
+    expect(long.findings.filter(row => row.severity === "error").map(row => `${row.code} ${row.where}`)).toEqual(["W-LEN frames.site-header.copy navigation.open [en] .navigation.open"]);
   });
 
   it("reports a pin it cannot read as an INPUT error instead of skipping it", async () => {

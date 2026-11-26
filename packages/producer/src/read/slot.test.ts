@@ -214,6 +214,25 @@ describe("clossys slot read model", () => {
     expect(routed.exitCode).toBe(0);
     expect((routed.output as SlotView).ref).toBe("designer/components.button");
   });
+
+  it("--full prints the slot's contract and every listed candidate's text, the view itself unchanged", async () => {
+    const root = copyFixture();
+    const bytes = jsonCandidate("button", "synthetic full-text marker");
+    addCandidate(root, "designer", "components.button", "button-v9.json", bytes);
+    const plain = await runSlotCli(["designer/components.button", "--json"], root);
+    const full = await runSlotCli(["designer/components.button", "--full", "--json"], root);
+    expect(full.exitCode).toBe(0);
+    const { full: detail, ...view } = full.output as SlotView & { full: { contract: unknown; candidates: { name: string; sha256: string; text: string }[] } };
+    expect(view).toEqual(plain.output);
+    expectSlotViewShape(view as SlotView);
+    expect(detail.contract).toEqual((plain.output as SlotView).slot.contract);
+    expect(detail.candidates.map(row => [row.name, row.sha256])).toEqual((plain.output as SlotView).candidates.map(row => [row.name, row.sha256]));
+    const listed = detail.candidates.find(row => row.name === "button-v9.json")!;
+    expect(listed.text).toContain("synthetic full-text marker");
+    expect(full.message).toContain(`--- contract\n${JSON.stringify(detail.contract ?? null, null, 2)}`);
+    expect(full.message).toContain(`--- candidate button-v9.json\n${listed.text.replace(/\n$/, "")}`);
+    expect(full.message!.startsWith(plain.message!)).toBe(true);
+  });
 });
 
 describe("Tallyhouse golden (target clossys.slot/2 records)", () => {

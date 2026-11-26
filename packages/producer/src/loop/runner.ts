@@ -44,7 +44,7 @@ import { readSlotEntry } from "../records/slots.js";
 import { validateAgainst } from "../records/schema.js";
 import { recordSchema, writeSlot } from "../records/slot.js";
 import { SLOT_LOCK, withDirLock, writeCandidate, writeTargetConfirm, writeTargetDecision, type WriteGuard } from "../records/slot-write.js";
-import { CODE_ADOPT, CODE_ADOPT_CLI, CODE_ADOPT_RUNG, REFERENCE_MANIFEST, codeAdoptSlotRefusal, stockDependencyPlan, stockItemOf, type DependencyPlan } from "../records/code-adopt.js";
+import { CODE_ADOPT, CODE_ADOPT_CLI, CODE_ADOPT_RUNG, CODE_ADOPT_SKILL, REFERENCE_MANIFEST, codeAdoptSlotRefusal, stockDependencyPlan, stockItemOf, type DependencyPlan } from "../records/code-adopt.js";
 import { declareStockDependencies, dependencyPlanText } from "../records/adopt-dependencies.js";
 import type { ShadcnRunner } from "@clossys/publisher/install";
 import type { SlotAgent } from "../records/slot-model/index.js";
@@ -957,9 +957,6 @@ function settlePick(ctx: Context, subject: SlotSubject | undefined): SettleVerdi
     answer: `pin ${top.candidate}`, cites: [slotFile, pinFile, scorecardFile], wrote: [pinFile, `clossys/agents/${refOf(subject)}/ledger.json`, scorecardFile],
   };
 }
-
-/** The skill a code adopt's submit event cites: the step it settles (the Designer's candidates step). */
-const CODE_ADOPT_SKILL = "packages/designer/actions/designer.candidates/skill.md";
 
 /**
  * What the code adopt of `<agent>/<slotId>` would change in the consumer's package.json (CP1-DEPS), by the adopt

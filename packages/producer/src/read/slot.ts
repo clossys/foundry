@@ -291,6 +291,24 @@ export function slotView(root: string, refString: string, options: SlotViewOptio
   };
 }
 
+/**
+ * The text of every candidate a slot view lists, in view order (`clossys slot <ref> --full`): the same
+ * files the view's `sha256` names (a package default or the consumer's own candidate). A listed candidate
+ * whose bytes are no longer on disk is refused, never shown empty.
+ */
+export function slotCandidateTexts(root: string, view: SlotView, options: SlotViewOptions = {}): { name: string; sha256: string; text: string }[] {
+  const consumer = join(root, "clossys");
+  const { agent, id } = view.slot;
+  const model = int2Model(consumer, agent as ModelAgent, id) ?? targetModel(consumer, agent, id);
+  if (!model) throw new SlotViewError(`No such slot: ${agent}/${id}`);
+  const pool = [...packageDefaults(options, agent, id), ...model.files];
+  return view.candidates.map(candidate => {
+    const file = pool.find(row => row.name === candidate.name && row.sha256 === candidate.sha256);
+    if (!file) throw new SlotViewError(`Candidate ${candidate.name} of ${agent}/${id} changed on disk since the view was read`);
+    return { name: candidate.name, sha256: candidate.sha256, text: file.bytes };
+  });
+}
+
 function rootOf(options: SlotViewOptions, agent: AgentId): string | undefined {
   return options.packageRoot ? options.packageRoot(agent) : installedPackageRoot(agent);
 }

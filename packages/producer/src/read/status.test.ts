@@ -6,8 +6,9 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { recutCandidateBytes } from "../migrate/recut.js";
 import { sha256Hex } from "../records/hash.js";
 import { buildPin, pinIssues } from "../records/pin.js";
+import { readPin } from "../records/slots.js";
 import { storeFormatPath } from "../records/store-format.js";
-import { SLOT_AGENTS, serializeFrontmatter, validateCandidate, validatePin } from "../records/slot-model/index.js";
+import { SLOT_AGENTS, serializeFrontmatter, validateCandidate, validatePin, type SlotAgent } from "../records/slot-model/index.js";
 import { agentSlotCensus } from "../server/slot-census.js";
 import { runStatusCli } from "../cli/status.js";
 import { validateAgainst, type JsonSchema } from "../records/schema.js";
@@ -51,7 +52,7 @@ describe.each(FIXTURES)("on %s", (_name, FIXTURE, pinnedParity) => {
     // pick there cites the queue answer it records; an unmarked store still reads the bare pin.
     if (existsSync(storeFormatPath(join(root, "clossys")))) {
       const answer = `20260101T000${version}Z-status-moat`;
-      const record = { candidate: name, sha256: sha256Hex(bytes), decidedBy: basis === "picked" ? `owner:queue.pick#${answer}` : "agent:synthetic-test-only", basis, at: `2026-01-0${version}T00:00:00Z` } as const;
+      const record = { candidate: name, sha256: sha256Hex(bytes), decidedBy: basis === "picked" ? `owner:queue.pick#${answer}` : "agent:director", basis, at: `2026-01-0${version}T00:00:00Z` } as const;
       const doc = buildPin({ agent: "director", slotId: SLOT, record, refs: basis === "picked" ? [{ to: "producer/queue.pick", record: answer, rel: "answers" }] : [], createdBy: { actor: "code", cli: "clossys pin", version: "0.0.0-test" } });
       expect(pinIssues(doc, { agent: "director", slotId: SLOT })).toEqual([]);
       writeFileSync(slotPath("director", SLOT, "pin.json"), JSON.stringify(doc));
@@ -224,6 +225,32 @@ describe.each(FIXTURES)("on %s", (_name, FIXTURE, pinnedParity) => {
       expect(plain.output).not.toHaveProperty("detail");
       expect(schemaIssues(plain.output)).toEqual([]);
     }, 120_000);
+
+    it("labels a planner-basis pin \"pinned (planner)\", apart from an unconfirmed agent pick (display only)", async () => {
+      pin(1, "agent");
+      const view = detailed();
+      // The basis the store's pin reader reports (a pin-map's records fold to one pin, as `clossys status` reads it).
+      const basisOf = (ref: string) => {
+        const [agent, id] = ref.split("/") as [SlotAgent, string];
+        return readPin(join(root, "clossys"), agent, id)?.basis;
+      };
+      const result = await runStatusCli([], root);
+      const plain = await runStatusCli(["--json"], root);
+      const { detail: _detail, ...core } = view;
+      expect(plain.output).toEqual(core);
+      const lines = result.message!.split("\n");
+      let planned = 0;
+      for (const agent of SLOT_AGENTS) {
+        const confirm = view.detail!.slots.filter(slot => slot.ref.startsWith(`${agent}/`) && slot.state === "confirm");
+        const planner = confirm.filter(slot => basisOf(slot.ref) === "planner").length;
+        planned += planner;
+        const line = lines.find(text => text.startsWith(`${agent} `))!;
+        expect(line).toContain(`pinned ${view.agents[agent]!.byState.pinned}, pinned (planner) ${planner}, confirm ${confirm.length - planner},`);
+      }
+      // The agent pick stays an unconfirmed "confirm"; the current fixture's planner pins are labelled apart.
+      expect(lines.find(text => text.startsWith("director "))).toMatch(/confirm [1-9]/);
+      if (!pinnedParity) expect(planned).toBeGreaterThan(0);
+    });
 
     it("refuses an unknown agent or flag", async () => {
       await expect(runStatusCli(["--agent", "nobody"], root)).rejects.toThrow(/--agent must be/);
