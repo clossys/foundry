@@ -20,6 +20,7 @@ import { readyFindings } from "../release/ready.js";
 import type { AgentId, PinRecord } from "../records/types.js";
 import { CONFIRMED_BY, OWNER_WORDS_REF, OWNER_WORDS_REF_FORM, PIN_BASES, SLOT_AGENTS, type PinBasis, type PinConfirmation, type SlotAgent } from "../records/slot-model/index.js";
 import { listSlots, readSlotEntry } from "../records/slots.js";
+import { writerCopyDuplicates } from "../records/writer-copy.js";
 import { GuardRefusal, SLOT_LOCK, withDirLock, writeConfirm, writeNotNeeded, writePin, writeTargetConfirm, writeTargetDecision, writeTargetNotNeeded, type WriteGuard } from "../records/slot-write.js";
 import "../constitution/guard.js"; // registers the write guard's runner
 import type { GuardSession } from "../constitution/guard.js";
@@ -255,6 +256,18 @@ function runTargetPin(root: string, agent: string, target: string, candidateId: 
       if (basis === "scorecard") {
         const refusals = releasePin || isLoopName(slotId) ? [`${agent}/${slotId} is a ${releasePin ? "release" : "loop"} slot; code pins content slots only`] : codeSlotRefusals(root, agent as AgentId, slotId, record);
         if (refusals.length) return { exitCode: 1, message: `pin refused: ${agent}/${target} ${candidate} is not code's to pin:\n${refusals.map(line => `  ${line}`).join("\n")}`, output: { schema: "clossys.pin-refused/1", slot: `${agent}/${slotId}`, refusals } };
+      }
+      // One slot owns a Writer key (records/writer-copy.ts): a Writer copy pin whose rows would record a key another
+      // pinned copy slot already holds is refused before the gate writes anything, named with both slots and the fix.
+      if (agent === "writer" && candidate.endsWith(".md")) {
+        const clashes = writerCopyDuplicates(join(root, "clossys"), { slot: slotId, ...(record !== undefined ? { record } : {}), candidate }).filter(row => row.slots.includes(slotId));
+        if (clashes.length) {
+          const refusals = clashes.map(row => {
+            const other = row.slots.filter(slot => slot !== slotId).join(", ");
+            return `${row.id}: ${other} already records this key and one slot owns a Writer key; rename the row in ${candidate}, or drop it and cite ${row.slots.find(slot => slot !== slotId)}#${row.id}`;
+          });
+          return { exitCode: 1, message: `pin refused: ${agent}/${target} ${candidate} would record a Writer key another pinned slot holds:\n${refusals.map(line => `  ${line}`).join("\n")}`, output: { schema: "clossys.pin-refused/1", slot: `${agent}/${slotId}`, refusals } };
+        }
       }
       const gate = pinGate(root, join(root, "clossys"), agent, slotId, candidate, toIsoZ(at)!, { ...(releasePin ? { verdict: "release.ready" as const } : {}), session });
       if (gate.refusals.length) return { exitCode: 1, message: `pin refused: ${agent}/${target} ${candidate}:\n${gate.refusals.map(line => `  ${line}`).join("\n")}`, output: { schema: "clossys.pin-refused/1", slot: `${agent}/${slotId}`, refusals: gate.refusals, scorecard: gate.scorecard } };
