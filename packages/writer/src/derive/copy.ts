@@ -7,6 +7,10 @@
  * Page metadata (writer.md 2 Copy, last row; foundry-build-0033) is derived from the Publisher directory: one L2 per
  * live publication, holding `publication.<id>.meta` (site name, default share) and one `page.<id>.meta` (title,
  * description, share) per live page whose `records.meta` names it. A parked publication or page has no meta slot.
+ *
+ * Record labels (CP1-WREC) are Copy leaves Writer owns with no Designer unit: the labels the copy-less, data-bound
+ * record sections show. `record-label-fields.json` declares each leaf, its Writer L2 and its flat field set; the derive
+ * places it there and the Copy check accepts exactly these leaves.
  */
 import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
@@ -14,19 +18,25 @@ import type { AwaitingLeaf, GroupL1, GroupSlot, GroupTree, WriterMark, WriterRef
 
 const DESIGNER_LAYERS = ["components", "sections", "frames", "assets"] as const;
 
+/** A record-label leaf: a Copy leaf with no Designer unit, declared in record-label-fields.json. */
+export interface RecordLabelLeaf { id: string; placement: string; unit: string; fields: DesignerCopyField[] }
+const RECORD_LABELS = JSON.parse(readFileSync(new URL("../../src/derive/record-label-fields.json", import.meta.url), "utf8")) as { leaves: RecordLabelLeaf[] };
+/** The declared record-label leaves, read from the record-label-fields data file. */
+export const RECORD_LABEL_LEAVES: readonly RecordLabelLeaf[] = Object.freeze(RECORD_LABELS.leaves);
+
 /**
  * The Designer units Copy holds, in order: the Designer-unit leaves of the Copy leaf freeze (its `leafIds`, then each
  * amendment's removes and adds), each `<unit>.copy`. Membership is the freeze's data (a new unit is a recorded
  * amendment, a SLOT-CREATE request answered by Writer), never a list in this module; the rest is Designer data.
  */
-export function copyTargetUnits(freeze: { leafIds: readonly string[]; amendments?: readonly { remove?: readonly string[]; add?: readonly string[] }[] }): string[] {
+export function copyTargetUnits(freeze: { leafIds: readonly string[]; amendments?: readonly { remove?: readonly string[]; add?: readonly string[] }[] }, declared: readonly string[] = RECORD_LABEL_LEAVES.map(leaf => leaf.id)): string[] {
   const ids = [...freeze.leafIds];
   for (const amendment of freeze.amendments ?? []) {
     for (const id of amendment.remove ?? []) { const at = ids.indexOf(id); if (at >= 0) ids.splice(at, 1); }
     for (const id of amendment.add ?? []) if (!ids.includes(id)) ids.push(id);
   }
   const layer = new RegExp(`^(?:${DESIGNER_LAYERS.join("|")})\\.`);
-  return ids.filter(id => id.endsWith(".copy") && layer.test(id)).map(id => id.slice(0, -".copy".length));
+  return ids.filter(id => id.endsWith(".copy") && layer.test(id) && !declared.includes(id)).map(id => id.slice(0, -".copy".length));
 }
 const COPY_FREEZE = new URL("../../src/catalog/ia/copy.leaf-freeze.json", import.meta.url);
 /** The shipped Copy freeze's Designer units (copyTargetUnits over `src/catalog/ia/copy.leaf-freeze.json`). */
@@ -131,6 +141,7 @@ export function deriveCopyTree(input: DesignerCopyInput): GroupTree {
       },
     });
   }
+  deriveRecordLabels(nodes, slots);
   derivePageMetadata(input.directory, nodes, slots);
   return { schema: "clossys.writer-ia/1", group: "copy", label: "Copy", nodes, slots, awaiting };
 }
@@ -145,6 +156,24 @@ const metaSlot = (id: string, unit: string, record: string, placement: string, f
     candidate: "clossys.copy-candidate/1",
   },
 });
+
+/** Record labels: each declared leaf joins its declared Writer L2, which the Designer units must already derive, as a starter slot. */
+function deriveRecordLabels(nodes: GroupL1[], slots: GroupSlot[], leaves: readonly RecordLabelLeaf[] = RECORD_LABEL_LEAVES): void {
+  for (const leaf of leaves) {
+    const l2 = nodes.flatMap(l1 => l1.children).find(node => node.id === leaf.placement);
+    if (!l2) throw new Error(`Writer derive: record-label leaf ${leaf.id} names Writer L2 ${leaf.placement}, which the Copy tree does not derive`);
+    l2.leaves.push(leaf.id);
+    slots.push({
+      id: leaf.id, kind: "copy", mark: "starter", inputs: [...VOICE_INPUTS, ...DIRECTOR_INPUTS].map(ref => ({ ...ref })),
+      contract: {
+        unit: leaf.unit,
+        copy: { sourceLocale: "en", fields: projectFields(leaf.fields) },
+        fieldsSha256: fieldsSha256(leaf.fields),
+        candidate: "clossys.copy-candidate/1",
+      },
+    });
+  }
+}
 
 /** Page metadata: one L2 per live publication; its `publication.<id>.meta`, then each live page's `page.<id>.meta`. */
 function derivePageMetadata(directory: PublisherDirectory, nodes: GroupL1[], slots: GroupSlot[]): void {
@@ -179,9 +208,11 @@ export function checkCopyAgainstDesigner(tree: GroupTree, input: DesignerCopyInp
   const bySlot = new Map(input.slots.map(slot => [slot.id, slot]));
   const unitOf = (slot: GroupSlot) => String(slot.contract?.unit ?? "").replace(/^designer\//, "");
   const isMeta = (slot: GroupSlot) => String(slot.contract?.unit ?? "").startsWith("publisher/");
+  const isRecordLabel = (slot: GroupSlot) => RECORD_LABEL_LEAVES.some(leaf => leaf.id === slot.id);
   findings.push(...checkPageMetadata(tree, input.directory));
+  findings.push(...checkRecordLabels(tree));
   for (const slot of tree.slots) {
-    if (isMeta(slot)) continue;
+    if (isMeta(slot) || isRecordLabel(slot)) continue;
     const unit = unitOf(slot);
     const fields = bySlot.get(unit)?.contract?.copy?.fields ?? [];
     if (slot.id !== `${unit}.copy`) fail(`${slot.id} names unit designer/${unit}; the slot id must be <unit>.copy`);
@@ -203,6 +234,27 @@ export function checkCopyAgainstDesigner(tree: GroupTree, input: DesignerCopyInp
   let expected: GroupTree | undefined;
   try { expected = deriveCopyTree(input); } catch (error) { fail((error as Error).message); }
   if (expected && JSON.stringify(expected) !== JSON.stringify(tree)) fail("copy.json is not the derivation of the current Designer catalog; run the Copy derive");
+  return findings;
+}
+
+/**
+ * Record labels both ways: each declared leaf has exactly one Copy slot, with the declared unit and fields, placed in
+ * its declared L2. A Copy slot that no Designer unit and no declaration owns stays refused by the Designer check.
+ */
+export function checkRecordLabels(tree: GroupTree, leaves: readonly RecordLabelLeaf[] = RECORD_LABEL_LEAVES): WriterTreeFinding[] {
+  const findings: WriterTreeFinding[] = [];
+  const fail = (message: string) => { findings.push({ code: "COPY", group: "copy", message: `COPY: ${message}` }); };
+  for (const leaf of leaves) {
+    const found = tree.slots.filter(slot => slot.id === leaf.id);
+    if (found.length !== 1) { fail(`${leaf.id} is a declared record-label leaf (record-label-fields.json) with ${found.length} Copy slots`); continue; }
+    const slot = found[0]!;
+    if (slot.contract?.unit !== leaf.unit) fail(`${leaf.id} names unit ${String(slot.contract?.unit)}; record-label-fields.json declares ${leaf.unit}`);
+    if (slot.contract?.fieldsSha256 !== fieldsSha256(leaf.fields) || JSON.stringify(slot.contract?.copy?.fields) !== JSON.stringify(projectFields(leaf.fields))) {
+      fail(`${leaf.id} is stale against record-label-fields.json; run the Copy derive`);
+    }
+    const placed = tree.nodes.flatMap(l1 => l1.children).filter(l2 => l2.leaves.includes(leaf.id)).map(l2 => l2.id);
+    if (placed.length !== 1 || placed[0] !== leaf.placement) fail(`${leaf.id} is placed in ${placed.join(", ") || "no L2"}; record-label-fields.json places it in ${leaf.placement}`);
+  }
   return findings;
 }
 

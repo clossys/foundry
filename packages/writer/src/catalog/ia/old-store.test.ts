@@ -50,9 +50,10 @@ describe("slot-defaults.json", () => {
   const keys = Object.keys(doc.slots);
 
   // foundry-build-0048 (Amendment 2026-11-18b, A1/A2): seven page metadata leaves join the target tree; 100 -> 107.
-  it("holds the 107 target leaves and no old-store id", () => {
+  // CP1-WREC: the declared record-label leaf sections.records.copy joins it; 107 -> 108.
+  it("holds the 108 target leaves and no old-store id", () => {
     expect(doc).toMatchObject({ schema: "clossys.slot-defaults/1", agent: "writer" });
-    expect(keys).toHaveLength(107);
+    expect(keys).toHaveLength(108);
     expect(defaultsFindings(keys, target)).toEqual([]);
     for (const id of keys) expect(typeof doc.slots[id]!.standard, id).toBe("string");
   });

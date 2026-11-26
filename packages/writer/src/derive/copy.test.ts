@@ -4,7 +4,9 @@
  */
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import { COPY_TARGET_UNITS, PAGE_METADATA_L1, checkCopyAgainstDesigner, deriveCopyTree, loadDesignerCopyInput, type DesignerCopyInput } from "./copy.js";
+import {
+  COPY_TARGET_UNITS, PAGE_METADATA_L1, RECORD_LABEL_LEAVES, checkCopyAgainstDesigner, checkRecordLabels, deriveCopyTree, fieldsSha256, loadDesignerCopyInput, type DesignerCopyInput,
+} from "./copy.js";
 import { runDeriveCopy } from "./cli.js";
 
 const input = loadDesignerCopyInput();
@@ -23,11 +25,13 @@ describe("Copy is generated from the Designer catalog", () => {
     expect(err.join("")).toBe("");
   });
 
+  // CP1-WREC: the declared record-label leaves sit in the Designer-layer L1s too, but are not Designer units.
   it("lists the 58 writer.md units, in Designer order, each once", () => {
     expect(COPY_TARGET_UNITS).toHaveLength(58);
     expect(new Set(COPY_TARGET_UNITS).size).toBe(58);
+    const declared = new Set(RECORD_LABEL_LEAVES.map(leaf => leaf.id));
     const placed = committed.nodes.filter((l1: { id: string }) => l1.id !== PAGE_METADATA_L1.id)
-      .flatMap((l1: { children: { leaves: string[] }[] }) => l1.children.flatMap(l2 => l2.leaves));
+      .flatMap((l1: { children: { leaves: string[] }[] }) => l1.children.flatMap(l2 => l2.leaves)).filter((id: string) => !declared.has(id));
     expect(placed).toHaveLength(58);
     expect(new Set(placed)).toEqual(new Set(COPY_TARGET_UNITS.map(unit => `${unit}.copy`)));
   });
@@ -114,6 +118,73 @@ describe("Page metadata is generated from the Publisher directory (foundry-build
     const next = clone(input);
     next.directory.slots["page.home"]!.records!.meta = "writer/strings.page-titles#home.title";
     expect(messages(committed, next)).toContain("does not name a writer/page.<id>.meta record");
+  });
+});
+
+describe("Record labels are a declared Copy leaf Writer owns (CP1-WREC)", () => {
+  // The flat field set from the CP1-G34 receipt: column heads, headings, detail labels, empty text, slot and candidate status names.
+  const KEYS = [
+    "slot", "kind", "status", "group", "name", "version", "rung", "source", "created-by", "specimen",
+    "gallery-heading", "contract", "pin-heading", "candidates-heading",
+    "purpose", "standard", "inputs", "uses", "rules", "none", "pin-candidate", "pin-decided-by", "pin-at", "pin-none", "pinned", "no-specimen",
+    "gallery-empty", "candidates-empty",
+    "status-starter", "status-live", "status-parked", "status-retired", "status-needs-refresh",
+    "status-draft", "status-submitted",
+  ];
+  const ID = "sections.records.copy";
+  const recordsL2 = (tree: { nodes: { id: string; children: { id: string; leaves: string[] }[] }[] }) =>
+    tree.nodes.find(l1 => l1.id === "copy/section-copy")!.children.find(l2 => l2.id === "copy/section-copy/records")!;
+
+  it("(a) derives sections.records.copy in Section copy / Records with every declared field", () => {
+    expect(RECORD_LABEL_LEAVES.map(leaf => leaf.id)).toEqual([ID]);
+    const tree = deriveCopyTree(input);
+    const slot = tree.slots.find(entry => entry.id === ID)!;
+    expect(slot).toMatchObject({ kind: "copy", mark: "starter", contract: { unit: "producer/admin-records", copy: { sourceLocale: "en" }, candidate: "clossys.copy-candidate/1" } });
+    const fields = (slot.contract as { copy: { fields: { key: string; kind: string; required: boolean }[] } }).copy.fields;
+    expect(fields.map(field => field.key)).toEqual(KEYS);
+    expect(fields.every(field => field.kind === "plain" && field.required)).toBe(true);
+    expect(slot.contract!.fieldsSha256).toBe(fieldsSha256(RECORD_LABEL_LEAVES[0]!.fields));
+    expect(recordsL2(tree).leaves.filter(id => id === ID)).toHaveLength(1);
+    expect(COPY_TARGET_UNITS).not.toContain("sections.records");
+    expect(input.slots.some(entry => entry.id === "sections.records")).toBe(false);
+    expect(checkCopyAgainstDesigner(committed, input)).toEqual([]);
+  });
+
+  it("(b) an undeclared non-Designer copy leaf is still refused, with the same Designer findings", () => {
+    const tree = clone(committed);
+    const slot = clone(tree.slots.find((entry: { id: string }) => entry.id === ID));
+    slot.id = "sections.labels.copy";
+    tree.slots.push(slot);
+    recordsL2(tree).leaves.push("sections.labels.copy");
+    expect(checkCopyAgainstDesigner(tree, input).map(finding => finding.message).filter(message => message.includes("sections.labels.copy"))).toEqual([
+      "COPY: sections.labels.copy names unit designer/producer/admin-records; the slot id must be <unit>.copy",
+      "COPY: sections.labels.copy is a Copy slot with no Designer copy field (designer/producer/admin-records)",
+    ]);
+  });
+
+  it("(c) a declared leaf missing from the derive output is a finding", () => {
+    const tree = clone(committed);
+    tree.slots = tree.slots.filter((entry: { id: string }) => entry.id !== ID);
+    const l2 = recordsL2(tree);
+    l2.leaves = l2.leaves.filter(id => id !== ID);
+    expect(messages(tree)).toContain(`COPY: ${ID} is a declared record-label leaf (record-label-fields.json) with 0 Copy slots`);
+    const extra = { ...clone(RECORD_LABEL_LEAVES[0]!), id: "sections.more-records.copy" };
+    expect(checkRecordLabels(committed, [...RECORD_LABEL_LEAVES, extra]).map(finding => finding.message)).toEqual([
+      "COPY: sections.more-records.copy is a declared record-label leaf (record-label-fields.json) with 0 Copy slots",
+    ]);
+  });
+
+  it("mutation: a declared leaf with the wrong unit, stale fields or the wrong L2 fails", () => {
+    const unit = clone(committed);
+    unit.slots.find((entry: { id: string }) => entry.id === ID).contract.unit = "producer/other";
+    expect(messages(unit)).toContain(`COPY: ${ID} names unit producer/other; record-label-fields.json declares producer/admin-records`);
+    const stale = clone(committed);
+    stale.slots.find((entry: { id: string }) => entry.id === ID).contract.copy.fields.pop();
+    expect(messages(stale)).toContain(`COPY: ${ID} is stale against record-label-fields.json; run the Copy derive`);
+    const moved = clone(committed);
+    recordsL2(moved).leaves = recordsL2(moved).leaves.filter(id => id !== ID);
+    moved.nodes.find((l1: { id: string }) => l1.id === "copy/section-copy").children[0].leaves.push(ID);
+    expect(messages(moved)).toContain(`COPY: ${ID} is placed in copy/section-copy/parts; record-label-fields.json places it in copy/section-copy/records`);
   });
 });
 
