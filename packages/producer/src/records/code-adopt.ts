@@ -192,34 +192,18 @@ export interface StockFiles {
   readonly files: readonly { path: string; type: string; content: string }[]; readonly reader: DeclaredFallbackReader;
 }
 
-/** The source-ladder row of `designer/<slotId>` (stockFilesOf and craftLineageOf read the same one). */
-function stockRowOf(root: string, slotId: string): { readonly row: ManifestRow; readonly doc: ReturnType<typeof readSlot>; readonly manifest: { items: ManifestRow[] } } | { readonly none: string } {
-  const at = `designer/${slotId}`;
-  const doc = readSlot(join(root, "clossys"), "designer", slotId);
-  const file = ((doc.contract as { fixture?: { fixtures?: { file?: unknown } } }).fixture?.fixtures?.file);
-  if (typeof file !== "string") return { none: `${at} has no contract fixture file, so no stock item ships it` };
-  const manifest = manifestOf(root);
-  const shipping = manifest.items.filter(row => STOCK_REGISTRIES.includes(row.registry) && row.files.some(each => each.path === file));
-  // The source ladder, explicitly: the first registry of STOCK_REGISTRIES (shadcn-aria) that ships the fixture wins,
-  // the partner (diceui) only when it does not; within one registry, the row naming this slot, then the row named
-  // for the fixture file, then the first row in manifest order. A frame or section then takes the example of a
-  // primitive row (sectionOrFrameSource).
-  const base = file.split("/").at(-1)!.replace(/\.tsx$/, "");
-  const registry = STOCK_REGISTRIES.find(name => shipping.some(row => row.registry === name));
-  const rows = shipping.filter(row => row.registry === registry);
-  const shipped = rows.find(each => (each.slots ?? []).includes(slotId)) ?? rows.find(each => each.name === base) ?? rows[0];
-  if (!shipped) return { none: `no ${STOCK_REGISTRIES.join(" or ")} stock item ships ${at}'s contract fixture ${file}` };
-  return { row: sectionOrFrameSource(manifest, slotId, shipped), doc, manifest };
-}
-
 /**
  * The stock row of `designer/<slotId>` and its .tsx files normalized to the consumer (stockItemOf, before the lockfile).
  * Also the source `derive.uses` reads for a slot with no pin (scripts/check-generated-derived.mjs deriveUses).
  */
 export function stockFilesOf(root: string, slotId: string): StockFiles | { readonly none: string } {
-  const found = stockRowOf(root, slotId);
-  if ("none" in found) return found;
-  const { row, doc, manifest } = found;
+  const at = `designer/${slotId}`;
+  const doc = readSlot(join(root, "clossys"), "designer", slotId);
+  const file = ((doc.contract as { fixture?: { fixtures?: { file?: unknown } } }).fixture?.fixtures?.file);
+  if (typeof file !== "string") return { none: `${at} has no contract fixture file, so no stock item ships it` };
+  const manifest = manifestOf(root);
+  const row = ladderRowOf(manifest, slotId, file);
+  if (!row) return { none: `no ${STOCK_REGISTRIES.join(" or ")} stock item ships ${at}'s contract fixture ${file}` };
   const ref = refIdOf(row);
   const consumer = join(root, "clossys");
   // Every fallback the written file carries is the consumer's pinned value; an undeclared name throws (refused).
@@ -228,6 +212,22 @@ export function stockFilesOf(root: string, slotId: string): StockFiles | { reado
     path: each.path, type: row.type, content: normalizedSeedFile(consumer, ref, each.path, { manifest, referencesDir: referencesDirOf(root), reader }),
   }));
   return { row, ref, doc, manifest, files, reader };
+}
+
+/**
+ * The source-ladder row that ships contract fixture `file` (stockFilesOf and craftLineageOf read the same one). The
+ * ladder, explicitly: the first registry of STOCK_REGISTRIES (shadcn-aria) that ships the fixture wins, the partner
+ * (diceui) only when it does not; within one registry, the row naming this slot, then the row named for the fixture
+ * file, then the first row in manifest order. A frame or section then takes the example of a primitive row
+ * (sectionOrFrameSource).
+ */
+function ladderRowOf(manifest: { items: ManifestRow[] }, slotId: string, file: string): ManifestRow | undefined {
+  const shipping = manifest.items.filter(row => STOCK_REGISTRIES.includes(row.registry) && row.files.some(each => each.path === file));
+  const base = file.split("/").at(-1)!.replace(/\.tsx$/, "");
+  const registry = STOCK_REGISTRIES.find(name => shipping.some(row => row.registry === name));
+  const rows = shipping.filter(row => row.registry === registry);
+  const shipped = rows.find(each => (each.slots ?? []).includes(slotId)) ?? rows.find(each => each.name === base) ?? rows[0];
+  return shipped && sectionOrFrameSource(manifest, slotId, shipped);
 }
 
 /**
@@ -261,9 +261,11 @@ export interface CraftLineage {
  */
 export function craftLineageOf(root: string, slotId: string): { readonly lineage: CraftLineage } | { readonly none: string } {
   if (!/^(frames|sections)\./.test(slotId)) return { none: `designer/${slotId} is not a frames or sections slot` };
-  const found = stockRowOf(root, slotId);
-  if ("none" in found) return found;
-  const { row } = found;
+  const doc = readSlot(join(root, "clossys"), "designer", slotId);
+  const file = ((doc.contract as { fixture?: { fixtures?: { file?: unknown } } }).fixture?.fixtures?.file);
+  if (typeof file !== "string") return { none: `designer/${slotId} has no contract fixture file, so no stock item ships it` };
+  const row = ladderRowOf(manifestOf(root), slotId, file);
+  if (!row) return { none: `no ${STOCK_REGISTRIES.join(" or ")} stock item ships designer/${slotId}'s contract fixture ${file}` };
   const galleryScaffolding: Record<string, string[]> = {};
   for (const each of row.files.filter(entry => entry.path.endsWith(".tsx"))) {
     const text = readFileSync(join(referencesDirOf(root), row.dir, each.path), "utf8");
