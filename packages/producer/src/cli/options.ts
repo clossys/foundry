@@ -13,12 +13,15 @@
  *       --redraft prints the brief for one re-drafted candidate that may cite new evidence
  *       (a project re-draft, the answer to a request gap). The CLI never writes candidates:
  *       the owning agent submits each through `clossys next <agent>/<slot> --submit`.
+ *   clossys options designer/<slot> --reference [--root <dir>] [--json]
+ *       prints what the slot's candidate is built from: the stock item the adopt path (loop.create's
+ *       `clossys settle adopt` step) installs, its files exactly as that path writes them, and the step skill's text.
  *   clossys pick <agent>/<slot> <candidate-id> --by agent:<seat> [--at <iso>] [--root <dir>] [--json]
  *       a judge seat picks one candidate: pin.json with basis "agent", shown as "confirm"
  *       in Studio until the owner pins with `clossys pin`.
  */
 import { refuseLegacyState, statePath } from "../engine/state-dir.js";
-import { mkdirSync, readdirSync, writeFileSync } from "node:fs";
+import { mkdirSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { CERTIFY_REPORT_SCHEMA, certifiedOptions } from "../constitution/pin-gate.js";
 import { OPTION_TABLE, SLOT_AGENTS, type SlotAgent } from "../records/slot-model/index.js";
@@ -26,6 +29,9 @@ import { checkSlotOptions, classCounts, classify, slotOptions, type SlotOptions 
 import { inspectSlot, listSlots, modelExists, readCandidate, readSlotEntry } from "../records/slots.js";
 import { writeSlotOptions } from "../records/slot-write.js";
 import { readPinFile } from "../records/pin-map.js";
+import { CODE_ADOPT_CLI, CODE_ADOPT_RUNG, CODE_ADOPT_SKILL, codeAdoptSlotRefusal, stockItemOf } from "../records/code-adopt.js";
+import { skillFor } from "../loop/slots.js";
+import { packagePath } from "../package-path.js";
 import { pinRecordStatus } from "../records/pin.js";
 import "../constitution/guard.js"; // registers the write guard's runner
 import { CliUsageError } from "./args.js";
@@ -36,20 +42,24 @@ import { seatRefusal } from "../records/seat-owner.js";
 import { discoverRoot } from "./root.js";
 
 export const OPTIONS_USAGE = "Usage: clossys options [<agent>/<slot> [--more | --redraft | --check]] [--root <dir>] [--json]\n"
+  + "       clossys options designer/<slot> --reference [--root <dir>] [--json]\n"
   + "       clossys options --classes [--check] [--root <dir>] [--json]\n"
   + "  lists a slot's candidates by variation; --more prints the brief for 2-3 fresh candidates on the reference's sources,\n"
   + "  --redraft the brief for one re-drafted candidate that may cite new evidence (the owning agent submits each with clossys next --submit).\n"
   + "  <agent>/<slot> --check certifies every candidate and exits 1 unless the submitted, certified ones hold the options\n"
   + "  the slot's family owes (loop.create's certify step); it writes clossys/.state/checks/<agent>/<slot>/certify.json.\n"
+  + "  --reference prints what a Designer slot's candidate is built from: the reference (stock) item's files exactly as the\n"
+  + "  adopt path writes them (loop.create's step " + CODE_ADOPT_CLI + ", run with clossys run loop.create --slot designer/<slot>,\n"
+  + "  installs it unmodified into an empty byte-exact adopt slot) and the text of the step skill; no stock item refuses.\n"
   + "  --classes writes slot.json options/varyOn from the committed option-class mapping; --check only reports drift.";
 export const PICK_USAGE = "Usage: clossys pick <agent>/<slot> <candidate-id> --by agent:<seat> [--at <iso timestamp>] [--root <dir>] [--json]\n"
   + "  a judge seat picks one candidate (pin basis agent); Studio shows it as confirm until the owner pins. An agent's seat\n"
   + "  (agent:<agent>[.<role>]) picks only on that agent's own slots.";
 
-interface Flags { positional: string[]; more: boolean; redraft: boolean; classes: boolean; check: boolean; by?: string; at?: string; root?: string; help: boolean }
+interface Flags { positional: string[]; more: boolean; redraft: boolean; reference: boolean; classes: boolean; check: boolean; by?: string; at?: string; root?: string; help: boolean }
 
 function parse(argv: readonly string[], usage: string, allowed: readonly string[]): Flags {
-  const flags: Flags = { positional: [], more: false, redraft: false, classes: false, check: false, help: false };
+  const flags: Flags = { positional: [], more: false, redraft: false, reference: false, classes: false, check: false, help: false };
   const value = (index: number, name: string): string => {
     const next = argv[index];
     if (next === undefined || next.startsWith("--")) throw new CliUsageError(`${name} requires a value\n${usage}`);
@@ -62,6 +72,7 @@ function parse(argv: readonly string[], usage: string, allowed: readonly string[
     else if (arg === "--help") flags.help = true;
     else if (arg === "--more") flags.more = true;
     else if (arg === "--redraft") flags.redraft = true;
+    else if (arg === "--reference") flags.reference = true;
     else if (arg === "--classes") flags.classes = true;
     else if (arg === "--check") flags.check = true;
     else if (arg === "--by") flags.by = value(++index, "--by");
@@ -119,13 +130,47 @@ export function optionsBrief(consumer: string, view: SlotOptions, mode: "more" |
   };
 }
 
+/**
+ * `--reference`: what `designer/<id>`'s candidate is built from, read through the verb alone: the stock item the adopt
+ * path installs (records/code-adopt.ts stockItemOf, the same call loop.create's `clossys settle adopt` step writes
+ * from), its files exactly as that path writes them, and the text of the step skill a candidate cites. No stock item,
+ * or a slot of another agent, refuses: there is no fallback reference.
+ */
+export function optionsReference(root: string, agent: SlotAgent, id: string): CliResult {
+  const at = `${agent}/${id}`;
+  if (agent !== "designer") return { exitCode: 1, message: `options refused: --reference reads a Designer slot's stock item, and ${at} is a ${agent} slot (no registry item ships it)` };
+  let found: ReturnType<typeof stockItemOf>;
+  try { found = stockItemOf(root, id); }
+  catch (error) { return { exitCode: 1, message: `options refused: ${at} has no reference item: ${errorMessage(error)}` }; }
+  if ("none" in found) return { exitCode: 1, message: `options refused: ${at} has no reference item: ${found.none}; the agent creates from the slot contract (clossys slot ${at} --full)` };
+  const { stock } = found;
+  const skillPath = skillFor(root, CODE_ADOPT_SKILL, agent)!;
+  const skill = { path: skillPath, text: readFileSync(packagePath(root, skillPath), "utf8") };
+  const notCode = codeAdoptSlotRefusal(root, agent, id);
+  const held = readSlotEntry(join(root, "clossys"), agent, id)?.candidates ?? [];
+  const byCode = notCode === undefined && held.length === 0;
+  const adopt = {
+    step: CODE_ADOPT_CLI, run: `clossys run loop.create --slot ${at}`, rung: CODE_ADOPT_RUNG, seed: stock.seed, byCode,
+    why: notCode ?? (held.length ? `${at} holds ${held.join(", ")}; code adopts only into a slot with no candidate` : `code installs ${stock.ref} unmodified at rung ${CODE_ADOPT_RUNG}`),
+  };
+  const output = { slot: at, reference: stock.ref, seed: stock.seed, item: stock.item, adopt, skill };
+  const lines = [
+    `${at}: reference ${stock.ref} (seed ${stock.seed}), ${stock.item.files.length} file(s); dependencies ${stock.item.dependencies.join(", ") || "none"}`,
+    `adopt: ${byCode ? `${adopt.run} installs it unmodified (${CODE_ADOPT_CLI}, rung ${CODE_ADOPT_RUNG})` : `code does not adopt here (${adopt.why}); submit it yourself at rung ${CODE_ADOPT_RUNG} --seed ${stock.seed}`}`,
+    ...stock.item.files.flatMap(file => [`--- file ${file.path}`, file.content]),
+    `--- skill ${skill.path}`, skill.text,
+  ];
+  return { exitCode: 0, message: lines.join("\n"), output };
+}
+
 function line(view: SlotOptions): string {
   return `${`${view.agent}/${view.slot}`.padEnd(48)} ${String(view.distinct)}/${view.options}${view.varyOn ? ` ${view.varyOn}` : ""} pin:${view.pinStatus}`;
 }
 
 export async function runOptionsCli(argv: readonly string[], cwd: string): Promise<CliResult> {
-  const flags = parse(argv, OPTIONS_USAGE, ["--more", "--redraft", "--classes", "--check"]);
+  const flags = parse(argv, OPTIONS_USAGE, ["--more", "--redraft", "--reference", "--classes", "--check"]);
   if (flags.more && flags.redraft) throw new CliUsageError(`--more and --redraft are two briefs; pass one\n${OPTIONS_USAGE}`);
+  if (flags.reference && (flags.more || flags.redraft || flags.check || flags.classes)) throw new CliUsageError(`--reference takes one <agent>/<slot> and no other mode\n${OPTIONS_USAGE}`);
   if (flags.help) return { exitCode: 0, message: OPTIONS_USAGE };
   const consumer = consumerOf(cwd, flags.root);
   if (flags.classes) {
@@ -170,7 +215,7 @@ export async function runOptionsCli(argv: readonly string[], cwd: string): Promi
     return { exitCode: judged.ok ? 0 : 1, message: [head, ...rows, ...(judged.ok ? [] : judged.why.map(line => `  why: ${line}`))].join("\n"), output: report };
   }
   if (!flags.positional.length) {
-    if (flags.more || flags.redraft) throw new CliUsageError(`${flags.more ? "--more" : "--redraft"} needs <agent>/<slot>\n${OPTIONS_USAGE}`);
+    if (flags.more || flags.redraft || flags.reference) throw new CliUsageError(`${flags.more ? "--more" : flags.redraft ? "--redraft" : "--reference"} needs <agent>/<slot>\n${OPTIONS_USAGE}`);
     const { findings, slots } = checkSlotOptions(consumer);
     const choice = slots.filter(slot => slot.options > 1);
     const lines = choice.map(line);
@@ -182,6 +227,7 @@ export async function runOptionsCli(argv: readonly string[], cwd: string): Promi
   const entry = readSlotEntry(consumer, agent, id);
   if (!entry) return { exitCode: 1, message: `options refused: unknown slot ${agent}/${id} (not in ${agent} ia.json)` };
   if (!modelExists(join(entry.dir, "slot.json"))) return { exitCode: 1, message: `options: ia gap ${agent}/${id}: the IA places it, but it has no slot.json yet (an open ia item: clossys next)` };
+  if (flags.reference) return optionsReference(dirname(consumer), agent, id);
   const view = slotOptions(consumer, entry);
   if (flags.more || flags.redraft) {
     const brief = optionsBrief(consumer, view, flags.redraft ? "redraft" : "more");

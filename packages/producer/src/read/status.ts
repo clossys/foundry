@@ -242,7 +242,17 @@ function producerSlots(consumer: string): { id: string; pin?: PinDoc; drift: boo
 
 /** The read model for the workspace at `root` (the directory holding `clossys/`). */
 export function statusView(root: string, options: StatusOptions = {}): StatusWithDetail {
+  return statusReport(root, options).view;
+}
+
+/**
+ * The read model plus, per agent, how many of its `confirm` slots are planner-basis pins (display
+ * only, outside `clossys.status/1`): `clossys status` labels those "pinned (planner)", apart from an
+ * unconfirmed pick. The view is the same bytes `statusView` returns.
+ */
+export function statusReport(root: string, options: StatusOptions = {}): { view: StatusWithDetail; plannerPins: Record<AgentId, number> } {
   const consumer = join(root, "clossys");
+  const plannerPins = Object.fromEntries(STATUS_AGENTS.map(agent => [agent, 0])) as Record<AgentId, number>;
   const hasDefault = options.hasDefault ?? (() => false);
   const agents = {} as StatusView["agents"];
   const slots: StatusDetail["slots"] = [];
@@ -264,6 +274,7 @@ export function statusView(root: string, options: StatusOptions = {}): StatusWit
       if (pin) { digest.push(`pin ${agent}/${row.id} ${pin.candidate} ${pin.sha256} ${pin.basis}`); times.push(pin.at); }
       const state = slotState(row, pin, pin ? checkResult(root, agent, row.id, pin.candidate) : null, hasDefault(agent, row.id));
       byState[state]++;
+      if (state === "confirm" && pin?.basis === "planner") plannerPins[agent]++;
       // Every slot's state and candidate names are in the state hash, so a new candidate or a state change moves it (not only a pin).
       digest.push(`slot ${agent}/${row.id} ${state} ${row.candidates.join(",")}`);
       const pinned = pin && row.pin === "valid" ? pin.candidate : null;
@@ -281,6 +292,7 @@ export function statusView(root: string, options: StatusOptions = {}): StatusWit
     if (loop.pin) { digest.push(`pin producer/${loop.id} ${loop.pin.candidate} ${loop.pin.sha256} ${loop.pin.basis}`); times.push(loop.pin.at); }
     const state: SlotState = loop.drift ? "failing" : loop.pin ? (pinStatus(loop.pin.basis) === "confirm" ? "confirm" : "pinned") : hasDefault("producer", loop.id) ? "sample" : "unresolved";
     producer[state]++;
+    if (state === "confirm" && loop.pin?.basis === "planner") plannerPins.producer++;
     digest.push(`slot producer/${loop.id} ${state} ${loop.candidates}`);
     if (inAgent("producer")) slots.push({ ref: `producer/${loop.id}`, state, candidates: loop.candidates, pinned: loop.pin && !loop.drift ? loop.pin.candidate : null });
   }
@@ -302,7 +314,7 @@ export function statusView(root: string, options: StatusOptions = {}): StatusWit
     ledger: ledgerAll.slice(0, Math.max(0, options.ledger ?? 5)),
     releases,
   };
-  if (!options.detail) return view;
+  if (!options.detail) return { view, plannerPins };
   const detail: StatusDetail = { slots, errors };
   if (options.gaps) {
     try {
@@ -321,5 +333,5 @@ export function statusView(root: string, options: StatusOptions = {}): StatusWit
         .map(slot => ({ agent: slot.agent, slot: slot.slot, options: slot.options, distinct: slot.distinct, missing: slot.missing })) };
     } catch { detail.options = { error: "The options could not load." }; }
   }
-  return { ...view, detail };
+  return { view: { ...view, detail }, plannerPins };
 }

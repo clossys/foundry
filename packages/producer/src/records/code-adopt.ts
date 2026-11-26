@@ -35,6 +35,8 @@ import { readStandard } from "./standards.js";
 export const CODE_ADOPT = "code:adopt";
 /** The command a code-adopted candidate's header names as its creator. */
 export const CODE_ADOPT_CLI = "clossys settle adopt";
+/** The skill a code adopt's submit event cites: the step it settles (the Designer's candidates step). */
+export const CODE_ADOPT_SKILL = "packages/designer/actions/designer.candidates/skill.md";
 /** The ladder rung a code adopt submits: the Designer's L1, stock adopted unmodified. */
 export const CODE_ADOPT_RUNG = "L1";
 /** The registries whose stock items code installs (the seeder's and the source ladder's stock rung). */

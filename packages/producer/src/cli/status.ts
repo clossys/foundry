@@ -10,7 +10,7 @@ import { gapsOf } from "../pipeline/interview.js";
 import type { Step } from "../pipeline/define.js";
 import { PACKAGE_ROOT } from "../pipeline/options.js";
 import { STEPS } from "../pipeline/steps/index.js";
-import { statusView, SLOT_STATES } from "../read/status.js";
+import { statusReport, SLOT_STATES, type SlotState } from "../read/status.js";
 import { CliUsageError } from "./args.js";
 import type { CliResult } from "./main.js";
 import { discoverRoot } from "./root.js";
@@ -39,7 +39,7 @@ export async function runStatusCli(argv: readonly string[], cwd: string, steps: 
   if (queue !== undefined && queue !== "open" && queue !== "all") throw new CliUsageError(`--queue must be open or all, got ${queue}\n${STATUS_USAGE}`);
   if (ledger !== undefined && !/^\d+$/.test(ledger)) throw new CliUsageError(`--ledger must be a whole number, got ${ledger}\n${STATUS_USAGE}`);
   const workspace = discoverRoot(resolve(cwd, root ?? "."));
-  const view = statusView(workspace, {
+  const { view, plannerPins } = statusReport(workspace, {
     ...(agent ? { agent: agent as SlotAgent } : {}),
     ...(queue ? { queue: queue as "open" | "all" } : {}),
     ...(ledger !== undefined ? { ledger: Number(ledger) } : {}),
@@ -48,7 +48,18 @@ export async function runStatusCli(argv: readonly string[], cwd: string, steps: 
     options: consumer => { const { slots } = checkSlotOptions(consumer); return { classes: classCounts(slots), slots }; },
   });
   const lines = Object.entries(view.agents).map(([id, row]) =>
-    `${id.padEnd(9)} ${String(row.slots).padStart(4)} slot(s)  ${SLOT_STATES.map(state => `${state} ${row.byState[state]}`).join(", ")}`);
+    `${id.padEnd(9)} ${String(row.slots).padStart(4)} slot(s)  ${stateCounts(row.byState, plannerPins[id as keyof typeof plannerPins] ?? 0)}`);
   lines.push(`queue ${view.queue.length} open, ledger ${view.ledger.length} run(s), releases ${view.releases.length}; state ${(view.stateSha256 ?? "").slice(0, 12)}`);
   return { exitCode: 0, root: workspace, output: view, message: lines.join("\n") };
+}
+
+/**
+ * One agent's state counts for the message. A planner-basis pin is still `confirm` in the read model
+ * (the owner has not confirmed it), but it is shown as "pinned (planner)", apart from an unconfirmed
+ * pick, so "confirm" counts only the bulk and agent pins. Display only; `--json` is unchanged.
+ */
+export function stateCounts(byState: Readonly<Record<SlotState, number>>, planner: number): string {
+  return SLOT_STATES.flatMap(state => state === "confirm"
+    ? [`pinned (planner) ${planner}`, `confirm ${byState.confirm - planner}`]
+    : [`${state} ${byState[state]}`]).join(", ");
 }

@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import type { Cell } from "@clossys/director";
 import type { WriterSlotBodyRecord } from "@clossys/writer/slot-body";
@@ -6,7 +7,8 @@ import { directorLineRef, directorRef, pinnedStrategyModel, readPinnedDirector }
 import { resolveCitation, sourceCitations } from "../records/citations.js";
 import { candidateDocument, readPinned, type PinnedCandidate } from "../records/pinned.js";
 import { candidateReason, directorTraceProblem } from "../records/director-trace.js";
-import { hasSlotModel, readIa } from "../records/slots.js";
+import { hasSlotModel, listSlots, readIa } from "../records/slots.js";
+import { SLOT_AGENTS, type SlotAgent } from "../records/slot-model/index.js";
 import type { CliArgs } from "./args.js";
 import type { CliResult } from "./main.js";
 import { emitProjection } from "./projection.js";
@@ -50,6 +52,53 @@ function writerBrief(cells: readonly Cell[], trees: readonly WriterTree[]) {
   };
 }
 
+/** One input a Writer slot's contract names, with the slots that name it and, when pinned, its value. */
+interface SlotInput { input: string; key?: string; slots: string[]; value?: string; candidate?: string }
+
+/**
+ * Every input the Writer slots' contracts name (slot.json `refs` with rel input), as name and value, so a session
+ * needs no record file: a Director input by the Direction line its `key` names (every Direction line when it names
+ * none), any other slot by its pinned candidate's body. An input with no pinned value is listed apart with why; no
+ * value is invented for it.
+ */
+function slotInputs(consumer: string, cells: readonly Cell[]): { pinned: SlotInput[]; unpinned: (SlotInput & { why: string })[] } {
+  const named = new Map<string, SlotInput>();
+  for (const entry of listSlots(consumer, "writer")) {
+    let refs: unknown;
+    try { refs = (JSON.parse(readFileSync(join(entry.dir, "slot.json"), "utf8")) as { refs?: unknown }).refs; } catch { continue; }
+    if (!Array.isArray(refs)) continue;
+    for (const ref of refs as { to?: unknown; rel?: unknown; key?: unknown }[]) {
+      if (ref?.rel !== "input" || typeof ref.to !== "string") continue;
+      const key = typeof ref.key === "string" ? ref.key : undefined;
+      const id = `${ref.to}${key ? `#${key}` : ""}`;
+      const row = named.get(id) ?? { input: ref.to, ...(key ? { key } : {}), slots: [] };
+      if (!row.slots.includes(entry.id)) row.slots.push(entry.id);
+      named.set(id, row);
+    }
+  }
+  const sets = new Map<SlotAgent, ReturnType<typeof readPinned>>();
+  const pinnedOf = (agent: SlotAgent) => { let set = sets.get(agent); if (!set) { set = readPinned(consumer, agent); sets.set(agent, set); } return set; };
+  const pinned: SlotInput[] = [], unpinned: (SlotInput & { why: string })[] = [];
+  for (const row of [...named.values()].sort((a, b) => a.input.localeCompare(b.input) || (a.key ?? "").localeCompare(b.key ?? ""))) {
+    const slash = row.input.indexOf("/");
+    const agent = row.input.slice(0, slash) as SlotAgent, id = row.input.slice(slash + 1);
+    if (!(SLOT_AGENTS as readonly string[]).includes(agent)) { unpinned.push({ ...row, why: `${agent} is not a slot agent` }); continue; }
+    if (agent === "director") {
+      const cell = cells.find(each => each.id === id);
+      if (!cell) { unpinned.push({ ...row, why: `${row.input} has no pinned candidate` }); continue; }
+      const lines = row.key ? cell.direction.filter(bullet => bullet.key === row.key) : cell.direction;
+      if (!lines.length) { unpinned.push({ ...row, why: `${row.input}'s pinned candidate has no Direction line keyed ${row.key}` }); continue; }
+      pinned.push({ ...row, value: lines.map(bullet => row.key || !bullet.key ? bullet.text : `${bullet.key}: ${bullet.text}`).join("\n"), candidate: cell.path.split("/").at(-1)! });
+      continue;
+    }
+    const candidate = pinnedOf(agent).pinned.find(each => each.id === id);
+    if (!candidate) { unpinned.push({ ...row, why: `${row.input} has no pinned candidate` }); continue; }
+    // A Markdown candidate's value is its body (the frontmatter is provenance); a JSON or SVG candidate's is its content as read.
+    pinned.push({ ...row, value: candidate.name.endsWith(".md") ? candidateDocument(candidate).body.trim() : candidate.bytes, candidate: candidate.name });
+  }
+  return { pinned, unpinned };
+}
+
 /** Every pinned Writer candidate's rows, read by the Writer's own slot-body parser. */
 async function pinnedRows(candidates: readonly PinnedCandidate[], findings: Finding[]): Promise<WriterRows[]> {
   const parser = await agentModule("writer", "slot-body.js");
@@ -80,7 +129,8 @@ export async function runWrite(args: CliArgs, root: string): Promise<CliResult> 
     const director = await readPinnedDirector(consumer);
     if (args.brief) {
       const target = await agentModule("writer", "catalog/ia/target.js");
-      const brief = writerBrief(director.cells, target.loadWriterTrees());
+      const inputs = slotInputs(consumer, director.cells);
+      const brief = { ...writerBrief(director.cells, target.loadWriterTrees()), slotInputs: inputs.pinned, unpinnedSlotInputs: inputs.unpinned };
       const emitted = await emitProjection(args, root, "writer brief", brief);
       return { ...base, exitCode: brief.missingInputs.length ? 1 : 0, brief, message: emitted ? `write: brief written to ${emitted}` : JSON.stringify(brief, null, 2) };
     }

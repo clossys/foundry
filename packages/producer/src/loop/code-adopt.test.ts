@@ -22,6 +22,8 @@ import { PINNED_THEME_READER } from "../read/theme-pins.js";
 import { writeCandidate } from "../records/slot-write.js";
 import { readLedger } from "../records/slots.js";
 import { startRun, type AgentPacket, type CodeCall, type RunHooks } from "./runner.js";
+import { runOptionsCli } from "../cli/options.js";
+import { packagePath } from "../package-path.js";
 
 const REF_VERBATIM_CLI = fileURLToPath(new URL("../../../designer/scripts/check-ref-verbatim.mjs", import.meta.url));
 const FIXTURE = fileURLToPath(new URL("../../test-fixtures/consumer/", import.meta.url));
@@ -144,6 +146,27 @@ describe("loop.create's adopt step (clossys settle adopt): code installs the sto
     expect(h.codeSteps.indexOf("certify")).toBeGreaterThan(-1);
     expect(h.agentSteps).toContain("create");
     expect(run.state!.settled?.create).toBeUndefined();
+  }, 60_000);
+
+  it("clossys options --reference prints the files the adopt step writes, byte for byte, plus the step skill text", async () => {
+    const { root, consumer } = world();
+    const shown = await runOptionsCli([`designer/${CHECKBOX}`, "--reference", "--json"], root);
+    expect(shown.exitCode, shown.message).toBe(0);
+    const output = shown.output as { reference: string; item: { files: { path: string; content: string }[] }; adopt: { byCode: boolean; run: string }; skill: { path: string; text: string } };
+    expect(output.adopt).toMatchObject({ byCode: true, run: `clossys run loop.create --slot designer/${CHECKBOX}` });
+    expect(output.skill.text).toBe(readFileSync(packagePath(root, output.skill.path), "utf8"));
+    expect(shown.message).toContain(output.skill.text);
+    // The adopt path itself (loop.create's clossys settle adopt step) then writes the candidate: its files are the printed ones.
+    const run = await startRun(root, { loop: "loop.create", slot: `designer/${CHECKBOX}` }, hooks(), { now: clock() });
+    expect(run.state, run.message).toBeDefined();
+    const written = JSON.parse(readFileSync(join(consumer, "agents", "designer", CHECKBOX, "candidates", "checkbox-v1.json"), "utf8")) as { content: { files: { path: string; content: string }[] } };
+    expect(written.content.files.length).toBeGreaterThan(0);
+    expect(output.item.files.map(file => [file.path, Buffer.from(file.content, "utf8").toString("hex")]))
+      .toEqual(written.content.files.map(file => [file.path, Buffer.from(file.content, "utf8").toString("hex")]));
+    for (const file of written.content.files) expect(shown.message).toContain(`--- file ${file.path}\n${file.content}\n`);
+    // No stock item, or another agent's slot, refuses: there is no fallback reference.
+    expect(await runOptionsCli(["designer/components.chart-area", "--reference"], root)).toMatchObject({ exitCode: 1, message: expect.stringMatching(/has no reference item/) });
+    expect(await runOptionsCli(["writer/page.about.meta", "--reference"], root)).toMatchObject({ exitCode: 1, message: expect.stringMatching(/reads a Designer slot's stock item/) });
   }, 60_000);
 
   it("hands create to the agent with no stock item (chart-area) or a held candidate (button), and writes nothing", async () => {

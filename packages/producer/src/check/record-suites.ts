@@ -14,7 +14,8 @@ import { readPinnedDirector } from "../records/director-pinned.js";
 import { readPublisher, readWriter } from "../publish/site-source.js";
 import { writerText } from "@clossys/publisher/build";
 import { validateSlotContract } from "../records/validate.js";
-import { listSlots, readCandidate } from "../records/slots.js";
+import { listSlots, readCandidate, readSlotRecordText } from "../records/slots.js";
+import { copyFields } from "../constitution/certify/strings.js";
 import { parseFrontmatter } from "../records/slot-model/index.js";
 import { isAgentLoop } from "../loop/agent-loops-ia.js";
 
@@ -113,13 +114,17 @@ export async function archetypeSuite(root: string, strict: boolean): Promise<Sui
 export async function writerSuite(root: string): Promise<SuiteReport> {
   const checks = await agentModule("writer", "slot-contracts/checks.js");
   const parser = await agentModule("writer", "slot-body.js");
+  const format = await agentModule("writer", "slot-contracts/format.js");
   const consumer = join(root, "clossys");
   const findings: SuiteFinding[] = [];
   const slots: unknown[] = [];
+  const copyContracts: WriterCopyContract[] = [];
   let unreadable = 0;
   const entries = listSlots(consumer, "writer").filter(entry => !isAgentLoop(entry.id));
   for (const entry of entries) {
     if (!entry.pin) continue;
+    const declared = copySlotContract(entry.id, slotContractOf(entry.dir));
+    if (declared) copyContracts.push(declared);
     const path = `agents/writer/${entry.id}/candidates/${entry.pin.candidate}`;
     try {
       const candidate = readCandidate(consumer, "writer", entry.id, entry.pin.candidate);
@@ -134,11 +139,58 @@ export async function writerSuite(root: string): Promise<SuiteReport> {
   let director: unknown;
   try { director = checks.directorVoiceFromCells((await readPinnedDirector(consumer)).cells); }
   catch (error) { findings.push({ severity: "error", code: "INPUT", message: `Pinned Director voice could not be read: ${message(error)}`, where: "director" }); }
-  const result = checks.runWriterSlotSuite({ slots, ...(director ? { director } : {}) });
+  // A copy slot the package catalog has no contract for is read from its slot.json `contract.copy`, as `clossys pin`
+  // reads it; a catalog contract is enforced as before and never replaced (copy slot ids, `<unit>.copy`, are not catalog ids).
+  const catalog = format.loadWriterContracts() as { slots: { id: string }[]; composition: unknown[] };
+  const catalogIds = new Set(catalog.slots.map(contract => contract.id));
+  const contracts = { ...catalog, slots: [...catalog.slots, ...copyContracts.filter(contract => !catalogIds.has(contract.id))] };
+  const result = checks.runWriterSlotSuite({ slots, ...(director ? { director } : {}) }, contracts);
   for (const finding of result.findings as { check: string; severity: SuiteFinding["severity"]; slot: string; path?: string; record?: string; locale?: string; key?: string; message: string }[]) {
     findings.push({ severity: finding.severity, code: finding.check, message: finding.message, where: `${finding.slot}${finding.record ? ` ${finding.record}` : finding.path ? ` ${finding.path}` : ""}${finding.locale ? ` [${finding.locale}]` : ""}${finding.key ? ` .${finding.key}` : ""}` });
   }
   return { ...report("writer-slots", slots.length + unreadable, findings), adopted: entries.length };
+}
+
+/** A Writer slot contract (writer slot-contracts/format.ts WriterSlotContract) the suite reads for one copy slot. */
+export interface WriterCopyContract {
+  readonly id: string; readonly package: "writer"; readonly layer: "passages"; readonly purpose: string; readonly inputs: readonly string[];
+  readonly limits: { readonly fields: Record<string, { required: boolean; maxChars: number }>; readonly translationHeadroom: number; readonly unique: boolean; readonly claims: boolean };
+  readonly references: readonly unknown[]; readonly checkSuiteId: "writer.copy.v1"; readonly specimenKind: "text";
+}
+/** The Writer catalog's translation headroom, which every catalog contract sets (0.3: 30% of maxChars). */
+const COPY_HEADROOM = 0.3;
+
+function slotContractOf(dir: string): unknown {
+  const text = readSlotRecordText(dir, "slot.json");
+  if (text === undefined) return undefined;
+  try { const doc = JSON.parse(text) as { contract?: unknown }; return doc.contract; } catch { return undefined; }
+}
+
+/**
+ * A copy slot's contract as the Writer's slot suite reads it: the slot's own `contract.copy` fields, read by the
+ * same reader `clossys pin` certifies a copy candidate with (constitution/certify/strings.ts `copyFields`). Each
+ * field keeps its key, `required` and its source-locale `maxLength` as `maxChars`; a field with no source-locale
+ * `maxLength` has no length limit (pin applies none). The contract declares no `unique` or claim rule, so neither is
+ * set. Undefined when the slot declares no copy contract or no source locale: the suite then reports the slot's
+ * missing contract as before.
+ */
+export function copySlotContract(id: string, contract: unknown): WriterCopyContract | undefined {
+  if (contract === null || typeof contract !== "object" || Array.isArray(contract)) return undefined;
+  const record = contract as Record<string, unknown>;
+  const copy = record.copy as { sourceLocale?: unknown } | undefined;
+  const fields = copyFields(record);
+  if (!fields || typeof copy?.sourceLocale !== "string") return undefined;
+  const source = copy.sourceLocale;
+  const limits: Record<string, { required: boolean; maxChars: number }> = {};
+  for (const field of fields) {
+    const max = field.maxLength[source];
+    if (max !== undefined && Number.isInteger(max) && max > 0) limits[field.key] = { required: field.required, maxChars: max };
+  }
+  return {
+    id, package: "writer", layer: "passages", purpose: `Copy of ${typeof record.unit === "string" ? record.unit : id}`, inputs: [],
+    limits: { fields: limits, translationHeadroom: COPY_HEADROOM, unique: false, claims: false },
+    references: [], checkSuiteId: "writer.copy.v1", specimenKind: "text",
+  };
 }
 
 /** The Director's own contract checks over each pinned Director candidate. */

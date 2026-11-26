@@ -15,7 +15,7 @@ import { STEPS } from "../pipeline/steps/index.js";
 import "./main.js";
 import { runCritiqueCli, runCritiquePacketCli } from "./critique.js";
 import { runNextSubmitCli } from "./next.js";
-import { runVerdictCli, verdictIssues } from "./verdict.js";
+import { runVerdictCli, VERDICT_EXAMPLES, VERDICT_USAGE, verdictIssues, verdictSchemaIssues } from "./verdict.js";
 
 const ID = "components.button";
 const AT = "2026-11-14T12:00:00.000Z";
@@ -126,6 +126,42 @@ describe("clossys verdict --record", () => {
     expect(result.message).toMatch(/R14\.1/);
     expect(existsSync(join(slotDir, "ledger.json"))).toBe(false);
     expect(existsSync(join(slotDir, "pin.json"))).toBe(false);
+  });
+});
+
+describe("clossys verdict explains itself: an example per rung, and a refusal that names the field", () => {
+  const raw = (doc: Record<string, unknown>) => {
+    writeFileSync(join(workspace, "verdict.json"), JSON.stringify(doc));
+    return runVerdictCli([`designer/${ID}`, "--record", "verdict.json", "--model", "fixture-model", "--tier", "high", "--by", "agent:designer.verdict", "--at", AT], workspace, NO_GUARD as never);
+  };
+  it("--help prints one complete example file per rung, each a valid verdict for the slot's standard", async () => {
+    const help = await runVerdictCli(["--help"], workspace);
+    expect(help.message).toBe(VERDICT_USAGE);
+    expect(help.message).toMatch(/rung adopt .*no verdict is needed/);
+    const component = { taste: new Set(["fidelity", "composition", "polish"]), requirements: new Set<string>(), brief: new Set(["variant"]) };
+    for (const [rung, example] of Object.entries(VERDICT_EXAMPLES)) {
+      expect(help.message, rung).toContain(JSON.stringify(example));
+      expect(verdictSchemaIssues(example), rung).toEqual([]);
+      expect(verdictIssues(example as unknown as Record<string, unknown>, component, { id: "component", mode: "adopt-first" }), rung).toEqual([]);
+    }
+  });
+
+  it("names the failing field and its allowed values, never the bare oneOf message", async () => {
+    const { schema: _schema, ...noSchema } = VERDICT_EXAMPLES.create;
+    const missing = await raw(noSchema);
+    expect(missing.exitCode).toBe(1);
+    expect(missing.message).toContain("the create verdict requires field schema (allowed: \"clossys.verdict/1\")");
+    expect(missing.message).not.toMatch(/oneOf/);
+    const wrong = await raw({ ...VERDICT_EXAMPLES.create, schema: "clossys.verdict/2", gaps: [{ id: "Fidelity!", class: "missing-behavior" }] });
+    expect(wrong.message).toContain("field schema must be \"clossys.verdict/1\"");
+    expect(wrong.message).toMatch(/field gaps\[0\]\.id must match .* \(allowed: a string matching /);
+    const empty = await raw({ ...VERDICT_EXAMPLES.create, gaps: [] });
+    expect(empty.message).toMatch(/field gaps must have at least 1 items \(allowed: a list of at least 1 item\(s\)/);
+    const extra = await raw({ ...VERDICT_EXAMPLES.pick, gaps: [] });
+    expect(extra.message).toMatch(/field gaps is not a pick verdict field \(allowed fields: schema, slot, inputsHash, pick, reason, criteria\)/);
+    const neither = await raw({ schema: "clossys.verdict/1", slot: ID, reason: "fixture" });
+    expect(neither.message).toMatch(/names neither pick nor create; a verdict is a pick \{.*\} or a create \{/);
+    expect(existsSync(join(slotDir, "ledger.json"))).toBe(false);
   });
 });
 
