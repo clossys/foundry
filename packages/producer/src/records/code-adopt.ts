@@ -78,7 +78,7 @@ const referencesDirOf = (root: string): string => dirname(packagePath(root, REFE
 
 /**
  * What "the agent creates" means wherever code adopts nothing (CP1-PKGS, the one wording; the Designer skill's loop step
- * 4 cites it verbatim): rung L4 of the source ladder, after the slot's latest verdict says create, crafted from the
+ * 3 cites it verbatim): rung L4 of the source ladder, after the slot's latest verdict says create, crafted from the
  * slot contract and the pinned slots it reads. It is not an item invented from nothing.
  */
 export const AGENT_CREATES = "the agent creates it: an L4 create after a verdict that says create, built from the slot contract and the pinned slots it reads";
