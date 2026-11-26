@@ -85,6 +85,45 @@ test('first-party packages are followed rather than externalized', async () => {
   fs.writeFileSync(path.join(server, 'index.js'), 'export * from "node:os";');
   assert.equal((await measure(root)).exitCode, 1);
 });
+test('shared resolutions stay separate per mode: a development-only server branch fails only that graph', async () => {
+  const root = fixture('conditional-dependency', { 'web.js': 'export * from "conditional-dep";' });
+  const dependency = path.join(path.dirname(path.dirname(root)), 'conditional-dep');
+  fs.mkdirSync(dependency);
+  fs.writeFileSync(path.join(dependency, 'package.json'), JSON.stringify({ name: 'conditional-dep', type: 'module',
+    exports: { '.': { development: './dev.js', default: './prod.js' } } }));
+  fs.writeFileSync(path.join(dependency, 'dev.js'), 'import "node:fs"; export const value = "dev";');
+  fs.writeFileSync(path.join(dependency, 'prod.js'), 'export const value = "prod";');
+  const report = await measure(root);
+  const production = report.graphs.find(graph => graph.mode === 'production');
+  const development = report.graphs.find(graph => graph.mode === 'development');
+  assert.equal(production.ok, true);
+  assert.deepEqual(production.violations, []);
+  assert(production.inputs.some(input => path.resolve(root, input.file) === path.join(dependency, 'prod.js')));
+  assert.equal(development.ok, false);
+  const violation = development.violations.find(row => row.specifier === 'node:fs');
+  assert(violation);
+  assert.equal(violation.importer, path.join(dependency, 'dev.js'));
+  assert.equal(report.exitCode, 1);
+});
+test('shared resolutions stay separate per directory: sibling ./util.js imports resolve to their own files', async () => {
+  const root = fixture('sibling-relative', { 'web.js': 'export * from "./a/index.js"; export * from "./b/index.js";',
+    'a/index.js': 'export * from "./util.js";', 'a/util.js': 'export const a = 1;',
+    'b/index.js': 'export * from "./util.js";', 'b/util.js': 'import "node:fs"; export const b = 1;' });
+  const report = await measure(root);
+  assert.equal(report.exitCode, 1);
+  for (const graph of report.graphs) {
+    // A refused build has no metafile, so its graph inputs are the resolved edge targets.
+    const inputs = graph.edges.map(edge => edge.resolved);
+    assert(inputs.includes(path.join(root, 'a/util.js')), `${graph.mode} graph includes a/util.js`);
+    assert(inputs.includes(path.join(root, 'b/util.js')), `${graph.mode} graph includes b/util.js`);
+    assert.equal(graph.violations.length, 1);
+    const [violation] = graph.violations;
+    assert.equal(violation.specifier, 'node:fs');
+    assert.equal(violation.importer, path.join(root, 'b/util.js'));
+    assert.deepEqual(violation.chain.map(edge => edge.specifier), ['@fixture/publisher/web', './b/index.js', './util.js', 'node:fs']);
+    assert.equal(violation.chain.at(-2).resolved, path.join(root, 'b/util.js'));
+  }
+});
 test('new web exports automatically join the census', async () => {
   const root = fixture('new-export', { 'web.js': 'export const safe = 1;', 'new.js': 'import "node:fs";' }, {
     './web': './web.js', './web/new-entry': './new.js',

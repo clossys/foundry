@@ -80,6 +80,11 @@ export async function checkClientBoundary(packageRoot, { repositoryRoot, build: 
     const build = suppliedBuild ?? (await import('esbuild')).build;
     const ts = await import('typescript');
     const inspected = new Map();
+    // One resolution memo for every graph of this call. It is keyed by what
+    // decides a resolution: the mode selects the conditions and resolveDir the
+    // lookup root. Every per-edge check still runs on the shared result. A
+    // rejected lookup is dropped so a later edge resolves afresh.
+    const resolutions = new Map();
     const owners = new Map();
     const ownerOf = file => {
       let dir = path.dirname(file);
@@ -145,8 +150,14 @@ export async function checkClientBoundary(packageRoot, { repositoryRoot, build: 
             violations.push({ ...edge, reason: 'server-only import' });
             return { errors: [{ text: `Server-only import refused: ${args.path}` }] };
           }
-          const resolved = await builder.resolve(args.path, { kind: args.kind, importer: args.importer,
-            resolveDir: args.resolveDir, pluginData: { boundaryResolve: true } });
+          const key = JSON.stringify([mode, args.kind, args.namespace, args.resolveDir, args.path]);
+          if (!resolutions.has(key)) {
+            const pending = builder.resolve(args.path, { kind: args.kind, importer: args.importer,
+              resolveDir: args.resolveDir, pluginData: { boundaryResolve: true } });
+            resolutions.set(key, pending);
+            pending.catch(() => { if (resolutions.get(key) === pending) resolutions.delete(key); });
+          }
+          const resolved = await resolutions.get(key);
           edge.resolved = resolved.path;
           edge.external = resolved.external;
           edge.namespace = resolved.namespace;
