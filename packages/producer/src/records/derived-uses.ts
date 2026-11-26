@@ -7,8 +7,9 @@
  * - A slot whose derived set equals its current uses refs is not touched, so a second run writes nothing.
  * - A slot with no source (no pin, no stock item) has no derived value and is never written: a missing value is not [].
  * - A slot/2 doc carrying a stray top-level `uses` key (not a slot/2 field) is repaired first, its refs kept, with an event.
- * - A write the writer refuses (a slot/1 doc, a package-synced slot whose refs would change, a slot not in ia.json) is
- *   reported, never forced.
+ * - A package-synced slot (`base` not null) whose derived set differs is not written: its refs are computed from the
+ *   package base (records/slot-write.ts currentSlotWrite refuses the change), so it is reported as a package gap.
+ * - A write the writer refuses (a slot/1 doc, a slot not in ia.json, an id no agent holds) is reported, never forced.
  */
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
@@ -25,6 +26,8 @@ export interface DerivedUsesResult {
   readonly written: readonly string[];
   /** `<agent>/<id>: <why>` for every write the slot writer refused. */
   readonly refused: readonly string[];
+  /** `<agent>/<id>: <package>` for every package-synced slot whose derived set differs (change it in the package). */
+  readonly synced?: readonly string[];
 }
 
 const slotJson = (consumer: string, agent: string, id: string) => join(consumer, "agents", agent, id, "slot.json");
@@ -68,7 +71,7 @@ export function repairStrayUses(consumer: string, input: { readonly at: string }
  * written.
  */
 export function writeDerivedUses(consumer: string, derived: ReadonlyMap<string, readonly string[]>, input: { readonly at: string }): DerivedUsesResult {
-  const written: string[] = [], refused: string[] = [];
+  const written: string[] = [], refused: string[] = [], synced: string[] = [];
   for (const [key, ids] of derived) {
     const [agent, id] = key.split("/") as [ModelAgent, string];
     const doc = readDoc(consumer, agent, id);
@@ -80,7 +83,9 @@ export function writeDerivedUses(consumer: string, derived: ReadonlyMap<string, 
     const current = usesRefs(doc);
     const same = current.length === new Set(current).size && current.length === uses.length && uses.every(to => current.includes(to));
     if (same) continue;
+    const base = (doc as Record<string, unknown>).base as { package?: unknown } | null | undefined;
+    if (base) { synced.push(`${key}: ${String(base.package)}`); continue; }
     write(consumer, agent, id, uses, input.at, written, refused);
   }
-  return { written, refused };
+  return { written, refused, synced };
 }
