@@ -6,7 +6,7 @@ import { fileURLToPath } from 'node:url';
 import { afterEach, describe, expect, it } from 'vitest';
 import { serializeFrontmatter } from './slot-model/index.js';
 import { writerKeysUnapproved } from '../pipeline/status.js';
-import { writerCopy, writerCopyDuplicates, writerRowKey } from './writer-copy.js';
+import { contractCopyKeys, writerCopy, writerCopyDuplicates, writerKeyFold, writerRowKey } from './writer-copy.js';
 import { installCopy } from '../publish/install.js';
 import { resolvePublicationTitles } from '../publish/pinned-publication.js';
 import { writeTargetPin } from './pin-map.js';
@@ -97,30 +97,26 @@ describe('pinned Writer copy row keys (BR-E2E5 option A)', () => {
 const FIXTURE = fileURLToPath(new URL('../../test-fixtures/consumer/', import.meta.url));
 const AT = '2026-11-26T00:00:00Z';
 
-/**
- * A mktemp copy of the fixture consumer: its `clossys/` folder. The copy leaves out the `publication.site.meta` pin:
- * its contract row `siteName` registers as `publication.site.meta.siteName`, which the Writer registry shape refuses
- * (lower case ids only), so with it pinned no fixture key resolves at all, on base as on this change.
- */
+/** A mktemp copy of the fixture consumer, every pin included: its `clossys/` folder. */
 function fixtureConsumer(): string {
   const root = realpathSync(mkdtempSync(join(tmpdir(), 'writer-copy-key-'))); roots.push(root);
-  const metaPin = join(FIXTURE, 'clossys/agents/writer/publication.site.meta/pin.json');
-  cpSync(FIXTURE, root, { recursive: true, filter: source => source !== metaPin });
+  cpSync(FIXTURE, root, { recursive: true });
   return join(root, 'clossys');
 }
 
 /**
- * Submit and pin a `frames.site-footer.copy` candidate through the record writers (writeCandidate,
- * writeTargetPin): the header's own candidate with the footer's slot and the given `### <row>` texts.
+ * Submit and pin a Writer copy candidate for `slot` through the record writers (writeCandidate, writeTargetPin):
+ * the header's own candidate head with `slot` in place of the header, and the given `### <row>` texts.
  */
-function pinFooter(clossys: string, rows: Record<string, string>): string {
+function pinCopy(clossys: string, slot: string, rows: Record<string, string>): string {
   const header = readFileSync(join(clossys, 'agents/writer/frames.site-header.copy/candidates/copy-v1.md'), 'utf8');
-  const head = header.slice(0, header.indexOf('## en')).replaceAll('frames.site-header.copy', 'frames.site-footer.copy');
+  const head = header.slice(0, header.indexOf('## en')).replaceAll('frames.site-header.copy', slot);
   const body = Object.entries(rows).map(([id, text]) => `### ${id}\n<!-- {"id":${JSON.stringify(id)},"bindings":[]} -->\n${text}\n`).join('\n');
-  const { name } = writeCandidate(clossys, 'writer', 'frames.site-footer.copy', 'copy', `${head}## en\n\n${body}`);
-  writeTargetPin(join(clossys, '..'), { agent: 'writer', slotId: 'frames.site-footer.copy', record: 'copy', candidate: name, decidedBy: 'planner', basis: 'planner', at: AT, createdBy: { actor: 'code', cli: 'clossys pin', version: '0.1.0' } });
+  const { name } = writeCandidate(clossys, 'writer', slot, 'copy', `${head}## en\n\n${body}`);
+  writeTargetPin(join(clossys, '..'), { agent: 'writer', slotId: slot, record: 'copy', candidate: name, decidedBy: 'planner', basis: 'planner', at: AT, createdBy: { actor: 'code', cli: 'clossys pin', version: '0.1.0' } });
   return name;
 }
+const pinFooter = (clossys: string, rows: Record<string, string>): string => pinCopy(clossys, 'frames.site-footer.copy', rows);
 
 describe('a contract key is its own slot\'s key (CP1-COPYKEY)', () => {
   it('loads one contract key from two pinned copy slots under each slot\'s id', () => {
@@ -166,6 +162,43 @@ describe('a contract key is its own slot\'s key (CP1-COPYKEY)', () => {
       { id: 'footer', title: 'frames.site-footer.copy#navigation.label' }, { id: 'header', title: 'frames.site-header.copy#navigation.label' },
     ] } } as never);
     expect(titled.map.entries.map(entry => entry.title)).toEqual(['Footer navigation', 'Main navigation']);
+  });
+
+  it('publication meta camelCase key is stored kebab-case and resolves', () => {
+    expect(writerKeyFold('siteName')).toBe('site-name');
+    expect(writerKeyFold('share.title')).toBe('share.title');
+    // The fixture pins publication.site.meta, whose contract declares `siteName`: its bytes keep the key as written.
+    const clossys = fixtureConsumer();
+    expect(readFileSync(join(clossys, 'agents/writer/publication.site.meta/candidates/meta-v1.md'), 'utf8')).toContain('### siteName');
+    const copy = writerCopy(clossys);
+    expect(copy.has('publication.site.meta.site-name')).toBe(true);
+    expect(copy.has('publication.site.meta.siteName')).toBe(false);
+    expect(copy.text('publication.site.meta.site-name')).toBe('Fixture Works');
+    const writer = Object.fromEntries(copy.ids.map(id => [id, copy.text(id)]));
+    expect(installCopy({ copy: { camel: 'publication.site.meta#siteName', kebab: 'publication.site.meta#site-name' } }, writer).copy)
+      .toEqual({ camel: 'publication.site.meta.site-name', kebab: 'publication.site.meta.site-name' });
+    const titled = resolvePublicationTitles(clossys, { map: { publicationId: 'copy-key-probe', entries: [
+      { id: 'camel', title: 'publication.site.meta#siteName' }, { id: 'kebab', title: 'publication.site.meta#site-name' },
+    ] } } as never);
+    expect(titled.map.entries.map(entry => entry.title)).toEqual(['Fixture Works', 'Fixture Works']);
+  });
+
+  it('the product\'s copy set resolves a text', () => {
+    // The product's pinned copy state, in the fixture: every fixture pin (publication.site.meta's `siteName` too) and
+    // the four frame copy slots pinned with their own contract keys, `navigation.label` and `skip.label` held twice.
+    const clossys = fixtureConsumer();
+    for (const slot of ['frames.site-footer.copy', 'frames.app-header.copy', 'frames.app-sidebar.copy']) {
+      const keys = [...contractCopyKeys(join(clossys, 'agents/writer', slot))];
+      pinCopy(clossys, slot, Object.fromEntries(keys.map(key => [key, `${slot} ${key}`])));
+    }
+    expect(writerCopyDuplicates(clossys)).toEqual([]);
+    const copy = writerCopy(clossys);
+    expect(copy.ids.length).toBeGreaterThan(0);
+    for (const id of copy.ids) expect(typeof copy.text(id)).toBe('string');
+    expect(copy.text('frames.app-sidebar.copy.navigation.label')).toBe('frames.app-sidebar.copy navigation.label');
+    expect(copy.text('frames.app-header.copy.skip.label')).toBe('frames.app-header.copy skip.label');
+    expect(copy.text('frames.site-header.copy.skip.label')).toBe('Skip to content');
+    expect(copy.text('publication.site.meta.site-name')).toBe('Fixture Works');
   });
 });
 

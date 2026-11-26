@@ -33,6 +33,7 @@ import { hasSlotModel, readCandidate, readIa, readPin, readSlot, slotCandidateIs
 import { slotPositions, validateCandidate } from "../records/slot-model/index.js";
 import { libraryRecordSource } from "../specimen/library-source.js";
 import { readWriter } from "./site-source.js";
+import { writerKeyFold } from "../records/writer-copy.js";
 import { specimenRoots } from "./publish.js";
 import { defaultInstallOut, INSTALL_MARKER } from "@clossys/publisher/build";
 
@@ -471,13 +472,15 @@ export interface NativePageCandidate {
 
 /**
  * A Writer key ref (`<writer slot>#<key>`) to the Writer copy key it binds: the key itself (a
- * native Writer row), else the compiled `<writer cell>.<key>` id a legacy Writer store holds.
+ * native Writer row), else the compiled `<writer cell>.<key>` id, its key in either form (camelCase or the
+ * stored kebab case).
  * Without `writer` copy, the bare key.
  */
 function writerKeyOf(ref: string, writer?: Readonly<Record<string, string>>): string {
   const hash = ref.indexOf("#"), cell = ref.slice(0, hash), key = ref.slice(hash + 1);
   if (!writer || Object.hasOwn(writer, key)) return key;
-  return [ref, `${cell}.${key}`].find(id => Object.hasOwn(writer, id)) ?? key;
+  // `<cell>#siteName` and `<cell>#site-name` both bind the stored `<cell>.site-name` (records/writer-copy.ts writerKeyFold).
+  return [ref, `${cell}.${key}`, `${cell}.${writerKeyFold(key)}`].find(id => Object.hasOwn(writer, id)) ?? key;
 }
 
 /** A page candidate's copy as install bindings: copy slot to Writer key, page-wide and per section instance. */

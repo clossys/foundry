@@ -57,14 +57,22 @@ export function contractCopyKeys(dir: string): ReadonlySet<string> {
 }
 
 /**
+ * A slot-owned row key in the Writer id grammar (lower case, dash joined): a camelCase contract key folds to its
+ * kebab-case form (`siteName` is stored as `site-name`), a lower-case key is itself. The contract and the pinned bytes
+ * keep the key as written; only the registered id folds, so no re-pin.
+ */
+export const writerKeyFold = (key: string): string => key.replace(/([a-z0-9])([A-Z])/g, "$1-$2").toLowerCase();
+
+/**
  * The key a pinned row registers under. The slot's contract decides the namespace, not the dot: a row whose id is a
  * key its slot's contract declares (`declared`, `contractCopyKeys`) registers as `<slot>.<key>`, and so does an
- * undotted row id (a meta slot's `title` registers as `page.home.meta.title`). Any other dotted id is an authored
- * global Writer id and registers as itself. Two slots holding one contract key (`navigation.label` in the site
- * header and the site footer) never collide, and a `<slot>#<key>` ref resolves through `<slot>.<key>` as install.ts
- * `writerKeyOf` and pinned-publication.ts `keyOf` read it.
+ * undotted row id (a meta slot's `title` registers as `page.home.meta.title`), its key folded to the Writer id grammar
+ * (`writerKeyFold`: a publication meta's `siteName` registers as `publication.site.meta.site-name`). Any other dotted
+ * id is an authored global Writer id and registers as itself. Two slots holding one contract key (`navigation.label`
+ * in the site header and the site footer) never collide, and a `<slot>#<key>` ref, in either form, resolves through
+ * `<slot>.<key>` as install.ts `writerKeyOf` and pinned-publication.ts `keyOf` read it.
  */
-export const writerRowKey = (slot: string, id: string, declared: ReadonlySet<string>): string => declared.has(id) || !id.includes(".") ? `${slot}.${id}` : id;
+export const writerRowKey = (slot: string, id: string, declared: ReadonlySet<string>): string => declared.has(id) || !id.includes(".") ? `${slot}.${writerKeyFold(id)}` : id;
 /**
  * Keyed on every pin (its basis too: an owner re-pin of the same bytes approves) and on every pinned candidate file's stamp (`stamp`), so bytes that change in
  * place after a first read are re-read and re-hashed against their pin, never served stale.
