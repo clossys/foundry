@@ -676,7 +676,9 @@ export async function publishInstall(options: PublishInstallOptions): Promise<Pu
       findings.push({ code: "render-failed", detail: `${page.id}: the bound page did not render: ${reason}` });
     }
   }
-  const report = { page: page.id, installed: result.installed, findings, ...(result.page ? { bound: result.page } : {}) };
+  // The selection the page mounted in is kept with its report, so loop.cascade's rerender step re-runs the same install.
+  const selection = options.selection ? { selection: { ...options.selection, module: selectionModule(options.selection.module, options.cwd) } } : {};
+  const report = { page: page.id, installed: result.installed, findings, ...(result.page ? { bound: result.page } : {}), ...selection };
   await writeFile(join(out, "install-report.json"), `${JSON.stringify(report, null, 2)}\n`);
   return { out, substrate, installed: result.installed, findings, ...(result.page ? { page: result.page } : {}), ...(html ? { html } : {}) };
 }

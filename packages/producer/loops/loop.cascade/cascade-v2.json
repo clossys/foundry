@@ -1,0 +1,122 @@
+{
+  "clossys": {
+    "schema": "clossys.candidate/1",
+    "id": "producer/loop.cascade/package:cascade-v2.json",
+    "agent": "producer",
+    "kind": "candidate",
+    "status": "submitted",
+    "slot": "producer/loop.cascade",
+    "createdBy": {
+      "actor": "package",
+      "package": "@clossys/producer",
+      "version": "0.1.0"
+    },
+    "createdAt": "2026-11-26T00:00:00Z",
+    "refs": [],
+    "source": {
+      "kind": "package-default",
+      "ref": []
+    },
+    "rationale": []
+  },
+  "content": {
+    "trigger": [
+      "T7"
+    ],
+    "steps": [
+      {
+        "id": "reverdict",
+        "does": "judge again, by the one certifier, every pinned candidate whose pinSet a repin changed; a failure marks its slot needs-refresh and goes to the slot's owner",
+        "decider": {
+          "by": "code"
+        },
+        "cli": "clossys check <dependants>",
+        "reads": [
+          "<slot>/slot.json",
+          "clossys/.state/checks/"
+        ],
+        "writes": [
+          "<dependant>/slot.json",
+          "clossys/.state/checks/"
+        ],
+        "checks": [
+          "cascade.clean",
+          "refs.dangling"
+        ],
+        "onFail": {
+          "raise": "queue.fix",
+          "then": "loop.choose"
+        }
+      },
+      {
+        "id": "rerender",
+        "does": "render again every pinned Designer dependant the reverdict judged (clossys render, its index.json under clossys/.state/renders/), mark each pinned Publisher page that places one stale in clossys/.state/publish/stale.json, and re-run clossys publish --install --page for each stale page; a page whose install passes leaves the stale list",
+        "decider": {
+          "by": "code"
+        },
+        "cli": "clossys render <dependants>",
+        "reads": [
+          "<dependant>/pin.json",
+          "clossys/.state/checks/"
+        ],
+        "writes": [
+          "clossys/.state/renders/",
+          "clossys/.state/publish/stale.json"
+        ],
+        "checks": [],
+        "onFail": {
+          "raise": "queue.clarify",
+          "then": "retry"
+        }
+      },
+      {
+        "id": "accept",
+        "does": "code accepts the cascade when the reverdict passed and cascade.clean holds now (every dependant's re-verdict passes): the impact step is settled and kept in a settle record; only a failure reaches the owner of the slot",
+        "decider": {
+          "by": "code"
+        },
+        "cli": "clossys settle impact <ref>",
+        "reads": [
+          "<slot>/pin.json",
+          "clossys/.state/checks/"
+        ],
+        "writes": [
+          "clossys/.state/runs/loops/*.settle/*"
+        ],
+        "checks": [],
+        "onFail": {
+          "raise": "queue.clarify",
+          "then": "retry"
+        }
+      },
+      {
+        "id": "impact",
+        "does": "DRAFT: the owner of the repinned slot reads what its repin changed and the re-verdicts of its dependants, and notes the impact in its own check scratch; it pins nothing and writes no other agent's tree",
+        "decider": {
+          "by": "agent",
+          "agent": "<owner of slot>",
+          "verb": "check",
+          "tier": "mid",
+          "skill": "packages/<agent>/actions/<agent>.cascade/skill.md"
+        },
+        "cli": "clossys slot <ref> --json",
+        "reads": [
+          "<slot>/slot.json",
+          "<slot>/pin.json",
+          "clossys/.state/checks/"
+        ],
+        "writes": [
+          "clossys/.state/checks/<agent>/<slot-id>/scratch/impact.md"
+        ],
+        "checks": [],
+        "onFail": {
+          "raise": "queue.clarify",
+          "then": "retry"
+        }
+      }
+    ],
+    "exit": "every pinned candidate whose pinSet changed is judged on the pinSet now and certifies, its Designer dependants are rendered again and every page that places one is installed again; release can run",
+    "repeat": "to a fixed point inside the step; past maxRounds a queue.clarify to the owner",
+    "maxRounds": 3
+  }
+}

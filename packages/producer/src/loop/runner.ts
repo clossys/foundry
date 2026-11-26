@@ -11,6 +11,8 @@
  *   a kind fix (clossys.queue-entry/2, with its cause) for the slot's owner (CHOOSE or CREATE), to a fixed point within
  *   `maxRounds`, then a `queue.clarify`;
  *   a legacy `consumedBy` dependant is marked `needs-refresh` when this run changed the slot's pin (flows.md F7 step 1);
+ *   `clossys render <dependants>` (loop.cascade v2, CP1-L1) renders the Designer slots that cascade judged again and
+ *   re-installs the published pages that place them (rerender.ts);
  * - an agent step hands `hooks.agent` a packet (agent, verb, tier, skill, cli); the agent answers with its exit, the
  *   files it wrote and the model that served it, or `wait`;
  * - a human step raises a queue entry for the owner and the run waits. It resumes only from the entry: open keeps
@@ -65,6 +67,7 @@ import { agentWorkRaiseIssues, closeWork, decideRequest, exactReuseOf, freshRais
 import { FIX_CHECKS } from "../queue/requester-check.js";
 import { handlerMismatch } from "../queue/routing.js";
 import { cascadeClean, runCascade } from "./cascade.js";
+import { RERENDER_CLI, rerender } from "./rerender.js";
 import { CASCADE_REVERDICT } from "../constitution/cascade.js";
 import { inputsOf, readEventLines } from "../engine/chain.js";
 import { commitEvent } from "../engine/log.js";
@@ -170,6 +173,8 @@ export interface RunState {
    * A retry back to a settled create step (a code adopt that failed its check) clears it: the agent creates.
    */
   settled?: Record<string, string>;
+  /** foundry-build-0048 CP1-L1: the `<agent>/<slot-id>` refs the reverdict step judged again, which loop.cascade v2's rerender step renders. */
+  reverdicted?: string[];
   outcome?: string;
   ledger?: string;
 }
@@ -753,8 +758,16 @@ async function advance(root: string, state: RunState, version: LoopVersion, hook
       }
     } else {
       ledgerDecider = { by: "code" };
-      const builtIn = await recordedBuiltIn(ctx, step, subject, filled);
-      if (builtIn) {
+      const builtIn = step.cli === RERENDER_CLI ? undefined : await recordedBuiltIn(ctx, step, subject, filled);
+      if (step.cli === RERENDER_CLI) {
+        // CP1-L1: render the reverdicted Designer dependants again, then re-install the published pages that place them.
+        try {
+          const outcome = await rerender(root, { reverdicted: state.reverdicted ?? [], at: iso(ctx.now()), runId: state.runId },
+            call => Promise.resolve(hooks.code({ runId: state.runId, step: step.id, cli: call.cli, argv: call.argv, ...(subject ? { ref: refOf(subject) } : {}) })));
+          exit = outcome.exit; wrote = outcome.wrote; failedWhy = outcome.why;
+        } catch (error) { exit = 1; wrote = []; failedWhy = `${step.id}: ${error instanceof Error ? error.message : String(error)}`; }
+      }
+      else if (builtIn) {
         ({ exit, wrote } = builtIn);
         findings = builtIn.findings ?? [];
         for (const entry of builtIn.raised ?? []) state.raised.push(entryName(entry));
@@ -820,13 +833,14 @@ async function codeBuiltIn(ctx: Context, step: LoopStep, subject: SlotSubject | 
     for (const entry of raised) state.raised.push(entryName(entry));
     return { exit: 0, wrote: raised.map(entry => `producer/${entry.queue}/entries/${entry.id}.json`) };
   }
-  if (step.cli.includes("<dependants>")) {
+  if (step.cli.includes("<dependants>") && step.cli !== RERENDER_CLI) {
     if (!subject) return { exit: 2, wrote: [] };
     const at = iso(ctx.now());
     const missing = subject.slot.refs.filter(ref => ref.rel === "consumedBy" && !readSubject(root, ref.to.split("/")[0] as AgentId, ref.to.split("/")[1] ?? ""));
     // loop.cascade runs because a repin upstream changed pinSets (T7); any other loop, when this run moved the pin.
     const repinned = state.loop === "loop.cascade" || pinSha(root, subject) !== state.startPin;
     const cascade = runCascade(root, at, { maxRounds: ctx.version.maxRounds, cause: subject, repinned });
+    state.reverdicted = [...new Set([...(state.reverdicted ?? []), ...cascade.reverdicted.map(row => row.slot)])];
     const raised: Raised[] = [];
     if (!cascade.converged) {
       const entry = raiseFor(ctx, subject, `${ctx.version.maxRounds} rounds of the cascade after ${refOf(subject)} did not reach a fixed point; still stale: ${cascade.stale.join(", ")}`, at, false);
