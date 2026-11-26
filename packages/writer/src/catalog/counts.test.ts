@@ -18,6 +18,8 @@
  * - foundry-build-0048 U2 derives the counts instead of restating them: each group's leaves are its frozen leaf set
  *   (<group>.leaf-freeze.json, amendments applied), every leaf is a slot or an awaiting leaf, every leaf has a mark,
  *   and the old tree splits into the kept ids plus the retired.json rows. A count changes only with the freeze.
+ * - CP1-WREC adds the declared record-label leaf sections.records.copy to Section copy / Records (copy.leaf-freeze
+ *   amendment foundry-build-0048-cp1-wrec-record-labels): one more starter Copy slot, L1 and L2 counts unchanged.
  */
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";

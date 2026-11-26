@@ -1,0 +1,48 @@
+{
+  "schema": "clossys.writer-record-labels/1",
+  "about": "Copy leaves Writer owns with no Designer unit (CP1-WREC, planner option A on CP1-G34): the labels the copy-less, data-bound admin record sections show (column heads, headings, detail labels, empty text, status names). The Copy derive places each leaf in its Writer L2 and emits it as a slot with the declared unit; the Copy check accepts exactly these leaves. Adding one is a recorded copy.leaf-freeze amendment.",
+  "leaves": [
+    {
+      "id": "sections.records.copy",
+      "placement": "copy/section-copy/records",
+      "unit": "producer/admin-records",
+      "fields": [
+        { "key": "slot", "kind": "plain", "role": "label", "required": true, "maxLength": { "en": 60 }, "dir": "auto" },
+        { "key": "kind", "kind": "plain", "role": "label", "required": true, "maxLength": { "en": 60 }, "dir": "auto" },
+        { "key": "status", "kind": "plain", "role": "label", "required": true, "maxLength": { "en": 60 }, "dir": "auto" },
+        { "key": "group", "kind": "plain", "role": "label", "required": true, "maxLength": { "en": 60 }, "dir": "auto" },
+        { "key": "name", "kind": "plain", "role": "label", "required": true, "maxLength": { "en": 60 }, "dir": "auto" },
+        { "key": "version", "kind": "plain", "role": "label", "required": true, "maxLength": { "en": 60 }, "dir": "auto" },
+        { "key": "rung", "kind": "plain", "role": "label", "required": true, "maxLength": { "en": 60 }, "dir": "auto" },
+        { "key": "source", "kind": "plain", "role": "label", "required": true, "maxLength": { "en": 60 }, "dir": "auto" },
+        { "key": "created-by", "kind": "plain", "role": "label", "required": true, "maxLength": { "en": 60 }, "dir": "auto" },
+        { "key": "specimen", "kind": "plain", "role": "label", "required": true, "maxLength": { "en": 60 }, "dir": "auto" },
+        { "key": "gallery-heading", "kind": "plain", "role": "heading", "required": true, "maxLength": { "en": 60 }, "dir": "auto" },
+        { "key": "contract", "kind": "plain", "role": "heading", "required": true, "maxLength": { "en": 60 }, "dir": "auto" },
+        { "key": "pin-heading", "kind": "plain", "role": "heading", "required": true, "maxLength": { "en": 60 }, "dir": "auto" },
+        { "key": "candidates-heading", "kind": "plain", "role": "heading", "required": true, "maxLength": { "en": 60 }, "dir": "auto" },
+        { "key": "purpose", "kind": "plain", "role": "label", "required": true, "maxLength": { "en": 60 }, "dir": "auto" },
+        { "key": "standard", "kind": "plain", "role": "label", "required": true, "maxLength": { "en": 60 }, "dir": "auto" },
+        { "key": "inputs", "kind": "plain", "role": "label", "required": true, "maxLength": { "en": 60 }, "dir": "auto" },
+        { "key": "uses", "kind": "plain", "role": "label", "required": true, "maxLength": { "en": 60 }, "dir": "auto" },
+        { "key": "rules", "kind": "plain", "role": "label", "required": true, "maxLength": { "en": 60 }, "dir": "auto" },
+        { "key": "none", "kind": "plain", "role": "label", "required": true, "maxLength": { "en": 60 }, "dir": "auto" },
+        { "key": "pin-candidate", "kind": "plain", "role": "label", "required": true, "maxLength": { "en": 60 }, "dir": "auto" },
+        { "key": "pin-decided-by", "kind": "plain", "role": "label", "required": true, "maxLength": { "en": 60 }, "dir": "auto" },
+        { "key": "pin-at", "kind": "plain", "role": "label", "required": true, "maxLength": { "en": 60 }, "dir": "auto" },
+        { "key": "pin-none", "kind": "plain", "role": "label", "required": true, "maxLength": { "en": 60 }, "dir": "auto" },
+        { "key": "pinned", "kind": "plain", "role": "label", "required": true, "maxLength": { "en": 60 }, "dir": "auto" },
+        { "key": "no-specimen", "kind": "plain", "role": "label", "required": true, "maxLength": { "en": 60 }, "dir": "auto" },
+        { "key": "gallery-empty", "kind": "plain", "role": "body", "required": true, "maxLength": { "en": 480 }, "dir": "auto" },
+        { "key": "candidates-empty", "kind": "plain", "role": "body", "required": true, "maxLength": { "en": 480 }, "dir": "auto" },
+        { "key": "status-starter", "kind": "plain", "role": "label", "required": true, "maxLength": { "en": 60 }, "dir": "auto" },
+        { "key": "status-live", "kind": "plain", "role": "label", "required": true, "maxLength": { "en": 60 }, "dir": "auto" },
+        { "key": "status-parked", "kind": "plain", "role": "label", "required": true, "maxLength": { "en": 60 }, "dir": "auto" },
+        { "key": "status-retired", "kind": "plain", "role": "label", "required": true, "maxLength": { "en": 60 }, "dir": "auto" },
+        { "key": "status-needs-refresh", "kind": "plain", "role": "label", "required": true, "maxLength": { "en": 60 }, "dir": "auto" },
+        { "key": "status-draft", "kind": "plain", "role": "label", "required": true, "maxLength": { "en": 60 }, "dir": "auto" },
+        { "key": "status-submitted", "kind": "plain", "role": "label", "required": true, "maxLength": { "en": 60 }, "dir": "auto" }
+      ]
+    }
+  ]
+}

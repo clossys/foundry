@@ -109,6 +109,14 @@
         "page.admin-questions.meta"
       ],
       "why": "owner words 2026-11-18b (spec Amendment 2026-11-18b), recorded 2026-11-18: A1 fixed admin workspace publication, A2 generic page slot, A3 admin record sections"
+    },
+    {
+      "id": "foundry-build-0048-cp1-wrec-record-labels",
+      "remove": [],
+      "add": [
+        "sections.records.copy"
+      ],
+      "why": "planner option A on the CP1-G34 BLOCKED-D5 (CP1-WREC): Writer owns the admin record labels as a declared copy leaf with no Designer unit, placed in Section copy / Records by src/derive/record-label-fields.json; the record sections stay copy-less and data-bound"
     }
   ]
 }

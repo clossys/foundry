@@ -340,6 +340,9 @@
     "sections.pricing.copy": {
       "standard": "passage"
     },
+    "sections.records.copy": {
+      "standard": "string"
+    },
     "sections.resource-list.copy": {
       "standard": "passage"
     },
