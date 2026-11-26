@@ -74,6 +74,7 @@ import { addGroup, assignGroup, dropGroup, followPositions, mergeGroups, moveSlo
 import type { CliResult } from "./main.js";
 import { discoverRoot } from "./root.js";
 import { RULES_FILE } from "./rules-file.js";
+import { AGENT_LOOPS, isLoopAgent } from "../loop/agent-loops-ia.js";
 import { closeRequest, isContentAgent, overlapRefusal, ownerOfNeed, placementContractIssues, placementOverlaps, raiseRequest, readRequest, RequestError, rerouteOpenEntries, signedApproval, targetOf, type SlotRequest } from "../records/request.js";
 
 export const IA_USAGE = "Usage: clossys ia <agent>/<slot> --contract <file> [--standard <id>] [--under <l1>/<l2>] [--kind <kind>] [--inputs <id,...>] [--uses <id,...>] [--owner-ref <ref> [--overlap-reason <text>]] [--dry] [--root <dir>]\n"
@@ -292,14 +293,15 @@ function atOf(flags: Flags): string {
   return at;
 }
 /**
- * Whether a leaf is a package leaf of the agent's installed Foundry IA (the whole catalog, not the consumed scope), for
+ * Whether a leaf is a package leaf of the agent's installed Foundry IA (the whole catalog, not the consumed scope, plus
+ * the Producer-standard loop leaves for a loop agent, as `ia sync` and R01.5 count them), for
  * a package-sourced IA. Undefined (every placed leaf guarded) for any other IA, or when the package IA does not read:
  * an absent source refuses, it never lets a flip through (DECIDED D3).
  */
 function packageLeafTest(agent: ModelAgent, ia: IaFile): ((slot: string) => boolean) | undefined {
   if (typeof ia.source !== "string" || !ia.source.startsWith(`@clossys/${agent}#`) || !Object.hasOwn(FOUNDRY_IA, agent)) return undefined;
   let leaves: ReadonlySet<string>;
-  try { leaves = new Set(FOUNDRY_IA[agent as keyof typeof FOUNDRY_IA]().slots.keys()); } catch { return undefined; }
+  try { leaves = new Set([...FOUNDRY_IA[agent as keyof typeof FOUNDRY_IA]().slots.keys(), ...(isLoopAgent(agent) ? AGENT_LOOPS : [])]); } catch { return undefined; }
   return slot => leaves.has(slot);
 }
 /** An edit, planned (slot.json positions follow, the owner ref recorded) and committed, or printed under --dry. */

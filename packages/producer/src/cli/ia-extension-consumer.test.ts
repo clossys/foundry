@@ -7,7 +7,8 @@ import { mkdirSync, mkdtempSync, readdirSync, readFileSync, realpathSync, rmSync
 import { tmpdir } from "node:os";
 import { join, relative } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { jsonBytes, slotPositions, writerIa, type IaDoc } from "../records/slot-model/index.js";
+import { directorIa, jsonBytes, slotPositions, writerIa, type IaDoc } from "../records/slot-model/index.js";
+import { isAgentLoop, withAgentLoopsIa } from "../loop/agent-loops-ia.js";
 import { applySlotsMigration, planSlotsMigration } from "../migrate/slots.js";
 import { buildContext, installedFoundryLeaves } from "../constitution/context.js";
 import { foundryPlaced } from "../constitution/checks/R01-catalog.js";
@@ -51,15 +52,22 @@ beforeEach(() => {
   const meta = pkg.nodes.find(node => node.id === META_L1)!;
   const group = meta.children[0]!;
   packageMeta = group.slots[0]!;
-  const doc: IaDoc = {
+  // Both IAs also place their agent's Producer loop leaves, as `clossys loop` does (their loop records are not needed here).
+  const doc = withAgentLoopsIa("writer", {
     schema: pkg.schema, source: pkg.source, extensions: [],
     nodes: [{ id: META_L1, label: meta.label, children: [{ id: group.id, label: group.label, slots: [packageMeta] }, { id: "agents", label: "agents", slots: [CONSUMER_META] }] }],
-  };
-  mkdirSync(writerDir(), { recursive: true });
-  writeFileSync(join(writerDir(), "ia.json"), jsonBytes(doc));
-  for (const [id, position] of slotPositions("writer", doc)) {
-    mkdirSync(join(writerDir(), id), { recursive: true });
-    writeFileSync(join(writerDir(), id, "slot.json"), jsonBytes({ schema: "clossys.slot/1", id, agent: "writer", ia: position, kind: "strings", standard: "string", contract: {}, inputs: [], uses: [] }));
+  });
+  const director = directorIa().ia;
+  const docs = { writer: doc, director: withAgentLoopsIa("director", { schema: director.schema, source: director.source, extensions: [], nodes: [], layers: [], axes: { ...director.axes, L0: { ...director.axes!.L0, values: [] }, L1: {} } }) };
+  for (const [agent, each] of Object.entries(docs) as [keyof typeof docs, IaDoc][]) {
+    const dir = join(consumer, "agents", agent);
+    mkdirSync(dir, { recursive: true });
+    writeFileSync(join(dir, "ia.json"), jsonBytes(each));
+    for (const [id, position] of slotPositions(agent, each)) {
+      if (isAgentLoop(id)) continue;
+      mkdirSync(join(dir, id), { recursive: true });
+      writeFileSync(join(dir, id, "slot.json"), jsonBytes({ schema: "clossys.slot/1", id, agent, ia: position, kind: "strings", standard: "string", contract: {}, inputs: [], uses: [] }));
+    }
   }
   const plan = planSlotsMigration(workspace, { at: AT, version: "0.0.0-test" });
   expect(plan.findings).toEqual([]);
@@ -78,6 +86,14 @@ describe("a consumer-placed Writer meta leaf in an adopted IA", () => {
   it("(d) a package leaf with --extension is still refused, and nothing is written", async () => {
     const before = tree();
     expect(await ia(`writer/${packageMeta}`, "--extension", "true")).toMatchObject({ exitCode: 1, message: expect.stringMatching(new RegExp(`extension flag of ${packageMeta.replace(/\./g, "\\.")}.*package IA`)) });
+    expect(tree()).toEqual(before);
+  });
+
+  it("(d') a Producer loop leaf (Director, Writer) with --extension is refused as a package leaf, and nothing is written", async () => {
+    const before = tree();
+    for (const target of ["director/loop.scope", "writer/loop.cascade"]) {
+      expect(await ia(target, "--extension", "true")).toMatchObject({ exitCode: 1, message: expect.stringMatching(/extension flag of loop\.(scope|cascade).*package IA/) });
+    }
     expect(tree()).toEqual(before);
   });
 
