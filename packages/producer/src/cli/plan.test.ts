@@ -60,8 +60,10 @@ async function world(options: { publisher?: boolean; scope?: string; requirement
   if (options.publisher === false) expect((await runCli(["ia", "publisher", "--start", "--root", root], root)).exitCode).toBe(0);
   const dir = join(consumer, "agents/director", RELEASE_SLOT);
   const slot = JSON.parse(readFileSync(join(dir, "slot.json"), "utf8")) as { contract: Record<string, unknown> };
-  if (options.requirement !== false) {
-    const contract = { ...slot.contract, requirements: [...(slot.contract.requirements as unknown[]), SCOPE_CHECK] };
+  {
+    // The fixture release carries the package contract, requirement included; `requirement: false` takes it out.
+    const kept = (slot.contract.requirements as { check?: string }[]).filter(requirement => requirement.check !== SCOPE_CHECK.check);
+    const contract = { ...slot.contract, requirements: options.requirement === false ? kept : [...kept, SCOPE_CHECK] };
     const file = join(root, "release-contract.json");
     writeFileSync(file, `${JSON.stringify(contract, null, 2)}\n`);
     // The inputs the Director's release contract names (contracts.json), so the release's citations clear its requester check.
