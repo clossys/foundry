@@ -7,13 +7,13 @@ import { loadSectionRegistry, loadBuildCatalog, loadCatalog, type SectionContrac
 const nodes = (rows: readonly PlacementNode[]): PlacementNode[] => rows.flatMap(node => "children" in node ? [node, ...nodes(node.children)] : [node]);
 
 describe("combined five-layer build IA", () => {
-  it("exposes all 252 owner-signed draft build slots alongside the 91 runtime leaves", () => {
-    // The owner-signed IA as loaded (ia-placement.test.ts OWNER_SIGNED_LEAVES = 252); the runtime leaves are its 42
+  it("exposes all 253 owner-signed draft build slots alongside the 91 runtime leaves", () => {
+    // The owner-signed IA as loaded (ia-placement.test.ts OWNER_SIGNED_LEAVES = 253, frames.video joining by CP1-VIDEO1 amendment); the runtime leaves are its 42
     // themes and 49 assets leaves, after the 2026-11-16 IA audit dedupe (foundry-build-0032).
     const build = loadBuildCatalog();
     expect(build.registryStatus).toBe("build-unfrozen");
-    expect(build.slots.filter(slot => !["assets.icon-panel-left", ...["command", "dropdown-menu", "empty", "item", "scroll-area", "sheet", "sidebar"].map(leaf => `components.${leaf}`)].includes(slot.id))).toHaveLength(244);
-    expect(Object.fromEntries(["themes", "assets", "components", "sections", "frames"].map(layer => [layer, build.slots.filter(slot => slot.layer === layer).length]))).toEqual({ themes: 42, assets: 49, components: 78, sections: 71, frames: 12 });
+    expect(build.slots.filter(slot => !["assets.icon-panel-left", ...["command", "dropdown-menu", "empty", "item", "scroll-area", "sheet", "sidebar"].map(leaf => `components.${leaf}`)].includes(slot.id))).toHaveLength(245);
+    expect(Object.fromEntries(["themes", "assets", "components", "sections", "frames"].map(layer => [layer, build.slots.filter(slot => slot.layer === layer).length]))).toEqual({ themes: 42, assets: 49, components: 78, sections: 71, frames: 13 });
     expect(build.slots.filter(slot => slot.layer === "sections")).toEqual(loadSectionRegistry().slots);
     expect(build.placements.find(placement => placement.layer === "sections")).toEqual(loadSectionRegistry().placement);
     expect(build.slots.filter(slot => slot.layer === "frames")).toEqual(frameSlots);

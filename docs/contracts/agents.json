@@ -1,0 +1,29 @@
+{
+  "$schema": "./agents.schema.json",
+  "$comment": "The one definition of every agent, owned by Controller: one row per package under packages/. Every other declaration of an agent is generated from this file or checked against it by npm run check:agents-definition.",
+  "schemaVersion": 1,
+  "agents": [
+    { "id": "advisor", "package": "@clossys/advisor", "class": "other", "definitionOwner": "controller", "rung": null },
+    { "id": "architect", "package": "@clossys/architect", "class": "other", "definitionOwner": "controller", "rung": null },
+    { "id": "bouncer", "package": "@clossys/bouncer", "class": "other", "definitionOwner": "controller", "rung": null },
+    { "id": "builder", "package": "@clossys/builder", "class": "other", "definitionOwner": "controller", "rung": null },
+    { "id": "butler", "package": "@clossys/butler", "class": "other", "definitionOwner": "controller", "rung": null },
+    { "id": "controller", "package": "@clossys/controller", "class": "other", "definitionOwner": "controller", "rung": null },
+    { "id": "customer", "package": "@clossys/customer", "class": "other", "definitionOwner": "controller", "rung": null },
+    { "id": "designer", "package": "@clossys/designer", "class": "content", "definitionOwner": "controller", "rung": null },
+    { "id": "director", "package": "@clossys/director", "class": "content", "definitionOwner": "controller", "rung": null },
+    { "id": "giver", "package": "@clossys/giver", "class": "other", "definitionOwner": "controller", "rung": null },
+    { "id": "influencer", "package": "@clossys/influencer", "class": "other", "definitionOwner": "controller", "rung": null },
+    { "id": "inspector", "package": "@clossys/inspector", "class": "other", "definitionOwner": "controller", "rung": null },
+    { "id": "integrator", "package": "@clossys/integrator", "class": "other", "definitionOwner": "controller", "rung": null },
+    { "id": "keeper", "package": "@clossys/keeper", "class": "other", "definitionOwner": "controller", "rung": null },
+    { "id": "launcher", "package": "@clossys/launcher", "class": "tooling", "definitionOwner": "controller", "rung": null },
+    { "id": "locksmith", "package": "@clossys/locksmith", "class": "other", "definitionOwner": "controller", "rung": null },
+    { "id": "messenger", "package": "@clossys/messenger", "class": "other", "definitionOwner": "controller", "rung": null },
+    { "id": "observer", "package": "@clossys/observer", "class": "other", "definitionOwner": "controller", "rung": null },
+    { "id": "producer", "package": "@clossys/producer", "class": "tooling", "definitionOwner": "controller", "rung": null },
+    { "id": "publisher", "package": "@clossys/publisher", "class": "content", "definitionOwner": "controller", "rung": null },
+    { "id": "starter", "package": "@clossys/starter", "class": "tooling", "definitionOwner": "controller", "rung": null },
+    { "id": "writer", "package": "@clossys/writer", "class": "content", "definitionOwner": "controller", "rung": null }
+  ]
+}

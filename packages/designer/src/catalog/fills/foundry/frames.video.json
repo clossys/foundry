@@ -1,0 +1,138 @@
+{
+  "$extensions": {
+    "com.clossys.fill": {
+      "author": "foundry",
+      "builtOn": [],
+      "conforms": [],
+      "evidence": [],
+      "id": "foundry/frames.video",
+      "license": "MIT",
+      "mode": "implementation",
+      "pin": {
+        "export": "./frames#VideoFrame",
+        "package": "@clossys/designer",
+        "version": "0.12.0"
+      },
+      "relation": "same-contract",
+      "slot": "frames.video",
+      "source": "foundry",
+      "sourceAddress": "./frames#VideoFrame",
+      "status": "draft",
+      "trust": "foundry"
+    }
+  },
+  "frames": {
+    "video": {
+      "composes": [
+        "components.button",
+        "components.semantic-content",
+        "components.slider"
+      ],
+      "consumption": {
+        "scanStatus": "lower-bound",
+        "scannedComposes": [
+          "components.button",
+          "components.semantic-content",
+          "components.slider"
+        ],
+        "scannedReads": {
+          "assets": [],
+          "components": [
+            "components.button",
+            "components.semantic-content",
+            "components.slider"
+          ],
+          "themes": [
+            "themes.background",
+            "themes.border",
+            "themes.card",
+            "themes.foreground",
+            "themes.muted-foreground",
+            "themes.ring",
+            "themes.sidebar"
+          ]
+        },
+        "sourceFiles": [
+          {
+            "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
+            "sha256": "d7e9c7483ea34e420632b86cca6d50a5eded29e05b41f77a74cc1140e2f68b4f"
+          },
+          {
+            "path": "packages/designer/src/components/ground-paint.ts",
+            "sha256": "fa0ccf04c141467fffaf0ef138ca32ba86bf908f02b92161ad34237c3f62b0f7"
+          },
+          {
+            "path": "packages/designer/src/components/internal/cx.ts",
+            "sha256": "db61016cece2d645fa7cbac16b5afceeacc64a84ac0b1b6fd7f7b8eeda41e9d0"
+          },
+          {
+            "path": "packages/designer/src/frames/VideoFrame.tsx",
+            "sha256": "099bb2cb4208bbf7646c1e981574e3347012e03314d149f1cd36d2d1dfcf97e8"
+          },
+          {
+            "path": "packages/designer/src/runtime/component-leaf.client.tsx",
+            "sha256": "81a9248ffae8d585644cd93a6a37eea3ed67076bd95cb305a14bc41f66438033"
+          },
+          {
+            "path": "packages/designer/src/runtime/component-leaf.tsx",
+            "sha256": "30253772b01aac86950d52035d3ecf21a16b3d7ab581e2ca565ca810a658d9da"
+          }
+        ],
+        "unresolved": [
+          {
+            "code": "DF2",
+            "evidence": "unresolved injected runtime inventory ../../tokens/tokens.js#TOKENS",
+            "file": "packages/designer/src/components/internal/cx.ts",
+            "line": 2
+          },
+          {
+            "code": "DF2",
+            "evidence": "unresolved dynamic import; runtime source is not inferred",
+            "file": "packages/designer/src/components/internal/cx.ts",
+            "line": 80
+          },
+          {
+            "code": "DF2",
+            "evidence": "unresolved dynamic import; runtime source is not inferred",
+            "file": "packages/designer/src/runtime/component-leaf.tsx",
+            "line": 4
+          }
+        ]
+      },
+      "impl": {
+        "export": "VideoFrame",
+        "kind": "package",
+        "module": "@clossys/designer/frames"
+      },
+      "members": [
+        "aspect.16-9",
+        "start.paused"
+      ],
+      "propMap": {
+        "aspect.16-9": "stage=aspect-video (fixed)",
+        "start.paused": "initial playing=false (fixed)"
+      },
+      "reads": {
+        "assets": [],
+        "themes": [
+          "themes.background",
+          "themes.border",
+          "themes.card",
+          "themes.foreground",
+          "themes.muted-foreground",
+          "themes.ring",
+          "themes.sidebar"
+        ]
+      },
+      "slot": "frames.video",
+      "slots": {
+        "controls": "labels",
+        "stage": "scenes"
+      },
+      "statePorts": {
+        "playing": "playing/onPlayingChange",
+        "scene": "scene/onSceneChange"
+      }
+    }
+  }
+}

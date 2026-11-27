@@ -86,6 +86,7 @@
     "frames.inspector": { "purpose": "Inspector panel beside the main region for detail content, docked, collapsed or as an overlay." },
     "frames.sheet": { "purpose": "Sheet dialog that slides in from the start, end or bottom, with a heading, body and footer." },
     "frames.command": { "purpose": "Command palette dialog: search field, grouped commands and an empty state, with an optional keyboard shortcut." },
-    "frames.deck": { "purpose": "Deck frame: one 16:9 slide canvas whose single main region holds one section rendered on the slide medium (variant medium.slide)." }
+    "frames.deck": { "purpose": "Deck frame: one 16:9 slide canvas whose single main region holds one section rendered on the slide medium (variant medium.slide)." },
+    "frames.video": { "purpose": "Video frame: one 16:9 stage (main region) that shows one scene at a time, each scene a section, over a named controls region built from the stock button and slider (play/pause, a scene scrubber and the scene count); it starts paused, so nothing moves until the viewer presses play (reduced motion).", "references": ["shadcn-aria/slider", "shadcn-aria/button"] }
   }
 }

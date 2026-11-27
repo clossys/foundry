@@ -20,7 +20,8 @@ interface FrameSlot {
 }
 const slots = slotData as unknown as readonly FrameSlot[];
 const placement = placementData as unknown as Placement;
-const expected = ["document", "site-shell", "app-shell", "auth-shell", "site-header", "app-header", "app-sidebar", "inspector", "site-footer", "sheet", "command", "deck"];
+const expected = ["document", "site-shell", "app-shell", "auth-shell", "site-header", "app-header", "app-sidebar", "inspector", "site-footer", "sheet", "command", "deck", "video"];
+// CP1-VIDEO1 (owner 2026-11-26, "Ok include video"): frames.video registers as the thirteenth frame, in Shells.
 // foundry-build-0032 (audit P3, owner 2026-11-16): frames.deck registers as the twelfth frame, in its own Deck family.
 const byId = (id: string): FrameContract => {
   const found = slots.find(slot => slot.id === `frames.${id}`);
@@ -80,7 +81,7 @@ describe("draft frame registry", () => {
     expect(byId("app-header").members.names).toEqual(["surface.glass", "fallback.opaque", "position.sticky", "position.static"]);
   });
 
-  it("contains exactly the twelve independent, unfrozen leaves", () => {
+  it("contains exactly the thirteen independent, unfrozen leaves", () => {
     expect(slots.map(slot => slot.id)).toEqual(expected.map(id => `frames.${id}`));
     for (const slot of slots) {
       expect(SLOT_ID.test(slot.id)).toBe(true);
@@ -103,7 +104,7 @@ describe("draft frame registry", () => {
   });
 
   it("preserves the original nine frame rows exactly and registers the standalone auth shell", () => {
-    const original = slots.filter(slot => slot.id !== "frames.auth-shell" && slot.id !== "frames.document" && slot.id !== "frames.deck");
+    const original = slots.filter(slot => slot.id !== "frames.auth-shell" && slot.id !== "frames.document" && slot.id !== "frames.deck" && slot.id !== "frames.video");
     expect(original).toHaveLength(9);
     // SCROLL-1 A158/A159: exact app-shell page-module/state/progress ports and app-header actions changed; unrelated rows remain pinned.
     // foundry-build-0018 (audits 0021, 0022): site-shell consent accepts sections.consent in a named region; app-sidebar tree is components.sidebar.
@@ -189,7 +190,7 @@ describe("draft frame registry", () => {
   });
 
   it("records roots, server boundaries and ordered shell landmarks", () => {
-    expect(slots.map(slot => slot.contract.root)).toEqual(["html", "div", "div", "div", "header", "header", "nav", "aside", "footer", "dialog", "dialog", "main"]);
+    expect(slots.map(slot => slot.contract.root)).toEqual(["html", "div", "div", "div", "header", "header", "nav", "aside", "footer", "dialog", "dialog", "main", "div"]);
     expect(slots.filter(slot => slot.contract.rendering === "server").map(slot => slot.id)).toEqual(["frames.document", "frames.site-shell", "frames.auth-shell", "frames.site-header", "frames.site-footer", "frames.deck"]);
     expect(byId("site-shell").landmarks.map(item => item.role)).toEqual(["region", "banner", "main", "contentinfo", "region"]);
     expect(byId("site-shell").landmarks[0]).toEqual({ slot: "consent", role: "region", topLevel: true, nameRequired: true });

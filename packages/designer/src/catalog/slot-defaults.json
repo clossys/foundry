@@ -424,6 +424,9 @@
     "frames.site-shell": {
       "standard": "frame"
     },
+    "frames.video": {
+      "standard": "frame"
+    },
     "sections.access-matrix": {
       "standard": "section.app"
     },
