@@ -5,7 +5,9 @@ import { join, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { runCli } from "./main.js";
-import type { SlotRequest } from "../records/request.js";
+import { ASSERTIONS } from "../conform/assertions.js";
+import { readConformModel } from "../conform/model.js";
+import { currentProposed, type SlotRequest } from "../records/request.js";
 import { contentPlan, currentProposal, PLAN_USAGE, PlanError, planDetail, RELEASE_REF, RELEASE_SLOT } from "./plan.js";
 import { starterPlan } from "./starter-plan.js";
 
@@ -13,6 +15,7 @@ import { starterPlan } from "./starter-plan.js";
 vi.setConfig({ testTimeout: 120_000 });
 
 const FIXTURE = fileURLToPath(new URL("../../test-fixtures/consumer/", import.meta.url));
+const REPO = fileURLToPath(new URL("../../../../", import.meta.url));
 const AT = "2026-11-26T10:00:00Z";
 const roots: string[] = [];
 afterEach(() => { for (const root of roots.splice(0)) rmSync(root, { recursive: true, force: true }); });
@@ -61,7 +64,8 @@ async function world(options: { publisher?: boolean; scope?: string; requirement
     const contract = { ...slot.contract, requirements: [...(slot.contract.requirements as unknown[]), SCOPE_CHECK] };
     const file = join(root, "release-contract.json");
     writeFileSync(file, `${JSON.stringify(contract, null, 2)}\n`);
-    const placed = await runCli(["ia", RELEASE_REF, "--contract", file, "--standard", "brief.list", "--root", root], root);
+    // The inputs the Director's release contract names (contracts.json), so the release's citations clear its requester check.
+    const placed = await runCli(["ia", RELEASE_REF, "--contract", file, "--standard", "brief.list", "--inputs", "focus.lifecycle.acquisition,context.customer.need,focus.reach.channel", "--root", root], root);
     expect(placed.exitCode, placed.message).toBe(0);
     rmSync(file);
   }
@@ -158,6 +162,53 @@ describe("clossys plan (CP1-PLAN)", () => {
     // Nothing is placed: the Publisher's slots are byte for byte what they were.
     expect(Object.keys(after).filter(path => path.startsWith("clossys/agents/publisher/") && after[path] !== before[path])).toEqual([]);
     expect(consumer).toBe(join(root, "clossys"));
+  });
+
+  it("the plan request offers an approve answer routed to publisher", async () => {
+    const { root, consumer } = await world({ publisher: false });
+    const filed = await runCli(["plan", "--at", AT, "--root", root], root);
+    expect(filed.exitCode, filed.message).toBe(0);
+    const id = (filed.output as { request: string }).request;
+    const entryOf = () => JSON.parse(readFileSync(join(consumer, "agents/producer/queue.change/entries", `${id}.json`), "utf8")) as SlotRequest;
+    // The owner approves or declines the proposal; nothing hands it to the Director.
+    expect(entryOf().options!.map(option => [option.id, option.then.verb])).toEqual([["approve", "approve"], ["decline", "close"]]);
+    // Every proposed step is a Publisher ia line; a new slot's contract rides as data.
+    const steps = currentProposed(entryOf())!.steps;
+    expect(steps.map(step => step.args.slice(0, 2).join(" "))).toEqual(["ia publisher/page.home", "ia publisher/page.pricing", "ia publisher/page.contact", "ia publisher/publication.site"]);
+    for (const step of steps) expect(step.contract, step.args[1]).toBeDefined();
+    expect(existsSync(join(consumer, "agents/publisher/page.home"))).toBe(false);
+    const approved = await runCli(["request", id, "--answer", "approve", "--via", "cli", "--quote", "approve the launch content map", "--at", "2026-11-26T10:30:00Z", "--root", root], root);
+    expect(approved.exitCode, approved.message).toBe(0);
+    expect(entryOf()).toMatchObject({ status: "closed", outcome: "changed" });
+    // The lines placed the Publisher's slots, each reading the release, and M1 passes on them.
+    for (const step of steps) {
+      const doc = JSON.parse(readFileSync(join(consumer, "agents", step.args[1]!, "slot.json"), "utf8")) as { refs: { to: string; rel: string }[] };
+      expect(doc.refs, step.args[1]).toContainEqual({ to: RELEASE_REF, rel: "input" });
+    }
+    const model = readConformModel(REPO, consumer);
+    const publisher = model.agents.find(agent => agent.agent === "publisher")!;
+    expect(publisher.live.filter(slot => slot.source === "placed").map(slot => slot.id).sort()).toEqual(["page.contact", "page.home", "page.pricing", "publication.site"]);
+    expect(ASSERTIONS.M1!(publisher, model, {} as never).rows).toEqual([]);
+  });
+
+  it("approve refuses when the plan changed since it was filed", async () => {
+    const { root, consumer } = await world({ publisher: false });
+    const id = ((await runCli(["plan", "--at", AT, "--root", root], root)).output as { request: string }).request;
+    const file = join(consumer, "agents/producer/queue.change/entries", `${id}.json`);
+    const held = readFileSync(file, "utf8");
+    // The release is re-pinned after the plan was filed: the stored lines are no longer what the plan derives.
+    pinRelease(consumer, "release-v2.md", "site (home, contact): launch site that shows founders the claim export");
+    const refused = await runCli(["request", id, "--answer", "approve", "--via", "cli", "--quote", "approve it", "--at", "2026-11-26T10:30:00Z", "--root", root], root);
+    expect(refused.exitCode).toBe(1);
+    expect(refused.message).toMatch(new RegExp(`request ${id}'s proposal changed since it was filed: clossys plan --dry now proposes 3 steps that differ from the 4 it holds; nothing was written\\. Next: clossys plan \\(it refreshes request ${id}\\), then clossys request ${id} --answer approve`));
+    expect(readFileSync(file, "utf8")).toBe(held);
+    expect(existsSync(join(consumer, "agents/publisher/page.home"))).toBe(false);
+    // The refresh it names, then approve, places the new plan.
+    expect((await runCli(["plan", "--at", "2026-11-26T10:31:00Z", "--root", root], root)).message).toMatch(new RegExp(`^plan: updated ${id} `));
+    const approved = await runCli(["request", id, "--answer", "approve", "--via", "cli", "--quote", "approve it", "--at", "2026-11-26T10:32:00Z", "--root", root], root);
+    expect(approved.exitCode, approved.message).toBe(0);
+    expect(existsSync(join(consumer, "agents/publisher/page.contact/slot.json"))).toBe(true);
+    expect(existsSync(join(consumer, "agents/publisher/page.pricing"))).toBe(false);
   });
 
   it("re-plan after a re-pin refreshes the open request's proposal", async () => {

@@ -605,9 +605,17 @@ export interface EntryRoute {
 /**
  * The predetermined next step of an owner option, as data (foundry-build-0048 U7 r4): a Producer verb and its args.
  * `pin <agent>/<slot> <candidate>` pins through the pin gate, then closes changed; `close <outcome>` closes through the
- * closure rule; `handoff <agent>` re-routes to that agent's declared handler; `reject` sends an agent's claim back, open.
+ * closure rule; `handoff <agent>` re-routes to that agent's declared handler; `reject` sends an agent's claim back, open;
+ * `approve` (no args) runs the entry's proposed steps (ProposedSteps, its latest raised event's), then closes changed.
  */
-export interface OptionStep { readonly verb: "pin" | "close" | "handoff" | "reject"; readonly args: readonly string[] }
+export interface OptionStep { readonly verb: "pin" | "close" | "handoff" | "reject" | "approve"; readonly args: readonly string[] }
+/**
+ * One step an owner request proposes (CP1-PLAN): a clossys verb's argv (no --root), and, when the verb places a slot, its
+ * contract as data (the approve answer writes it to a file and passes `--contract <file>`).
+ */
+export interface ProposedStep { readonly args: readonly string[]; readonly contract?: Readonly<Record<string, unknown>> }
+/** The steps a raised event proposes. The verb that filed the entry (its createdBy.cli), run --dry, re-derives them. */
+export interface ProposedSteps { readonly steps: readonly ProposedStep[] }
 /** One closed choice of the owner on a queue entry: the owner answers its id only. */
 export interface OwnerOption { readonly id: string; readonly label: string; readonly then: OptionStep }
 export interface RequestEvent {
@@ -618,6 +626,8 @@ export interface RequestEvent {
   readonly via?: "cli" | "chat" | "app"; readonly quote?: string;
   /** A verified event: the digest of the inputs the requester check judged (records/request.ts inputsSha256). */
   readonly inputsSha256?: string;
+  /** A raised event: the steps it proposes; the latest raised event's are the entry's current proposal. */
+  readonly proposed?: ProposedSteps;
 }
 export interface Overlap { readonly slot: string; readonly why: string }
 export interface Proposal {

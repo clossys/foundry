@@ -265,6 +265,40 @@
           "inputsSha256": {
             "description": "A verified event's digest of the inputs the requester check judged (foundry-build-0048 U7 r3, records/request.ts inputsSha256): sha256 over the sorted paths of slot.json and pin.json of each judged slot, each path NUL bytes. Conform Q7 re-runs the checks while it is unchanged.",
             "$ref": "#/$defs/sha256"
+          },
+          "proposed": {
+            "description": "A raised event: the steps the entry proposes (CP1-PLAN), each a clossys verb's argv and the contract it places as data. The latest raised event's are current; the owner's approve answer runs them after the verb that filed the entry, run --dry, re-derives the same steps.",
+            "type": "object",
+            "required": [
+              "steps"
+            ],
+            "properties": {
+              "steps": {
+                "type": "array",
+                "minItems": 1,
+                "items": {
+                  "type": "object",
+                  "required": [
+                    "args"
+                  ],
+                  "properties": {
+                    "args": {
+                      "type": "array",
+                      "minItems": 1,
+                      "items": {
+                        "type": "string",
+                        "minLength": 1
+                      }
+                    },
+                    "contract": {
+                      "type": "object"
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              }
+            },
+            "additionalProperties": false
           }
         },
         "additionalProperties": false
@@ -380,7 +414,8 @@
                   "pin",
                   "close",
                   "handoff",
-                  "reject"
+                  "reject",
+                  "approve"
                 ]
               },
               "args": {

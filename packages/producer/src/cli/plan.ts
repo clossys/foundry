@@ -15,7 +15,7 @@ import { join, resolve } from "node:path";
 import { parseReleaseScope, releaseScopeParams, type ReleaseScope } from "../constitution/criteria/director/st-d/release.js";
 import { candidateDocument, readPinned } from "../records/pinned.js";
 import { producerVersion } from "../loop/route.js";
-import { appendRaise, raiseWork, RequestError, type SlotRequest } from "../records/request.js";
+import { appendRaise, currentProposed, raiseWork, RequestError, type ProposedSteps, type SlotRequest } from "../records/request.js";
 import { iaPath } from "../records/slot-model/layout.js";
 import { listSlots, modelExists, readSlot } from "../records/slots.js";
 import { SLOT_AGENTS } from "../records/slot-model/types.js";
@@ -35,9 +35,9 @@ export const PLAN_USAGE = "Usage: clossys plan [--dry] [--at <iso>] [--root <dir
   + "  release (--inputs execution.roadmap.release). Placements come only from the starters init seats\n"
   + `  (${SEATABLE_STARTERS.join(", ")}) and their page archetypes; a row they cannot serve is reported, never invented, and a\n`
   + "  kind no row names gets nothing.\n"
-  + "  The proposal is filed as one owner request on the release (clossys request --list shows it); nothing else is\n"
-  + "  written. The owner approves it, then the Publisher runs its ia lines (writing each listed contract to the file\n"
-  + "  its line names first). --dry prints the proposal and files nothing. A re-plan while that request is open\n"
+  + "  The proposal is filed as one owner request on the release (clossys request --list shows it), its ia lines and\n"
+  + "  contracts as data; nothing else is written. The owner's approve answer re-runs clossys plan --dry, refuses if the\n"
+  + "  plan changed, then runs the lines in order. --dry prints the proposal and files nothing. A re-plan while that request is open\n"
   + "  refreshes its proposal (one more raised event, the latest is current) and says filed, updated or unchanged.\n"
   + "  Loop order: Director release, then clossys plan, then the owner approves, then clossys ia.\n"
   + "  Refuses (exit 1) when the release is not pinned, its pin does not clear, or its slot contract states no\n"
@@ -55,6 +55,8 @@ export interface PlanPlacement {
   readonly inputs: readonly string[];
   readonly uses: readonly string[];
   readonly command: string;
+  /** The line as the step the owner's approve runs (argv, no --contract: the contract rides as data). */
+  readonly args: readonly string[];
   readonly contract?: Readonly<Record<string, unknown>>;
 }
 /** A Scope row, or a page of one, the menu cannot serve. */
@@ -100,14 +102,13 @@ export function contentPlan(root: string): ContentPlan {
       const inputs = doc.inputs.map(bare);
       if (inputs.includes(RELEASE_SLOT)) return;
       const next = [...inputs, RELEASE_SLOT], uses = doc.uses.map(bare);
-      placements.push({ slot, kind, row, placed, inputs: next, uses, command: `clossys ia publisher/${slot} --standard ${doc.standard ?? kind} --inputs ${next.join(",")}${uses.length ? ` --uses ${uses.join(",")}` : ""}` });
+      const args = ["ia", `publisher/${slot}`, "--standard", doc.standard ?? kind, "--inputs", next.join(","), ...(uses.length ? ["--uses", uses.join(",")] : [])];
+      placements.push({ slot, kind, row, placed, inputs: next, uses, args, command: `clossys ${args.join(" ")}` });
       return;
     }
     const inputs = [RELEASE_SLOT, ...refs];
-    placements.push({
-      slot, kind, row, placed, inputs, uses: refs, contract: starterContract(plan, slot),
-      command: `clossys ia publisher/${slot} --contract ${contractFile(slot)} --standard ${kind} --under ${starterUnder(plan, slot)} --kind ${kind} --inputs ${inputs.join(",")}${refs.length ? ` --uses ${refs.join(",")}` : ""}`,
-    });
+    const args = ["ia", `publisher/${slot}`, "--standard", kind, "--under", starterUnder(plan, slot), "--kind", kind, "--inputs", inputs.join(","), ...(refs.length ? ["--uses", refs.join(",")] : [])];
+    placements.push({ slot, kind, row, placed, inputs, uses: refs, args, contract: starterContract(plan, slot), command: `clossys ${args.slice(0, 2).join(" ")} --contract ${contractFile(slot)} ${args.slice(2).join(" ")}` });
   };
   for (const row of scope.rows) {
     if (!SEATABLE_STARTERS.includes(row.kind)) { unserved.push({ row: row.text, reason: `no seatable ${row.kind} starter: the menu seats ${SEATABLE_STARTERS.join(", ")}` }); continue; }
@@ -135,10 +136,14 @@ export function contentPlan(root: string): ContentPlan {
 }
 
 /** The proposal as the request's detail: the rows, every ia line with its contract, and every unserved row. */
+/** The plan as the steps its owner request proposes: each ia line, with its contract as data. */
+export const planSteps = (plan: ContentPlan): ProposedSteps | undefined =>
+  plan.placements.length ? { steps: plan.placements.map(item => ({ args: [...item.args], ...(item.contract ? { contract: item.contract } : {}) })) } : undefined;
+
 export function planDetail(plan: ContentPlan): string {
   const lines = [
     `Content plan from ${RELEASE_REF} (${plan.release}), stage ${plan.stage}: ${plan.rows.length} row${plan.rows.length === 1 ? "" : "s"}, ${plan.placements.length} ia line${plan.placements.length === 1 ? "" : "s"}, ${plan.unserved.length} unserved.`,
-    "Approve, then run each line in order; a <dir>/<slot>.json names a file to write with the contract shown under the line.",
+    "Approving runs each line in order (clossys request <id> --answer approve); a <dir>/<slot>.json is the contract shown under its line, written for you.",
     ...plan.placements.flatMap(item => [`- ${item.command}`, ...(item.contract ? [`  contract ${item.slot}: ${JSON.stringify(item.contract)}`] : [])]),
     ...plan.unserved.map(item => `- unserved: ${item.page ? `page ${item.page} of ` : ""}"${item.row}": ${item.reason}`),
     `Not in scope: ${plan.notInScope.join(", ")}.`,
@@ -173,7 +178,7 @@ export async function runPlanCli(argv: readonly string[], cwd: string): Promise<
     if (error instanceof PlanError) return { exitCode: 1, root, output: { error: "PlanError" }, message: `plan refused: ${error.message}` };
     throw error;
   }
-  const detail = planDetail(plan);
+  const detail = planDetail(plan), proposed = planSteps(plan);
   const placed = plan.placements.length;
   const why = `Approve the content map the ${plan.stage} release asks for: ${placed} Publisher ia line${placed === 1 ? "" : "s"}${plan.unserved.length ? `, ${plan.unserved.length} row or page the menu cannot serve` : ""}.`;
   const dry = flags.bare.has("--dry");
@@ -183,18 +188,18 @@ export async function runPlanCli(argv: readonly string[], cwd: string): Promise<
   try {
     const raised = raiseWork(consumer, {
       kind: "change", target: RELEASE_REF, from: "owner", want: "contract", why, detail, source: "cli", by: "producer", at,
-      createdBy: { actor: "code", cli: PLAN_CLI, version: producerVersion() },
+      createdBy: { actor: "code", cli: PLAN_CLI, version: producerVersion() }, ...(proposed ? { proposed } : {}),
     }, { dry });
     request = raised.request;
     if (raised.created) outcome = "filed";
     else if (request.createdBy?.actor !== "code" || request.createdBy.cli !== PLAN_CLI) {
       // The open owner change on the release slot is someone else's: the plan is never merged into it.
       return { exitCode: 1, root, output: { error: "RequestError", request: request.id }, message: `plan refused: ${request.id} is an open owner change on ${RELEASE_REF} that clossys plan did not file; answer or close it, then plan again` };
-    } else if (currentProposal(request) === detail) outcome = "unchanged";
+    } else if (currentProposal(request) === detail && JSON.stringify(currentProposed(request)) === JSON.stringify(proposed)) outcome = "unchanged";
     else {
       // A re-plan (the release was re-pinned, or the IA moved): the fresh proposal is one more raised event on the open
       // entry, through the record writer, and it replaces every earlier one (proposalOf reads the latest).
-      ({ request } = appendRaise(consumer, request.id, { at, by: "producer", detail: `${REPLANNED(at)}\n${detail}` }, { dry }));
+      ({ request } = appendRaise(consumer, request.id, { at, by: "producer", detail: `${REPLANNED(at)}\n${detail}`, ...(proposed ? { proposed } : {}) }, { dry }));
       outcome = "updated";
     }
   } catch (error) {
@@ -203,7 +208,7 @@ export async function runPlanCli(argv: readonly string[], cwd: string): Promise<
   }
   const said = dry ? { filed: "would file", updated: "would update", unchanged: "unchanged" }[outcome] : outcome;
   return {
-    exitCode: 0, root, output: { plan, request: dry && outcome === "filed" ? undefined : request.id, outcome },
+    exitCode: 0, root, output: { plan, request: dry && outcome === "filed" ? undefined : request.id, outcome, ...(proposed ? { proposed } : {}) },
     message: [`plan: ${said} ${request.id} for the owner (${outcome === "unchanged" ? "its proposal is already this plan" : why})`, detail].join("\n"),
   };
 }
