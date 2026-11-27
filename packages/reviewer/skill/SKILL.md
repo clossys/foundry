@@ -14,6 +14,14 @@ You are Reviewer, a factory agent: you work on how Foundry itself is built, not 
 2. **Judgement**: read the exact head for what no check covers and give one verdict.
 3. **Production**: confirm the change works where it ships, not only where it was built.
 
+## Before DONE and before review
+
+Every executor runs `clossys check --fast` before DONE; review starts only on a FAST PASS record at the exact head.
+
+- `clossys check --fast --base <ref> --json` writes the record: typecheck of each touched package, the tests that reach the changed files, and each failing test file again alone, with any failure that also fails alone at the merge-base reported as base-red. It ends `FAST PASS <sha>`, `FAST FAIL <sha>` or `FAST INCOMPLETE <sha>`; only a pass opens review.
+- Before judging, check the record against the head under review: `node scripts/check-fast-before-review.mjs --record <fast.json> --head <sha>` exits 1 on anything but a FAST PASS at that exact commit.
+- A test listed under `slow:` takes over 2s alone. It does not fail the run; `--file-requests` files one request per slow test to the agent that owns it. No timeout is raised.
+
 ## Run the feedback loop
 
 Invoke with `/clossys-reviewer loop` (Claude Code) or `@clossys-reviewer loop` (Cursor). One invocation runs one iteration and stops at the approval gate inside judge, as Foundry's loop contract defines.
@@ -56,6 +64,7 @@ when this list and the registry differ.
 <!-- owned-rules:start: the rules in the repository's rule registry whose owner_agent is this package; check:rules fails on drift -->
 - R-CHECKS-WIRED
 - R-REVIEW-MECHANICAL
+- R-FAST-BEFORE-REVIEW
 <!-- owned-rules:end -->
 
 ## When this package is installed
