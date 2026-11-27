@@ -181,6 +181,76 @@
         },
         "additionalProperties": false
       }
+    },
+    "stage": {
+      "enum": [
+        "setup",
+        "strategy",
+        "fill",
+        "review",
+        "release",
+        "refine"
+      ],
+      "description": "The engagement stage, derived from records (clossys status --help states each rule)."
+    },
+    "next": {
+      "description": "The step clossys run --dry stops at, with its model tier and the seat policy's model for it; null when nothing is open.",
+      "oneOf": [
+        {
+          "type": "null"
+        },
+        {
+          "type": "object",
+          "required": [
+            "step",
+            "agent",
+            "skill",
+            "kind",
+            "tier",
+            "model"
+          ],
+          "properties": {
+            "step": {
+              "type": "string",
+              "minLength": 1
+            },
+            "agent": {
+              "type": "string",
+              "minLength": 1
+            },
+            "skill": {
+              "type": "string",
+              "minLength": 1
+            },
+            "kind": {
+              "enum": [
+                "plumb",
+                "decide:creative",
+                "decide:judgment"
+              ]
+            },
+            "tier": {
+              "enum": [
+                "none",
+                "mid",
+                "high"
+              ]
+            },
+            "model": {
+              "oneOf": [
+                {
+                  "type": "null"
+                },
+                {
+                  "type": "string",
+                  "minLength": 1
+                }
+              ]
+            }
+          },
+          "additionalProperties": false
+        }
+      ]
     }
   },
   "additionalProperties": false,

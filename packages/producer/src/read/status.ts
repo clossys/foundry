@@ -217,6 +217,11 @@ export interface StatusOptions {
   detail?: boolean;
   gaps?: (root: string, agent?: SlotAgent) => { readonly counts: Readonly<Record<string, number>>; readonly gaps: readonly Readonly<StatusGap>[] };
   options?: (consumer: string) => { classes: unknown; slots: readonly { agent: SlotAgent; slot: string; options: number; distinct: number; missing: readonly string[] }[] };
+  /**
+   * `stage` and `next` (src/read/stage.ts whereWeStand) from the workspace and the core view. Injected by the verb
+   * (src/cli/status.ts), so the read model itself reaches no pipeline module; omitted, the view carries neither field.
+   */
+  where?: (root: string, view: Pick<StatusView, "agents" | "queue" | "releases">) => { stage: NonNullable<StatusView["stage"]>; next: NonNullable<StatusView["next"]> | null };
 }
 
 const EPOCH = "1970-01-01T00:00:00.000Z";
@@ -314,6 +319,12 @@ export function statusReport(root: string, options: StatusOptions = {}): { view:
     ledger: ledgerAll.slice(0, Math.max(0, options.ledger ?? 5)),
     releases,
   };
+  // Where the engagement stands: the whole workspace's open queue, not the --agent scope, decides review.
+  if (options.where) {
+    const where = options.where(root, { agents, queue: allQueue.filter(item => item.status === "open"), releases });
+    view.stage = where.stage;
+    view.next = where.next;
+  }
   if (!options.detail) return { view, plannerPins };
   const detail: StatusDetail = { slots, errors };
   if (options.gaps) {

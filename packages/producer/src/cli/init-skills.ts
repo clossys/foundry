@@ -4,10 +4,14 @@
  * folder is copied (never linked) to `.claude/skills/clossys-<role>/` and `.agents/skills/clossys-<role>/`. A file is
  * written only when its bytes differ, so a second init on an unchanged install changes nothing and a changed package
  * overwrites its copy; a file the package does not ship is never touched. `CLAUDE.md` gets the `@AGENTS.md` line once.
+ * `AGENTS.md` gets the managed entry block (views/entry-block.ts): the covered scope generated from the installed agents
+ * and the workspace records, when to use the `clossys-producer` skill (on invocation or a covered ask only), and that
+ * records change only through `clossys` verbs. Only the text between its markers is managed.
  * `skillFindings` is the check init runs after placing: a role with a package skill and no discoverable copy fails.
  */
 import { existsSync, mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
 import { join, relative } from "node:path";
+import { ensureEntryBlock, type EntryBlockResult } from "../views/entry-block.js";
 
 export const SKILL_HOMES = [join(".claude", "skills"), join(".agents", "skills")] as const;
 export const CLAUDE_IMPORT = "@AGENTS.md";
@@ -17,6 +21,8 @@ export interface InitSkills {
   /** Workspace-relative files written by this run (absent or different bytes before). */
   readonly written: readonly string[];
   readonly claude: "added" | "present";
+  /** The AGENTS.md entry block: added, updated between its markers, present (same bytes), or refused (unpaired markers, in issues). */
+  readonly entry: EntryBlockResult["outcome"] | "refused";
   readonly issues: readonly string[];
 }
 
@@ -52,7 +58,12 @@ export function placeSkills(root: string): InitSkills {
       }
     }
   }
-  return { roles: roles.map(item => item.role), written, claude: ensureClaudeImport(root), issues: skillFindings(root) };
+  const claude = ensureClaudeImport(root);
+  const issues = skillFindings(root);
+  let entry: InitSkills["entry"];
+  try { entry = ensureEntryBlock(root).outcome; }
+  catch (error) { entry = "refused"; issues.push(`entry: ${error instanceof Error ? error.message : String(error)}`); }
+  return { roles: roles.map(item => item.role), written, claude, entry, issues };
 }
 
 /** Writes `CLAUDE.md` as the one line `@AGENTS.md` when missing; adds the line only when an existing file lacks it. */

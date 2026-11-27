@@ -33,6 +33,9 @@ import { SEATABLE_STARTERS } from "./starter-plan.js";
 export const INIT_USAGE = "Usage: clossys init [--starters <id,...>] [--root <dir>] [--at <iso>] [--json]\n"
   + "  adds the views pointer block to the workspace AGENTS.md (created when missing) unless it is already there:\n"
   + "  run clossys views list, follow clossys views show <id>, answer only through clossys answer.\n"
+  + "  It writes the managed clossys entry block to AGENTS.md (only the text between its markers; the same bytes on a re-run):\n"
+  + "  the covered scope generated from the installed agents and the workspace records, use the clossys-producer skill only\n"
+  + "  when the owner invokes it or asks for covered work (everything else is ordinary work), and records change only through clossys verbs.\n"
   + "  starts the Publisher IA and seats no page, publication or release: it prints the admin starter as a suggestion (the\n"
   + "  clossys ia publisher/... calls that would place it). --starters admin seats it (Publisher admin pages and publication.admin\n"
   + "  in the admin tab) through clossys ia, and raises one Designer slot request for each frame or section those pages compose\n"
@@ -114,7 +117,7 @@ async function initWorkspace(workspace: string, at: string | undefined, cwd: str
   const pointerSaid = pointer.outcome === "added" ? `added the views pointer to ${pointer.file}` : `${pointer.file} already has the views pointer`;
   // The installed packages' agent skills, copied where Claude and Codex discover them (init-skills.ts), then checked.
   const skills = placeSkills(workspace);
-  const said = [`placed ${skills.roles.length} agent skill${skills.roles.length === 1 ? "" : "s"} (${skills.roles.join(", ") || "none installed"}); ${skills.written.length} file${skills.written.length === 1 ? "" : "s"} written${skills.claude === "added" ? "; CLAUDE.md imports @AGENTS.md" : ""}`, pointerSaid].join("\n");
+  const said = [`placed ${skills.roles.length} agent skill${skills.roles.length === 1 ? "" : "s"} (${skills.roles.join(", ") || "none installed"}); ${skills.written.length} file${skills.written.length === 1 ? "" : "s"} written${skills.claude === "added" ? "; CLAUDE.md imports @AGENTS.md" : ""}${skills.entry === "added" || skills.entry === "updated" ? `; ${skills.entry} the clossys entry block in AGENTS.md` : ""}`, pointerSaid].join("\n");
   if (skills.issues.length) return { exitCode: 1, root: workspace, output: { ...pointer, skills }, message: (refused === "init refused" ? [said, ...skills.issues.map(issue => `${refused}: ${issue}`)] : [...skills.issues.map(issue => `${refused}: ${issue}`), said]).join("\n") };
   // The slot model follows no symbolic link (records/slots.ts), so the seat runs on the workspace's real path (a tmp
   // or home folder reached through a link still seats).

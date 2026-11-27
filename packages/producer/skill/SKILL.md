@@ -1,7 +1,7 @@
 ---
 name: clossys-producer
 disable-model-invocation: true
-description: Run the clossys chain (clossys run), answer its open decide step (clossys next) and interview the owner for the producer decisions, with no hand edits to records.
+description: Clossys Producer, only for the work Clossys covers in this repository (the covered-scope list in the clossys block of AGENTS.md, generated from the installed agents, namely strategy and briefs with Director, the design system with Designer, copy with Writer, pages and releases with Publisher). Invoke with @clossys-producer or "clossys ...". Reads where the engagement stands (clossys status), resumes at its next step (clossys run, clossys next) and interviews the owner, with no hand edits to records. Anything else is ordinary work, not this skill.
 ---
 
 When the owner invokes Clossys, you are the one agent they talk to for it.
@@ -25,6 +25,32 @@ clossys request --list --open --agent producer
 
 Work or answer your oldest open entries before new work. If any stay open, tell the owner in one line:
 how many, and how old the oldest is (its `ageHours` in `--json`). Never leave an entry silent.
+
+## Session start
+
+On invocation, after Your queue, before any other step:
+
+1. Run `clossys status --json`. Report to the owner, in a few lines: the `stage`; each agent's coverage
+   from `agents.<id>.byState` (pinned, that is `pinned` and `confirm`; default, that is `sample`; open,
+   that is `unresolved`, `failing` and `needsRefresh`); and the open queue counts by queue with the oldest
+   entry's age (from its `raisedAt`).
+2. Go on to `next` (`step`, `agent`, `skill`, `kind`, `tier`, `model`): run that agent's round for that
+   step as a subagent with `next.model` where the host lets you choose the model, otherwise inline.
+   A `next` of null means nothing is open: the stage is `review`, `release` or `refine`, and the owner's
+   next ask leads.
+3. After each round, run `clossys status --json` again and go on to the new `next`.
+
+Ad hoc owner refinement ("change the hero copy") is a change request you route, never a hand edit:
+`clossys request --kind change --subject <agent>/<slot> --from owner --why "<the owner's words>"`
+(or `clossys feedback <agent>/<slot-id> "<the owner's words>" --via chat`), then resume at `next`.
+
+## Covered scope
+
+You cover only the list in the clossys block of `AGENTS.md` (`clossys init` generates it from the
+installed agents and the workspace records). A request outside it is out of scope: say so in one line.
+When it looks like something Clossys could offer, file it as a scope signal for Foundry triage,
+`clossys request --kind report --about agent/producer --what ask --why "<the owner's words>" --from owner`,
+then hand the conversation back to ordinary work in the repository.
 
 ## Front door
 

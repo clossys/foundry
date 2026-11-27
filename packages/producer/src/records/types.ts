@@ -524,6 +524,10 @@ export interface StatusView {
   queue: { id: string; queue: QueueName | "queue.slot" | "queue.change" | "queue.report"; decider: QueueEntry["decider"]; subject: string; ask: string; default: string | null; raisedAt: Iso }[];
   ledger: { id: string; loop: string; status: LedgerEntry["status"]; outcome: string; at: Iso }[];
   releases: { publication: string; pinned: CandidateName | null; stale: boolean; reason?: string }[];
+  /** The engagement stage, derived from records (src/read/stage.ts; CP1-FRONTDOOR). */
+  stage?: "setup" | "strategy" | "fill" | "review" | "release" | "refine";
+  /** The step `clossys run --dry` stops at, with its model tier and the seat policy's model for it; null when nothing is open. */
+  next?: { step: string; agent: string; skill: string; kind: string; tier: "none" | "mid" | "high"; model: string | null } | null;
 }
 
 export interface SlotView {
@@ -722,7 +726,7 @@ export const RECORD_KEYS: Readonly<Record<string, readonly string[]>> = {
     schema: true, id: true, status: true, createdBy: true, createdAt: true, updatedAt: true, facts: true,
   }),
   "clossys.status/1": keysOf<StatusView>()({
-    schema: true, at: true, workspace: true, stateSha256: true, agents: true, queue: true, ledger: true, releases: true,
+    schema: true, at: true, workspace: true, stateSha256: true, agents: true, queue: true, ledger: true, releases: true, stage: true, next: true,
   }),
   "clossys.slot-view/1": keysOf<SlotView>()({
     schema: true, ref: true, slot: true, candidates: true, pin: true, consumedBy: true, queue: true, ledger: true,

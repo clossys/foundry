@@ -13,6 +13,9 @@ import { agentSlotCensus } from "../server/slot-census.js";
 import { runStatusCli } from "../cli/status.js";
 import { validateAgainst, type JsonSchema } from "../records/schema.js";
 import { agentCensus, SLOT_STATES, STATUS_AGENTS, statusView } from "./status.js";
+import { PACKAGE_ROOT } from "../pipeline/options.js";
+import { STEPS } from "../pipeline/steps/index.js";
+import { whereWeStand } from "./stage.js";
 
 /**
  * Both fixture consumers: the current one (recut, clossys.slot/2) and the old-tree one (slot/1, before the recut).
@@ -228,7 +231,8 @@ describe.each(FIXTURES)("on %s", (_name, FIXTURE, pinnedParity) => {
 
     it("labels a planner-basis pin \"pinned (planner)\", apart from an unconfirmed agent pick (display only)", async () => {
       pin(1, "agent");
-      const view = detailed();
+      // The verb injects where the engagement stands (stage, next); the read model is the same bytes with it.
+      const view = detailed({ where: (at, core) => whereWeStand(at, core, STEPS, PACKAGE_ROOT) });
       // The basis the store's pin reader reports (a pin-map's records fold to one pin, as `clossys status` reads it).
       const basisOf = (ref: string) => {
         const [agent, id] = ref.split("/") as [SlotAgent, string];
