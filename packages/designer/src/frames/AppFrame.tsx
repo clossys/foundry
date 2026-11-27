@@ -41,7 +41,10 @@ const FRAME_STAMP = dsAttrs("frames", "frames.app-shell", "foundry/frames.app-sh
  */
 const HEADER_ROW = "frame-header-container relative flex min-w-0 shrink-0 items-center";
 /** Root block size per `fill`: the host's definite height, or the dynamic viewport with no host glue. */
-const ROOT_FILL: Record<NonNullable<AppFrameProps["fill"]>, string> = { host: "h-full", viewport: "h-dvh" };
+const ROOT_FILL_CLASSES: Record<NonNullable<AppFrameProps["fill"]>, string> = {
+  host: "h-full",
+  viewport: "h-dvh",
+};
 const STAGE_INSET = "frame-main-inset";
 const MAIN = "flex h-full min-h-0 min-w-0 flex-col frame-main-gap frame-main-bleed overflow-auto ";
 const CONTROL = "control-h-md inline-flex shrink-0 items-center justify-center rounded-control border-0 bg-transparent px-frame-control text-body focus-ring forced-colors:border-current";
@@ -290,7 +293,7 @@ function FrameContent({ brand, navigation, account: { avatar = "initials", ...ac
     labels={{ breadcrumb: breadcrumbLabel ?? copy(SHELL_COPY_REFS.frame.breadcrumb), collapsedBreadcrumb: collapsedBreadcrumbLabel ?? copy(SHELL_COPY_REFS.frame.collapsedBreadcrumb), pageInfo: pageInfoLabel ?? copy(SHELL_COPY_REFS.frame.pageInfo),
       pageActions: pageActionsLabel ?? copy(SHELL_COPY_REFS.frame.pageActions) }} />;
   return <OverlayDirection dir={dir}>
-    <SemanticContent as="div" ref={frame} lang={locale} dir={dir} data-application-frame="" data-application-frame-layout={shellLayout} data-application-frame-stage={stageInset} data-application-frame-fill={fill} {...FRAME_STAMP} className={"relative flex min-h-0 min-w-0 flex-col overflow-hidden text-body " + GROUND_PAINT.page.surface + " " + GROUND_PAINT.page.primary + " " + ROOT_FILL[fill]}>
+    <SemanticContent as="div" ref={frame} lang={locale} dir={dir} data-application-frame="" data-application-frame-layout={shellLayout} data-application-frame-stage={stageInset} data-application-frame-fill={fill} {...FRAME_STAMP} className={"relative flex min-h-0 min-w-0 flex-col overflow-hidden text-body " + GROUND_PAINT.page.surface + " " + GROUND_PAINT.page.primary + " " + ROOT_FILL_CLASSES[fill]}>
       {state?.navigating && progress ? <SemanticContent as="div" data-application-frame-region="progress" className="pointer-events-none absolute inset-x-0 top-0 overflow-hidden progress-hairline layer-progress">{progress}</SemanticContent> : null}
       <SkipLink targetId={target}>{skipLabel}</SkipLink>
       <SemanticContent as="span" aria-hidden="true" className="absolute size-0 overflow-hidden"><SemanticContent as="span" ref={sidebarProbe} className="block frame-sidebar-measure" /></SemanticContent>

@@ -4,6 +4,8 @@ import { dirname, extname, join, relative, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import { __unstable__loadDesignSystem } from "tailwindcss";
+import { declaredTokenValues } from "../compiled-css/declared-fallbacks.js";
+import { compiledCssDeclaredSources } from "../compiled-css/generate.js";
 import { TOKENS } from "../tokens/index.js";
 
 /**
@@ -72,7 +74,8 @@ import { TOKENS } from "../tokens/index.js";
  * raw source text, so it independently catches a bad token name whether it
  * appears in a plain `style` object OR inside a Tailwind arbitrary value
  * like the one above. The two checks are complementary, not redundant:
- * Tailwind is the oracle for "is this a real utility"; `TOKENS` is the
+ * Tailwind is the oracle for "is this a real utility"; `TOKENS`, plus the
+ * package's declared sources for stock reads (see `DECLARED_SOURCES`), is the
  * oracle for "does this custom property actually exist".
  *
  * A second, structural side-effect of the redesign: the previous version
@@ -371,6 +374,40 @@ function extractCandidateClasses(code: string): Set<string> {
 // arbitrary text at all.
 const VAR_RE = /var\(\s*(--[a-zA-Z0-9-]+)\s*(?:,|\))/g;
 
+// A read also resolves when the package's declared sources give the name a
+// value: the same sources, by code, that `generateCompiledCss` reads its
+// fallbacks from (`compiled-css/declared-fallbacks.ts`): tokens.css, theme.css
+// with theme-keys.css, the package default theme (the stock shadcn theme
+// fills) and the installed Tailwind default theme, plus the variables the
+// package's own sources set inline. One source, never a typed list: Tailwind's
+// `--spacing` or shadcn's `--foreground` resolve because the installed theme
+// declares them, and a name no source declares still fails.
+const DECLARED_SOURCES = compiledCssDeclaredSources(join(dirname(srcDir), "styles"));
+const DECLARED_VARIABLES: ReadonlySet<string> = new Set([
+  ...declaredTokenValues(DECLARED_SOURCES, "").keys(),
+  ...DECLARED_SOURCES.runtimeSetVariables,
+]);
+
+function isDeclaredVariable(property: string): boolean {
+  return property in TOKENS || DECLARED_VARIABLES.has(property);
+}
+
+/** Every `var(--x)` read in `code` that neither TOKENS nor a declared source resolves. */
+function unresolvedVarFindings(relFile: string, code: string): Finding[] {
+  const out: Finding[] = [];
+  for (const match of code.matchAll(VAR_RE)) {
+    const property = match[1] as string;
+    if (isDeclaredVariable(property)) continue;
+    out.push({
+      file: relFile,
+      kind: "var",
+      text: property,
+      reason: `"${property}" is not a token in @clossys/designer/tokens' TOKENS export, and no declared source (tokens.css, theme.css, the package default theme, Tailwind's default theme, an inline setter) declares it`,
+    });
+  }
+  return out;
+}
+
 // ── Compile Tailwind once, using this package's real token CSS ─────────
 //
 // `require.resolve` (via `createRequire`, since this file is ESM) rather
@@ -441,16 +478,7 @@ for (const file of sourceFiles) {
 
   const vars = [...code.matchAll(VAR_RE)].map((match) => match[1] as string);
   varsByFile.set(file, vars);
-  for (const property of vars) {
-    if (!(property in TOKENS)) {
-      findings.push({
-        file: relFile,
-        kind: "var",
-        text: property,
-        reason: `"${property}" is not a token in @clossys/designer/tokens' TOKENS export`,
-      });
-    }
-  }
+  findings.push(...unresolvedVarFindings(relFile, code));
 }
 
 // One compiler call for every candidate across every file, then a map
@@ -494,6 +522,18 @@ describe("token parity: every Tailwind class and var() read resolves against a r
       throw new Error(`${findings.length} unresolved reference(s):\n${report}`);
     }
     expect(findings).toEqual([]);
+  });
+
+  /**
+   * The declared sources widen what resolves to what the installed theme
+   * really declares, never to "anything": a name that no token and no source
+   * declares is still a finding, beside stock reads that do resolve.
+   */
+  it("an unknown css variable still fails token parity", () => {
+    const unknown = "--ui-no-such-token-anywhere";
+    expect(isDeclaredVariable(unknown)).toBe(false);
+    const probe = `<div style={{ color: "var(${unknown})", margin: "calc(var(--spacing) * 2)", borderColor: "var(--border)" }} />`;
+    expect(unresolvedVarFindings("probe.tsx", probe).map((f) => f.text)).toEqual([unknown]);
   });
 
   /**
