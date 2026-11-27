@@ -26,11 +26,13 @@
  * nothing: the slot rule, then the item is the stock item exactly (registry lineage, rung L1 with its seed, every
  * file byte-exact to the normalized reference). R03.2 flags any submit by code:adopt that fails the same rule.
  *
- * Token fallbacks (D5-2D, remainder 2 option b): a consumer adoption writes every bare token read with the value the
- * consumer's pinned `themes.*` slots declare (read/theme-pins.ts pinnedThemeReader), never a package value; a name the
- * pins do not declare refuses the adoption (UndeclaredTokenFallbackError). The reference is normalized through the
- * same reader, so the comparison stays byte-exact, and the item records the reader's source and each written file's
- * sha256 (meta.refVerbatim.reader, outputSha256).
+ * Token fallbacks (D5-2D, remainder 2 option b; CP1-TOKENFALL): a consumer adoption writes every bare token read with
+ * the value the consumer's pinned `themes.*` slots declare (read/theme-pins.ts pinnedThemeReader). A name no pin
+ * declares takes Foundry's declared value only when the token catalog marks it brand-optional, and the written file
+ * ends with a comment line naming each such value; a brand-required name, or any other undeclared name, refuses the
+ * adoption (UndeclaredTokenFallbackError). The reference is normalized through the same reader, so the comparison
+ * stays byte-exact, and the item records the reader's source and each written file's sha256 (meta.refVerbatim.reader,
+ * outputSha256).
  */
 import { createHash } from "node:crypto";
 import { existsSync, readFileSync } from "node:fs";
@@ -62,6 +64,8 @@ export interface ManifestRow {
   readonly hash: string; readonly license: string; readonly files: readonly ManifestFile[]; readonly slots?: readonly string[];
   /** The npm packages the registry entry declares (`name` or `name@range`, as shadcn lists them). */
   readonly dependencies?: readonly string[];
+  /** The registry items the entry installs with it (an example names the primitive it shows, and the gallery wrapper). */
+  readonly registryDependencies?: readonly string[];
 }
 export interface StockItem {
   readonly row: ManifestRow;
@@ -202,18 +206,12 @@ export function stockFilesOf(root: string, slotId: string, options: { readonly t
   const file = ((doc.contract as { fixture?: { fixtures?: { file?: unknown } } }).fixture?.fixtures?.file);
   if (typeof file !== "string") return { none: `${at} has no contract fixture file, so no stock item ships it` };
   const manifest = manifestOf(root);
-  const shipping = manifest.items.filter(row => STOCK_REGISTRIES.includes(row.registry) && row.files.some(each => each.path === file));
-  // The source ladder, explicitly: the first registry of STOCK_REGISTRIES (shadcn-aria) that ships the fixture wins,
-  // the partner (diceui) only when it does not; within one registry, the row naming this slot, then the row named
-  // for the fixture file, then the first row in manifest order.
-  const base = file.split("/").at(-1)!.replace(/\.tsx$/, "");
-  const registry = STOCK_REGISTRIES.find(name => shipping.some(row => row.registry === name));
-  const rows = shipping.filter(row => row.registry === registry);
-  const row = rows.find(each => (each.slots ?? []).includes(slotId)) ?? rows.find(each => each.name === base) ?? rows[0];
+  const row = ladderRowOf(manifest, slotId, file);
   if (!row) return { none: `no ${STOCK_REGISTRIES.join(" or ")} stock item ships ${at}'s contract fixture ${file}` };
   const ref = refIdOf(row);
   const consumer = join(root, "clossys");
-  // Every fallback the written file carries is the consumer's pinned value; an undeclared name throws (refused).
+  // Every fallback the written file carries is the consumer's pinned value, or Foundry's declared value for a
+  // brand-optional id no pin emits (marked in the file); any other undeclared name throws (refused).
   // `themeReader: false` (a crafted stock slot's dependency plan) reads the imports only: a theme-pin gap there does
   // not block the install step, and the caller reports it separately.
   const reader = options.themeReader === false ? undefined : pinnedThemeReader(consumer);
@@ -221,6 +219,78 @@ export function stockFilesOf(root: string, slotId: string, options: { readonly t
     path: each.path, type: row.type, content: normalizedSeedFile(consumer, ref, each.path, { manifest, referencesDir: referencesDirOf(root), ...(reader ? { reader } : {}) }),
   }));
   return { row, ref, doc, manifest, files, reader };
+}
+
+/**
+ * The source-ladder row that ships contract fixture `file` (stockFilesOf and craftLineageOf read the same one). The
+ * ladder, explicitly: the first registry of STOCK_REGISTRIES (shadcn-aria) that ships the fixture wins, the partner
+ * (diceui) only when it does not; within one registry, the row naming this slot, then the row named for the fixture
+ * file, then the first row in manifest order. A frame or section then takes the example of a primitive row
+ * (sectionOrFrameSource).
+ */
+function ladderRowOf(manifest: { items: ManifestRow[] }, slotId: string, file: string): ManifestRow | undefined {
+  const shipping = manifest.items.filter(row => STOCK_REGISTRIES.includes(row.registry) && row.files.some(each => each.path === file));
+  const base = file.split("/").at(-1)!.replace(/\.tsx$/, "");
+  const registry = STOCK_REGISTRIES.find(name => shipping.some(row => row.registry === name));
+  const rows = shipping.filter(row => row.registry === registry);
+  const shipped = rows.find(each => (each.slots ?? []).includes(slotId)) ?? rows.find(each => each.name === base) ?? rows[0];
+  return shipped && sectionOrFrameSource(manifest, slotId, shipped);
+}
+
+/**
+ * A frame or section cites a registry:block or registry:example, never a registry:ui primitive (check-ref-verbatim
+ * REF-PRIMITIVE-AS-REF). When the fixture's row is a primitive, the source is the same registry's example of it
+ * (`<primitive>-example`, a registry:example that installs the primitive): sections.empty-state's `empty` gives
+ * `empty-example`. With no such example the primitive row stays, and the ref check refuses it as before.
+ */
+function sectionOrFrameSource(manifest: { items: ManifestRow[] }, slotId: string, row: ManifestRow): ManifestRow {
+  if (!/^(frames|sections)\./.test(slotId) || row.type !== "registry:ui") return row;
+  return manifest.items.find(each => each.registry === row.registry && each.version === row.version && each.type === "registry:example"
+    && each.name === `${row.name}-example` && (each.registryDependencies ?? []).includes(row.name)) ?? row;
+}
+
+/** The gallery wrapper a registry:example imports (`@/components/example`, shadcn-aria/example): scaffolding, not consumer UI. */
+const GALLERY_IMPORT = /^@\/(?:registry\/[^/]+\/)?components\/example$/;
+
+/** The lineage a frames or sections craft brief cites: the stock row the contract fixture gives (stockFilesOf's ladder). */
+export interface CraftLineage {
+  readonly source: { readonly ref: string; readonly registry: string; readonly item: string; readonly version: string; readonly hash: string; readonly type: string };
+  /** The type the candidate itself carries: a section or frame ships as a block, whatever its lineage source is. */
+  readonly candidateType: "registry:block";
+  /** The source files' gallery imports (file to specifiers), which the craft removes. */
+  readonly galleryScaffolding: Readonly<Record<string, readonly string[]>>;
+  readonly note: string;
+}
+
+/**
+ * The lineage source of a frames or sections slot (`designer/<slotId>`), read from the vendored reference files as
+ * they are, or why there is none. Not a frames or sections slot, or no stock row: `none`.
+ */
+export function craftLineageOf(root: string, slotId: string): { readonly lineage: CraftLineage } | { readonly none: string } {
+  if (!/^(frames|sections)\./.test(slotId)) return { none: `designer/${slotId} is not a frames or sections slot` };
+  const doc = readSlot(join(root, "clossys"), "designer", slotId);
+  const file = ((doc.contract as { fixture?: { fixtures?: { file?: unknown } } }).fixture?.fixtures?.file);
+  if (typeof file !== "string") return { none: `designer/${slotId} has no contract fixture file, so no stock item ships it` };
+  const row = ladderRowOf(manifestOf(root), slotId, file);
+  if (!row) return { none: `no ${STOCK_REGISTRIES.join(" or ")} stock item ships designer/${slotId}'s contract fixture ${file}` };
+  const galleryScaffolding: Record<string, string[]> = {};
+  for (const each of row.files.filter(entry => entry.path.endsWith(".tsx"))) {
+    const text = readFileSync(join(referencesDirOf(root), row.dir, each.path), "utf8");
+    const specs = [...text.matchAll(/\bimport\s+(?:type\s+)?(?:[^'"`;]*?\sfrom\s+)?["']([^"']+)["']/g)].map(match => match[1]!).filter(spec => GALLERY_IMPORT.test(spec));
+    if (specs.length) galleryScaffolding[each.path] = [...new Set(specs)];
+  }
+  const ref = refIdOf(row);
+  const scaffold = Object.keys(galleryScaffolding).length
+    ? `; its ${Object.values(galleryScaffolding).flat().filter((spec, index, all) => all.indexOf(spec) === index).join(", ")} import is the shadcn gallery wrapper (scaffolding, not consumer UI), which the craft removes`
+    : "";
+  return {
+    lineage: {
+      source: { ref, registry: row.registry, item: row.name, version: row.version, hash: row.hash, type: row.type },
+      candidateType: "registry:block",
+      galleryScaffolding,
+      note: `cite ${ref} (${row.type}, ${row.hash}) as meta lineage source; the candidate's own type stays registry:block${scaffold}`,
+    },
+  };
 }
 
 /** What the adopt step changes in the consumer's root package.json before it installs the stock item. */

@@ -6,7 +6,7 @@
 import { projectPinnedPublication, type PinnedPublication } from "@clossys/publisher/content-map";
 import { listSlots, readAgentFile, readCandidate, readSlotRecordText } from "../records/slots.js";
 import { slotDir } from "../records/slot-model/index.js";
-import { WRITER_KEY, writerCopy } from "../records/writer-copy.js";
+import { WRITER_KEY, writerCopy, writerKeyFold } from "../records/writer-copy.js";
 
 export type { PinnedPublication };
 
@@ -50,11 +50,12 @@ export function resolvePublicationTitles(consumer: string, pinned: PinnedPublica
     if (typeof value === "string" && (WRITER_KEY.test(value) || value.includes("#"))) throw new Error(`Publication ${publicationId}: ${what} names ${JSON.stringify(value)}, which no pinned Writer string registers`);
     throw new Error(`Publication ${publicationId}: ${what} is a literal ${JSON.stringify(value)}; it must be a Writer key`);
   };
-  // A `<writer slot>#<key>` ref binds its key as install.ts writerKeyOf reads it: the key, else `<ref>` or `<slot>.<key>`.
+  // A `<writer slot>#<key>` ref binds its key as install.ts writerKeyOf reads it: the key, else `<ref>` or `<slot>.<key>`,
+  // its key in either form (`siteName` or the stored `site-name`, writer-copy.ts writerKeyFold).
   const keyOf = (value: unknown): unknown => {
     if (typeof value !== "string" || !value.includes("#")) return value;
     const hash = value.indexOf("#"), key = value.slice(hash + 1);
-    return copy.has(key) ? key : [value, `${value.slice(0, hash)}.${key}`].find(id => copy.has(id)) ?? key;
+    return copy.has(key) ? key : [value, `${value.slice(0, hash)}.${key}`, `${value.slice(0, hash)}.${writerKeyFold(key)}`].find(id => copy.has(id)) ?? key;
   };
   const title = (owner: string, value: unknown): string => {
     const key = keyOf(value);

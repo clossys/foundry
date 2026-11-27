@@ -48,6 +48,8 @@ import { tags } from '../dist/constitution/criteria/core/lib.js';
 // `clossys config --init` writes it with; the check regenerates it with them and the fixture seeder writes it with them.
 import { CONSUMER_STYLESHEET, consumerStylesheet, flavorJson, writeFlavor } from '../dist/records/consumer-flavor.js';
 import { readCandidate, readPin } from '../dist/records/slots.js';
+// The one Writer row-key rule (a key its slot's contract declares registers as `<slot>.<key>`), as the pinned copy reads it.
+import { contractCopyKeys, writerRowKey } from '../dist/records/writer-copy.js';
 import { consumerPath, consumerUnder } from './consumer-root.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -233,15 +235,18 @@ function designerUiExports(root = repo) {
   return map;
 }
 
-/** Writer copy key -> the pinned writer slot defining it. */
+/** Writer copy key -> the pinned writer slot defining it; each row keyed as the pinned copy registers it (writer-copy.ts `writerRowKey`). */
 function writerKeys(clossysRoot) {
   const map = new Map();
   for (const slot of slotIds(clossysRoot, 'writer')) {
     const entry = pinned(clossysRoot, 'writer', slot);
     if (!entry) continue;
+    const declared = contractCopyKeys(join(clossysRoot, 'agents', 'writer', slot));
     for (const match of entry.text.matchAll(/<!--\s*(\{[\s\S]*?\})\s*-->/g)) {
       let record; try { record = JSON.parse(match[1]); } catch { continue; }
-      if (typeof record?.id === 'string' && !map.has(record.id)) map.set(record.id, slot);
+      if (typeof record?.id !== 'string') continue;
+      const key = writerRowKey(slot, record.id, declared);
+      if (!map.has(key)) map.set(key, slot);
     }
   }
   return map;

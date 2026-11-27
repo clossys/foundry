@@ -27,7 +27,7 @@
 import { existsSync } from "node:fs";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { dirname, isAbsolute, join, relative, resolve, sep } from "node:path";
-import { bindPage, installPage, isBlocking, NEXT_ROUTE_MARKER, pageHostModule, relativeSpecifier, resolvePage, shellCopyIds, type BoundPage, type InstallFinding, type InstallPageRecord, type PageHostSelection, type ShadcnRunner } from "@clossys/publisher/install";
+import { bindPage, installPage, isBlocking, NEXT_ROUTE_MARKER, pageHostModule, relativeSpecifier, resolvePage, shellCopyIds, type BoundPage, type InstallFinding, type InstallPageRecord, type InstallPins, type PageHostSelection, type ShadcnRunner } from "@clossys/publisher/install";
 import type { ContentMap, ContentMapEntry } from "@clossys/publisher/content-map";
 
 /** The content map's own path rule (`contentMapPath`): a declared path, else `/<slug>`. */
@@ -201,7 +201,9 @@ function stateRecord(home: InstallPageRecord): InstallPageRecord {
  * Resolve, bind and (unless `check`) install every page of the publication into the site project,
  * and plan the generated modules. Blocking findings mean the plan holds no files.
  */
-export async function planNextBind(options: { root: string; site: string; map: ContentMap; check: boolean; bind: NextBindOptions; leafTemplates: readonly unknown[]; locales?: { readonly default: string; readonly all: readonly string[] } }): Promise<NextBindPlan> {
+export async function planNextBind(options: { root: string; site: string; map: ContentMap; check: boolean; bind: NextBindOptions; leafTemplates: readonly unknown[]; locales?: { readonly default: string; readonly all: readonly string[] };
+  /** Reads a map page's record in place of its own Publisher page cell: a slide deck's slides resolve to the deck's record (`install-next-slides.ts`). */
+  recordOf?: (id: string, pins: InstallPins, copy?: Readonly<Record<string, string>>) => Promise<InstallPageRecord> }): Promise<NextBindPlan> {
   const { root, site, map } = options;
   const findings: InstallFinding[] = [];
   const assembly = posixRelative(join(site, "app"), join(site, NEXT_BIND_ASSEMBLY));
@@ -248,7 +250,7 @@ export async function planNextBind(options: { root: string; site: string; map: C
   const homeId = (entries.find(entry => contentMapPath(entry) === "/") ?? entries[0])?.id;
   const records: InstallPageRecord[] = [];
   for (const entry of entries) {
-    try { records.push(await pageRecordFromCell(root, entry.id, pins, copy)); }
+    try { records.push(await (options.recordOf ?? ((id, pagePins, pageCopy) => pageRecordFromCell(root, id, pagePins, pageCopy)))(entry.id, pins, copy)); }
     catch (error) { findings.push({ code: "site-route-missing", slot: entry.id, detail: `${entry.id}: ${error instanceof Error ? error.message : String(error)}` }); }
   }
   const home = records.find(record => record.id === homeId);

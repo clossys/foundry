@@ -107,7 +107,8 @@ export const USAGE = "Usage: clossys <direct|design|write|publish|produce|check>
   + "Install: clossys publish --install --page <page id | page record.json> --selection <component selection module>[#export] [--out <dir>] [--records <consumer dir>]...\n"
   + "Site: clossys publish --install --site <route pack id> [--origin <deployment origin>] [--build] [--out <dir>] [--records <consumer dir>]... (one routed app: content-map paths, route-pack slots, one frame)\n"
   + "Next app: clossys publish --install --site <publication> --next <app dir> --assembly <module> [--states <module>] [--live] [--check] (one route file per page, one [slug] route per leaf template; --states also installs the root layout and the loading, not-found, error and global-error files)\n"
-  + "Bound Next app: clossys publish --install --site <publication> --next <app dir> --bind --selection <component selection module>[#export] [--check] (Publisher also generates the assembly, states and page modules from the pinned page records and installs their items into the app's project)";
+  + "Bound Next app: clossys publish --install --site <publication> --next <app dir> --bind --selection <component selection module>[#export] [--check] (Publisher also generates the assembly, states and page modules from the pinned page records and installs their items into the app's project)\n"
+  + "Slide deck: a deck.16x9 publication installs one page per slide at /<deck route>/<n> (from 1), each at a fixed 16:9 stage linking the previous and next slides (an --assembly serves them as pages <deck page>-<n>)";
 
 export function parseArgs(argv: readonly string[]): CliArgs {
   const args: CliArgs = { help: false, check: false, brief: false, json: false, once: false, noOpen: false, suites: false, strict: false, records: [], install: false, build: false, live: false, slots: false, readiness: false, constitution: false };
