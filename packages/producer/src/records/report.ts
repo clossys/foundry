@@ -204,12 +204,13 @@ export async function recheckReports(consumer: string, at: string, runCheck: Che
 
 /**
  * A loop run's step that could not run, or failed with no route on, files a report (about the step's verb, else
- * verb/run): the same fileReport the CLI files through, from `producer/<loop>`, by Producer. Returns the entry name.
+ * verb/run): the same fileReport the CLI files through, from `producer/<loop>`, by Producer. Returns the entry name,
+ * and whether this call filed it (`created`) or an open report with the same about and what was reused unchanged.
  */
-export function fileStepReport(root: string, input: { readonly loop: string; readonly runId: string; readonly step: string; readonly cli: string; readonly why: string; readonly at: string }): string {
+export function fileStepReport(root: string, input: { readonly loop: string; readonly runId: string; readonly step: string; readonly cli: string; readonly why: string; readonly at: string }): { readonly entry: string; readonly created: boolean } {
   const about = `verb/${/^clossys ([a-z][a-z0-9-]*)/.exec(input.cli)?.[1] ?? "run"}`;
   const filed = fileReport(join(root, "clossys"), {
     about, what: "bug", why: `${input.loop} run ${input.runId}: ${input.why}`, from: `producer/${input.loop}`, by: "producer", at: input.at, source: "check",
   });
-  return `${REPORT_QUEUE}#${filed.report.id}`;
+  return { entry: `${REPORT_QUEUE}#${filed.report.id}`, created: filed.created };
 }

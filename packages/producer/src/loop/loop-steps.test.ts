@@ -376,6 +376,29 @@ describe("a create step raises the upstream change its skill tells it to (consum
     expect(readRunState(w.root, runId)).toMatchObject({ status: "waiting", waiting: { step: "create", on: "entry", entry: `queue.slot#${id}`, then: "retry" } });
   });
 
+  // CP1-CHECKS (CP1-REPORT review N4): an agent step of an agent loop that obeys the report rule (a verb refused with no
+  // next step: file `clossys request --kind report` and stop) is judged by the report's own shape, not refused for it.
+  it("an agent loop step may file its own loop's report", async () => {
+    const report = async (w: World, from: string) => {
+      const filed = await w.cli("request", "--kind", "report", "--about", "verb/next", "--what", "gap", "--why", "clossys next refused with no next step", "--from", from, "--by", "designer");
+      expect(filed.exitCode, filed.message).toBe(0);
+      return `producer/queue.report/entries/${(filed.output as { id: string }).id}.json`;
+    };
+    const { w, runId } = await createWaiting();
+    const entry = await report(w, "designer/loop.create");
+    const stopped = await w.run("loop.create", "--resume", "--run", runId, "--step-exit", "2", "--model", MODEL, "--wrote", entry);
+    expect(stopped.exitCode, stopped.message).toBe(2);
+    expect(stopped.message).not.toMatch(/refuses it|does not declare it writes/);
+    expect(stopped.message).toMatch(/step create could not run \(exit 2\)/);
+    expect(w.read(entry)).toMatchObject({ kind: "report", status: "open", from: "designer/loop.create", about: "verb/next" });
+    // Only the report of the step's own loop: one from another loop is still a write the step does not declare.
+    const other = await createWaiting();
+    const foreign = await report(other.w, "designer/loop.refine");
+    const refused = await other.w.run("loop.create", "--resume", "--run", other.runId, "--step-exit", "2", "--model", MODEL, "--wrote", foreign);
+    expect(refused.exitCode, refused.message).toBe(1);
+    expect(refused.message).toMatch(/refuses it|does not declare it writes/);
+  });
+
   it("refuses an unreported raise, and a raise from another slot than the run's", async () => {
     const { w, runId } = await createWaiting();
     const id = await raise(w);
