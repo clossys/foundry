@@ -45,6 +45,7 @@ import { LEDGER_FILE, LEDGER_SCHEMA, eventIssues } from "../records/ledger.js";
 import { jsonBytes } from "../records/slot-model/layout.js";
 import { requestActor, requestIssues, type SlotRequest } from "../records/request.js";
 import { reportIssues } from "../records/report-shape.js";
+import { agentReportDraft, agentReportIssues, type ReportEntry } from "../records/report.js";
 import type { DeciderVerb, LoopStep, LoopVersion } from "../records/types.js";
 import { isStandardAgentStep } from "./agent-loops.js";
 import { isAgentLoop, isLoopAgent } from "./agent-loops-ia.js";
@@ -413,13 +414,16 @@ export const queueEntryId = (key: string): string | undefined => QUEUE_ENTRY_KEY
  * step's own loop (`<agent>/<loop>`), `added` the report entries the step added, `accepted` collects the ones judged
  * here, which leave the write allowlist (loop/runner.ts).
  */
-export interface OwnLoopReport { readonly from: string; readonly added: ReadonlySet<string>; readonly accepted: Set<string> }
+export interface OwnLoopReport { readonly agent: string; readonly from: string; readonly added: ReadonlySet<string>; readonly accepted: Set<string> }
 
 /**
  * Why a request.create over a report entry is not the report writer's own filing of the step's loop report; undefined
  * when it is: the event names that one entry, under subject `request:<id>`, as the last event naming it, with its bytes
  * after the step; the step added the entry; it is a valid report by its own shape (records/report-shape.ts
- * reportIssues, not requestIssues); it is from the step's own loop; and its actor is the one the writer names for it.
+ * reportIssues, not requestIssues); it is from the step's own loop; it is exactly the report the writer files for the
+ * step's agent (records/report.ts agentReportIssues: the writer's own draft rebuilt with `--by <agent>`, source cli,
+ * createRequest's -2..-9 suffix allowed; fix round 1, review-cp1checks-blindA P1-1); and its actor is the one the writer
+ * names for that draft (Producer's routed event), never the one the doc claims.
  */
 function reportWriteIssue(root: string, event: { kind: string; actor: string; subject: string; inputs: readonly { path: string; sha256: string | null }[] }, final: boolean, afterSha: ShaOf, report: OwnLoopReport): string | undefined {
   const key = event.inputs[0]!.path, id = queueEntryId(key)!;
@@ -437,7 +441,9 @@ function reportWriteIssue(root: string, event: { kind: string; actor: string; su
   if (invalid.length) return `names a report the report writer never writes (${invalid[0]})`;
   const from = (doc as { from?: unknown }).from;
   if (from !== report.from) return `files a report from ${String(from)}, not from the step's own loop ${report.from}`;
-  const actor = requestActor(doc as SlotRequest);
+  const forged = agentReportIssues(join(root, "clossys"), doc as ReportEntry, report.agent);
+  if (forged.length) return forged.join("; ");
+  const actor = requestActor(agentReportDraft(doc as ReportEntry, report.agent) as unknown as SlotRequest);
   if (event.actor !== actor) return `is by ${event.actor}, but the report writer names ${actor} for ${key}`;
   report.accepted.add(key);
   return undefined;
@@ -567,7 +573,7 @@ export interface SnapshotJudgement {
 export function judgeSnapshot(root: string, before: TreeFiles, after: TreeFiles, reported: ReadonlySet<string>, step: Pick<LoopStep, "id" | "decider" | "cli">, agent: string, subject: { agent: string; slotId: string } | undefined, standard?: LoopVersion, runId?: string, texts: Readonly<TreeTexts> = {}, raised: ReadonlySet<string> = new Set(), loop?: string): SnapshotJudgement {
   const issues: string[] = [], appended: string[] = [];
   const report: OwnLoopReport | undefined = loop !== undefined && isAgentLoop(loop)
-    ? { from: `${agent}/${loop}`, added: new Set(Object.keys(after).filter(key => REPORT_ENTRY_KEY.test(key) && before[key] === undefined)), accepted: new Set() }
+    ? { agent, from: `${agent}/${loop}`, added: new Set(Object.keys(after).filter(key => REPORT_ENTRY_KEY.test(key) && before[key] === undefined)), accepted: new Set() }
     : undefined;
   const ledger = subject && subject.agent === agent ? ownLedgerKey(subject) : undefined;
   const cascade = subject && subject.agent === agent ? ownCascadeKey(subject) : undefined;
