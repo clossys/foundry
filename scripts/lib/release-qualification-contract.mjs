@@ -1,5 +1,5 @@
 import { ARCHETYPES, parseStrictJson } from "./candidate-qualification.mjs";
-import { publishedName } from "./package-renames.mjs";
+import { publishedName, workspaceDirectory } from "./package-renames.mjs";
 
 const DIMENSIONS = ["position", "completion", "rollback", "duplicate", "cadence", "closeWindow"];
 const object = (value) => value && typeof value === "object" && !Array.isArray(value);
@@ -62,7 +62,9 @@ export function validateReleaseQualificationPolicy(policy) {
     const pathsValid = blocked
       ? entry?.adapterPath === undefined && entry?.fixturePath === undefined
       : REPOSITORY_PATH.test(entry?.adapterPath) && REPOSITORY_PATH.test(entry?.fixturePath) && entry.adapterPath.endsWith(".json") && !entry.fixturePath.endsWith(".json");
-    if (!PACKAGE.test(name) || !scope || !PACKAGE_KEY.test(entry?.packageKey) || entry?.recordStem !== `${scope}-${entry?.packageKey}` || entry?.packageDir !== `packages/${entry?.packageKey}` || !pathsValid) finding(findings, "package-policy", `exact namespace-qualified package bindings required for ${name}.`);
+    // packageKey and recordStem key dated records, so a renamed package keeps its published
+    // key; its packageDir is the directory it lives in now (scripts/lib/package-renames.mjs).
+    if (!PACKAGE.test(name) || !scope || !PACKAGE_KEY.test(entry?.packageKey) || entry?.recordStem !== `${scope}-${entry?.packageKey}` || entry?.packageDir !== `packages/${workspaceDirectory(entry?.packageKey)}` || !pathsValid) finding(findings, "package-policy", `exact namespace-qualified package bindings required for ${name}.`);
     for (const key of Object.keys(seen)) {
       const value = entry?.[key];
       if (blocked && ["adapterPath", "fixturePath"].includes(key)) continue;
