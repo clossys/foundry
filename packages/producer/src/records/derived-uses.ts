@@ -11,6 +11,7 @@
  *   package base (records/slot-write.ts currentSlotWrite refuses the change), so it is reported as a package gap.
  * - A write the writer refuses (a slot/1 doc, a slot not in ia.json, an id no agent holds) is reported, never forced.
  */
+import { AGENT_LISTS } from "../agent-lists.generated.js";
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { isCurrentSlot } from "./slot-current.js";
@@ -19,7 +20,7 @@ import type { ModelAgent } from "./slot-model/index.js";
 import type { Ref } from "./types.js";
 
 /** The agents whose slots carry `uses` (the derivation's agents). */
-export const USES_AGENTS: readonly ModelAgent[] = ["director", "designer", "writer", "publisher"];
+export const USES_AGENTS: readonly ModelAgent[] = AGENT_LISTS.content;
 
 export interface DerivedUsesResult {
   /** `<agent>/<id>` of every slot.json written, in order. */

@@ -2,14 +2,14 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "agents.schema.json",
   "title": "Foundry agent definitions",
-  "description": "The one definition of every agent: one row per package under packages/. scripts/check-agents-definition.mjs reads this schema and joins every other declaration of an agent to the rows.",
+  "description": "The one definition of every agent: one row per package under packages/, the named agent lists code reads, and the chain handoffs. scripts/check-agents-definition.mjs reads this schema, joins every other declaration of an agent to the rows and writes the generated copies packages read.",
   "type": "object",
-  "required": ["schemaVersion", "agents"],
+  "required": ["schemaVersion", "agents", "lists", "handoffs"],
   "additionalProperties": false,
   "properties": {
     "$schema": { "type": "string" },
     "$comment": { "type": "string" },
-    "schemaVersion": { "const": 1 },
+    "schemaVersion": { "const": 2 },
     "agents": {
       "type": "array",
       "items": {
@@ -22,6 +22,33 @@
           "class": { "enum": ["content", "factory", "tooling", "other"], "description": "How the code treats the agent: content agents own slots and loops, factory agents plan, build and review Foundry's own work, tooling ships deterministic mechanics and is not a role, other is every other role." },
           "definitionOwner": { "const": "controller", "description": "The agent that owns this definition." },
           "rung": { "type": "null", "description": "The readiness rung. Null until the readiness ladder computes it." }
+        }
+      }
+    },
+    "lists": {
+      "type": "object",
+      "description": "Named, ordered agent lists, owned by Controller. Code reads a list by name through a generated copy instead of writing the ids out. Each member is a row id, at most once; the content list's members are exactly the rows of class content.",
+      "propertyNames": { "pattern": "^[a-z][a-z0-9-]*$" },
+      "additionalProperties": {
+        "type": "object",
+        "required": ["description", "members"],
+        "additionalProperties": false,
+        "properties": {
+          "description": { "type": "string", "description": "What the list is and who reads it." },
+          "members": { "type": "array", "minItems": 1, "items": { "type": "string", "pattern": "^[a-z][a-z0-9-]*$" }, "description": "Row ids, in the order code reads them." }
+        }
+      }
+    },
+    "handoffs": {
+      "type": "object",
+      "required": ["description", "pairs"],
+      "additionalProperties": false,
+      "description": "The chain handoffs: which agent feeds which.",
+      "properties": {
+        "description": { "type": "string" },
+        "pairs": {
+          "type": "array",
+          "items": { "type": "array", "minItems": 2, "maxItems": 2, "items": { "type": "string", "pattern": "^[a-z][a-z0-9-]*$" }, "description": "Upstream row id, then downstream row id." }
         }
       }
     }

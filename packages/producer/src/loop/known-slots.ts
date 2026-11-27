@@ -5,6 +5,7 @@
  * consumer's own slot/2 folders. A `when` that names anything else can never match a slot, so the step it guards is
  * unreachable.
  */
+import { AGENT_LISTS } from "../agent-lists.generated.js";
 import type { AgentId, LoopStep } from "../records/types.js";
 import { designerIa, directorIa, slotPositions, writerIa, type FoundryIa } from "../records/slot-model/foundry-ia.js";
 import { chainOrderedSlots, whenMatches, type SlotSubject } from "./slots.js";
@@ -43,7 +44,7 @@ export function unreachableWhen(when: LoopStep["when"], known: KnownSlots): stri
   if (when === undefined) return [];
   const out: string[] = [];
   for (const ref of when.slots ?? []) if (!known.refs.has(ref)) out.push(`slots ${ref}`);
-  for (const agent of when.owner ?? []) if (!["director", "designer", "writer", "publisher"].includes(agent)) out.push(`owner ${agent}`);
+  for (const agent of when.owner ?? []) if (!(AGENT_LISTS.content as readonly string[]).includes(agent)) out.push(`owner ${agent}`);
   for (const path of when.ia ?? []) {
     if (!known.places.some(place => whenMatches({ ia: [path] }, asSubject(place)))) out.push(`ia ${path}`);
   }

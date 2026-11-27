@@ -1,7 +1,8 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
-import { evaluate, extractList, readSources } from "./check-agents-definition.mjs";
+import { GENERATED, evaluate, readSources, renderGenerated } from "./check-agents-definition.mjs";
 
 const root = fileURLToPath(new URL("..", import.meta.url));
 const real = readSources(root);
@@ -62,19 +63,50 @@ test("executable tooling in package evidence is exactly the tooling rows", () =>
   assert.ok(findings.includes("agent-without-role @clossys/producer"));
 });
 
-test("a content list in code that drifts from the content rows fails", () => {
+test("a generated copy that differs from agents.json by one byte fails", () => {
   const sources = fresh();
-  const list = sources.codeLists.find((item) => item.symbol === "SLOT_AGENTS");
-  list.members = [...list.members, "producer"];
-  assert.deepEqual(named(evaluate(sources)), ["code-list-content-drift packages/producer/src/records/slot-model/types.ts#SLOT_AGENTS"]);
+  const copy = sources.generated.find((item) => item.path === "packages/producer/src/agent-lists.generated.ts");
+  copy.text = `${copy.text} `;
+  assert.deepEqual(named(evaluate(sources)), ["generated-copy-drift packages/producer/src/agent-lists.generated.ts"]);
+  const missing = fresh();
+  missing.generated.find((item) => item.path === "packages/advisor/src/agent-lists.generated.ts").text = null;
+  assert.deepEqual(named(evaluate(missing)), ["generated-copy-missing packages/advisor/src/agent-lists.generated.ts"]);
 });
 
-test("written-out lists are read in each of their shapes", () => {
-  assert.deepEqual(extractList('export const A: readonly X[] = ["b", "c"] as const;', { symbol: "A" }), ["b", "c"]);
-  assert.deepEqual(extractList('const A = Object.freeze(["b"]);', { symbol: "A" }), ["b"]);
-  assert.deepEqual(extractList("const A = {\n  b: [1],\n  c: [2],\n} as const;", { symbol: "A", shape: "keys" }), ["b", "c"]);
-  assert.deepEqual(extractList("const A = /^(b|c)\\/x$/;", { symbol: "A", shape: "alternation" }), ["b", "c"]);
-  assert.equal(extractList("const B = [];", { symbol: "A" }), null);
+test("every generated copy is the render of agents.json", () => {
+  for (const copy of real.generated) assert.equal(copy.text, renderGenerated(real.agents, copy.flavour), copy.path);
+  assert.deepEqual(real.generated.map((copy) => copy.path), GENERATED.map((copy) => copy.path));
+});
+
+test("a named list naming a missing agent fails", () => {
+  const sources = fresh();
+  sources.agents.lists.nav.members.push("ghost");
+  sources.agents.handoffs.pairs.push(["director", "ghost"]);
+  const findings = named(evaluate(sources)).filter((line) => !line.startsWith("generated-copy-drift "));
+  assert.deepEqual(findings, ["list-unknown-agent lists.nav", "handoff-unknown-agent handoffs.pairs[4]"]);
+});
+
+test("a named list naming an agent twice fails", () => {
+  const sources = fresh();
+  sources.agents.lists.trio.members.push("advisor");
+  assert.deepEqual(named(evaluate(sources)).filter((line) => !line.startsWith("generated-copy-drift ")), ["list-duplicate-agent lists.trio"]);
+});
+
+test("the content list is exactly the content rows", () => {
+  const sources = fresh();
+  sources.agents.lists.content.members = sources.agents.lists.content.members.filter((id) => id !== "publisher");
+  assert.deepEqual(named(evaluate(sources)).filter((line) => !line.startsWith("generated-copy-drift ")), ["content-list-drift lists.content"]);
+  const missing = fresh();
+  delete missing.agents.lists.content;
+  assert.deepEqual(named(evaluate(missing)).filter((line) => !line.startsWith("generated-copy-drift ")), ["content-list-missing lists.content"]);
+});
+
+test("PACK_ROLES is read from agents.json", async () => {
+  const { PACK_ROLES } = await import("../packages/producer/scripts/pack-five.mjs");
+  assert.deepEqual([...PACK_ROLES], real.agents.lists.install.members);
+  for (const path of ["packages/producer/scripts/pack-five.mjs", "packages/advisor/src/front-door/install.ts"]) {
+    assert.match(readFileSync(`${root}${path}`, "utf8"), /export const PACK_ROLES = AGENT_LISTS\.install;/, path);
+  }
 });
 
 test("a row outside the schema fails", () => {

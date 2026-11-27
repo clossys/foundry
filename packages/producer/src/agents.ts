@@ -1,14 +1,12 @@
 import { readFileSync, realpathSync } from "node:fs";
 import { createRequire } from "node:module";
 import { join } from "node:path";
+import { AGENT_LISTS, AGENT_ROWS } from "./agent-lists.generated.js";
 import { errorMessage, isAbsent } from "./errors.js";
 
-export const AGENT_PACKAGES = {
-  director: ["@clossys/director"],
-  designer: ["@clossys/designer"],
-  writer: ["@clossys/writer"],
-  publisher: ["@clossys/publisher"],
-} as const;
+type ContentId = (typeof AGENT_LISTS.content)[number];
+/** Each content agent (the agents.json content list, in its order) and the package names tried for it. */
+export const AGENT_PACKAGES = Object.freeze(Object.fromEntries(AGENT_LISTS.content.map(id => [id, Object.freeze([AGENT_ROWS.find(row => row.id === id)!.package])]))) as { readonly [K in ContentId]: readonly [string] };
 
 export type AgentKind = keyof typeof AGENT_PACKAGES;
 export type AgentResolver = (packageName: string) => string;

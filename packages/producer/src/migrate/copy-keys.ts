@@ -16,6 +16,7 @@
  *
  * Deterministic and idempotent: a second run plans no change.
  */
+import { AGENT_LISTS } from "../agent-lists.generated.js";
 import { readFileSync, writeFileSync } from "node:fs";
 import { join, relative, sep } from "node:path";
 import { errorMessage } from "../errors.js";
@@ -83,7 +84,7 @@ export function planCopyKeyMigration(consumer: string, catalog: CopyKeyCatalog =
   const root = join(consumer, "..");
   const rel = (path: string) => relative(root, path).split(sep).join("/");
   const renames: CopyKeyRename[] = [], files: CopyKeyFileChange[] = [], repinned: string[] = [], findings: CopyKeyFinding[] = [];
-  for (const agent of ["designer", "writer"] as const) {
+  for (const agent of AGENT_LISTS["copy-keys"]) {
     for (const entry of listSlots(consumer, agent)) {
       const path = slotFile(entry.dir);
       const before = readSlotRecordText(entry.dir, "slot.json");

@@ -14,6 +14,7 @@
  * `closed` name the raising and closing events). The slot model itself is read through records/slots.ts and written
  * through records/slot-write.ts only.
  */
+import { AGENT_LISTS } from "../agent-lists.generated.js";
 import { refuseLegacyState, statePath } from "../engine/state-dir.js";
 import { closeSync, existsSync, linkSync, mkdirSync, openSync, readdirSync, readFileSync, renameSync, rmSync, unlinkSync, writeFileSync, writeSync } from "node:fs";
 import { createHash } from "node:crypto";
@@ -44,13 +45,13 @@ const LEGACY_FIX_SCHEMA = "clossys.queue-entry/1";
 export const REQUEST_FILE = "queue-entry-2.json";
 /** The queue folder kind slot entries live in (one queue: the folder is the kind, `assignee` says who executes). */
 export const SLOT_QUEUE = "queue.slot";
-export const CONTENT_AGENTS = ["director", "designer", "writer", "publisher"] as const;
+export const CONTENT_AGENTS = AGENT_LISTS.content;
 export type ContentAgent = (typeof CONTENT_AGENTS)[number];
 export const isContentAgent = (value: string): value is ContentAgent => (CONTENT_AGENTS as readonly string[]).includes(value);
 
 export const REQUEST_ID = /^[0-9]{8}T[0-9]{4}Z-[a-z0-9][a-z0-9-]*$/;
 const NEED_ID = /^[a-z][a-z0-9-]*(\.[a-z0-9][a-z0-9-]*){1,3}$/;
-const SLOT_TARGET = /^(director|designer|writer|publisher)\/([a-z][a-z0-9-]*(?:\.[a-z0-9][a-z0-9-]*){1,3})$/;
+const SLOT_TARGET = new RegExp(`^(${CONTENT_AGENTS.join("|")})/([a-z][a-z0-9-]*(?:\\.[a-z0-9][a-z0-9-]*){1,3})$`);
 
 export type { OptionStep, Overlap, OwnerOption, Proposal, RequestEvent, RequestOp, SlotRequest } from "./types.js";
 

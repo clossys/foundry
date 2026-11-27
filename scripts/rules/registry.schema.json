@@ -74,6 +74,11 @@
           },
           "additionalProperties": false
         },
+        "owner_agent": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9-]*$",
+          "description": "The package under packages/ (its directory name) whose verbs or checks enforce the rule; check:rules fails when packages/<owner_agent>/package.json does not exist."
+        },
         "status": {
           "enum": [
             "enforced",

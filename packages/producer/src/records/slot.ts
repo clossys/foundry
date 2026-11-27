@@ -9,6 +9,7 @@
  * - The consumer may only make the brief stricter, through `tighten` entries (`brief.tighten-only`).
  * - A null `base` is the only mark of a consumer-added slot (F4).
  */
+import { AGENT_LISTS } from "../agent-lists.generated.js";
 import { existsSync, mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { PRODUCER_ROOT, packagePath } from "../package-path.js";
@@ -19,7 +20,7 @@ import type { AgentId, Brief, Iso, Ref, Slot, Tighten, TightenOp } from "./types
 
 export const SLOT_SCHEMA = "clossys.slot/2";
 export const SLOT_V1_SCHEMA = "clossys.slot/1";
-export const SLOT_AGENTS: readonly AgentId[] = ["director", "designer", "writer", "publisher", "producer"];
+export const SLOT_AGENTS: readonly AgentId[] = AGENT_LISTS.live;
 
 // ---------------------------------------------------------------------------
 // IA position

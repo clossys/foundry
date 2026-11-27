@@ -81,6 +81,7 @@
 //   request.addressee  a `clossys gaps` request names no upstream addressee distinct from its requester
 //
 // A check with `pending` waits on its branch: it is listed as PENDING, never as passing. Exit 0 pass, 1 findings, 2 could not run.
+import { AGENT_LISTS } from "./agent-lists.generated.mjs";
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
@@ -390,7 +391,7 @@ for (const file of existsSync(stepsDir) ? readdirSync(stepsDir).filter(name => /
 // ---------------------------------------------------------------- interview and ladder (SKILL-INT)
 // Every agent skill drives its own multiple-choice interview in one shape; the Producer skill states
 // the contract the others cite.
-const INTERVIEW_AGENTS = ["producer", "director", "designer", "writer", "publisher"];
+const INTERVIEW_AGENTS = AGENT_LISTS.nav;
 /** The body of a `## Interview` section (up to the next `## ` heading), or null. */
 const interviewSection = body => { const match = /^## Interview\b.*$/m.exec(body); if (!match) return null; const rest = body.slice(match.index + match[0].length); const end = rest.search(/^## /m); return end < 0 ? rest : rest.slice(0, end); };
 for (const agent of INTERVIEW_AGENTS) {

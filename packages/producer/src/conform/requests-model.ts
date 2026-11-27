@@ -5,6 +5,7 @@
  * from disk; assertions.ts judges. An agent "is about" an entry when it raised it (`from`), holds it (`assignee`) or
  * owns its target slot.
  */
+import { AGENT_LISTS } from "../agent-lists.generated.js";
 import { spawnSync } from "node:child_process";
 import { cpSync, existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, realpathSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -542,7 +543,7 @@ export function readRequestMachinery(repo: string, consumer: string): RequestMac
   };
 }
 
-const CONTENT_AGENTS = ["director", "designer", "writer", "publisher"] as const;
+const CONTENT_AGENTS = AGENT_LISTS.content;
 const about = (agent: string, doc: Record<string, unknown>): boolean =>
   (typeof doc.from === "string" && doc.from.startsWith(`${agent}/`)) || doc.assignee === agent || (typeof doc.target === "string" && doc.target.startsWith(`${agent}/`));
 

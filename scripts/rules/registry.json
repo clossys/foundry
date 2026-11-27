@@ -10,6 +10,7 @@
         "quote": "every page = frame + sections; Publisher never writes or designs",
         "date": "2026-10-30"
       },
+      "owner_agent": "controller",
       "status": "enforced",
       "checks": [
         "packages/producer#check:assemble-only",
@@ -182,6 +183,7 @@
         "quote": "visual to Designer, copy to Writer, assembly only to Publisher",
         "date": "2026-10-31"
       },
+      "owner_agent": "controller",
       "status": "enforced",
       "checks": [
         "packages/producer#check:copy-source",
@@ -302,6 +304,7 @@
         "quote": "agents/<agent>/<slot-id>/ flat; grouping only in ia.json data",
         "date": "2026-11-02"
       },
+      "owner_agent": "controller",
       "status": "enforced",
       "note": "check:flat-slots runs from root check and fails when a legacy store is kept, read or shipped: clossys/{library,cells,tree.json} or an agent folder holding library, cells or tree.json; an agent folder entry other than ia.json and slot folders, or a slot folder nesting a directory other than candidates/; a code file naming a legacy store path or joining cells, tree.json or library onto a root; a package manifest or the pipeline graph declaring one. clossys/library was retired (git rm) after Designer ref-verbatim --pinned gave identical output with and without it. Red on the real tree until the Director, Designer library-cli, Publisher content-map and Writer cells stores move to flat slot folders (engine gap). The fixture keeps clossys/library, a grouping folder and a tree.json reader.",
       "related": [
@@ -636,6 +639,7 @@
         "quote": "ok clean up and harden",
         "date": "2026-11-03"
       },
+      "owner_agent": "controller",
       "status": "enforced",
       "checks": [
         ".#check:git-cms"
@@ -946,6 +950,7 @@
         "quote": "i want a super tight/connect system, so that we have all the plumbing/wiring locked",
         "date": "2026-11-03"
       },
+      "owner_agent": "controller",
       "status": "enforced",
       "checks": [
         ".#check:single-reader"
@@ -1081,6 +1086,34 @@
         }
       ],
       "note": "A consumer built only from tarballs and public verbs renders its pinned page: clossys check --e2e packs the cohort, installs it into an empty directory, drives the shipped scenario with the installed bin and asserts the built HTML, whose files hold no absolute path of the consumer and build to the same digest from another directory. Causes: e2e.usage (the check could not start: a bad flag, or no cohort package beside this Producer); e2e.pack (npm pack of a cohort package failed, or --from lacks one of its tarballs); e2e.install (npm install of the tarballs into the empty directory failed); e2e.one-copy (the install holds other than one copy of a first-party package, or one not resolved from its tarball); e2e.bin (node_modules/.bin/clossys is missing or is not the installed @clossys/producer); e2e.scenario (the scenario is missing, malformed, or names a step or file it does not hold); e2e.step (a scenario verb exited other than the scenario expects); e2e.render (the latest build lacks a route's index.html, or the HTML lacks a pinned string or marker); e2e.repeat (a second build of the same pins named another digest); e2e.portable (a build file holds an absolute path of the consumer or of the machine (its home or temp folder), or the consumer moved to another directory built the same pins to another digest)."
+    },
+    {
+      "id": "R-AGENTS-DEFINITION",
+      "owner_words": {
+        "quote": "the loops that run on existing agents must run on new agents too",
+        "date": "2026-11-26"
+      },
+      "owner_agent": "controller",
+      "status": "enforced",
+      "checks": [
+        ".#check:agents-definition"
+      ],
+      "fixture": "scripts/rules/fixtures/R-AGENTS-DEFINITION",
+      "fixture_runs": [
+        {
+          "check": ".#check:agents-definition",
+          "cwd": ".",
+          "run": "node scripts/check-agents-definition.mjs --root {fixture}",
+          "expect": "^list-unknown-agent lists\\.install: names ghost, which has no row"
+        },
+        {
+          "check": ".#check:agents-definition",
+          "cwd": ".",
+          "run": "node scripts/check-agents-definition.mjs --root {fixture}",
+          "expect": "^generated-copy-drift packages/producer/scripts/agent-lists\\.generated\\.mjs: differs from the render"
+        }
+      ],
+      "note": "docs/contracts/agents.json is the one agent definition, owned by Controller: one row per package, the named ordered lists code reads and the chain handoffs. Every package that reads a list reads a generated copy, and check:agents-definition fails when a named list or handoff names an agent with no row, or a generated copy differs from the render by one byte. The fixture is an empty world whose install list names ghost and whose Producer scripts copy was edited by hand."
     }
   ],
   "exemptions": [

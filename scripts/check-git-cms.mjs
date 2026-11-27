@@ -49,6 +49,7 @@
  * Usage: node scripts/check-git-cms.mjs [--repo <checkout>] [--json]
  * Exit 0 clean, 1 findings, 2 usage or load error.
  */
+import { agentList } from './lib/agent-lists.mjs';
 import { createHash } from 'node:crypto';
 import { existsSync, lstatSync, readdirSync, readFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
@@ -60,7 +61,7 @@ const SLOT_ENTRIES = new Set(['slot.json', 'candidates', 'pin.json']);
 /** Agent trees of the seat kind (slot-model types.ts FOLDER_KIND: producer is "seat"); every other tree holds slots. */
 export const SEAT_TREES = Object.freeze(['producer']);
 /** The only agent folders clossys/agents may hold (slot-model types.ts FOLDER_KIND keys). */
-export const AGENTS = Object.freeze(['director', 'designer', 'writer', 'publisher', 'producer']);
+export const AGENTS = agentList('live');
 const SEAT_ENTRIES = new Set(['slot.json', 'candidates', 'pin.json']);
 
 const stat = path => { try { return lstatSync(path); } catch { return undefined; } };

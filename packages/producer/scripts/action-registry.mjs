@@ -5,6 +5,7 @@
 // generated files from it: pipeline/actions.json (the contracts in pipeline order, which the runtime
 // loads) and pipeline/manifest.json (per agent: steps, verbs, commands, skills, code, exceptions).
 // scripts/generate-pipeline-actions.mjs writes them; scripts/check-step-standard.mjs compares them.
+import { AGENT_LISTS } from "./agent-lists.generated.mjs";
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { dirname, join, posix, relative, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -13,7 +14,7 @@ export const PKG = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 export const REPO = resolve(PKG, "../..");
 export const PKG_REL = relative(REPO, PKG).split(sep).join("/");
 /** Packages that own actions, in the pipeline's cascade order (ties inside a stage sort by it). */
-export const PACKAGES = Object.freeze(["director", "designer", "writer", "publisher", "producer"]);
+export const PACKAGES = AGENT_LISTS.live;
 export const ACTIONS_DIR = "actions";
 export const ACTION_FILE = "action.json";
 export const SKILL_FILE = "skill.md";
@@ -26,7 +27,7 @@ export const REGISTRY_FILES = Object.freeze([IA_FILE, EXCEPTIONS_FILE]);
 
 /** The Producer's loop versions (loops/loop.<id>/<id>-v<n>.json) and the slot agents their `<agent>` fills. */
 export const LOOPS_DIR = "loops";
-export const LOOP_AGENTS = Object.freeze(["director", "designer", "writer", "publisher"]);
+export const LOOP_AGENTS = AGENT_LISTS.content;
 
 /**
  * Every skill file a loop version's agent decider declares (`decider.skill`), `<agent>` filled for each

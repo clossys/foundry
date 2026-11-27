@@ -37,13 +37,14 @@
  *
  * A second run changes nothing.
  */
+import { agentList } from "./lib/agent-lists.mjs";
 import { execFileSync, spawn } from "node:child_process";
 import { closeSync, existsSync, mkdtempSync, openSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join, posix, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
-export const PACKAGES = ["designer", "director", "producer", "publisher", "writer"];
+export const PACKAGES = [...agentList("live")].sort();
 const CHECK = "scripts/check-contamination-classes.mjs";
 const NAMES = ["Bouncer", "Controller", "Designer", "Director", "Launcher", "Producer", "Publisher", "Writer"];
 const FORBIDDEN = [/^references\//, /^src\/components\/partners\//, /(^|\/)changelogs?\//i, /(^|\/)CHANGELOG/i];

@@ -2,6 +2,7 @@
  * The four Producer loops, their triggers and the checks their exits rest on (producer.md 2-3, flows.md 2 and 4).
  * Pure tables: the loader (version.ts), the runner (runner.ts) and `loop.reachable` read them.
  */
+import { AGENT_LISTS } from "../agent-lists.generated.js";
 import type { AgentId } from "../records/types.js";
 
 /**
@@ -98,7 +99,7 @@ export const EXIT_CHECKS: Readonly<Record<LoopName, readonly string[]>> = {
 export const RELEASE_READY = "release.ready";
 
 /** The five live agents a step's decider may name (plus the owner, and the per-slot placeholder). */
-export const LIVE_AGENTS: readonly AgentId[] = ["director", "designer", "writer", "publisher", "producer"];
+export const LIVE_AGENTS: readonly AgentId[] = AGENT_LISTS.live;
 export const OWNER_OF_SLOT = "<owner of slot>";
 
 /** flows.md N3: chain order. Director first, then Designer and Writer, then Publisher (Producer last). */

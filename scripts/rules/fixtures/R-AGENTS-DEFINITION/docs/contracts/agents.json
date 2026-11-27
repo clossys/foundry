@@ -1,0 +1,8 @@
+{
+  "schemaVersion": 2,
+  "agents": [],
+  "lists": {
+    "install": { "description": "Names an agent with no row.", "members": ["ghost"] }
+  },
+  "handoffs": { "description": "None.", "pairs": [] }
+}

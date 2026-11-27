@@ -16,6 +16,7 @@
  * Pure tables and judges: the loader (version.ts), the certifier (constitution/certify/loop.ts), `loop.agent-standard`
  * and `loop.connected` read them.
  */
+import { AGENT_HANDOFFS, AGENT_LISTS } from "../agent-lists.generated.js";
 import { STATE_SEGMENTS, stateRel } from "../engine/state-dir.js";
 import { existsSync, readFileSync } from "node:fs";
 import { join, posix } from "node:path";
@@ -46,9 +47,7 @@ export const AGENT_LOOPS_DIR = "loops";
  * flows.md N3 handoffs: Director feeds Designer and Writer; Designer and Writer feed Publisher. Each edge must be a
  * read, in the downstream agent's own loops, of a path the upstream agent's loops write (its pins).
  */
-export const CHAIN_HANDOFFS: readonly (readonly [LoopAgent, LoopAgent])[] = [
-  ["director", "designer"], ["director", "writer"], ["designer", "publisher"], ["writer", "publisher"],
-];
+export const CHAIN_HANDOFFS: readonly (readonly [LoopAgent, LoopAgent])[] = AGENT_HANDOFFS;
 
 /** One read agent loop version: a loop file that names the agent owning it. */
 export type AgentLoopFile = LoopFile & { readonly agent: LoopAgent };
@@ -438,7 +437,7 @@ const QUEUE_WRITE = /^producer\/queue\.slot\/entries(?:\/|$)/;
 /** The agent tree a pattern's first segment names: an agent id, `*` (any agent's), or undefined (no agent tree, e.g. `clossys/.state/`). */
 const treeOf = (pattern: readonly string[]): string | undefined => {
   const first = pattern[0]!;
-  return first === "*" || first === "**" || ["director", "designer", "writer", "publisher", "producer"].includes(first) ? first : undefined;
+  return first === "*" || first === "**" || (AGENT_LISTS.live as readonly string[]).includes(first) ? first : undefined;
 };
 
 /**

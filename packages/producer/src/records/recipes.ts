@@ -8,6 +8,7 @@
  * plumb whose `standards` list the standards it produces for) computes its candidates, its craft.md
  * runs clossys verbs only, and it has no model stage, no axes, no generator and no craft events.
  */
+import { AGENT_LISTS } from "../agent-lists.generated.js";
 import { existsSync, lstatSync, readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { packagePath } from "../package-path.js";
@@ -79,7 +80,7 @@ export interface Recipe {
 }
 
 /** The packages that hold action contracts (`packages/<package>/actions/<id>/action.json`). */
-export const ACTION_PACKAGES = Object.freeze(["director", "designer", "writer", "publisher", "producer"] as const);
+export const ACTION_PACKAGES = AGENT_LISTS.live;
 
 /** Reads the action contract `id` from whichever package holds it; an issue when none does or it does not read. */
 export function readRecipeAction(root: string, id: string): { action?: RecipeAction; issue?: string } {

@@ -18,8 +18,12 @@
 //   D6  scripts/lib/package-renames.mjs: every renamed directory is a row;
 //   D7  packages/<id>/package.json: the row's id is the directory and its package the name;
 //   D8  packages/<id>/skill/SKILL.md: the skill is named `<scope>-<id>`;
-//   D9  the agent lists still written out in code (CODE_LISTS): a list of content agents names
-//       exactly the `content` rows, and any other list names only rows.
+//   D9  the named lists (`lists`) and the chain handoffs (`handoffs`) in agents.json: every member
+//       is a row, at most once per list, and the `content` list is exactly the `content` rows;
+//   D10 the generated copies (GENERATED): the copy of the rows, lists and handoffs each package
+//       that reads them carries, byte for byte the render of agents.json. Code reads a list by
+//       name from its package's copy (root scripts read agents.json through scripts/lib/agent-lists.mjs)
+//       instead of writing the ids out; `--write` regenerates every copy, nobody edits one by hand.
 //
 // Usage: node scripts/check-agents-definition.mjs [--root DIR] [--json] [--write]
 // Exit 0 when every source agrees, 1 on any finding, 2 on a usage error or an unreadable source.
@@ -37,38 +41,34 @@ const LIFECYCLE_PATH = "docs/contracts/package-lifecycle.json";
 const WAVES_PATH = "docs/contracts/first-wave-sequence.json";
 const POLICY_PATH = "governance/release-qualification-policy.json";
 
-/** D9: the agent lists still written out in code. `content` lists must name exactly the content agents. */
-export const CODE_LISTS = Object.freeze([
-  { file: "packages/producer/src/agents.ts", symbol: "AGENT_PACKAGES", shape: "keys", rule: "content" },
-  { file: "packages/producer/src/records/slot-model/types.ts", symbol: "SLOT_AGENTS", rule: "content" },
-  { file: "packages/producer/src/records/request.ts", symbol: "CONTENT_AGENTS", rule: "content" },
-  { file: "packages/producer/src/records/request.ts", symbol: "SLOT_TARGET", shape: "alternation", rule: "content" },
-  { file: "packages/producer/src/queue/routing.ts", symbol: "ROUTED_AGENTS", rule: "content" },
-  { file: "packages/producer/src/conform/model.ts", symbol: "CONFORM_AGENTS", rule: "content" },
-  { file: "packages/producer/src/loop/agent-loops-ia.ts", symbol: "LOOP_AGENTS", rule: "content" },
-  { file: "packages/controller/src/heartbeat/fs.ts", symbol: "AGENT_ROLES", rule: "content" },
-  { file: "scripts/check-package-skills.mjs", symbol: "CONTENT_AGENT_LOOP", rule: "content" },
-  { file: "scripts/check-package-framework.mjs", symbol: "NATIVE_CELL_ROLES", rule: "content" },
-  { file: "packages/producer/src/loop/names.ts", symbol: "LIVE_AGENTS", rule: "agents" },
-  { file: "packages/producer/src/check/e2e.ts", symbol: "E2E_COHORT", rule: "agents" },
-  { file: "packages/producer/scripts/pack-five.mjs", symbol: "PACK_ROLES", rule: "agents" },
-  { file: "packages/advisor/src/front-door/install.ts", symbol: "PACK_ROLES", rule: "agents" },
-  { file: "packages/producer/src/constitution/checks/R01-catalog.ts", symbol: "FOUNDRY_AGENTS", rule: "agents" },
-  { file: "scripts/check-contamination-classes.mjs", symbol: "SKILL_ID_PACKAGES", rule: "agents" },
+/** D10: the generated copies of agents.json, one per package that reads the rows, lists or handoffs. */
+export const GENERATED = Object.freeze([
+  { path: "packages/producer/src/agent-lists.generated.ts", flavour: "ts" },
+  { path: "packages/producer/scripts/agent-lists.generated.mjs", flavour: "mjs" },
+  { path: "packages/controller/src/agent-lists.generated.ts", flavour: "ts" },
+  { path: "packages/advisor/src/agent-lists.generated.ts", flavour: "ts" },
 ].map(Object.freeze));
 
-const ID = /["']([a-z][a-z0-9-]*)["']/g;
-
-/** The members of one written-out list in `source`, or null when the list is not found. */
-export function extractList(source, { symbol, shape = "array" }) {
-  const head = new RegExp(`\\b(?:const|let|var)\\s+${symbol}\\b[^=]*=\\s*`).exec(source);
-  if (!head) return null;
-  const rest = source.slice(head.index + head[0].length);
-  let members;
-  if (shape === "keys") members = /^\{([^}]*)\}/.exec(rest)?.[1].match(/^\s*([a-z][a-z0-9-]*)\s*:/gm)?.map((key) => key.replace(/[\s:]/g, ""));
-  else if (shape === "alternation") members = /^\/\^\(([a-z|-]+)\)/.exec(rest)?.[1].split("|");
-  else members = [.../^(?:Object\.freeze\(|new Set\()?\[([^\]]*)\]/.exec(rest)?.[1].matchAll(ID) ?? []].map((match) => match[1]);
-  return members?.length ? members : null;
+/** The generated copy of `agents` (the parsed agents.json) in `flavour` ("ts" or "mjs"). Pure. */
+export function renderGenerated(agents, flavour) {
+  const tuple = (items) => `Object.freeze([${items.map((item) => JSON.stringify(item)).join(", ")}]${flavour === "ts" ? " as const" : ""})`;
+  const rows = (agents.agents ?? []).map((row) => `  Object.freeze({ id: ${JSON.stringify(row.id)}, package: ${JSON.stringify(row.package)}, class: ${JSON.stringify(row.class)} }),`);
+  const lists = Object.entries(agents.lists ?? {}).map(([name, list]) => `  /** ${list.description} */\n  ${JSON.stringify(name)}: ${tuple(list.members)},`);
+  const pairs = (agents.handoffs?.pairs ?? []).map((pair) => `  ${tuple(pair)},`);
+  return [
+    `// Generated from ${AGENTS_PATH} by \`node scripts/check-agents-definition.mjs --write\`. Do not edit:`,
+    "// check:agents-definition fails when this file differs from that render by one byte.",
+    "",
+    "/** One row per Foundry package: its id (the directory under packages/), package name and class. */",
+    `export const AGENT_ROWS = Object.freeze([\n${rows.join("\n")}\n]${flavour === "ts" ? " as const" : ""});`,
+    "",
+    "/** The named, ordered agent lists. Read a list by name; never write its ids out. */",
+    `export const AGENT_LISTS = Object.freeze({\n${lists.join("\n")}\n});`,
+    "",
+    `/** ${agents.handoffs?.description ?? ""} */`,
+    `export const AGENT_HANDOFFS = Object.freeze([\n${pairs.join("\n")}\n]${flavour === "ts" ? " as const" : ""});`,
+    "",
+  ].join("\n");
 }
 
 function skillName(root, dir) {
@@ -101,13 +101,13 @@ export function readSources(root) {
     policy,
     adapters: Object.fromEntries(Object.entries(policy).map(([key, entry]) => [key, typeof entry?.adapterPath === "string" && existsSync(join(root, entry.adapterPath))])),
     renames: PACKAGE_RENAMES.map((row) => ({ ...row })),
-    codeLists: CODE_LISTS.map((list) => ({ ...list, members: existsSync(join(root, list.file)) ? extractList(text(list.file), list) : null })),
+    generated: GENERATED.map((copy) => ({ ...copy, text: existsSync(join(root, copy.path)) ? text(copy.path) : null })),
   };
 }
 
 const kind = (value) => (value === null ? "null" : Array.isArray(value) ? "array" : Number.isInteger(value) ? "integer" : typeof value);
 
-/** The subset of JSON Schema agents.schema.json uses: type, const, enum, pattern, required, properties, additionalProperties, items. */
+/** The subset of JSON Schema agents.schema.json uses: type, const, enum, pattern, required, properties, propertyNames, additionalProperties, items, minItems, maxItems. */
 export function validateSchema(schema, value, path, findings) {
   const fail = (message) => findings.push({ rule: "agents-schema", subject: path, message });
   if (schema.type && kind(value) !== schema.type) return fail(`must be ${schema.type}`);
@@ -117,11 +117,17 @@ export function validateSchema(schema, value, path, findings) {
   if (kind(value) === "object") {
     for (const key of schema.required ?? []) if (!(key in value)) fail(`is missing ${key}`);
     for (const [key, item] of Object.entries(value)) {
+      if (schema.propertyNames?.pattern && !new RegExp(schema.propertyNames.pattern).test(key)) fail(`has key ${key}, which must match ${schema.propertyNames.pattern}`);
       if (schema.properties?.[key]) validateSchema(schema.properties[key], item, `${path}.${key}`, findings);
       else if (schema.additionalProperties === false) fail(`has unknown key ${key}`);
+      else if (kind(schema.additionalProperties) === "object") validateSchema(schema.additionalProperties, item, `${path}.${key}`, findings);
     }
   }
-  if (kind(value) === "array" && schema.items) value.forEach((item, index) => validateSchema(schema.items, item, `${path}[${index}]`, findings));
+  if (kind(value) === "array") {
+    if (schema.minItems !== undefined && value.length < schema.minItems) fail(`must have at least ${schema.minItems} items`);
+    if (schema.maxItems !== undefined && value.length > schema.maxItems) fail(`must have at most ${schema.maxItems} items`);
+    if (schema.items) value.forEach((item, index) => validateSchema(schema.items, item, `${path}[${index}]`, findings));
+  }
 }
 
 /** Join every source to the rows; returns [{ rule, subject, message }]. Pure. */
@@ -189,13 +195,24 @@ export function evaluate(sources) {
   for (const row of rows) if (qualified.get(row.id) !== 1) find("qualification-missing", row.package, `has ${qualified.get(row.id) ?? 0} entries in ${POLICY_PATH}, not exactly one`);
   for (const rename of sources.renames) if (!byId.has(rename.directory)) find("rename-unknown-agent", rename.directory, "scripts/lib/package-renames.mjs renames a directory with no row");
 
-  // D9: the lists still written out in code.
+  // D9: the named lists and the handoffs name rows only, each at most once; the content list is the content rows.
+  const lists = kind(sources.agents?.lists) === "object" ? sources.agents.lists : {};
   const content = rows.filter((row) => row.class === "content").map((row) => row.id).sort();
-  for (const list of sources.codeLists) {
-    const subject = `${list.file}#${list.symbol}`;
-    if (!list.members) { find("code-list-unreadable", subject, "the list was not found"); continue; }
-    for (const id of list.members) if (!byId.has(id)) find("code-list-unknown-agent", subject, `names ${id}, which has no row`);
-    if (list.rule === "content" && JSON.stringify([...new Set(list.members)].sort()) !== JSON.stringify(content)) find("code-list-content-drift", subject, `names ${list.members.join(", ")}; the content agents are ${content.join(", ")}`);
+  for (const [name, list] of Object.entries(lists)) {
+    const members = Array.isArray(list?.members) ? list.members : [];
+    for (const id of members) if (!byId.has(id)) find("list-unknown-agent", `lists.${name}`, `names ${id}, which has no row`);
+    if (new Set(members).size !== members.length) find("list-duplicate-agent", `lists.${name}`, `names an agent more than once: ${members.join(", ")}`);
+  }
+  if (!lists.content) find("content-list-missing", "lists.content", "agents.json has no content list");
+  else if (JSON.stringify([...new Set(lists.content.members ?? [])].sort()) !== JSON.stringify(content)) find("content-list-drift", "lists.content", `names ${(lists.content.members ?? []).join(", ")}; the content rows are ${content.join(", ")}`);
+  for (const [index, pair] of (Array.isArray(sources.agents?.handoffs?.pairs) ? sources.agents.handoffs.pairs : []).entries()) {
+    for (const id of Array.isArray(pair) ? pair : []) if (!byId.has(id)) find("handoff-unknown-agent", `handoffs.pairs[${index}]`, `names ${id}, which has no row`);
+  }
+
+  // D10: every generated copy is the render of agents.json, byte for byte.
+  for (const copy of sources.generated) {
+    if (copy.text === null) find("generated-copy-missing", copy.path, "does not exist; write it with `node scripts/check-agents-definition.mjs --write`");
+    else if (copy.text !== renderGenerated(sources.agents, copy.flavour)) find("generated-copy-drift", copy.path, `differs from the render of ${AGENTS_PATH}; regenerate it with \`node scripts/check-agents-definition.mjs --write\``);
   }
   return findings;
 }
@@ -216,7 +233,11 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
   let sources;
   try {
     args = parseArgs(process.argv.slice(2));
-    if (args.write) writeFileSync(join(args.root, CONTROLLER_COPY_PATH), readFileSync(join(args.root, ROLE_CONTRACT_PATH)));
+    if (args.write) {
+      writeFileSync(join(args.root, CONTROLLER_COPY_PATH), readFileSync(join(args.root, ROLE_CONTRACT_PATH)));
+      const agents = JSON.parse(readFileSync(join(args.root, AGENTS_PATH), "utf8"));
+      for (const copy of GENERATED) writeFileSync(join(args.root, copy.path), renderGenerated(agents, copy.flavour));
+    }
     sources = readSources(args.root);
   } catch (error) {
     console.error(`check-agents-definition: ${error instanceof Error ? error.message : String(error)}`);

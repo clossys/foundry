@@ -40,6 +40,7 @@
 // that is internally consistent can still point at packages a consumer
 // should not install yet.
 
+import { agentList } from "./lib/agent-lists.mjs";
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { dirname, isAbsolute, join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -61,7 +62,7 @@ export const REQUIRED_PRIORITY = Object.freeze([
   "operational-integrity",
   "frontend-expression",
 ]);
-export const REQUIRED_TRIO = Object.freeze(["advisor", "starter", "controller"]);
+export const REQUIRED_TRIO = agentList("trio");
 
 function isRecord(value) {
   return typeof value === "object" && value !== null && !Array.isArray(value);

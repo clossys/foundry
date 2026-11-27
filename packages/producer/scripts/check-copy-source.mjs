@@ -38,6 +38,7 @@
  *   --rev   check that commit of this repository (to prove the check fails before a fix)
  * Each finding prints as `<rule> <where>: <message>`. Exit 0 when every rule holds, 1 on a finding.
  */
+import { AGENT_LISTS } from './agent-lists.generated.mjs';
 import { execFileSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { existsSync, mkdtempSync, readFileSync, readdirSync, realpathSync, rmSync } from 'node:fs';
@@ -184,7 +185,7 @@ const publisherKeys = [];
 }
 
 const consumer = flag('--root') || rev ? join(repo, 'clossys') : consumerPath();
-const AGENTS = ['director', 'designer', 'writer', 'publisher', 'producer'];
+const AGENTS = AGENT_LISTS.live;
 
 /* names */
 if (existsSync(join(consumer, 'agents'))) {

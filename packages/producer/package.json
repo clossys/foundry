@@ -36,6 +36,7 @@
     "skill",
     "pipeline",
     "loops",
+    "scripts/agent-lists.generated.mjs",
     "scripts/check-generated-derived.mjs",
     "scripts/consumer-root.mjs",
     "!dist/**/__fixtures__/**",

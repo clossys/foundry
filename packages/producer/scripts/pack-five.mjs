@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import { AGENT_LISTS } from './agent-lists.generated.mjs';
 import { spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, realpathSync, renameSync, rmSync, statSync, writeFileSync } from "node:fs";
@@ -70,7 +71,7 @@ function packResult(stdout) {
   throw new Error("npm pack did not return one valid JSON package result.");
 }
 
-export const PACK_ROLES = Object.freeze(["controller", "director", "designer", "writer", "publisher", "producer", "advisor"]);
+export const PACK_ROLES = AGENT_LISTS.install;
 
 export function packTargets(mapped, root = repoRoot) {
   const targets = [...mapped, { role: "producer", root: join(root, "packages/producer") }, { role: "controller", root: join(root, "packages/controller") }, { role: "advisor", root: join(root, "packages/advisor") }];

@@ -36,6 +36,7 @@
  * the Writer strings pin, and the gate must go red by name).
  * Exit 0 green, 1 a finding (its cause code, the verb, its exit and stderr tail), 2 it could not run.
  */
+import { AGENT_LISTS } from "../agent-lists.generated.js";
 import { statePath, stateRel } from "../engine/state-dir.js";
 import { settlePath } from "../loop/runner.js";
 import { candidateView } from "../records/slot-current.js";
@@ -49,7 +50,7 @@ import { fileURLToPath } from "node:url";
 export const E2E_CHECK = "consumer.e2e";
 export const E2E_SCENARIO_SCHEMA = "clossys.e2e-scenario/1";
 /** The first-party packages a consumer installs together (scripts/pack-cohort.mjs (not shipped) packs the same six). */
-export const E2E_COHORT = ["producer", "director", "designer", "writer", "publisher", "controller"] as const;
+export const E2E_COHORT = AGENT_LISTS.e2e;
 
 /** The rule this check enforces, one line: scripts/rules/registry.json R-E2E-CONSUMER carries it as its note. */
 export const E2E_STATEMENT = "A consumer built only from tarballs and public verbs renders its pinned page: clossys check --e2e packs the cohort, installs it into an empty directory, drives the shipped scenario with the installed bin and asserts the built HTML, whose files hold no absolute path of the consumer and build to the same digest from another directory.";

@@ -71,6 +71,7 @@
 // still the tip of main and is not older than the commit the published
 // manifest names. A rerun of an older run therefore leaves the release alone.
 
+import { agentList } from "./lib/agent-lists.mjs";
 import { execFileSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import { existsSync, lstatSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
@@ -78,7 +79,7 @@ import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
-export const OVERLAY_PACKAGES = Object.freeze(["designer", "publisher"]);
+export const OVERLAY_PACKAGES = agentList("surfaces");
 export const MANIFEST_KIND = "foundry-overlay-manifest";
 export const MANIFEST_SCHEMA_VERSION = 1;
 export const TREE_DIGEST_ALGORITHM = "sha256-lines-v1";
@@ -90,7 +91,7 @@ export const OVERLAY_FILES = Object.freeze(overlayFilesFor(OVERLAY_PACKAGES));
  * schema, over all six packages a consumer vendors (see
  * docs/releasing/overlay.md, "Consumer cohort pack").
  */
-export const COHORT_PACKAGES = Object.freeze(["producer", "director", "designer", "writer", "publisher", "controller"]);
+export const COHORT_PACKAGES = agentList("e2e");
 
 /** Every file a pack of `packages` carries: <dir>.tgz for each, plus the manifest, byte-sorted. */
 export function overlayFilesFor(packages) {

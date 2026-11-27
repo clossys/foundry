@@ -12,8 +12,9 @@
  * `ia`, so the IA can be regrouped without moving a file.
  * Nothing about pinning lives in a candidate. Provenance is one `source` key.
  */
+import { AGENT_LISTS } from "../../agent-lists.generated.js";
 import { PIN_BASES } from "@clossys/director";
-export const SLOT_AGENTS = ["director", "designer", "writer", "publisher"] as const;
+export const SLOT_AGENTS = AGENT_LISTS.content;
 /**
  * The agents whose IA is Foundry data (`clossys ia <agent> --adopt`), each with the agents whose IA it is adopted
  * after (its slots read theirs); the Publisher IA is the workspace's own (`clossys ia publisher --start`).

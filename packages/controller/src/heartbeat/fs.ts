@@ -11,10 +11,11 @@
  */
 import { existsSync, lstatSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
+import { AGENT_LISTS } from "../agent-lists.generated.js";
 import { roleFolderPrefix } from "../loop/artifacts.js";
 import { isValidLoopState } from "../loop/state.js";
 
-const AGENT_ROLES = ["director", "designer", "writer", "publisher"] as const;
+const AGENT_ROLES = AGENT_LISTS.content;
 const isRealDirectory = (path: string): boolean => { try { return lstatSync(path).isDirectory(); } catch { return false; } };
 import type { LoopState } from "../loop/types.js";
 import { computeHeartbeat, renderDigest } from "./digest.js";

@@ -13,6 +13,7 @@
  *   determine (a mounted Designer element, a Voice or Prose rule) is named, never invented.
  * Each rewrite is one ledgered `slot` event (verb migrate); a second run changes nothing.
  */
+import { AGENT_LISTS } from "../agent-lists.generated.js";
 import type { Slot, SlotFamily } from "../records/types.js";
 import { listSlots, readSlotRecordText } from "../records/slots.js";
 import { OPTION_TABLE, type OptionTable } from "../records/slot-model/option-classes.js";
@@ -40,7 +41,7 @@ function publisherFamily(records: Map<string, Record<string, unknown>>, id: stri
   return object(family) ? family as unknown as SlotFamily : null;
 }
 
-export const CONTRACT_AGENTS: readonly SlotAgent[] = ["director", "designer", "writer"];
+export const CONTRACT_AGENTS: readonly SlotAgent[] = AGENT_LISTS.placed;
 /**
  * The agents `clossys migrate contracts` seeds: the contract agents and the Publisher, whose workspace IA `ia sync`
  * never refreshes. A Publisher slot's family is its package record's own `family` (packages/publisher/src/catalog/ia):

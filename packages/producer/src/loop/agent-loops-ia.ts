@@ -9,6 +9,7 @@
  * loops (`clossys loop`), and `ia sync` keeps the L1 it adopted (targetIa) instead of reporting it as undeclared.
  * Pure data and one IA transform; no records are read here.
  */
+import { AGENT_LISTS } from "../agent-lists.generated.js";
 import type { AgentId } from "../records/types.js";
 import type { IaAxes, IaDoc, IaLayer, IaNode } from "../records/slot-model/types.js";
 import type { LoopName } from "./names.js";
@@ -19,7 +20,7 @@ export type AgentLoopName = (typeof AGENT_LOOPS)[number];
 export const isAgentLoop = (value: string): value is AgentLoopName => (AGENT_LOOPS as readonly string[]).includes(value);
 
 /** The agents that own loops, in chain order. */
-export const LOOP_AGENTS = ["director", "designer", "writer", "publisher"] as const satisfies readonly AgentId[];
+export const LOOP_AGENTS = AGENT_LISTS.content satisfies readonly AgentId[];
 export type LoopAgent = (typeof LOOP_AGENTS)[number];
 export const isLoopAgent = (value: string): value is LoopAgent => (LOOP_AGENTS as readonly string[]).includes(value);
 

@@ -8,6 +8,7 @@ const { launchChrome } = require('./chrome-launch.cjs');
 const path = require('node:path');
 const { createHash } = require('node:crypto');
 const { studioOrigin, specimensReady } = require('./studio-origin.mjs');
+const { AGENT_LISTS } = require('../../scripts/agent-lists.generated.mjs');
 const routeScope = require('./route-scope.cjs');
 
 const studioRoot = path.resolve(__dirname, '..');
@@ -337,7 +338,7 @@ function gateReports(checks, gates) {
   const reports = checks.flatMap(check => (check.reports ?? []).map(finding => ({ route: check.route, viewport: check.viewport, theme: check.theme, owner: gates[finding.rule]?.owner, ...finding })));
   const reloads = new Map();
   for (const finding of reports) if (finding.rule === 'aborted-reload') reloads.set(finding.route, Math.max(reloads.get(finding.route) ?? 0, finding.count));
-  const laterPolish = reloads.size ? [{ item: 'deferred-loading iframe part (option A)', owners: ['designer', 'publisher'], rule: 'aborted-reload', reason: 'Streamed segments moved by React abort and reload their iframes; a deferred-loading iframe part would load each frame once.', pages: [...reloads].map(([route, reloadsPerPage]) => ({ route, reloads: reloadsPerPage })).sort((a, b) => b.reloads - a.reloads) }] : [];
+  const laterPolish = reloads.size ? [{ item: 'deferred-loading iframe part (option A)', owners: [...AGENT_LISTS.surfaces], rule: 'aborted-reload', reason: 'Streamed segments moved by React abort and reload their iframes; a deferred-loading iframe part would load each frame once.', pages: [...reloads].map(([route, reloadsPerPage]) => ({ route, reloads: reloadsPerPage })).sort((a, b) => b.reloads - a.reloads) }] : [];
   const counts = {};
   for (const finding of reports) counts[finding.rule] = (counts[finding.rule] ?? 0) + 1;
   return { gates, reportCounts: counts, laterPolish, reports };

@@ -33,6 +33,7 @@
  * Usage: node scripts/check-single-reader.mjs [--root DIR] [--json]
  * Exit 0 with no finding, 1 on any finding, 2 on a usage or parse error.
  */
+import { agentList } from "./lib/agent-lists.mjs";
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import { dirname, join, relative, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -42,7 +43,7 @@ const here = dirname(fileURLToPath(import.meta.url));
 /** The reader and the one writer of the slot model, repository-relative. */
 export const READER = "packages/producer/src/records/slots.ts";
 export const WRITER = "packages/producer/src/records/slot-write.ts";
-export const SLOT_AGENTS = Object.freeze(["director", "designer", "writer", "publisher"]);
+export const SLOT_AGENTS = agentList("content");
 /** The agent trees the reader owns: the slot trees and the Producer seat tree (slot-model types.ts MODEL_AGENTS). */
 export const MODEL_TREES = Object.freeze([...SLOT_AGENTS, "producer"]);
 /** Calls that change the file system: the writer scan flags these in READER. */

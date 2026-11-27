@@ -12,6 +12,7 @@
  * A question that waits on others (`after`) runs after their recommended answers, on the same scratch copy.
  * Read-only on the workspace: the scratch copy lives under the OS temp folder and is removed after each option.
  */
+import { AGENT_LISTS } from "../agent-lists.generated.js";
 import { createHash } from "node:crypto";
 import { cpSync, existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, realpathSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -41,7 +42,7 @@ export interface OwnerWiringResult { readonly options: number; readonly calls: n
  * folder) and the agents' standards the write guard certifies a pin against (R05, `packages/<agent>/standards/`).
  */
 const RULES_DIR = RULES_FILE.split("/").slice(0, -1).join("/");
-const COPIED = ["clossys", RULES_DIR, ...["producer", "director", "designer", "writer", "publisher"].map(agent => `packages/${agent}/standards`)] as const;
+const COPIED = ["clossys", RULES_DIR, ...AGENT_LISTS.nav.map(agent => `packages/${agent}/standards`)] as const;
 const SLOT_TARGET = /^(producer|director|designer|writer|publisher)\/([a-z0-9][a-z0-9.-]*)$/;
 
 /** A content digest of every file under a folder (empty when it does not exist). */

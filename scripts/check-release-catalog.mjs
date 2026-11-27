@@ -8,6 +8,7 @@
 // reviewed launch allowlist. That makes a scope switch fail closed instead of
 // discovering and publishing every workspace package under the new identity.
 
+import { agentList } from "./lib/agent-lists.mjs";
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { publishedDirectory } from "./lib/package-renames.mjs";
@@ -19,18 +20,12 @@ const PRECUTOVER_TARGET = Object.freeze({
   id: "clossys-npmjs-precutover",
   scope: "@clossys",
   registry: "https://registry.npmjs.org",
-  packages: Object.freeze(["advisor", "starter", "controller"]),
+  packages: agentList("trio"),
 });
 // Catalogue keys are the directories the packages were published from; a
 // package renamed since (scripts/lib/package-renames.mjs) keeps its published
 // key until the owner moves it on npm and the catalogue with it.
-export const ALL_PACKAGE_RELEASE_ORDER = Object.freeze([
-  "advisor", "starter", "controller", "launcher", publishedDirectory("director"), "writer", "designer",
-  "customer",
-  "architect", "bouncer", "butler", "giver", "influencer", "integrator",
-  "keeper", "locksmith", "messenger", "observer", "builder", "inspector",
-  "publisher",
-]);
+export const ALL_PACKAGE_RELEASE_ORDER = Object.freeze(agentList("release-order").map((id) => publishedDirectory(id)));
 // The retired producer identity is not spelled out here. Its scope and
 // registry are read from governance/package-identity-transition.json — the one
 // closed declaration of what this repository published under before it moved —

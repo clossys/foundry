@@ -109,6 +109,7 @@
 // clean run here is necessary, not sufficient; check-public-safety.mjs is the
 // separate, harder gate that still has to pass before anything publishes.
 
+import { agentList } from "./lib/agent-lists.mjs";
 import { readFileSync, readdirSync, statSync, existsSync } from "node:fs";
 import { join, relative, extname, resolve, dirname, basename, sep } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -1421,7 +1422,7 @@ const PUBLIC_FORMAT_FILENAMES = new Set([
 // The packages packagePath maps: Producer itself and AGENT_PACKAGES
 // (packages/producer/src/agents.ts). packages/producer/src/package-path.test.ts
 // pins this list to those two sources, so the two cannot drift apart.
-const SKILL_ID_PACKAGES = ["producer", "director", "designer", "writer", "publisher"];
+const SKILL_ID_PACKAGES = agentList("nav");
 const SKILL_ID_ARG_RE = /(?:^|[\s`'"(])--skill(?:=|[ \t]+)$/;
 const SKILL_ID_RE = /^packages\/([a-z][a-z0-9-]*)\/(.+)$/;
 

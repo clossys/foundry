@@ -1,7 +1,7 @@
 {
   "$schema": "./agents.schema.json",
-  "$comment": "The one definition of every agent, owned by Controller: one row per package under packages/. Every other declaration of an agent is generated from this file or checked against it by npm run check:agents-definition.",
-  "schemaVersion": 1,
+  "$comment": "The one definition of every agent, owned by Controller: one row per package under packages/. Every other declaration of an agent is generated from this file or checked against it by npm run check:agents-definition. `lists` are the named, ordered agent lists code reads instead of writing one out; `handoffs` are the chain edges. Packages read them through the generated copies `node scripts/check-agents-definition.mjs --write` writes.",
+  "schemaVersion": 2,
   "agents": [
     { "id": "advisor", "package": "@clossys/advisor", "class": "other", "definitionOwner": "controller", "rung": null },
     { "id": "architect", "package": "@clossys/architect", "class": "other", "definitionOwner": "controller", "rung": null },
@@ -25,5 +25,26 @@
     { "id": "publisher", "package": "@clossys/publisher", "class": "content", "definitionOwner": "controller", "rung": null },
     { "id": "starter", "package": "@clossys/starter", "class": "tooling", "definitionOwner": "controller", "rung": null },
     { "id": "writer", "package": "@clossys/writer", "class": "content", "definitionOwner": "controller", "rung": null }
-  ]
+  ],
+  "lists": {
+    "content": { "description": "The content agents in chain order. Each owns slots, a loop and a queue. Its members are exactly the rows of class content.", "members": ["director", "designer", "writer", "publisher"] },
+    "live": { "description": "The agents with a live record tree under clossys/agents: the content agents in chain order, then Producer.", "members": ["director", "designer", "writer", "publisher", "producer"] },
+    "nav": { "description": "The live agents in Studio nav and interview order: Producer, then the content agents in chain order.", "members": ["producer", "director", "designer", "writer", "publisher"] },
+    "e2e": { "description": "The first-party packages the end-to-end check installs and the overlay cohort packs: the nav agents, then Controller.", "members": ["producer", "director", "designer", "writer", "publisher", "controller"] },
+    "install": { "description": "The roles a consumer install pack holds, each exactly once: what pack-five packs and advisor install accepts.", "members": ["controller", "director", "designer", "writer", "publisher", "producer", "advisor"] },
+    "placed": { "description": "The agents whose package IA places slots in a consumer; Publisher assembles and places none.", "members": ["director", "designer", "writer"] },
+    "policy": { "description": "The agents whose owner decisions are asked as policy, not per slot.", "members": ["designer", "writer", "publisher"] },
+    "copy-keys": { "description": "The agents whose slot candidates carry copy keys and declared inputs.", "members": ["designer", "writer"] },
+    "markdown": { "description": "The agents whose candidates are Markdown documents; the others' are JSON.", "members": ["director", "writer"] },
+    "surfaces": { "description": "The packages that ship rendered surfaces: Designer's components and Publisher's pages.", "members": ["designer", "publisher"] },
+    "side-door": { "description": "The packages the engine side-door scan reads, in scan order.", "members": ["producer", "designer", "writer", "publisher", "director"] },
+    "assemble-only": { "description": "The agent words the assemble-only check reads in a page or route, in match order.", "members": ["designer", "writer", "director", "publisher", "producer"] },
+    "native-cells": { "description": "The roles whose package framework declares native cells.", "members": ["director", "writer", "designer", "publisher"] },
+    "trio": { "description": "The first three packages ever published: the pre-cutover release target and the first wave of qualification.", "members": ["advisor", "starter", "controller"] },
+    "release-order": { "description": "Every published package in release order; Producer is not published.", "members": ["advisor", "starter", "controller", "launcher", "director", "writer", "designer", "customer", "architect", "bouncer", "butler", "giver", "influencer", "integrator", "keeper", "locksmith", "messenger", "observer", "builder", "inspector", "publisher"] }
+  },
+  "handoffs": {
+    "description": "The chain handoffs (flows.md N3): Director feeds Designer and Writer, and Designer and Writer feed Publisher. Each pair is upstream, then downstream.",
+    "pairs": [["director", "designer"], ["director", "writer"], ["designer", "publisher"], ["writer", "publisher"]]
+  }
 }

@@ -30,6 +30,7 @@
  *   filled, or dropped through `clossys ia <agent> --drop <l1>/<l2>`; a package group whose leaves all
  *   retired is left out of the consumer tree by the package IA (foundry-build-0048 U33).
  */
+import { AGENT_LISTS, AGENT_ROWS } from "../../agent-lists.generated.js";
 import { MODEL_AGENTS, type ModelAgent } from "../../records/slot-model/index.js";
 import { isCurrentSlot } from "../../records/slot-current.js";
 import { positionIa } from "../../records/slot.js";
@@ -37,10 +38,7 @@ import { isObject, liveSlots, row, stringList } from "../checks/shared.js";
 import type { AgentRecord, Check, ConstitutionContext, Row, SlotRecord } from "../types.js";
 
 /** The Foundry packages (packages/* of the Foundry repository); an L0 or L1 must not name one (R01.9). */
-export const FOUNDRY_PACKAGES: readonly string[] = [
-  "advisor", "architect", "bouncer", "builder", "butler", "controller", "customer", "designer", "director", "giver", "influencer",
-  "inspector", "integrator", "keeper", "launcher", "locksmith", "messenger", "observer", "producer", "publisher", "starter", "writer",
-];
+export const FOUNDRY_PACKAGES: readonly string[] = AGENT_ROWS.map(row => row.id);
 /**
  * Words that name where a leaf came from or who consumes it, not what it is (R01.9, R01.14).
  * Specimens is a Studio surface (proposal (c): "Specimens and Producer are consumers").
@@ -51,7 +49,7 @@ export const STUDIO_PUBLICATION = "publication.studio";
 /** The Studio nav group above the agents (proposal (c), Studio nav). */
 export const WORKSPACE_GROUP = "workspace";
 /** Nav order of the agent groups: chain order (proposal (c), owner Q-order). */
-export const NAV_AGENT_ORDER: readonly ModelAgent[] = ["producer", "director", "designer", "writer", "publisher"];
+export const NAV_AGENT_ORDER: readonly ModelAgent[] = AGENT_LISTS.nav;
 /**
  * One side of an IA mirror: an L0 (its L1 tabs are the list), or with `l1` one L1 of it (its L2 groups are the
  * list, an L2 id read without its L1's `<key>-` prefix).

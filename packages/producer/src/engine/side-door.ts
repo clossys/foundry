@@ -23,6 +23,7 @@
  *     with `#!`) that names a state folder or a slot path (namesRecordPath).
  * No allowlist and no baseline: every finding fails the check.
  */
+import { AGENT_LISTS } from "../agent-lists.generated.js";
 import { readFileSync, readdirSync, statSync } from "node:fs";
 import { join, relative, sep } from "node:path";
 import ts from "typescript";
@@ -64,8 +65,8 @@ export const SCRIPT_WRITERS = Object.freeze([
 export const PAIRED_WRITERS = Object.freeze(["replaceModelFile", "createModelFile", "removeModelFile", "moveModelEntry", "dropEmptyModelDir"]);
 export const PAIRED_APPENDERS = Object.freeze(["appendIaEvent", "appendSlotDocEvent", "appendRetireCandidate", "appendRetireSlot", "appendCraftEvent", "appendMigrationEvents", "writeSeatDecision"]);
 /** The packages whose source and scripts are scanned, and the repository scripts. */
-export const SIDE_DOOR_PACKAGES = Object.freeze(["producer", "designer", "writer", "publisher", "director"]);
-export const SIDE_DOOR_SCOPE = "packages/<producer|designer|writer|publisher|director>/{src,bin,scripts} and scripts/";
+export const SIDE_DOOR_PACKAGES: readonly string[] = AGENT_LISTS["side-door"];
+export const SIDE_DOOR_SCOPE = `packages/<${SIDE_DOOR_PACKAGES.join("|")}>/{src,bin,scripts} and scripts/`;
 
 export const WRITE_CALLS = Object.freeze([
   "writeFileSync", "writeFile", "appendFileSync", "appendFile", "unlinkSync", "unlink", "mkdirSync", "mkdir", "rmSync", "rm",
@@ -75,7 +76,7 @@ export const WRITE_CALLS = Object.freeze([
 const OPEN_CALLS = new Set(["openSync", "open"]);
 /** Slot-model path helpers (records/slot-model, records/pin.ts, queue/entry.ts): their result is a record path. */
 export const HELPERS = Object.freeze(["agentsDir", "agentDir", "iaPath", "slotDir", "slotFile", "pinFile", "candidatesDir", "slotRel", "seatDir", "seatFile", "pinPath", "queueEntryPath", "queueEntriesDir", "requestsDir", "ledgerDir", "producerDir"]);
-const MODEL_TREES = ["director", "designer", "writer", "publisher", "producer"];
+const MODEL_TREES = AGENT_LISTS.live;
 const AGENT_PATH = new RegExp(`(?:^|/)agents/(?:${MODEL_TREES.join("|")})(?:/|$)`);
 const MODEL_FILE = /(?:^|\/)(?:ia|slot|pin|seat|ledger)\.json$|(?:^|\/)candidates(?:\/|$)/;
 /** A path naming the state folder (STATE_DIR) or the legacy root one (LEGACY_STATE_DIR), whole or inside. */

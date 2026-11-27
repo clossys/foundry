@@ -10,6 +10,7 @@
  * of that skill file as installed; a package actor carries the version read from the installed
  * `package.json`. A candidate file is written once (`writeCandidateFile` refuses an existing name).
  */
+import { AGENT_LISTS } from "../agent-lists.generated.js";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -18,7 +19,7 @@ import { sha256Hex } from "./hash.js";
 import { readRecordHeader, validateAgainst, type JsonSchema } from "./schema.js";
 import type { Actor, AgentId, CandidateHeader, CandidateName, Iso, Ref, Sha256, SlotId, Tier } from "./types.js";
 
-export const TARGET_AGENTS: readonly AgentId[] = ["director", "designer", "writer", "publisher", "producer"];
+export const TARGET_AGENTS: readonly AgentId[] = AGENT_LISTS.live;
 export const SLOT_ID = /^[a-z][a-z0-9-]*(\.[a-z0-9][a-z0-9-]*){1,3}$/;
 export const CANDIDATE_NAME = /^([a-z0-9][a-z0-9.-]*)-v([1-9][0-9]*)\.(md|json|svg)$/;
 export const SHA256 = /^[0-9a-f]{64}$/;

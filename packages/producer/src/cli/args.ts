@@ -1,3 +1,5 @@
+import { AGENT_LISTS } from "../agent-lists.generated.js";
+
 export const VERBS = ["direct", "design", "write", "publish", "produce", "check"] as const;
 export type Verb = typeof VERBS[number];
 
@@ -187,7 +189,7 @@ export function parseArgs(argv: readonly string[]): CliArgs {
   if (args.rule !== undefined && !args.constitution) throw new CliUsageError("--rule requires check --constitution");
   if (args.rule !== undefined && !args.rule.every(id => /^R(?:0[1-9]|1[0-6]|20)$/.test(id))) throw new CliUsageError("--rule must be a rule id R01..R16 or R20");
   if (args.agent !== undefined && !args.constitution) throw new CliUsageError("--agent requires check --constitution");
-  if (args.agent !== undefined && !["director", "designer", "writer", "publisher", "producer"].includes(args.agent)) throw new CliUsageError("--agent must be director, designer, writer, publisher or producer");
+  if (args.agent !== undefined && !(AGENT_LISTS.live as readonly string[]).includes(args.agent)) throw new CliUsageError("--agent must be director, designer, writer, publisher or producer");
   if ((args.slot !== undefined || args.changed !== undefined) && !args.constitution) throw new CliUsageError("--slot and --changed require check --constitution");
   if (args.recordGreen && (args.slot !== undefined || args.changed !== undefined)) throw new CliUsageError("--record-green needs a full run: no --slot or --changed");
   if (args.slot !== undefined && !args.slot.every(target => /^(director|designer|writer|publisher|producer)\/[a-z0-9][a-z0-9._-]*$/.test(target))) throw new CliUsageError("--slot must be <agent>/<slot> (agent director, designer, writer, publisher or producer)");

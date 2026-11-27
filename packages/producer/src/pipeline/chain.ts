@@ -9,6 +9,7 @@
  *   - any other decide step is open while no file matches its outputs.
  * The orchestrators themselves are not steps and record nothing; every step they run records itself.
  */
+import { AGENT_LISTS } from "../agent-lists.generated.js";
 import { spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
@@ -173,7 +174,7 @@ export function openItems(step: Step, context: Context): string[] {
 }
 
 // ---------------------------------------------------------------- packets
-export const INTERVIEW_AGENTS = ["producer", "director", "designer", "writer", "publisher"] as const;
+export const INTERVIEW_AGENTS = AGENT_LISTS.nav;
 export type InterviewAgent = typeof INTERVIEW_AGENTS[number];
 const isInterviewAgent = (value: string): value is InterviewAgent => (INTERVIEW_AGENTS as readonly string[]).includes(value);
 /** The agent whose interview round asks an open owner item: a slot's agent, evidence the Director's, the rest the Producer's. */

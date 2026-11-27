@@ -16,6 +16,7 @@
 // `packages/<pkg>/skill/SKILL.md`; the parent directory is `skill`, which is
 // intentional; this gate checks frontmatter `name === clossys-<pkg>` instead.
 
+import { agentList } from "./lib/agent-lists.mjs";
 import { existsSync, readdirSync, readFileSync, realpathSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -95,7 +96,7 @@ function validateSkillName(name, expectedName, packageDir) {
  * The four content agents (Director = director, Designer, Writer, Publisher) each ship
  * one loop skill: numbered steps under `## Loop` and an exact `## Done when` check.
  */
-const CONTENT_AGENT_LOOP = new Set(["director", "designer", "writer", "publisher"]);
+const CONTENT_AGENT_LOOP = new Set(agentList("content"));
 const LOOP_HEADING = /^## Loop\b.*$/m;
 const DONE_HEADING = /^## Done when[ \t]*$/m;
 const INSPECTOR_USER_BOUNDARY = /synthetic user/i;

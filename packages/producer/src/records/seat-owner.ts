@@ -14,9 +14,10 @@
  * free text are refused unless the caller names them in `also`. The retire verb and writers and the candidate writers
  * call it; retire binds the owner answer to its slot and the option `retire` (`bind`, U7 r4).
  */
+import { AGENT_LISTS } from "../agent-lists.generated.js";
 import { resolveOwnerAnswer } from "../queue/rules.js";
 
-export const SEAT_AGENTS = ["director", "designer", "writer", "publisher", "producer"] as const;
+export const SEAT_AGENTS = AGENT_LISTS.live;
 
 const SEAT = /^agent:([a-z][a-z0-9-]*)(?:\.[a-z0-9.-]+)?$/;
 

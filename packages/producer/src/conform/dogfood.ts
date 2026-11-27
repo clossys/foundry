@@ -8,6 +8,7 @@
  * pick, verdict, and the Writer's owner pin) on a temporary copy with a hand-placed and a submitted, uncertified candidate; the rest
  * read files.
  */
+import { AGENT_LISTS } from "../agent-lists.generated.js";
 import { createHash } from "node:crypto";
 import { cpSync, existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, realpathSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -202,7 +203,7 @@ export async function probePinGate(consumer: string, agents: readonly AgentModel
         pick = { slot: placedSlot, dir: join(temp, "clossys", "agents", agent.agent, placedSlot.id, "candidates"), names: [] };
       }
       const source = pick.names.at(-1);
-      const ext = source?.split(".").pop() ?? (["director", "writer"].includes(agent.agent) ? "md" : "json");
+      const ext = source?.split(".").pop() ?? ((AGENT_LISTS.markdown as readonly string[]).includes(agent.agent) ? "md" : "json");
       const placed = `${PIN_PROBE_NAME}-v1.${ext}`;
       mkdirSync(pick.dir, { recursive: true });
       writeFileSync(join(pick.dir, placed), source ? readFileSync(join(pick.dir, source)) : ext === "json" ? "{}\n" : "---\n---\n");

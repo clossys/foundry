@@ -1,3 +1,4 @@
+import { agentList } from "./agent-lists.mjs";
 import { createHash } from "node:crypto";
 import { execFileSync } from "node:child_process";
 import { existsSync, readFileSync, readdirSync } from "node:fs";
@@ -9,7 +10,7 @@ const PACKAGE_DIRECTORY = /^[a-z0-9][a-z0-9-]*$/;
 // This is the sealed first-publication cohort.  It is intentionally not the
 // active catalogue: later packages are reviewed additions, never a rewrite of
 // the historical Trio boundary.
-export const INITIAL_PUBLICATION_PACKAGES = Object.freeze(["advisor", "starter", "controller"]);
+export const INITIAL_PUBLICATION_PACKAGES = agentList("trio");
 const IDENTITY_TRANSITION_CONTROL_SURFACES = new Set([
   "governance/package-identity-transition.json",
   "governance/package-repository-history.json",

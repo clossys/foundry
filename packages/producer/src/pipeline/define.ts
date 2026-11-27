@@ -9,6 +9,7 @@
  * Globs are workspace-relative. `pkg:` is relative to this package, `consumer:` to the consumer
  * folder (`clossys/`, globs.ts workspaceGlob) and `arg:` is a caller-chosen path (a CLI argument).
  */
+import { AGENT_LISTS } from "../agent-lists.generated.js";
 import { SLOT_AGENTS } from "../records/slot-model/types.js";
 
 export const STEP_KINDS = ["plumb", "decide:creative", "decide:judgment"] as const;
@@ -151,7 +152,7 @@ export class StepDefinitionError extends Error {}
 export const ACTION_SCHEMA = "clossys.action/1";
 /** W1b's run-record format: every step writes `clossys/.state/runs/<step>.jsonl` rows of this schema. */
 export const RUN_RECORD = "clossys.pipeline-run/1";
-export const ACTION_AGENTS = ["director", "designer", "writer", "publisher", "producer", "owner"] as const;
+export const ACTION_AGENTS = [...AGENT_LISTS.live, "owner"] as const;
 export type ActionAgent = typeof ACTION_AGENTS[number];
 export const DECIDERS = ["owner", "agent"] as const;
 export type Decider = typeof DECIDERS[number];

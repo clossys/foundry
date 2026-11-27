@@ -9,11 +9,12 @@
 import { createHash } from "node:crypto";
 import { copyFileSync, existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { basename, join, resolve } from "node:path";
+import { AGENT_LISTS } from "../agent-lists.generated.js";
 import { isSecretPath } from "./guard.js";
 import { ok, refused, tail, type Host, type VerbResult } from "./host.js";
 
-/** Every role a pack holds, each exactly once (pack-five's PACK_ROLES). */
-export const PACK_ROLES = ["controller", "producer", "director", "designer", "writer", "publisher", "advisor"] as const;
+/** Every role a pack holds, each exactly once: the agents.json install list, which pack-five's PACK_ROLES also reads. */
+export const PACK_ROLES = AGENT_LISTS.install;
 export const INSTALL_RECORD = "clossys/advisor/install.json";
 export const VENDOR_DIR = "vendor/clossys";
 const HEX40 = /^[0-9a-f]{40}$/;

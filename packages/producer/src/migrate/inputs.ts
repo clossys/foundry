@@ -11,6 +11,7 @@
  * Inputs are only added, never removed: a declared input the graph does not show stays.
  * Deterministic and idempotent: a second run plans no change.
  */
+import { AGENT_LISTS } from "../agent-lists.generated.js";
 import { readFileSync, writeFileSync } from "node:fs";
 import { join, relative, sep } from "node:path";
 import { sourceCitations } from "../records/citations.js";
@@ -46,7 +47,7 @@ export function planInputsMigration(consumer: string, catalog: InputsCatalog = f
   const rel = (path: string) => relative(root, path).split(sep).join("/");
   const known = slotIndex(consumer);
   const changes: InputsChange[] = [], files: InputsFileChange[] = [], findings: InputsFinding[] = [];
-  for (const agent of ["designer", "writer"] as const) {
+  for (const agent of AGENT_LISTS["copy-keys"]) {
     for (const entry of listSlots(consumer, agent)) {
       const before = readSlotRecordText(entry.dir, "slot.json");
       if (before === undefined) continue;

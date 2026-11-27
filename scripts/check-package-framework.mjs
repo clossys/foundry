@@ -73,6 +73,7 @@
 // child process. It belongs in check:gates (dependency-free) alongside
 // check-role-assessment-surfaces.mjs.
 
+import { agentList } from "./lib/agent-lists.mjs";
 import { readFileSync, readdirSync, existsSync } from "node:fs";
 import { dirname, join, isAbsolute } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -95,7 +96,7 @@ function isSafeRelativePath(value) {
 }
 
 const roleShortName = (role) => role.split("/").pop();
-const NATIVE_CELL_ROLES = new Set(["director", "writer", "designer", "publisher"]);
+const NATIVE_CELL_ROLES = new Set(agentList("native-cells"));
 
 /** Declaration compatibility only; this does not select or fall back between runtime roots. */
 export function isOwnedOutputPath(role, path) {

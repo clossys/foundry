@@ -24,6 +24,7 @@
  * - R01.7-R01.16 the IA checks (levels, axes, labels, nav parity, extension facet, fanout, empty groups) live in
  *   rules/r01-ia.ts; rules.json registers them `building` (R01.15 `warn`) until the IA data units land.
  */
+import { AGENT_LISTS } from "../../agent-lists.generated.js";
 import { createHash } from "node:crypto";
 import { hasSchema, loadSchema, validateValue } from "../../pipeline/schema.js";
 import { AGENT_KIND, fixtureShapeIssues, SLOT_KINDS, validateIa, validateSlotDoc, type SlotKind } from "../../records/slot-model/index.js";
@@ -40,7 +41,7 @@ import { elementMountsFixture } from "../certify/element.js";
 const AGENT_FILES = new Set(["ia.json", "ledger.json", "policy.json"]);
 const SLOT_ENTRIES = new Set(["slot.json", "pin.json", "candidates", "ledger.json", "retired"]);
 /** The agents whose live slots must be Foundry leaves or extensions (R01.5). */
-export const FOUNDRY_AGENTS: readonly FoundryAgent[] = ["director", "designer", "writer"];
+export const FOUNDRY_AGENTS: readonly FoundryAgent[] = AGENT_LISTS.placed;
 
 const agentRow = (check: string, agent: AgentRecord, reason: string, path: string): Row => row("R01", check, { agent: agent.agent, id: "*" }, reason, path);
 const schemaIssues = (value: unknown, name: string) => validateValue(value, loadSchema(name)).map(issue => `${issue.path} ${issue.message}`);

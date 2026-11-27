@@ -21,6 +21,7 @@
  * Producer seats are clossys.slot/1 in the base). After it, the run places every Publisher package leaf
  * (scripts/place-fixture-publisher.mjs) on the same clock, then seeds PUBLISHER_TARGETS through the same verbs.
  */
+import { AGENT_LISTS } from "./agent-lists.generated.mjs";
 import { execFileSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import { cpSync, existsSync, lstatSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, realpathSync, rmSync, statSync, writeFileSync } from "node:fs";
@@ -1037,7 +1038,7 @@ const MARK_TEXT = "written by scripts/seed-pinned-world.mjs\n";
 const marked = dir => existsSync(join(dir, MARK));
 
 /** The agents whose IA places slots in the fixture; Publisher's IA places none. */
-export const LOOP_PLACED = ["director", "designer", "writer"];
+export const LOOP_PLACED = AGENT_LISTS.placed;
 
 /**
  * The placed agents' own loops, last (R3): `clossys loop <agent>/loop.scope` adopts each agent's five loop slots and

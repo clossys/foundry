@@ -5,6 +5,7 @@
  * five loop skills. The placed side is a consumer folder (`agents/<agent>/`), by default the producer's
  * test fixture. Reading is all this file does; assertions.ts judges and run.ts reports.
  */
+import { AGENT_LISTS } from "../agent-lists.generated.js";
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { basename, dirname, join } from "node:path";
 import { AGENT_LOOPS, AGENT_LOOPS_DIR, readAgentLoopPin, type AgentLoopName } from "../loop/agent-loops.js";
@@ -14,7 +15,7 @@ import { loadStandards, type Standard } from "../records/standards.js";
 import { pinBlocker } from "../records/slots.js";
 import { readAgentRequests, readRequestMachinery, resetRequestFacts, type AgentRequestFacts, type RequestMachinery } from "./requests-model.js";
 
-export const CONFORM_AGENTS = ["director", "designer", "writer", "publisher"] as const;
+export const CONFORM_AGENTS = AGENT_LISTS.content;
 export type ConformAgent = (typeof CONFORM_AGENTS)[number];
 export const LOOPS = ["scope", "slot", "create", "choose", "cascade"] as const;
 export type LoopName = (typeof LOOPS)[number];

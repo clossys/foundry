@@ -72,6 +72,21 @@ agent or code pin shows as `confirm`: the slot is filled, and the owner can stil
 it. A slot shown as `sample` (still on the package default), `unresolved`, `failing` or
 `needsRefresh` is not done.
 
+## Rules you own
+
+The rules in the repository's rule registry whose `owner_agent` is `controller`: the agent standards,
+starting with the one agent definition (`docs/contracts/agents.json`, checked by
+`check:agents-definition`). `check:rules` fails when this list and the registry differ.
+
+<!-- owned-rules:start: the rules in the repository's rule registry whose owner_agent is this package; check:rules fails on drift -->
+- R-ASSEMBLE-ONLY
+- R-WRITER-COPY
+- R-FLAT-SLOTS
+- R-GIT-CMS
+- R-SINGLE-READER
+- R-AGENTS-DEFINITION
+<!-- owned-rules:end -->
+
 ## When this package is installed
 
 If `node_modules/@clossys/controller` is present (or this package's bins are on PATH), use the exact pin in the tree. Read `package.json` `bin` for the real command names.

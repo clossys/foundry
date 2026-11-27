@@ -50,6 +50,7 @@
  * A Publisher candidate that is a `clossys.page/1` record (the page record today's install and slot check
  * read) is passed through untouched: it already is the record, and the publisher ships no migration from it.
  */
+import { AGENT_LISTS } from "../agent-lists.generated.js";
 import { existsSync, mkdirSync, readdirSync, readFileSync, renameSync, rmdirSync, statSync, unlinkSync, writeFileSync } from "node:fs";
 import { dirname, join, relative, sep } from "node:path";
 import { CANDIDATE_NAME, buildCandidateHeader, parseCandidateName, serializeCandidate, targetSchema } from "../records/candidate.js";
@@ -78,7 +79,7 @@ export const RECUT_RETIRE_BY = `migration:${RECUT}`;
 /** Where a retired slot folder goes: the `clossys retire --slot` place, a non-slot (`_`) folder of the agent. */
 export const RETIRED_SLOTS = "_retired";
 /** The agents whose packages ship a recut tree and a retired.json. */
-export const RECUT_AGENTS = ["director", "designer", "writer", "publisher"] as const;
+export const RECUT_AGENTS = AGENT_LISTS.content;
 export type RecutAgent = (typeof RECUT_AGENTS)[number];
 export type RecutFate = "live" | "move" | "retire" | "unknown";
 
@@ -552,7 +553,7 @@ export interface FollowUp { slot1To2: number; slot1To2Findings: string[]; pins: 
  * package leaves a publication consumes plus the ones the consumer already places (syncState, CONSISTENCY D5 option 1).
  */
 export function treeAgents(dir: string): SyncAgent[] {
-  return (["director", "designer", "writer"] as const).filter(agent => slotDefinitions(dir, agent).size > 0);
+  return AGENT_LISTS.placed.filter(agent => slotDefinitions(dir, agent).size > 0);
 }
 /** Step 6: the slot-model sync writes of every tree agent (ia.json and slot.json files), and why an agent's sync is refused. */
 export function planTreeSync(dir: string, at: Iso, version: string): { writes: [string, string][]; findings: string[] } {

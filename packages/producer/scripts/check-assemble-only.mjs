@@ -22,6 +22,7 @@
  * Usage: node scripts/check-assemble-only.mjs [--root <repository>] [--json]. `--root` checks another
  * repository tree (its packages/producer) instead of this one. Exit 1 on any finding.
  */
+import { AGENT_LISTS } from './agent-lists.generated.mjs';
 import fs from 'node:fs';
 import path from 'node:path';
 import { createRequire } from 'node:module';
@@ -40,7 +41,7 @@ export const PAGE_HEADER = 'sections.studio.page-header';
 /** The page-tabs section a record with group tabs places. */
 export const PAGE_TABS = 'sections.studio.page-tabs';
 /** The model agents (slot-model types.ts FOLDER_KIND keys), and with them the slot-kind word. */
-export const AGENTS = Object.freeze(['designer', 'writer', 'director', 'publisher', 'producer']);
+export const AGENTS = AGENT_LISTS['assemble-only'];
 const AGENT_WORDS = [...AGENTS, 'slot'];
 const AGENT_LITERAL = `['"\`](?:${AGENT_WORDS.join('|')})['"\`]`;
 const AGENT_BRANCH = [

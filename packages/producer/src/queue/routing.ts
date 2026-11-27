@@ -22,6 +22,7 @@
  *
  * The route records the row id and the table's sha256, so `rederive` re-runs the same function and compares.
  */
+import { AGENT_LISTS } from "../agent-lists.generated.js";
 import { createHash } from "node:crypto";
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
@@ -40,7 +41,7 @@ const MATCHES = ["live", "owner-class", "home", "agent", "any"] as const;
 /** The kinds an owner class reserves: a change or a new slot in the class is the owner's (a fix goes to its handler). */
 const OWNER_KINDS = ["change", "slot"] as const;
 const DESTINATIONS = ["handler", "owner-packet", "decider", "owner-clarify"] as const;
-const ROUTED_AGENTS = ["director", "designer", "writer", "publisher"] as const;
+const ROUTED_AGENTS = AGENT_LISTS.content;
 export type RoutedAgent = (typeof ROUTED_AGENTS)[number];
 const isRoutedAgent = (value: string): value is RoutedAgent => (ROUTED_AGENTS as readonly string[]).includes(value);
 

@@ -1,3 +1,5 @@
+import { AGENT_LISTS } from "../agent-lists.generated.js";
+
 /**
  * The ref string of the CLI and prose (system.md section 5):
  * `<agent>/<slot-id>[/<candidate>][#<record>][:<Key>]`, where `<candidate>` is a consumer candidate
@@ -6,7 +8,7 @@
  * Parsing checks the grammar only; whether the slot or candidate exists is the reader's job
  * (a ref that parses can still dangle).
  */
-export const REF_AGENTS = ["director", "designer", "writer", "publisher", "producer"] as const;
+export const REF_AGENTS = AGENT_LISTS.live;
 export type RefAgent = typeof REF_AGENTS[number];
 
 export const SLOT_ID = /^[a-z][a-z0-9-]*(\.[a-z0-9][a-z0-9-]*){1,3}$/;

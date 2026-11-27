@@ -41,6 +41,7 @@
  * current candidate format; the generator imports these derivations, and the check runs on any tree
  * with the Producer built.
  */
+import { AGENT_LISTS } from './agent-lists.generated.mjs';
 import { createHash } from 'node:crypto';
 import { existsSync, mkdtempSync, readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -64,7 +65,7 @@ import { consumerPath, consumerUnder } from './consumer-root.mjs';
 const here = dirname(fileURLToPath(import.meta.url));
 const producer = resolve(here, '..');
 const repo = resolve(producer, '..', '..');
-const AGENTS = ['director', 'designer', 'writer', 'publisher'];
+const AGENTS = AGENT_LISTS.content;
 // A registry item name (`button`, `card`) names a component first: shadcn registry dependencies are components.
 const REF_LAYERS = ['components', 'sections', 'frames', 'assets', 'themes'];
 const sha256 = bytes => createHash('sha256').update(bytes).digest('hex');

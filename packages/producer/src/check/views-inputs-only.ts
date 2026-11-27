@@ -17,6 +17,7 @@
  * - the body or the inputs name a coding tool, a model or its vendor (one file serves every chat agent);
  * - the `## Rules` section is missing.
  */
+import { AGENT_LISTS } from "../agent-lists.generated.js";
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
 import { packagePath, PRODUCER_ROOT } from "../package-path.js";
@@ -26,7 +27,7 @@ import { runOf, type TargetCheckRun, type TargetFinding } from "./pins-resolve.j
 
 export const VIEWS_INPUTS_ONLY = "views.inputs-only";
 
-export const VIEW_AGENTS: readonly AgentId[] = ["director", "designer", "writer", "publisher", "producer"];
+export const VIEW_AGENTS: readonly AgentId[] = AGENT_LISTS.live;
 /** The four read verbs a view may take as an input (system.md 12.1). */
 export const READ_VERBS = ["status", "slot", "render", "preview"] as const;
 export const VIEW_QUEUES: readonly QueueName[] = ["queue.pick", "queue.approve", "queue.clarify", "queue.fix"];

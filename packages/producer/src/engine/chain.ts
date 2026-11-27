@@ -10,6 +10,7 @@
  *
  * Node runs this file with type stripping in child writers (engine/*.test.ts, records/ledger.test.ts (not shipped)).
  */
+import { AGENT_LISTS } from "../agent-lists.generated.js";
 import { createHash } from "node:crypto";
 import { mkdirSync, readFileSync, renameSync, rmSync, writeFileSync } from "node:fs";
 import { basename, dirname, isAbsolute, join, relative, resolve, sep } from "node:path";
@@ -24,7 +25,7 @@ export const INDEX_FILE = stateRel("index.json");
 /** The consumer folder name a workspace root holds. */
 export const CONSUMER_DIR = "clossys";
 /** The agent trees whose records log events (records/slot-model MODEL_AGENTS). */
-export const RECORD_AGENTS = ["director", "designer", "writer", "publisher", "producer"] as const;
+export const RECORD_AGENTS = AGENT_LISTS.live;
 
 export const enginePaths = (root: string) => ({
   dir: join(root, ENGINE_DIR),

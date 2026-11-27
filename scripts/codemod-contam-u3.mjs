@@ -29,11 +29,12 @@
  *
  * A second run changes nothing.
  */
+import { agentList } from "./lib/agent-lists.mjs";
 import { existsSync, readdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
 import { dirname, join, posix, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
-export const PACKAGES = ["producer", "director", "designer", "writer", "publisher"];
+export const PACKAGES = agentList("nav");
 const TREES = ["recipes", "actions"];
 const TEXT = /\.(md|mjs|js|ts|json|txt)$/;
 

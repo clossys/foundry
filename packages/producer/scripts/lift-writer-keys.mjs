@@ -23,6 +23,7 @@
  * --repo is required: the consumer root (the folder holding clossys/). There is no default, so a
  * one-shot writer never lands on whatever checkout it happens to sit in. Exit 2 without it.
  */
+import { AGENT_LISTS } from './agent-lists.generated.mjs';
 import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { execFileSync } from 'node:child_process';
@@ -99,7 +100,7 @@ const name = (context, text) => {
   names.set(context, text);
 };
 const existing = new Map(pinnedWriter('strings.names').records.map(record => [record.context, record.text.trim()]));
-for (const agent of ['director', 'designer', 'writer', 'publisher', 'producer']) {
+for (const agent of AGENT_LISTS.live) {
   const ia = JSON.parse(readFileSync(join(consumer, 'agents', agent, 'ia.json'), 'utf8'));
   for (const node of ia.nodes) { name(`${agent}.ia.${node.id}`, node.label); for (const child of node.children) name(`${agent}.ia.${child.id}`, child.label); }
   for (const layer of ia.layers ?? []) name(`${agent}.ia.${layer.id}`, layer.label);

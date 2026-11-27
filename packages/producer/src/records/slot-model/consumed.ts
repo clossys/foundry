@@ -21,13 +21,14 @@
  * ia.orphans through its own refs. A leaf the walk does not reach stays in the package catalog, adoptable on demand
  * through `clossys request` (loop.slot reuse).
  */
+import { AGENT_LISTS } from "../../agent-lists.generated.js";
 import { declaredPublications, isAgentLoopKey, publicationReach } from "../../check/ia-orphans.js";
 import { feedsIndex } from "./derive.js";
 import { designerIa, directorIa, slotPositions, writerIa, type FoundryIa } from "./foundry-ia.js";
 import { packageBehaviour } from "./ia-sync.js";
 import type { IaDoc } from "./types.js";
 
-export const CONSUMED_AGENTS = ["director", "designer", "writer"] as const;
+export const CONSUMED_AGENTS = AGENT_LISTS.placed;
 export type ConsumedAgent = (typeof CONSUMED_AGENTS)[number];
 export const isConsumedAgent = (agent: string): agent is ConsumedAgent => (CONSUMED_AGENTS as readonly string[]).includes(agent);
 /**

@@ -34,6 +34,7 @@
  *   --routes only the first N routes (a probe; the gate itself always runs every route)
  * Exit 0 when every rendered string resolves, 1 on any finding, 2 when no browser or Studio is reachable.
  */
+import { AGENT_LISTS } from '../../scripts/agent-lists.generated.mjs';
 import { createHash } from 'node:crypto';
 import { existsSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
@@ -233,7 +234,7 @@ export async function registryUniverse(repo) {
       }
     }
   }
-  for (const agent of ['director', 'designer', 'writer', 'publisher', 'producer']) {
+  for (const agent of AGENT_LISTS.live) {
     const file = join(repo, 'clossys/agents', agent, 'ia.json');
     if (!existsSync(file)) continue;
     const ia = JSON.parse(readFileSync(file, 'utf8'));

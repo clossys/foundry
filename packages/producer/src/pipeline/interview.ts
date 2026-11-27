@@ -39,6 +39,7 @@
  * first and every seat question waits on it. Order of agents: producer, director, designer, writer,
  * publisher.
  */
+import { AGENT_LISTS } from "../agent-lists.generated.js";
 import { join } from "node:path";
 import { blocks, checkCell, readStrategyRoot } from "@clossys/director";
 import type { Cell, StrategyModel } from "@clossys/director";
@@ -77,7 +78,7 @@ export type GapKind = typeof GAP_KINDS[number];
 /** At most this many questions per round. */
 export const ROUND_SIZE = 4;
 /** The agents whose owner decisions are asked as policy, not per slot. */
-export const POLICY_AGENTS = ["designer", "writer", "publisher"] as const;
+export const POLICY_AGENTS = AGENT_LISTS.policy;
 type PolicyAgent = typeof POLICY_AGENTS[number];
 
 export interface Gap {
