@@ -1,3 +1,4 @@
+import { AGENT_LISTS } from "../agent-lists.generated.js";
 import type { CopyRef } from "@clossys/writer";
 import type { CopyField } from "./composition.js";
 import type { ContentSlot, ContentWorkspace } from "./model.js";
@@ -36,7 +37,7 @@ export function adminPageMeta(page: AdminPageName, locale: string): CopyField[] 
 }
 
 export function adminPageForRoute(route: string | undefined): AdminPageName | undefined {
-  return (["designer", "writer", "publisher"] as const).find(page => route === `/agents/${page}`);
+  return AGENT_LISTS.policy.find(page => route === `/agents/${page}`);
 }
 
 /** Admin placement and app ownership also cover home, account, and admin sign-in routes. */

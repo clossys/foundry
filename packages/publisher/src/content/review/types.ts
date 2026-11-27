@@ -1,3 +1,4 @@
+import type { AGENT_LISTS } from "../../agent-lists.generated.js";
 import type { CopyResolver } from "@clossys/writer";
 import type { CompositionSection, ContentFinding, CopyFinding } from "../composition.js";
 import type { ConsumerLibrarySnapshot } from "../library.js";
@@ -40,7 +41,7 @@ export interface Need {
   readonly id: string;
   readonly slotId: string;
   readonly kind: "section" | "config" | "frame" | "asset" | "copy-schema" | "copy";
-  readonly target: "designer" | "writer";
+  readonly target: (typeof AGENT_LISTS)["copy-keys"][number];
   readonly ref?: string;
   readonly detail: string;
   readonly raisedAt: string;

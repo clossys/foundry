@@ -19,6 +19,7 @@
  * new bytes stops the run), so nothing is lost and nothing is written twice. Every path is checked to stay
  * inside the consumer folder by its real path, never through a link. A second run plans nothing.
  */
+import { AGENT_LISTS } from "../agent-lists.generated.js";
 import { closeSync, fsyncSync, lstatSync, openSync, readdirSync, readFileSync, realpathSync, renameSync, unlinkSync, writeFileSync, type Stats } from "node:fs";
 import { join, sep } from "node:path";
 import { CANDIDATE_NAME } from "../records/candidate.js";
@@ -78,7 +79,7 @@ const object = (value: unknown): value is Record<string, unknown> => typeof valu
 const lstatOf = (path: string): Stats | undefined => { try { return lstatSync(path); } catch { return undefined; } };
 const jsonBytes = (value: unknown) => `${JSON.stringify(value, null, 2)}\n`;
 /** A journal or plan path: `agents/<agent>/<folder>/slot.json|pin.json|candidates/<name>`, nothing else. */
-const CHANGE_PATH = /^agents\/(director|designer|writer|publisher|producer)\/([A-Za-z0-9][A-Za-z0-9._-]*)\/(slot\.json|pin\.json|candidates\/[A-Za-z0-9][A-Za-z0-9._-]*)$/;
+const CHANGE_PATH = new RegExp(String.raw`^agents\/(${AGENT_LISTS.live.join("|")})\/([A-Za-z0-9][A-Za-z0-9._-]*)\/(slot\.json|pin\.json|candidates\/[A-Za-z0-9][A-Za-z0-9._-]*)$`);
 
 /** Every slot folder with a slot.json, by lstat only: a link anywhere on the way is a finding and is never followed. */
 function walk(consumer: string, findings: SlotsFinding[]): { agent: AgentId; id: string; dir: string }[] {

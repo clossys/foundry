@@ -2,11 +2,12 @@
  * Producer seat criteria (ST-P): a seat says who decides one pipeline step, which model and tier
  * runs it from which skill, and how a person does it by hand. Pure.
  */
+import { AGENT_LISTS } from "../../../../agent-lists.generated.js";
 import { isRecord, words } from "../../core/lib.js";
 import type { Criterion } from "../../core/types.js";
 
-const BY = /^(?:owner|planner|agent:(?:director|designer|writer|publisher|producer))$/;
-const PROMPT = /^packages\/(director|designer|writer|publisher|producer)\/actions\/[a-z][a-z0-9.-]*\/skill\.md$/;
+const BY = new RegExp(String.raw`^(?:owner|planner|agent:(?:${AGENT_LISTS.live.join("|")}))$`);
+const PROMPT = new RegExp(String.raw`^packages\/(${AGENT_LISTS.live.join("|")})\/actions\/[a-z][a-z0-9.-]*\/skill\.md$`);
 
 /** seat.assigned: `by` is owner, planner or agent:<agent>; an llm (when set) names a model, a low, mid or high tier and a packages/<agent>/actions/<step>/skill.md prompt; a human (when set) has a procedure sentence and a clossys command; at least one is set, and an owner seat keeps a human procedure. */
 export const assigned: Criterion = subject => {

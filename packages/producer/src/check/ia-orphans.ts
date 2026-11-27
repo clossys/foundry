@@ -31,6 +31,7 @@
  * its folders stay orphans (no fallback). A package IA that cannot be read refuses (PublisherDataError): the check fails
  * naming it, never judging against an empty declared set.
  */
+import { AGENT_LISTS } from "../agent-lists.generated.js";
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { SEATABLE_STARTERS } from "../cli/starter-plan.js";
@@ -46,7 +47,7 @@ import type { Ref, Slot } from "../records/types.js";
 
 export const IA_ORPHANS = "ia.orphans";
 
-const SLOT_REF = /^(director|designer|writer|publisher|producer)\/([a-z][a-z0-9-]*(?:\.[a-z0-9][a-z0-9-]*){1,3})(?:[/#:].*)?$/;
+const SLOT_REF = new RegExp(String.raw`^(${AGENT_LISTS.live.join("|")})\/([a-z][a-z0-9-]*(?:\.[a-z0-9][a-z0-9-]*){1,3})(?:[/#:].*)?$`);
 const WALKED: ReadonlySet<Ref["rel"]> = new Set(["input", "uses", "places"]);
 
 const slotOf = (to: string): string | undefined => {

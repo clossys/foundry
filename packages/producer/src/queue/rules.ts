@@ -9,6 +9,7 @@
  * Check ids follow the ticket; system.md 12.6 calls two of them `answer.in-options` and `answer.owner-quoted`
  * (ANSWER_CHECK_ALIASES maps those names).
  */
+import { AGENT_LISTS } from "../agent-lists.generated.js";
 import { danglingReason } from "../check/refs-dangling.js";
 import { targetSchema } from "../records/candidate.js";
 import { OWNER_QUEUE_ANSWER } from "../records/pin.js";
@@ -30,7 +31,7 @@ export const ANSWER_CHECK_ALIASES: Readonly<Record<string, string>> = {
 type Event = QueueEntry["events"][number];
 
 /** `owner`, `agent:<id>` or `code:<cli>`: who may write an `answered` event. */
-export const ANSWER_BY = /^(owner|agent:(director|designer|writer|publisher|producer)|code:[a-z][a-z0-9 ._-]*)$/;
+export const ANSWER_BY = new RegExp(String.raw`^(owner|agent:(${AGENT_LISTS.live.join("|")})|code:[a-z][a-z0-9 ._-]*)$`);
 /** Queues a `code:<cli>` answer may close: the fix or clarify whose work a pin or an approval finished. */
 export const CODE_CLOSABLE: readonly QueueEntry["queue"][] = ["queue.fix", "queue.clarify"];
 

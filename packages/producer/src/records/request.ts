@@ -436,7 +436,7 @@ export const REQUEST_SEATS = [...CONTENT_AGENTS, "owner", "planner", "producer"]
 function checkSeat(by: string): void {
   if (!(REQUEST_SEATS as readonly string[]).includes(by)) throw new RequestError(`--by must be one of ${REQUEST_SEATS.join(", ")}, got ${by}`);
 }
-const SLOT_REF = /^(director|designer|writer|publisher)\/([a-z][a-z0-9-]*(?:\.[a-z0-9][a-z0-9-]*){1,3})$/;
+const SLOT_REF = new RegExp(String.raw`^(${AGENT_LISTS.content.join("|")})\/([a-z][a-z0-9-]*(?:\.[a-z0-9][a-z0-9-]*){1,3})$`);
 const isPlaced = (consumer: string, agent: ContentAgent, id: string) => placedSlots(consumer, agent).some(entry => entry.id === id);
 
 let version: string | undefined;
@@ -1559,7 +1559,7 @@ function closeLocked(consumer: string, id: string, input: { readonly by: string;
   const target = targetOf(request)!;
   const wrote: string[] = [];
   const skill = slotSkill(target.agent);
-  const requester = /^(director|designer|writer|publisher)\/(.+)$/.exec(request.from);
+  const requester = new RegExp(String.raw`^(${AGENT_LISTS.content.join("|")})\/(.+)$`).exec(request.from);
   if (requester && isContentAgent(input.by) && input.by !== requester[1]) throw new RequestError(`${input.by} cannot write ${request.from}: a close writes the requester's own slot, by its agent (${requester[1]}), the owner, the planner or Producer code`);
   if (requester) {
     const agent = requester[1] as ContentAgent, slotId = requester[2]!;

@@ -1,3 +1,4 @@
+import type { AGENT_LISTS } from "../agent-lists.generated.js";
 /** TypeScript views of the record schemas in ./schemas.ts. Validate before trusting a cast. */
 
 export type Hash = `sha256:${string}`;
@@ -263,7 +264,7 @@ export type ReferencePackage = {
 // name the target type takes a suffix (CheckResultDoc).
 // ---------------------------------------------------------------------------
 
-export type AgentId = "director" | "designer" | "writer" | "publisher" | "producer";
+export type AgentId = (typeof AGENT_LISTS)["live"][number];
 export type SlotId = string;          // /^[a-z][a-z0-9-]*(\.[a-z0-9][a-z0-9-]*){1,3}$/
 export type CandidateName = string;   // /^[a-z0-9][a-z0-9.-]*-v[1-9][0-9]*\.(md|json|svg)$/
 export type Iso = string;             // 2026-11-18T09:12:00Z

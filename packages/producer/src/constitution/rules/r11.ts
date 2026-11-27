@@ -15,6 +15,7 @@
  * the repository's check scripts (one spawn each) and read the compiled Studio map. A root without
  * packages/producer/package.json has no code to judge and gives no row.
  */
+import { AGENT_LISTS } from "../../agent-lists.generated.js";
 import { spawnSync } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
@@ -98,7 +99,7 @@ const REFERENCE_KEYS = new Set(["icon", "frame", "frameId", "section", "sections
 
 /** A slot id from a reference value: an optional `<agent>:` prefix and `#<key>` suffix dropped. */
 function referencedSlot(value: string): string | undefined {
-  const id = value.replace(/^(?:director|designer|writer|publisher|producer):/, "").split("#")[0]!;
+  const id = value.replace(new RegExp(String.raw`^(?:${AGENT_LISTS.live.join("|")}):`), "").split("#")[0]!;
   return CITATION_SLOT_ID.test(id) ? id : undefined;
 }
 

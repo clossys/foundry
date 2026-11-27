@@ -264,7 +264,7 @@ describe("stage-check diverge reads the recipe rung (census row 75)", () => {
     const tmp = realpathSync(mkdtempSync(join(tmpdir(), "stage-check-plumb-")));
     const recipes = join(tmp, "packages", "producer", "recipes");
     mkdirSync(recipes, { recursive: true });
-    for (const name of ["stage-check.mjs", "stage-core.mjs"]) cpSync(join(HERE, name), join(recipes, name));
+    for (const name of ["stage-check.mjs", "stage-core.mjs", "agent-lists.generated.mjs"]) cpSync(join(HERE, name), join(recipes, name));
     cpSync(join(ROOT, "packages", "publisher", "recipes", "release"), join(recipes, "release"), { recursive: true });
     mkdirSync(join(recipes, "flat"));
     writeFileSync(join(recipes, "flat", "recipe.json"), JSON.stringify({ schema: "clossys.recipe/1", id: "flat", produces: ["release"], rung: "create", axes: [] }));

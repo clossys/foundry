@@ -1,0 +1,9 @@
+{
+  "agents": [
+    { "id": "director", "package": "@clossys/director", "class": "content", "definitionOwner": "controller", "rung": null },
+    { "id": "designer", "package": "@clossys/designer", "class": "content", "definitionOwner": "controller", "rung": null }
+  ],
+  "lists": {
+    "content": { "description": "The content agents in chain order.", "members": ["director", "designer"] }
+  }
+}

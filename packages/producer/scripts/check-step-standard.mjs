@@ -410,7 +410,7 @@ for (const agent of INTERVIEW_AGENTS) {
   if (agent !== "producer") for (const [needle, what] of shared) if (body.includes(needle)) fail("skill.interview", `${file}'s Interview section restates the contract's ${what} ("${needle}"); state it once, in the Producer skill`);
 }
 const LADDERS = { designer: ["L1", "L2", "L3", "L4"], other: ["adopt", "adapt", "create"] };
-for (const action of loaded.filter(each => /^(director|designer|writer|publisher)\.candidates$/.test(each.contract.id))) {
+for (const action of loaded.filter(each => new RegExp(String.raw`^(${AGENT_LISTS.content.join("|")})\.candidates$`).test(each.contract.id))) {
   const file = `packages/${action.package}/${ACTIONS_DIR}/${action.contract.id}/${SKILL_FILE}`;
   const body = text(join(PACKAGES_DIR, action.package, ACTIONS_DIR, action.contract.id, SKILL_FILE));
   const match = /^## Selection ladder\b.*$/m.exec(body);

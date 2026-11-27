@@ -15,6 +15,7 @@
  *   that slot's pin. Lineage inside one slot stays allowed (owner rule, foundry-feedback-0017).
  * The byte comparison against installed dependency packages (the second half of R06.2) is pending.
  */
+import { AGENT_LISTS } from "../../agent-lists.generated.js";
 import { sha256Hex } from "../../records/hash.js";
 import type { ConstitutionContext, Row, RuleModule, SlotRecord } from "../types.js";
 import { allSlots, candidateMeta, focusedSlots, installPathOf, isObject, listed, pending, registryFiles, row, slotDoc, stringList } from "./shared.js";
@@ -123,7 +124,7 @@ export function identicalBytes(ctx: ConstitutionContext): Row[] {
 }
 
 /** A candidate file by path: `[clossys/]agents/<agent>/<slot>/candidates/<file>` or `../<slot>/candidates/<file>`. */
-const CANDIDATE_PATH = /(?<![A-Za-z0-9._/-])(?:(?:clossys\/)?agents\/(?:director|designer|writer|publisher|producer)\/|(?:\.\.\/)+)([a-z][a-z0-9-]*(?:\.[a-z0-9][a-z0-9-]*){1,3})\/candidates\/[A-Za-z0-9._-]+/g;
+const CANDIDATE_PATH = new RegExp(String.raw`(?<![A-Za-z0-9._/-])(?:(?:clossys\/)?agents\/(?:${AGENT_LISTS.live.join("|")})\/|(?:\.\.\/)+)([a-z][a-z0-9-]*(?:\.[a-z0-9][a-z0-9-]*){1,3})\/candidates\/[A-Za-z0-9._-]+`, "g");
 /** A candidate file by shorthand: `<slot>/<name>-v<n>[.md|.json]`. */
 const CANDIDATE_SHORTHAND = /(?<![A-Za-z0-9._/@:-])([a-z][a-z0-9-]*(?:\.[a-z0-9][a-z0-9-]*){1,3})\/[a-z0-9][a-z0-9.-]*-v[1-9][0-9]*(?:\.(?:md|json))?(?![A-Za-z0-9_-])/g;
 

@@ -1,3 +1,4 @@
+import type { AGENT_LISTS } from "../../agent-lists.generated.js";
 import type { PublisherBoardCopyResolver } from "./copy.js";
 import type { CopyField } from "../composition.js";
 import type { ContentRegistry } from "../model.js";
@@ -6,7 +7,7 @@ import type { StageStatus } from "../stages.js";
 import type { ContentTree } from "../taxonomy.js";
 
 export interface PublisherBoardNeed {
-  readonly target: "writer" | "designer" | "publisher";
+  readonly target: (typeof AGENT_LISTS)["policy"][number];
   readonly ref: string;
   readonly detail: string;
 }

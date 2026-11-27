@@ -215,7 +215,7 @@ export type ParsedRun =
   | { readonly form: "cli"; readonly verb: string; readonly flags: readonly string[]; readonly target?: string; readonly words: readonly string[] }
   | { readonly form: "trace"; readonly step: string; readonly command: readonly string[]; readonly npm?: string; readonly script?: string };
 
-const TARGET = /^(director|designer|writer|publisher)\//;
+const TARGET = new RegExp(String.raw`^(${AGENT_LISTS.content.join("|")})\/`);
 /**
  * Read a run (or pass) command. Mode flags are bare `--flag` words not followed by a value; the target
  * is the first `<agent>/...` positional. `<...>` words are placeholders for caller values.

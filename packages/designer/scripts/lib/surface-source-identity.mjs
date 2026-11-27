@@ -1,3 +1,4 @@
+import { AGENT_LISTS } from "../agent-lists.generated.mjs";
 import ts from "typescript";
 import fs from "node:fs";
 import path from "node:path";
@@ -353,7 +354,7 @@ export async function checkSurfaceSourceIdentity(repository) {
   for (const file of fs.readdirSync(path.join(root, "packages/designer/src/catalog/fills"), { recursive: true }).filter(file => file.endsWith(".json"))) {
     const meta = json(`packages/designer/src/catalog/fills/${file}`).$extensions?.["com.clossys.fill"];
     if (!meta?.slot?.startsWith("components.") || !meta.pin?.package || !meta.pin.export) continue;
-    for (const owner of ["designer", "publisher"]) {
+    for (const owner of AGENT_LISTS.surfaces) {
       const directory = path.join(root, "packages", owner), manifest = json(`packages/${owner}/package.json`);
       if (manifest.name !== meta.pin.package) continue;
       const [subpath, name] = meta.pin.export.split("#"), target = manifest.exports?.[subpath];

@@ -59,6 +59,12 @@ export const AGENT_LISTS = Object.freeze({
   "trio": Object.freeze(["advisor", "starter", "controller"]),
   /** Every published package in release order; Producer is not published. */
   "release-order": Object.freeze(["advisor", "starter", "controller", "launcher", "director", "writer", "designer", "customer", "architect", "bouncer", "butler", "giver", "influencer", "integrator", "keeper", "locksmith", "messenger", "observer", "builder", "inspector", "publisher"]),
+  /** The agents a Publisher release hands over to, one per destination kind: what a release target, handover and receipt may name. */
+  "release-receivers": Object.freeze(["builder", "messenger", "influencer"]),
+  /** The packages whose catalogs Designer's IA coverage reads as external nodes: Writer's passages and copy records, Publisher's admin routes and compositions. */
+  "coverage-externals": Object.freeze(["writer", "publisher"]),
+  /** The packages whose sources, tests and scripts the DOM provenance attribute codemods rewrite and check. */
+  "provenance-stamped": Object.freeze(["designer", "publisher", "producer", "writer"]),
 });
 
 /** The chain handoffs (flows.md N3): Director feeds Designer and Writer, and Designer and Writer feed Publisher. Each pair is upstream, then downstream. */

@@ -2,6 +2,7 @@
  * reader supplies (Producer `@clossys/producer`). Publisher opens no files: the
  * source hands it raw record text and the reader's sha256 of each candidate.
  * A pin is data, never serving approval. */
+import { AGENT_LISTS } from "../agent-lists.generated.js";
 import { checkContentMap } from "./check.js";
 import type { ContentMap } from "./contract.js";
 import { PAGE_ID, pageId } from "./page-identity.js";
@@ -35,7 +36,7 @@ const SLOT_ID = /^[a-z][a-z0-9-]*(\.[a-z0-9][a-z0-9-]*){1,3}$/;
 const STANDARD_ID = /^[a-z][a-z0-9-]*(\.[a-z0-9][a-z0-9-]*)*$/;
 const CANDIDATE = /^[a-z0-9][a-z0-9.-]*-v[1-9][0-9]*\.json$/;
 /** A slot ref's target in `clossys.slot/2` (`<agent>/<slot id>`): Producer @clossys/producer SLOT_REF, mirrored. */
-const SLOT_REF = /^(director|designer|writer|publisher|producer)\/([a-z][a-z0-9-]*(?:\.[a-z0-9][a-z0-9-]*){1,3})$/;
+const SLOT_REF = new RegExp(String.raw`^(${AGENT_LISTS.live.join("|")})\/([a-z][a-z0-9-]*(?:\.[a-z0-9][a-z0-9-]*){1,3})$`);
 const SLOT_V2_KEYS = ["schema", "id", "agent", "kind", "status", "ia", "createdBy", "createdAt", "updatedAt", "refs", "base", "standard", "brief", "contract", "tighten", "options", "varyOn"] as const;
 const SLOT_V2_REQUIRED = ["schema", "id", "agent", "kind", "status", "createdBy", "createdAt", "refs", "ia", "base", "standard", "brief", "contract", "tighten"] as const;
 /** Statuses of a slot that may be published: a parked (not needed) or retired slot never is. */
@@ -157,7 +158,7 @@ function currentPin(pin: JsonObject, id: string, pinPath: string) {
   if (pin.id !== `publisher/${id}/pin` || pin.agent !== "publisher" || pin.kind !== "pin" || !["pinned", "confirm"].includes(pin.status)) fail(pinPath, "Invalid pin identity, kind or status");
   if (!object(pin.createdBy) || !text(pin.createdBy.actor) || !iso(pin.createdAt) || pin.updatedAt !== undefined && !iso(pin.updatedAt)) fail(pinPath, "Invalid pin provenance");
   if (!Array.isArray(pin.refs) || pin.refs.some(ref => !object(ref) || typeof ref.to !== "string" || typeof ref.rel !== "string")) fail(pinPath, "Invalid pin refs");
-  if (typeof pin.decidedBy !== "string" || !/^(?:(?:owner|planner)(?::.+)?|agent:(?:director|designer|writer|publisher|producer)|code:scorecard|migrated)$/.test(pin.decidedBy)) fail(pinPath, "Invalid pin");
+  if (typeof pin.decidedBy !== "string" || !new RegExp(String.raw`^(?:(?:owner|planner)(?::.+)?|agent:(?:${AGENT_LISTS.live.join("|")})|code:scorecard|migrated)$`).test(pin.decidedBy)) fail(pinPath, "Invalid pin");
   if (pin.confirmed !== undefined) {
     if (!CONFIRMABLE_BASES.includes(pin.basis as string)) fail(pinPath, "confirmed is only on an agent or code pick (basis agent or scorecard)");
     if (!object(pin.confirmed)) fail(pinPath, "Invalid pin confirmation");

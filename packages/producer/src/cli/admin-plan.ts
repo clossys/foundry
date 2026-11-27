@@ -13,6 +13,7 @@
  * (`/admin/requests` wins over `/admin/<agent>`, so an agent named `requests` would have no gallery), and the admin
  * publication, being fixed, roots under its own static prefix with every page route under it (U20b).
  */
+import { AGENT_LISTS } from "../agent-lists.generated.js";
 import { readFileSync } from "node:fs";
 import { packagePath } from "../package-path.js";
 import { slotFile } from "../records/slot-model/layout.js";
@@ -112,7 +113,7 @@ const boundOf = (contracts: readonly SectionContract[]): Map<string, AdminRead> 
 const readContracts = (root: string): SectionContract[] => readJson<SectionContract[]>(packagePath(root, "packages/designer/src/catalog/slot-contracts/sections.json"));
 
 interface PageDefault { path?: string; sections: { use: string; copy?: string }[]; meta?: { copy?: string } }
-const unprefixed = (ref: string) => ref.replace(/^(?:designer|writer|publisher)\//, "");
+const unprefixed = (ref: string) => ref.replace(new RegExp(String.raw`^(?:${AGENT_LISTS.policy.join("|")})\/`), "");
 
 /**
  * The clossys.page/1 record `clossys init` seeds for one admin page: the Publisher package default, translated
@@ -171,7 +172,7 @@ export const dataBoundReads = (root: string): ReadonlyMap<string, AdminRead> => 
 /** The route scope parameters a `reads.scope` names (`workspace` names none). */
 export const scopeParams = (scope: string): string[] => scope === "workspace" ? [] : scope.split(",").map(part => part.trim()).filter(Boolean);
 
-const SLOT_STRING = /^(?:director|designer|writer|publisher)\/([a-z][a-z0-9-]*(?:\.[a-z0-9][a-z0-9-]*){1,3})(?:#.*)?$/;
+const SLOT_STRING = new RegExp(String.raw`^(?:${AGENT_LISTS.content.join("|")})\/([a-z][a-z0-9-]*(?:\.[a-z0-9][a-z0-9-]*){1,3})(?:#.*)?$`);
 /** The slot ids (agent prefix and `#record` dropped) every `<agent>/<slot>` string in a package default names, in document order. */
 function slotIdsIn(value: unknown): string[] {
   if (typeof value === "string") { const id = SLOT_STRING.exec(value)?.[1]; return id ? [id] : []; }

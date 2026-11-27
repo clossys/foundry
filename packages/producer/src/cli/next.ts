@@ -18,6 +18,7 @@
  * nothing and leaves no run record. An accepted one writes `<name>-v<n>` into the slot's candidates
  * and its run record keeps the model, tier, basis, ladder, skill file and output file with their sha256.
  */
+import { AGENT_LISTS } from "../agent-lists.generated.js";
 import { createHash } from "node:crypto";
 import { readFileSync, realpathSync } from "node:fs";
 import { join, resolve } from "node:path";
@@ -183,7 +184,7 @@ export async function runNextCli(argv: readonly string[], cwd: string, steps: re
  */
 export function submitTarget(argv: readonly string[], cwd: string, steps: readonly Step[] = STEPS): readonly string[] {
   if (argv[0] !== "next" || !argv.includes("--submit")) return argv;
-  if (argv.slice(1).some(arg => /^(director|designer|writer|publisher)\//.test(arg))) return argv;
+  if (argv.slice(1).some(arg => new RegExp(String.raw`^(${AGENT_LISTS.content.join("|")})\/`).test(arg))) return argv;
   // Help needs no workspace; anything else needs its root, and a root that cannot be resolved fails here with its
   // cause (RootDiscoveryError), never as the argv unchanged and a "no open candidates slot" refusal downstream.
   if (argv.includes("--help")) return argv;

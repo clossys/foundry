@@ -1,4 +1,5 @@
 /** IA-first Studio gallery data. Empty slots never depend on a candidate or a route. */
+import type { AGENT_LISTS } from '../agent-lists.generated.js';
 import { hasAgentModel, hasPinFile as hasPinRecord, listSlots, readCandidate, readIa, readSlot, readSlotEntry, slotCandidateIssues, viewPlacedAt, type SlotEntry } from '../records/slots.js';
 import { type IaDoc, type NotNeeded, parseFrontmatter, type SlotAgent, type SlotKind, type SlotStateRejection } from '../records/slot-model/index.js';
 import { parseWriterSlotBody } from '@clossys/writer/slot-body';
@@ -48,7 +49,7 @@ export function shownCandidate(entry: SlotEntry): string | undefined {
 }
 
 /** Director brief and Writer strings -> the existing Studio specimen component's input. */
-export function recordSpecimenInput(consumer: string, agent: 'director' | 'writer', id: string, candidate?: string): RecordSpecimenInput | undefined {
+export function recordSpecimenInput(consumer: string, agent: (typeof AGENT_LISTS)['markdown'][number], id: string, candidate?: string): RecordSpecimenInput | undefined {
   const entry = readSlotEntry(consumer, agent, id);
   if (!entry) return undefined;
   if (!entry.pin && hasPinFile(entry)) return undefined;

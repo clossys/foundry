@@ -19,6 +19,7 @@
  *
  * A second run on an unchanged workspace places, rewires and raises nothing new (a raise is idempotent).
  */
+import type { AGENT_LISTS } from "../agent-lists.generated.js";
 import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -105,7 +106,7 @@ export async function seatStarter(root: string, starter: string, at: string): Pr
     if (refused) return fail(refused);
   } finally { rmSync(dir, { recursive: true, force: true }); }
   // The gaps: each cited slot no workspace slot holds is one request to its agent, naming the pages that need it.
-  const unheld = new Map<string, { agent: "designer" | "writer"; rel: "uses" | "input"; pages: string[] }>();
+  const unheld = new Map<string, { agent: (typeof AGENT_LISTS)["copy-keys"][number]; rel: "uses" | "input"; pages: string[] }>();
   for (const page of plan.pages) {
     for (const [ids, agent, rel] of [[page.uses, "designer", "uses"], [page.copy, "writer", "input"]] as const) {
       for (const id of ids) {

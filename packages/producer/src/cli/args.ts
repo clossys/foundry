@@ -192,7 +192,7 @@ export function parseArgs(argv: readonly string[]): CliArgs {
   if (args.agent !== undefined && !(AGENT_LISTS.live as readonly string[]).includes(args.agent)) throw new CliUsageError("--agent must be director, designer, writer, publisher or producer");
   if ((args.slot !== undefined || args.changed !== undefined) && !args.constitution) throw new CliUsageError("--slot and --changed require check --constitution");
   if (args.recordGreen && (args.slot !== undefined || args.changed !== undefined)) throw new CliUsageError("--record-green needs a full run: no --slot or --changed");
-  if (args.slot !== undefined && !args.slot.every(target => /^(director|designer|writer|publisher|producer)\/[a-z0-9][a-z0-9._-]*$/.test(target))) throw new CliUsageError("--slot must be <agent>/<slot> (agent director, designer, writer, publisher or producer)");
+  if (args.slot !== undefined && !args.slot.every(target => new RegExp(String.raw`^(${AGENT_LISTS.live.join("|")})\/[a-z0-9][a-z0-9._-]*$`).test(target))) throw new CliUsageError("--slot must be <agent>/<slot> (agent director, designer, writer, publisher or producer)");
   if (args.e2e && args.verb !== "check") throw new CliUsageError("--e2e requires check");
   if ((args.from !== undefined || args.scenario !== undefined || args.keep) && !args.e2e) throw new CliUsageError("--from, --scenario and --keep require check --e2e");
   if (args.e2e && (args.constitution || args.suites || args.slots || args.readiness || args.pages !== undefined || args.strict)) throw new CliUsageError("check --e2e runs alone: no --constitution, --suites, --slots, --readiness, --pages or --strict");

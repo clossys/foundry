@@ -12,13 +12,14 @@
  * compiled utilities stylesheet) are never rewritten here: their own generators re-emit them from
  * `DS_ATTR`. The check still reads them, so a stale generated file fails it.
  */
+import { AGENT_LISTS } from "./agent-lists.generated.mjs";
 import { execFileSync } from "node:child_process";
 import { readFileSync, writeFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const repository = resolve(dirname(fileURLToPath(import.meta.url)), "..", "..", "..");
-const PACKAGES = ["designer", "publisher", "producer", "writer"];
+const PACKAGES = AGENT_LISTS["provenance-stamped"];
 const TEXT = /\.(?:[cm]?[jt]sx?|css|json|md|html)$/;
 const SKIPPED = /(?:^|\/)(?:node_modules|dist|references)\//;
 const GENERATED = [

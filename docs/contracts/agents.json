@@ -41,7 +41,10 @@
     "assemble-only": { "description": "The agent words the assemble-only check reads in a page or route, in match order.", "members": ["designer", "writer", "director", "publisher", "producer"] },
     "native-cells": { "description": "The roles whose package framework declares native cells.", "members": ["director", "writer", "designer", "publisher"] },
     "trio": { "description": "The first three packages ever published: the pre-cutover release target and the first wave of qualification.", "members": ["advisor", "starter", "controller"] },
-    "release-order": { "description": "Every published package in release order; Producer is not published.", "members": ["advisor", "starter", "controller", "launcher", "director", "writer", "designer", "customer", "architect", "bouncer", "butler", "giver", "influencer", "integrator", "keeper", "locksmith", "messenger", "observer", "builder", "inspector", "publisher"] }
+    "release-order": { "description": "Every published package in release order; Producer is not published.", "members": ["advisor", "starter", "controller", "launcher", "director", "writer", "designer", "customer", "architect", "bouncer", "butler", "giver", "influencer", "integrator", "keeper", "locksmith", "messenger", "observer", "builder", "inspector", "publisher"] },
+    "release-receivers": { "description": "The agents a Publisher release hands over to, one per destination kind: what a release target, handover and receipt may name.", "members": ["builder", "messenger", "influencer"] },
+    "coverage-externals": { "description": "The packages whose catalogs Designer's IA coverage reads as external nodes: Writer's passages and copy records, Publisher's admin routes and compositions.", "members": ["writer", "publisher"] },
+    "provenance-stamped": { "description": "The packages whose sources, tests and scripts the DOM provenance attribute codemods rewrite and check.", "members": ["designer", "publisher", "producer", "writer"] }
   },
   "handoffs": {
     "description": "The chain handoffs (flows.md N3): Director feeds Designer and Writer, and Designer and Writer feed Publisher. Each pair is upstream, then downstream.",

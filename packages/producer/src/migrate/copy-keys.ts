@@ -25,7 +25,7 @@ import { listSlots, readCandidate, readSlotRecordText } from "../records/slots.j
 import { designerIa, writerIa, type FoundrySlot } from "../records/slot-model/foundry-ia.js";
 import { candidatesDir, pinFile, slotFile } from "../records/slot-model/layout.js";
 
-export type CopyKeyAgent = "designer" | "writer";
+export type CopyKeyAgent = (typeof AGENT_LISTS)["copy-keys"][number];
 /** Slot id -> the copy keys its catalog contract declares. */
 export type CopyKeyCatalog = Readonly<Record<CopyKeyAgent, ReadonlyMap<string, ReadonlySet<string>>>>;
 

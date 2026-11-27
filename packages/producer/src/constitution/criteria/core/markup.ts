@@ -2,10 +2,11 @@
  * Structure criteria shared across kinds: citation grammar, ICU messages, declared props, allowed
  * compositions and APG roles.
  */
+import { AGENT_LISTS } from "../../../agent-lists.generated.js";
 import { excerpt, isRecord, strings, stringLeaves, tags } from "./lib.js";
 import type { Criterion } from "./types.js";
 
-const AGENT = "(?:director|designer|writer|publisher|producer)";
+const AGENT = `(?:${AGENT_LISTS.live.join("|")})`;
 const SLOT = "[a-z][a-z0-9-]*(?:\\.[a-z0-9][a-z0-9-]*){1,3}";
 /** A citation `[<agent>:]<slot-id>[#<key>]` (section 1); a version suffix is illegal. */
 export const CITATION = new RegExp(`^(?:${AGENT}:)?${SLOT}(?:#[^\\s#@]+)?$`);

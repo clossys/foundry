@@ -1,3 +1,4 @@
+import type { AGENT_LISTS } from "../../agent-lists.generated.js";
 import type { ContentRegistry } from "../../content/model.js";
 import type { ContentTree } from "../../content/taxonomy.js";
 import type { CandidateStageEvidence, StageKey } from "../../content/stage-engine.js";
@@ -17,11 +18,11 @@ export interface CoverageInput {
   formatTree: FormatIA; formats: readonly FormatLeaf[];
   designer: DesignerEntry[]; writer: WriterEntry[];
   libraries: readonly ReviewLibrarySnapshot[]; evidence: readonly CandidateStageEvidence[];
-  edges: Edge[]; needs: string[]; unavailable: ("writer" | "designer")[];
+  edges: Edge[]; needs: string[]; unavailable: (typeof AGENT_LISTS)["copy-keys"][number][];
   diagnostics?: Finding[]; inputHashes?: Record<string, string>;
 }
 export interface Node {
-  id: string; package: "publisher" | "designer" | "writer";
+  id: string; package: (typeof AGENT_LISTS)["policy"][number];
   kind: "slot" | "candidate" | "format" | "item" | "schema" | "record";
   registered: boolean; uses: string[]; usedBy: string[];
   admin: "reachable" | "unknown" | "unreachable";

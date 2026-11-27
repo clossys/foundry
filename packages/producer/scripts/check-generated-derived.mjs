@@ -363,7 +363,7 @@ export function deriveUses(clossysRoot, root = repo, unresolved = undefined) {
 /** `uses` as one JSON document keyed `<agent>/<slot>`, for a temp-dir diff. */
 export function usesJson(uses) { return json(Object.fromEntries([...uses].sort(([a], [b]) => a.localeCompare(b)))); }
 
-const SLOT_REF = /^(?:director|designer|writer|publisher|producer)\/([a-z][a-z0-9-]*(?:\.[a-z0-9][a-z0-9-]*){1,3})$/;
+const SLOT_REF = new RegExp(String.raw`^(?:${AGENT_LISTS.live.join("|")})\/([a-z][a-z0-9-]*(?:\.[a-z0-9][a-z0-9-]*){1,3})$`);
 /**
  * The `uses` committed in every slot.json, in the same shape, read where the certifier reads it: a clossys.slot/2
  * slot's `uses` refs (records/slot-current.ts refIds, the reader's view), a slot/1 slot's top-level `uses`. A stray

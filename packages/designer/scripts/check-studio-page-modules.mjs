@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import { AGENT_LISTS } from "./agent-lists.generated.mjs";
 import fs from "node:fs";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
@@ -289,8 +290,8 @@ export function adaptPublishedStudioBodies({ program, manifestFile }) {
     if (specimen && !/^sections\.specimen-[a-z0-9-]+$/.test(literal(specimen) ?? "")) add("invalid-body-specimen", specimen, "An authored specimen must be an exact sections.specimen-* identity", role);
     pages.push({ role, node, bodyNode: body, bandsNode: bands, specimenNode: specimen });
   }
-  for (const role of ["director", "designer", "writer", "publisher"]) if (!pages.some(page => page.role === role)) add("missing-native-page-body", document, `No native body measured for ${role}`, role);
-  for (const field of projected.properties) if (!["director", "designer", "writer", "publisher"].includes(propertyName(field))) add("unexpected-projected-body", field, "Only agent bodies are projected", propertyName(field));
+  for (const role of AGENT_LISTS.content) if (!pages.some(page => page.role === role)) add("missing-native-page-body", document, `No native body measured for ${role}`, role);
+  for (const field of projected.properties) if (!AGENT_LISTS.content.includes(propertyName(field))) add("unexpected-projected-body", field, "Only agent bodies are projected", propertyName(field));
   return { status: findings.length ? "FINDINGS" : "ADAPTED", pages, findings };
 }
 

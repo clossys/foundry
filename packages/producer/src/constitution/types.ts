@@ -4,6 +4,7 @@
  * one `ConstitutionContext`, built once per run from one read of the tree. A rule module never opens
  * a file itself; the same records in give the same rows out.
  */
+import type { AGENT_LISTS } from "../agent-lists.generated.js";
 import type { ModelAgent, SlotModelIssue } from "../records/slot-model/index.js";
 import type { MigratedEvent } from "../records/migrations.js";
 
@@ -180,7 +181,7 @@ export interface ConstitutionContext {
 export interface FocusTarget { readonly agent: string; readonly slot: string; readonly candidate?: string }
 
 /** The agents whose IA Foundry places (R01.5). */
-export type FoundryAgent = "director" | "designer" | "writer";
+export type FoundryAgent = (typeof AGENT_LISTS)["placed"][number];
 
 /** A check: one pure function from the context to rows. */
 export type Check = (ctx: ConstitutionContext) => Row[];

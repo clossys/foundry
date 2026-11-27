@@ -2,11 +2,12 @@
  * Shared reads of a Designer candidate (a shadcn-format registry item, `clossys.element` meta): its
  * meta, its files and the slot citations it carries. Pure: the subject in, values out.
  */
+import { AGENT_LISTS } from "../../../../agent-lists.generated.js";
 import { isRecord, strings } from "../../core/lib.js";
 import type { Subject } from "../../core/types.js";
 
 /** A slot id (section 1), with an optional `<agent>:` prefix; never a version suffix or a file path. */
-export const SLOT_ID = /^(?:(director|designer|writer|publisher|producer):)?([a-z][a-z0-9-]*(?:\.[a-z0-9][a-z0-9-]*){1,3})$/;
+export const SLOT_ID = new RegExp(String.raw`^(?:(${AGENT_LISTS.live.join("|")}):)?([a-z][a-z0-9-]*(?:\.[a-z0-9][a-z0-9-]*){1,3})$`);
 
 /** The registry item of the subject, when it parsed as an object. */
 export const itemOf = (subject: Subject): Record<string, unknown> | undefined => isRecord(subject.json) ? subject.json : undefined;

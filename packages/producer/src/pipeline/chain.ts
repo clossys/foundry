@@ -410,7 +410,7 @@ export function packetOf(step: Step, item: string, open: number, context: Contex
   const record = step.id === "ia" && item.includes("/") ? `clossys ia ${item} --contract <file>`
     : step.kind === "decide:creative"
     ? `clossys next ${item} --submit <file> --model <model> --tier <tier> --basis <basis> --skill ${skillOf(step, packageRoot).path} --rung <${rungsOf(agent).join("|")}> [--seed <id>] [--reason <text>]`
-    : step.run?.replace("<agent>/<slot>", item).replace(/(director|designer|writer|publisher)\/<slot>/, item.includes("/") ? item : `$1/${slot}`).replace("<step>", item) ?? verbOf(step);
+    : step.run?.replace("<agent>/<slot>", item).replace(new RegExp(String.raw`(${AGENT_LISTS.content.join("|")})\/<slot>`), item.includes("/") ? item : `$1/${slot}`).replace("<step>", item) ?? verbOf(step);
   const packet: Packet = {
     schema: PACKET_SCHEMA, step: step.id, agent: step.agent ?? "", kind: step.kind, decider: deciderOf(step, seat),
     seat: seat ? { state: seat.state, by: seat.by, llm: seat.llm, human: seat.human } : { state: "none", by: null, llm: null, human: null },

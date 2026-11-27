@@ -6,6 +6,7 @@
  * with exactly those bytes; a retired candidate keeps its file (system.md 7), so a deleted one fails too.
  * When two entries recorded different digests for the same candidate, the candidate was rewritten: that fails.
  */
+import { AGENT_LISTS } from "../agent-lists.generated.js";
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
 import { CANDIDATE_NAME } from "../records/candidate.js";
@@ -15,7 +16,7 @@ import { runOf, type TargetCheckRun, type TargetFinding } from "./pins-resolve.j
 
 export const CANDIDATE_IMMUTABLE = "candidate.immutable";
 
-const CANDIDATE_WRITE = /^(director|designer|writer|publisher|producer)\/[a-z][a-z0-9-]*(\.[a-z0-9][a-z0-9-]*){1,3}\/candidates\/([^/]+)$/;
+const CANDIDATE_WRITE = new RegExp(String.raw`^(${AGENT_LISTS.live.join("|")})\/[a-z][a-z0-9-]*(\.[a-z0-9][a-z0-9-]*){1,3}\/candidates\/([^/]+)$`);
 const isDir = (path: string): boolean => existsSync(path) && statSync(path).isDirectory();
 
 /** Every ledger entry file, sorted by path. */

@@ -43,7 +43,7 @@ export interface OwnerWiringResult { readonly options: number; readonly calls: n
  */
 const RULES_DIR = RULES_FILE.split("/").slice(0, -1).join("/");
 const COPIED = ["clossys", RULES_DIR, ...AGENT_LISTS.nav.map(agent => `packages/${agent}/standards`)] as const;
-const SLOT_TARGET = /^(producer|director|designer|writer|publisher)\/([a-z0-9][a-z0-9.-]*)$/;
+const SLOT_TARGET = new RegExp(String.raw`^(${AGENT_LISTS.nav.join("|")})\/([a-z0-9][a-z0-9.-]*)$`);
 
 /** A content digest of every file under a folder (empty when it does not exist). */
 function digest(dir: string): string {

@@ -1,3 +1,4 @@
+import type { AGENT_LISTS } from "../agent-lists.generated.js";
 import type { ContentPreviewProvenance } from "./preview/provenance.js";
 import type { CopyResolver } from "@clossys/writer";
 import type { ContentSectionBinding } from "./content-route-runtime.js";
@@ -12,7 +13,7 @@ import type { RevisionId } from "../content/vocabulary.js";
 export interface ContentRouteNeed {
   readonly id: string;
   readonly kind: "frame" | "section" | "config" | "asset" | "copy";
-  readonly target: "designer" | "writer";
+  readonly target: (typeof AGENT_LISTS)["copy-keys"][number];
   readonly slotId: string;
   readonly ref?: string;
   readonly detail: string;

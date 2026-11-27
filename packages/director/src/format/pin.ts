@@ -1,3 +1,4 @@
+import { AGENT_LISTS } from "../cell-format/agent-lists.generated.js";
 /**
  * The one pin schema (planner R9): `pin.json` = {candidate, sha256, decidedBy, basis, at, confirmed?}.
  * Every pin reader checks it here or mirrors it exactly: the slot-model validator
@@ -67,7 +68,7 @@ export const PIN2_COMMON_KEYS = ["schema", "id", "agent", "kind", "status", "cre
 /** Every key a pin/2 may carry. */
 export const PIN2_KEYS = [...PIN2_COMMON_KEYS, ...PIN_KEYS] as const;
 const PIN2_REQUIRED = ["schema", "id", "agent", "kind", "status", "createdBy", "createdAt", "refs", "candidate", "sha256", "decidedBy", "basis", "at"] as const;
-const AGENTS = ["director", "designer", "writer", "publisher", "producer"] as const;
+const AGENTS = AGENT_LISTS.live;
 const AGENT = `(?:${AGENTS.join("|")})`;
 const SLOT_ID = "[a-z][a-z0-9-]*(?:\\.[a-z0-9][a-z0-9-]*){1,3}";
 const PIN2_ID = new RegExp(`^${AGENT}/${SLOT_ID}/pin$`);

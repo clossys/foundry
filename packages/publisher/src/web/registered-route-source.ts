@@ -1,3 +1,4 @@
+import type { AGENT_LISTS } from "../agent-lists.generated.js";
 import { registeredRouteHeadMetadata } from "./headMetadata.js";
 import { routeProviderMount, routeServerLoader, routeSourcePath, isLegacyRouteRegistration } from "../core/route-registry.js";
 import { isRetiredCompleteRouteRegistration } from "../core/route-identities.js";
@@ -104,7 +105,7 @@ export function emitRegisteredRouteAdapter(route: RouteRegistration): string {
 }
 
 export interface CompleteRoutePageSource {
-  readonly kind: "designer" | "writer" | "publisher";
+  readonly kind: (typeof AGENT_LISTS)["policy"][number];
   readonly file: string;
   readonly loader: RouteSourceExport;
 }

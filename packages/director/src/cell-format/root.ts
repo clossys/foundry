@@ -1,7 +1,8 @@
+import { AGENT_LISTS } from "./agent-lists.generated.js";
 import { statSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 
-export type CellAgent = "designer" | "writer" | "publisher" | "director";
+export type CellAgent = (typeof AGENT_LISTS)["native-cells"][number];
 
 export interface ResolveCellRootOptions {
   /** Explicit cell root, resolved against cwd rather than repoRoot. */
@@ -12,7 +13,7 @@ export interface ResolveCellRootOptions {
   cwd?: string;
 }
 
-const agents = new Set<string>(["designer", "writer", "publisher", "director"]);
+const agents = new Set<string>(AGENT_LISTS["native-cells"]);
 
 function checkPath(value: unknown, name: string): asserts value is string {
   if (typeof value !== "string" || value.trim() === "" || value.includes("\0")) {

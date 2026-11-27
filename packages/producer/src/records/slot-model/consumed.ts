@@ -39,7 +39,7 @@ export const isConsumedAgent = (agent: string): agent is ConsumedAgent => (CONSU
 export const scopedToConsumed = (agent: string): agent is Exclude<ConsumedAgent, "director"> => isConsumedAgent(agent) && agent !== "director";
 
 const PACKAGE_IA: Readonly<Record<ConsumedAgent, () => FoundryIa>> = { director: directorIa, designer: designerIa, writer: writerIa };
-const SLOT_REF = /^(director|designer|writer|publisher|producer)\/([a-z][a-z0-9-]*(?:\.[a-z0-9][a-z0-9-]*){1,3})(?:[/#:].*)?$/;
+const SLOT_REF = new RegExp(String.raw`^(${AGENT_LISTS.live.join("|")})\/([a-z][a-z0-9-]*(?:\.[a-z0-9][a-z0-9-]*){1,3})(?:[/#:].*)?$`);
 const keyOf = (to: string): string | undefined => { const match = SLOT_REF.exec(to); return match ? `${match[1]}/${match[2]}` : undefined; };
 
 export interface ConsumedGraph {

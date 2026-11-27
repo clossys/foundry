@@ -20,6 +20,7 @@
  * Exit 0 clean, 1 with one line per issue (rule id, the issue, the fix), 2 on a usage error.
  * Nothing under the judge (src/constitution, certifiers, guards) imports this file (R16.1).
  */
+import { AGENT_LISTS } from "./agent-lists.generated.mjs";
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -32,7 +33,7 @@ const PACKAGE = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 
 const SLOT_ID = /^[a-z][a-z0-9-]*(?:\.[a-z0-9][a-z0-9-]*){1,3}$/;
 const SHA256 = /^[0-9a-f]{64}$/;
-const AGENTS = ["director", "designer", "writer", "publisher", "producer"];
+const AGENTS = AGENT_LISTS.live;
 /** The most taste-log entries a brief reads as preferences (section 5b stage 1). */
 export const TASTE_LOG_WINDOW = 20;
 /** The direction count bounds of the diverge stage (section 5b stage 2: 3, cap 4). */

@@ -13,6 +13,7 @@
  * for (a release manifest, a Designer SVG, a Writer JSON record, a Director brief with only its header) is judged
  * by the target rules alone (`targetIssues`).
  */
+import { AGENT_LISTS } from "../agent-lists.generated.js";
 import { buildCandidateHeader, candidateHeaderIssues, parseCandidateName, serializeCandidate } from "./candidate.js";
 import { sha256Hex } from "./hash.js";
 import { sourceKindOf } from "./source-kind.js";
@@ -66,7 +67,7 @@ export const CURRENT_AGENT_KINDS: Readonly<Record<ModelAgent, readonly TargetSlo
 };
 
 const object = (value: unknown): value is Record<string, unknown> => typeof value === "object" && value !== null && !Array.isArray(value);
-const SLOT_REF = /^(director|designer|writer|publisher|producer)\/([a-z][a-z0-9-]*(?:\.[a-z0-9][a-z0-9-]*){1,3})$/;
+const SLOT_REF = new RegExp(String.raw`^(${AGENT_LISTS.live.join("|")})\/([a-z][a-z0-9-]*(?:\.[a-z0-9][a-z0-9-]*){1,3})$`);
 
 /** A slot.json as the reader holds it: the reader's view, and the current document when it is one. */
 export interface SlotRead { readonly doc: SlotDoc; readonly current?: Slot }

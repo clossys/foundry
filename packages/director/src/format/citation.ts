@@ -1,3 +1,4 @@
+import { AGENT_LISTS } from "../cell-format/agent-lists.generated.js";
 /**
  * Citations name slot ids (planner D2). A record cites `<slot>` (a slot of its own agent) or
  * `<agent>:<slot>`; it never names a version. What a citation means is the cited slot's pinned
@@ -10,7 +11,7 @@
  * rewritten once by `clossys migrate citations-to-slots`.
  */
 
-export const CITATION_AGENTS = ["director", "designer", "writer", "publisher"] as const;
+export const CITATION_AGENTS = AGENT_LISTS.content;
 export type CitationAgent = typeof CITATION_AGENTS[number];
 /** A slot id: `<layer>.<name>` with one to three dotted segments after the first (the slot model's SLOT_ID). */
 export const CITATION_SLOT_ID = /^[a-z][a-z0-9-]*(?:\.[a-z0-9][a-z0-9-]*){1,3}$/;

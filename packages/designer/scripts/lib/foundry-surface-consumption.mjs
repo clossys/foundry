@@ -1,4 +1,5 @@
 // Descriptor measurements are separate from the frozen historical report gate.
+import { AGENT_LISTS } from "../agent-lists.generated.mjs";
 import { createHash } from "node:crypto";
 import { existsSync, lstatSync, readFileSync, readdirSync, realpathSync } from "node:fs";
 import { resolve } from "node:path";
@@ -44,7 +45,7 @@ export function measureFoundrySurfaces(root, buildSurfaceConsumption) {
   const inventory = Object.fromEntries(["themes", "assets", "components", "sections", "frames"].map(layer => [layer, json(`src/catalog/slots/${layer}.json`)]));
   const docs = readdirSync(resolve(src, "catalog/fills/foundry")).filter(file => /^(?:components|sections|frames)\.(?!coverage\.)[^/]+\.json$/.test(file)).sort().map(file => json(`src/catalog/fills/foundry/${file}`));
   const metadata = doc => doc.$extensions["com.clossys.fill"];
-  const packageRoots = ["designer", "publisher"].map(name => ({ name: JSON.parse(readFileSync(resolve(repo, `packages/${name}/package.json`), "utf8")).name, root: `packages/${name}/src` }));
+  const packageRoots = AGENT_LISTS.surfaces.map(name => ({ name: JSON.parse(readFileSync(resolve(repo, `packages/${name}/package.json`), "utf8")).name, root: `packages/${name}/src` }));
   const packages = Object.fromEntries(packageRoots.map(row => [row.name, row.root]));
   const cache = new Map();
   const sourceRead = path => {

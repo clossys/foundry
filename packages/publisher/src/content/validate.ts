@@ -1,3 +1,4 @@
+import { AGENT_LISTS } from "../agent-lists.generated.js";
 import { canonicalLocale } from "@clossys/writer/locale";
 import { PAGE_META_FIELDS, validateComposition, validateCopyFields } from "./composition.js";
 import type { ContentFinding } from "./composition.js";
@@ -190,7 +191,7 @@ class Checks {
       const p = `${path}.destinations[${i}]`;
       if (!this.object(target, p)) return;
       for (const key of ["id", "ref"]) this.text(target[key], `${p}.${key}`);
-      this.enum(target.kind, ["builder", "messenger", "influencer"], `${p}.kind`);
+      this.enum(target.kind, AGENT_LISTS["release-receivers"], `${p}.kind`);
     });
   }
 }

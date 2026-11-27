@@ -3,6 +3,7 @@
  * `## <locale>` section per locale, each a run of `### <key>` entries whose first line is the
  * `<!-- {"id": "<key>", ...} -->` meta comment and whose value is plain text or one fenced json block.
  */
+import { AGENT_HANDOFFS } from "../../../../agent-lists.generated.js";
 import { isRecord, strings } from "../../core/lib.js";
 import type { Subject } from "../../core/types.js";
 
@@ -95,7 +96,9 @@ export function slotOf(subject: Subject): string | undefined {
 
 /** A slot id (2-4 dotted segments). */
 export const SLOT_ID = /^[a-z][a-z0-9-]*(?:\.[a-z0-9][a-z0-9-]*){1,3}$/;
+/** The agents a Writer copy citation may name: the agents that hand off to Writer, then Writer itself. */
+const WRITER_CITED = [...AGENT_HANDOFFS.filter(([, to]) => to === "writer").map(([from]) => from), "writer"];
 /** A copy citation `<agent>:<slot>[#<key>]` or a finding. */
-export const UPSTREAM_REF = /^(?:(?:director|writer):[a-z][a-z0-9-]*(?:\.[a-z0-9][a-z0-9-]*){1,3}(?:#[a-z0-9][a-z0-9.-]*)?|(?:finding|evidence):[a-z0-9][a-z0-9.-]*)$/;
+export const UPSTREAM_REF = new RegExp(String.raw`^(?:(?:${WRITER_CITED.join("|")}):[a-z][a-z0-9-]*(?:\.[a-z0-9][a-z0-9-]*){1,3}(?:#[a-z0-9][a-z0-9.-]*)?|(?:finding|evidence):[a-z0-9][a-z0-9.-]*)$`);
 /** A copy reference inside a narrative: `<writer slot>#<key>`. */
 export const COPY_REF = /^[a-z][a-z0-9-]*(?:\.[a-z0-9][a-z0-9-]*){1,3}#[a-z0-9][a-z0-9.-]*$/;

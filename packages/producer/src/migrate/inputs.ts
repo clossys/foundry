@@ -21,7 +21,7 @@ import { DESIGN_BRIEF_INPUTS } from "../records/slot-model/design-brief-inputs.j
 import { designerIa, writerIa, type FoundrySlot } from "../records/slot-model/foundry-ia.js";
 import { slotFile } from "../records/slot-model/layout.js";
 
-export type InputsAgent = "designer" | "writer";
+export type InputsAgent = (typeof AGENT_LISTS)["copy-keys"][number];
 /** Slot id -> the inputs the Foundry IA declares for it. */
 export type InputsCatalog = Readonly<Record<InputsAgent, ReadonlyMap<string, readonly string[]>>>;
 

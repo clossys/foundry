@@ -1,3 +1,4 @@
+import type { AGENT_LISTS } from "../../agent-lists.generated.js";
 import type { CompositeEngineInput } from "@clossys/designer/catalog";
 import type { CompiledPublication, ReleasedPublication } from "./publication.js";
 import type { ContentFinding, CopyFinding, ContentWriterContext } from "../composition.js";
@@ -44,7 +45,7 @@ export interface TargetBuildManifest {
 export interface HandoverReceipt {
   readonly targetId: string;
   readonly releaseN: number;
-  readonly receiver: "builder" | "messenger" | "influencer";
+  readonly receiver: (typeof AGENT_LISTS)["release-receivers"][number];
   readonly matches: false;
   readonly status: "pending";
   readonly observedAt: null;

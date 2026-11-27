@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import { AGENT_LISTS } from "./agent-lists.generated.mjs";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -56,7 +57,7 @@ export function checkOneLeafSource(repository, layers = allLayers) {
       for (const offer of row.offers ?? []) if (offer.leaves?.includes(leaf)) leaves.get(leaf).offers.push(offer.source);
     }
   }
-  const owners = ["designer", "publisher"].map(name => {
+  const owners = AGENT_LISTS.surfaces.map(name => {
     const directory = path.join(root, "packages", name);
     return { directory, manifest: read(path.join(directory, "package.json")) };
   });

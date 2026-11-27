@@ -1,3 +1,4 @@
+import type { AGENT_LISTS } from "../agent-lists.generated.js";
 import type { Composition, CopyField } from "./composition.js";
 import type { ContentJson, ContentJsonObject, SourceAnswer } from "./json.js";
 import type { ContentPlacement, ContentTree, SlotId } from "./taxonomy.js";
@@ -11,7 +12,7 @@ export interface ContentWorkspace {
   readonly locales: readonly string[];
   readonly currentMilestoneTag?: string;
   readonly deployTargets: readonly { readonly id: string; readonly repo: string; readonly app: string; readonly builderSurfaceId?: string; readonly origin?: string }[];
-  readonly destinations: readonly { readonly id: string; readonly kind: "builder" | "messenger" | "influencer"; readonly ref: string }[];
+  readonly destinations: readonly { readonly id: string; readonly kind: (typeof AGENT_LISTS)["release-receivers"][number]; readonly ref: string }[];
 }
 export interface ContentBrief {
   readonly audience: string;

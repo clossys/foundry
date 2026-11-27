@@ -21,6 +21,7 @@
  * Mechanical only: it reads files, never the clock, the network or randomness, and runs no model.
  * Nothing under the judge (src/constitution, certifiers, guards) imports this file (R16.1).
  */
+import { AGENT_LISTS } from "./agent-lists.generated.mjs";
 import { createHash } from "node:crypto";
 import { existsSync, readFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
@@ -29,7 +30,7 @@ import { fileURLToPath } from "node:url";
 export const SLOT_ID = /^[a-z][a-z0-9-]*(?:\.[a-z0-9][a-z0-9-]*){1,3}$/;
 export const FINDING_REF = /^(?:finding|evidence):([a-z0-9][a-z0-9.-]*)$/;
 const SHA256 = /^[0-9a-f]{64}$/;
-const AGENTS = ["director", "designer", "writer", "publisher", "producer"];
+const AGENTS = AGENT_LISTS.live;
 /** The most taste-log entries a brief reads as preferences (section 5b stage 1). */
 export const TASTE_LOG_WINDOW = 20;
 /** The direction count bounds of the diverge stage (section 5b stage 2: 3, cap 4). */

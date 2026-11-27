@@ -140,7 +140,7 @@ export const RELEASE_BEFORE_SIGNOFF: readonly { readonly id: string; readonly cl
 /** Ids a run takes from its caller, checked before any is used in a path or an argv (B8). */
 export const RUN_ID = /^[0-9]{8}T[0-9]{4}Z-[a-z0-9][a-z0-9-]*$/;
 export const PUBLICATION_ID = /^[a-z][a-z0-9-]*$/;
-export const SLOT_REF = /^(director|designer|writer|publisher|producer)\/[a-z][a-z0-9-]*(\.[a-z0-9][a-z0-9-]*){1,3}$/;
+export const SLOT_REF = new RegExp(String.raw`^(${AGENT_LISTS.live.join("|")})\/[a-z][a-z0-9-]*(\.[a-z0-9][a-z0-9-]*){1,3}$`);
 export const ENTRY_NAME = /^queue\.(pick|approve|clarify|change|fix|report)#[0-9]{8}T[0-9]{4}Z-[a-z0-9][a-z0-9-]*$/;
 export const CANDIDATE_NAME = /^[a-z0-9][a-z0-9.-]*-v[1-9][0-9]*\.(md|json|svg)$/;
 export const TRIGGER_CODE = /^T[1-8]$/;

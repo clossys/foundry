@@ -47,6 +47,15 @@ export const GENERATED = Object.freeze([
   { path: "packages/producer/scripts/agent-lists.generated.mjs", flavour: "mjs" },
   { path: "packages/controller/src/agent-lists.generated.ts", flavour: "ts" },
   { path: "packages/advisor/src/agent-lists.generated.ts", flavour: "ts" },
+  { path: "packages/designer/src/agent-lists.generated.ts", flavour: "ts" },
+  { path: "packages/designer/scripts/agent-lists.generated.mjs", flavour: "mjs" },
+  { path: "packages/designer/recipes/agent-lists.generated.mjs", flavour: "mjs" },
+  { path: "packages/director/src/cell-format/agent-lists.generated.ts", flavour: "ts" },
+  { path: "packages/director/recipes/agent-lists.generated.mjs", flavour: "mjs" },
+  { path: "packages/producer/recipes/agent-lists.generated.mjs", flavour: "mjs" },
+  { path: "packages/publisher/src/agent-lists.generated.ts", flavour: "ts" },
+  { path: "packages/publisher/recipes/agent-lists.generated.mjs", flavour: "mjs" },
+  { path: "packages/writer/recipes/agent-lists.generated.mjs", flavour: "mjs" },
 ].map(Object.freeze));
 
 /** The generated copy of `agents` (the parsed agents.json) in `flavour` ("ts" or "mjs"). Pure. */

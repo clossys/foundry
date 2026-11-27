@@ -214,7 +214,7 @@ export function missingPaths(adapter: Adapter, repo: string, packageDir: string)
 }
 
 /** An agent-qualified slot ref (`designer/sections.hero`, or the `director:focus.segment.core` form). */
-export const SLOT_REF = /^(director|designer|writer|publisher|producer)[/:]([a-z][a-z0-9-]*(?:\.[a-z0-9][a-z0-9-]*){1,3})$/;
+export const SLOT_REF = new RegExp(String.raw`^(${AGENT_LISTS.live.join("|")})[/:]([a-z][a-z0-9-]*(?:\.[a-z0-9][a-z0-9-]*){1,3})$`);
 
 const ADAPTER_JSON_SCHEMA = JSON.parse(readFileSync(new URL("../../src/conform/adapter.schema.json", import.meta.url), "utf8")) as JsonSchema;
 

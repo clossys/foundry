@@ -1114,6 +1114,28 @@
         }
       ],
       "note": "docs/contracts/agents.json is the one agent definition, owned by Controller: one row per package, the named ordered lists code reads and the chain handoffs. Every package that reads a list reads a generated copy, and check:agents-definition fails when a named list or handoff names an agent with no row, or a generated copy differs from the render by one byte. The fixture is an empty world whose install list names ghost and whose Producer scripts copy was edited by hand."
+    },
+    {
+      "id": "R-AGENT-LISTS",
+      "owner_words": {
+        "quote": "the loops that run on existing agents must run on new agents too",
+        "date": "2026-11-26"
+      },
+      "owner_agent": "controller",
+      "status": "enforced",
+      "checks": [
+        ".#check:agent-lists"
+      ],
+      "fixture": "scripts/rules/fixtures/R-AGENT-LISTS",
+      "fixture_runs": [
+        {
+          "check": ".#check:agent-lists",
+          "cwd": ".",
+          "run": "node scripts/check-agent-lists.mjs --root {fixture}",
+          "expect": "^agent-list packages/producer/src/loop/cohort\\.ts:2: array of agent ids director, designer written out"
+        }
+      ],
+      "note": "No source file writes out a list of agent ids: code reads a named list of docs/contracts/agents.json, root scripts through scripts/lib/agent-lists.mjs and a package through its generated copy, so a new agent joins every loop and cohort the day its row and list membership land. check:agent-lists fails on any array, string-literal union or regex alternation of two or more agent ids outside agents.json and its generated outputs (GENERATED in check-agents-definition.mjs); test and fixture files hold expected values and are not read. The fixture is a world whose Producer loop writes its cohort out."
     }
   ],
   "exemptions": [

@@ -1,9 +1,10 @@
+import { AGENT_LISTS } from "../agent-lists.generated.js";
 import type { LegacyRouteRegistration } from "../core/route-registry.js";
 
 /** Historical publication data only. These descriptors cannot register or emit a page. */
-export type CompleteRouteMetadataKind = "designer" | "writer" | "publisher";
+export type CompleteRouteMetadataKind = (typeof AGENT_LISTS)["policy"][number];
 export function isCompleteRouteMetadataKind(value: unknown): value is CompleteRouteMetadataKind {
-  return value === "designer" || value === "writer" || value === "publisher";
+  return (AGENT_LISTS.policy as readonly unknown[]).includes(value);
 }
 export interface CompleteRouteMetadata extends Omit<LegacyRouteRegistration, "composition"> {
   readonly composition: {

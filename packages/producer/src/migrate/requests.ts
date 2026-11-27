@@ -36,6 +36,7 @@
  * (its record detail, open or closed) and finishes only what is missing; the legacy files are gone after a whole run,
  * so a second one plans nothing.
  */
+import { AGENT_LISTS } from "../agent-lists.generated.js";
 import { closeSync, fsyncSync, lstatSync, openSync, readdirSync, readFileSync, realpathSync, rmdirSync, statSync, unlinkSync, type Stats } from "node:fs";
 import { basename, dirname, join, relative } from "node:path";
 import { MIGRATED_RAISE_NOTE } from "@clossys/director";
@@ -49,16 +50,19 @@ import { placedSlots, type WorkKind } from "../queue/routing.js";
 
 export const REQUESTS_MIGRATION_CLI = "clossys migrate requests";
 /** The legacy store folders and the record file names each holds. */
-const LEGACY_DIRS: Readonly<Record<string, { readonly agent: "director" | "designer"; readonly file: RegExp }>> = {
+const LEGACY_STORES = {
   requests: { agent: "director", file: /^REQ-\d{4}\.json$/ },
   needs: { agent: "designer", file: /^NEED-\d{3,}\.json$/ },
-};
+} as const;
+/** The agent whose legacy store a record was read from: an agent of LEGACY_STORES. */
+export type LegacyAgent = (typeof LEGACY_STORES)[keyof typeof LEGACY_STORES]["agent"];
+const LEGACY_DIRS: Readonly<Record<string, { readonly agent: LegacyAgent; readonly file: RegExp }>> = LEGACY_STORES;
 /** Folders a scan of --root outside clossys/ never enters (besides dot folders and node_modules). */
 const OUTPUT_DIRS = new Set(["dist", "build", "coverage"]);
 const REQUEST_KINDS = ["missing", "contradiction", "tripwire", "drift", "reading", "change"];
 const REQUEST_STATUSES = ["open", "drafted", "resolved", "declined"];
 const NEED_STATUSES = ["open", "proposed", "approved", "built", "closed"];
-const SLOT_REF = /^(director|designer|writer|publisher)\/([a-z][a-z0-9-]*(?:\.[a-z0-9][a-z0-9-]*){1,3})$/;
+const SLOT_REF = new RegExp(String.raw`^(${AGENT_LISTS.content.join("|")})\/([a-z][a-z0-9-]*(?:\.[a-z0-9][a-z0-9-]*){1,3})$`);
 const SLOT_ID = /^[a-z][a-z0-9-]*(?:\.[a-z0-9][a-z0-9-]*){1,3}$/;
 
 export interface MigratedRaise {
@@ -90,7 +94,7 @@ export interface PlannedRaise extends MigratedRaise {
 export interface LegacyRecord {
   /** Consumer-relative path of the legacy file. */
   readonly file: string;
-  readonly agent: "director" | "designer";
+  readonly agent: LegacyAgent;
   readonly id: string;
   /** The entries it becomes or merges into. */
   readonly raises: readonly PlannedRaise[];
@@ -138,7 +142,7 @@ function scanStores(dir: string, skip: (path: string, name: string) => boolean, 
 }
 
 /** Who raised a record: a placed slot it names, the owner, or another raiser (kept by name). */
-function raiserOf(consumer: string, raisedBy: string, agent: "director" | "designer"): { slot?: string; owner?: true; by?: string } {
+function raiserOf(consumer: string, raisedBy: string, agent: LegacyAgent): { slot?: string; owner?: true; by?: string } {
   if (raisedBy === "owner") return { owner: true };
   const ref = SLOT_REF.exec(raisedBy) ?? (agent === "designer" && SLOT_ID.test(raisedBy) ? SLOT_REF.exec(`designer/${raisedBy}`) : null);
   if (ref && placedSlots(consumer, ref[1] as ContentAgent).some(slot => slot.id === ref[2])) return { slot: `${ref[1]}/${ref[2]}` };
@@ -149,7 +153,7 @@ function raiserOf(consumer: string, raisedBy: string, agent: "director" | "desig
  * slot itself for a change or fix, and for a slot entry the agent's first placed slot (by id) whose refs cite the need.
  * Never the owner for an agent's record (U8 round 2); with no citing slot, a finding (the message).
  */
-function requesterOf(consumer: string, raiser: ReturnType<typeof raiserOf>, agent: "director" | "designer", kind: SlotRequest["kind"], target: string): { from: string; rel?: "input" | "uses" } | string {
+function requesterOf(consumer: string, raiser: ReturnType<typeof raiserOf>, agent: LegacyAgent, kind: SlotRequest["kind"], target: string): { from: string; rel?: "input" | "uses" } | string {
   if (raiser.slot) return { from: raiser.slot };
   if (raiser.owner) return { from: "owner" };
   if (kind !== "slot") return { from: target };
@@ -256,7 +260,7 @@ function closeRefusal(consumer: string, raise: MigratedRaise, entry: SlotRequest
   return undefined;
 }
 
-interface ReadRecord { readonly file: string; readonly agent: "director" | "designer"; readonly id: string; readonly doc: Record<string, unknown>; readonly raises: readonly MigratedRaise[] }
+interface ReadRecord { readonly file: string; readonly agent: LegacyAgent; readonly id: string; readonly doc: Record<string, unknown>; readonly raises: readonly MigratedRaise[] }
 
 /**
  * Reads every legacy record and checks each raise it becomes, nothing written: a raise a stopped run already carried

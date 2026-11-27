@@ -17,6 +17,7 @@
  * An owner basis (`picked`, `bulk`) is never given a queue answer it does not have: such a pin migrates as it is
  * and is listed in `needsOwnerAnswer`; `pins.resolve` keeps failing it until the owner answers.
  */
+import { AGENT_LISTS } from "../agent-lists.generated.js";
 import { CANDIDATE_NAME, parseCandidateName } from "../records/candidate.js";
 import { buildPin, cliActor, OWNER_BASES, ownerAnswerRef, pinPath, pinRecordIssues, toIsoZ, writePinDoc, type Pin1Doc } from "../records/pin.js";
 import { readPinFile, setPinMapRecord, usesPinMap } from "../records/pin-map.js";
@@ -25,7 +26,7 @@ import type { AgentId, Pin, PinMap, PinRecord, Ref, SlotId } from "../records/ty
 
 export const PIN_MIGRATION = "pin-1-to-2";
 const MIGRATION_CLI = `clossys migrate ${PIN_MIGRATION}`;
-const DECIDED_BY_2 = /^(owner(:.+)?|planner(:.+)?|agent:(director|designer|writer|publisher|producer)|migrated)$/;
+const DECIDED_BY_2 = new RegExp(String.raw`^(owner(:.+)?|planner(:.+)?|agent:(${AGENT_LISTS.live.join("|")})|migrated)$`);
 const BASES = ["picked", "bulk", "planner", "agent"] as const;
 
 export type PinConversion =

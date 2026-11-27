@@ -1,3 +1,4 @@
+import { AGENT_LISTS } from "../agent-lists.generated.mjs";
 import ts from "typescript";
 import fs from "node:fs";
 import path from "node:path";
@@ -234,7 +235,7 @@ export function createLeafAnalyzer({ program, root, componentRoots = new Map(), 
 
 /** Shared registry and symbol context for surface/module body consumers. */
 export function createSurfaceLeafContext(repository, { sourceRoots = [], analysisRoot = repository } = {}) {
-  const root = path.resolve(repository), packages = ["designer", "publisher"].map(name => {
+  const root = path.resolve(repository), packages = AGENT_LISTS.surfaces.map(name => {
     const directory = path.join(root,"packages",name), manifest = JSON.parse(fs.readFileSync(path.join(directory,"package.json"),"utf8"));
     return { directory, manifest };
   });

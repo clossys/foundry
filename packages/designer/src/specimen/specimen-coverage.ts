@@ -1,8 +1,9 @@
+import { AGENT_LISTS } from "../agent-lists.generated.js";
 import { specimenLayoutNeeds, type SpecimenAxis, type SpecimenItem, type SpecimenLeafDefinition, type SpecimenLeafProps } from "./specimen-layouts.js";
 import { SPECIMEN_KIND_MAP, resolveSpecimenLeafBinding, type SpecimenCellKind } from "./specimen-kind-map.js";
 import { DS_ATTR } from "../catalog-core/provenance-attrs.js";
 
-export type SpecimenAgent = "director" | "writer" | "designer" | "publisher";
+export type SpecimenAgent = (typeof AGENT_LISTS)["native-cells"][number];
 export interface SpecimenCoverageCell extends SpecimenCellKind {
   readonly agent: SpecimenAgent;
   readonly id: string;
@@ -50,7 +51,7 @@ export interface SpecimenCoverageReport {
   readonly agents: readonly SpecimenAgentCoverage[];
   readonly findings: readonly SpecimenCoverageFinding[];
 }
-const agents: readonly SpecimenAgent[] = ["director", "writer", "designer", "publisher"];
+const agents: readonly SpecimenAgent[] = AGENT_LISTS["native-cells"];
 const coordinateKey = (coordinates: Readonly<Record<string, string>>) => JSON.stringify(Object.entries(coordinates).sort(([a], [b]) => a.localeCompare(b)));
 const itemKey = (item: SpecimenItem) => JSON.stringify([item.id, coordinateKey(item.coordinates ?? {})]);
 function dataKey(value: unknown, seen = new Set<object>()): string | undefined {

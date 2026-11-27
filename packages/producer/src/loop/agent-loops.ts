@@ -116,7 +116,7 @@ export function requiredSteps(standard: LoopVersion, agent: LoopAgent): LoopStep
 }
 
 /** Agent-tree prefixes a path may name (`<agent>/...`, `clossys/agents/<agent>/...`). */
-const AGENT_PATH = /^(?:clossys\/agents\/)?(director|designer|writer|publisher|producer)\//;
+const AGENT_PATH = new RegExp(String.raw`^(?:clossys\/agents\/)?(${AGENT_LISTS.live.join("|")})\/`);
 /** The agent tree a read or write path names, if it names one by id (judged on the posix-normalized path). */
 export const pathAgent = (path: string): string | undefined => AGENT_PATH.exec(posix.normalize(path))?.[1];
 /** A path that leaves the tree it is written against: absolute, or through a `..` segment. */

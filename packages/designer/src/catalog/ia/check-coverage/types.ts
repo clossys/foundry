@@ -1,3 +1,4 @@
+import type { AGENT_LISTS } from "../../../agent-lists.generated.js";
 /** Private report schema: catalog ids remain independent of all display paths. */
 export type Layer = "themes" | "assets" | "components" | "sections" | "frames";
 export type FillState = "absent" | "draft" | "checked" | "approved";
@@ -17,7 +18,9 @@ export interface Edge {
   /** A schema's reverse ownership pointer is validated, but is not a consumption cycle. */
   kind?: "consumes" | "describes";
 }
-export interface ExternalNode { id: string; package: "writer" | "publisher"; kind: string }
+/** A package whose catalog the coverage reads as external nodes. */
+export type CoverageExternalPackage = (typeof AGENT_LISTS)["coverage-externals"][number];
+export interface ExternalNode { id: string; package: CoverageExternalPackage; kind: string }
 export interface CoverageInput {
   placements: Placement[];
   slots: { id: string; layer: Layer }[];
@@ -27,7 +30,7 @@ export interface CoverageInput {
   adminRoots: string[];
   adminInputsComplete: boolean;
   needs?: string[];
-  unavailablePackages?: ("writer" | "publisher")[];
+  unavailablePackages?: CoverageExternalPackage[];
   diagnostics?: Finding[];
 }
 export interface Finding { code: string; priority: Priority; subject: string; target?: string; message: string }

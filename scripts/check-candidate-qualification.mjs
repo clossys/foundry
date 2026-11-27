@@ -1,6 +1,7 @@
 import { createHash } from "node:crypto";
 import { execFileSync } from "node:child_process";
 import { readFileSync, readdirSync } from "node:fs";
+import { agentList } from "./lib/agent-lists.mjs";
 import { blobOid, createQualificationHistory, parseStrictJson, qualificationPath, realPathTouches, sealedQualificationPathsAtTransitionBase, validatePrepublicationPrTail, validateRetainedCandidateQualification, validateTrioPublicationClosure } from "./lib/candidate-qualification.mjs";
 import { findUnrecognisedArgument, resolvePackageArgs, resolveShardArgs, selectedForRederivation } from "./lib/candidate-qualification-shard.mjs";
 import { loadTransitionPolicy } from "./lib/package-identity-transition.mjs";
@@ -155,7 +156,7 @@ failed ||= trioFindings.length > 0;
 const publicationFindings = publication ? validateTrioFirstPublication(publication.value, { cohort: cohort?.value, cohortBytes: cohort?.bytes, records: recordMap, recordBytes, validatedRecordPaths }) : [];
 for (const item of publicationFindings) console.error("[" + item.rule + "] " + TRIO_PUBLICATION_PATH + ": " + item.message);
 failed ||= publicationFindings.length > 0;
-const trioRecords = records.map((item) => item.record).filter((record) => record?.timing === "pre-publication" && /^@clossys\/(advisor|starter|controller)$/.test(record?.candidate?.name ?? ""));
+const trioRecords = records.map((item) => item.record).filter((record) => record?.timing === "pre-publication" && new RegExp(String.raw`^@clossys\/(${agentList("trio").join("|")})$`).test(record?.candidate?.name ?? ""));
 const forwardRecords = records
   .filter((item) => item.record?.timing === "pre-publication" && item.record?.candidate?.name?.startsWith(`${sourceIdentity.scope}/`) && !sealedQualificationPaths.has(item.path))
   .map((item) => item.record);

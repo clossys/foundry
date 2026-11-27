@@ -1,3 +1,4 @@
+import { AGENT_LISTS } from "../../agent-lists.generated.js";
 import { publicationDigest, stampPublication, assertCompiledPublication } from "../release/publication.js";
 import type { CompiledPublication } from "../release/publication.js";
 import { constants } from "node:fs";
@@ -115,7 +116,7 @@ function validateBundle(manifest: unknown, build: unknown, handover: unknown, ta
     routes.add(route.slotId);
   }
   if (!object(handover) || !keys(handover, ["targetId", "releaseN", "receiver", "matches", "status", "observedAt"]) ||
-    handover.targetId !== targetId || handover.releaseN !== n || !["builder", "messenger", "influencer"].includes(handover.receiver as string) ||
+    handover.targetId !== targetId || handover.releaseN !== n || !(AGENT_LISTS["release-receivers"] as readonly string[]).includes(handover.receiver as string) ||
     handover.matches !== false || handover.status !== "pending" || handover.observedAt !== null) invalid("Stored handover must be a matching pending local receipt");
 }
 

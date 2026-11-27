@@ -314,7 +314,7 @@ function allGaps(root: string, options: InterviewOptions): { gaps: Gap[]; notes:
   }
   // A recorded candidate whose selection-ladder record does not hold (a created one with no reason no seed fit).
   for (const { record, store, line } of readRuns(root)) {
-    const agent = /^(director|designer|writer|publisher)\.candidates$/.exec(record.step)?.[1];
+    const agent = new RegExp(String.raw`^(${AGENT_LISTS.content.join("|")})\.candidates$`).exec(record.step)?.[1];
     if (!agent || record.exit !== 0 || !record.decision?.ladder) continue;
     for (const issue of ladderIssues(agent, record.decision.ladder)) gaps.push({ kind: "wiring", code: `ladder.${issue.rule}`, agent: agent as InterviewAgent, item: record.decision.output.path, step: record.step, decider: "agent",
       message: `${store}:${line} ${issue.detail}; submit a new candidate with its ladder record` });

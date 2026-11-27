@@ -76,7 +76,8 @@ it. A slot shown as `sample` (still on the package default), `unresolved`, `fail
 
 The rules in the repository's rule registry whose `owner_agent` is `controller`: the agent standards,
 starting with the one agent definition (`docs/contracts/agents.json`, checked by
-`check:agents-definition`). `check:rules` fails when this list and the registry differ.
+`check:agents-definition`) and its named lists, which code reads instead of writing agent ids out
+(`check:agent-lists`). `check:rules` fails when this list and the registry differ.
 
 <!-- owned-rules:start: the rules in the repository's rule registry whose owner_agent is this package; check:rules fails on drift -->
 - R-ASSEMBLE-ONLY
@@ -85,6 +86,7 @@ starting with the one agent definition (`docs/contracts/agents.json`, checked by
 - R-GIT-CMS
 - R-SINGLE-READER
 - R-AGENTS-DEFINITION
+- R-AGENT-LISTS
 <!-- owned-rules:end -->
 
 ## When this package is installed

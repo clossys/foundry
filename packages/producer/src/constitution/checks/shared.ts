@@ -1,4 +1,5 @@
 /** Helpers shared by the rule modules: row building, slot lookups, citation and file scans. Pure. */
+import { AGENT_LISTS } from "../../agent-lists.generated.js";
 import { installedPath } from "@clossys/publisher/specimen";
 import { parseFrontmatter } from "../../records/slot-model/index.js";
 import { isCurrentSlot, readSlotValue } from "../../records/slot-current.js";
@@ -125,7 +126,7 @@ export function slotHomes(ctx: ConstitutionContext): Map<string, SlotRecord> {
  * A version citation `[<agent>:]<slot-id>@[v]<n>` (R07.2), in any text. The slot id must be a known
  * slot; the same boundaries as the audit scan (scratchpad/audit/scan.py VERSION_CITE).
  */
-const VERSION_CITE = /(?<![A-Za-z0-9.:/-])(?:(director|designer|writer|publisher|producer):)?([a-z][a-z0-9-]*(?:\.[a-z0-9][a-z0-9-]*){1,3})@v?([1-9][0-9]*)(?![0-9])/g;
+const VERSION_CITE = new RegExp(String.raw`(?<![A-Za-z0-9.:/-])(?:(${AGENT_LISTS.live.join("|")}):)?([a-z][a-z0-9-]*(?:\.[a-z0-9][a-z0-9-]*){1,3})@v?([1-9][0-9]*)(?![0-9])`, "g");
 export interface VersionCite { readonly agent?: string; readonly slot: string; readonly version: number; readonly text: string }
 export function versionCites(text: string, known: ReadonlySet<string> | ReadonlyMap<string, unknown>): VersionCite[] {
   const cites: VersionCite[] = [];
@@ -137,7 +138,7 @@ export function versionCites(text: string, known: ReadonlySet<string> | Readonly
 }
 
 /** The legal citation grammar `[<agent>:]<slot-id>[#<key>]` plus the illegal version suffix, parsed. */
-const CITATION = /^(?:(director|designer|writer|publisher|producer):)?([a-z][a-z0-9-]*(?:\.[a-z0-9][a-z0-9-]*){1,3})(?:@v?[0-9]+)?(?:#\S+)?$/;
+const CITATION = new RegExp(String.raw`^(?:(${AGENT_LISTS.live.join("|")}):)?([a-z][a-z0-9-]*(?:\.[a-z0-9][a-z0-9-]*){1,3})(?:@v?[0-9]+)?(?:#\S+)?$`);
 /** `<slot-id>/<candidate>` (a candidate citation, R06.4). */
 const CANDIDATE_CITATION = /^([a-z][a-z0-9-]*(?:\.[a-z0-9][a-z0-9-]*){1,3})\/([a-z0-9][a-z0-9.-]*-v[1-9][0-9]*)(?:\.(?:md|json))?$/;
 

@@ -10,6 +10,7 @@
  * - every pinned candidate certifies on the pinSet now: a fresh recorded verdict is taken, a stale or legacy one is
  *   re-judged (certify, the slot's own contract checks), and a failed one fails.
  */
+import { AGENT_LISTS } from "../agent-lists.generated.js";
 import { existsSync } from "node:fs";
 import { join } from "node:path";
 import { briefTightenOnly } from "../check/brief-tighten-only.js";
@@ -33,7 +34,7 @@ import { isReleaseSlot } from "../release/pins.js";
 import type { AgentId, OwnerOption, SlotRequest } from "../records/types.js";
 import { consumerFacts, routeEntry, RoutingError } from "./routing.js";
 
-const SLOT_REF = /^(director|designer|writer|publisher)\/([a-z][a-z0-9-]*(?:\.[a-z0-9][a-z0-9-]*){1,3})$/;
+const SLOT_REF = new RegExp(String.raw`^(${AGENT_LISTS.content.join("|")})\/([a-z][a-z0-9-]*(?:\.[a-z0-9][a-z0-9-]*){1,3})$`);
 
 export interface RequesterCheck {
   readonly ok: boolean;

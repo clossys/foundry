@@ -16,13 +16,14 @@
  * stylesheet, so a stale one fails it. Tiptap's own node-view content-hole attribute is
  * that library's contract (read by `@tiptap/react`), not a name this repository owns, so it is not listed.
  */
+import { AGENT_LISTS } from "./agent-lists.generated.mjs";
 import { execFileSync } from "node:child_process";
 import { readFileSync, writeFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const repository = resolve(dirname(fileURLToPath(import.meta.url)), "..", "..", "..");
-const PACKAGES = ["designer", "publisher", "producer", "writer"];
+const PACKAGES = AGENT_LISTS["provenance-stamped"];
 const TEXT = /\.(?:[cm]?[jt]sx?|css|json|md|html)$/;
 const SKIPPED = /(?:^|\/)(?:node_modules|dist|references)\/|^packages\/producer\/studio\/app\/writer\/patterns\/data[-]and[-]lists\//;
 const GENERATED = [/^packages\/designer\/styles\/utilities\.css$/];

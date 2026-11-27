@@ -20,6 +20,7 @@
  * Exit 0 clean, 1 with one line per issue (rule id, the issue, the fix), 2 on a usage error.
  * Nothing under the judge (src/constitution, certifiers, guards) imports this file (R16.1).
  */
+import { AGENT_LISTS } from "./agent-lists.generated.mjs";
 import { existsSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -29,8 +30,8 @@ export { STAGES } from "./stage-core.mjs";
 
 const AGENT = "producer";
 
-const BY = /^(?:owner|planner|agent:(?:director|designer|writer|publisher|producer))$/;
-const PROMPT = /^packages\/(director|designer|writer|publisher|producer)\/actions\/[a-z][a-z0-9.-]*\/skill\.md$/;
+const BY = new RegExp(String.raw`^(?:owner|planner|agent:(?:${AGENT_LISTS.live.join("|")}))$`);
+const PROMPT = new RegExp(String.raw`^packages\/(${AGENT_LISTS.live.join("|")})\/actions\/[a-z][a-z0-9.-]*\/skill\.md$`);
 const HANDS = ["llm", "human", "llm+human"];
 
 /** The seat policy: the model per tier and whether seats are human only. */

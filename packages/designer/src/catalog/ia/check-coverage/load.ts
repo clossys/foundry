@@ -7,7 +7,7 @@ import bundledGraph from "../../reports/usage-graph.json" with { type: "json" };
 import { flatten, references } from "../../../catalog-core/model.js";
 import type { FillDoc } from "../../../catalog-core/types.js";
 import { LAYERS } from "./check.js";
-import type { CoverageInput, Edge, ExternalNode, Fill, Finding, Layer, Placement } from "./types.js";
+import type { CoverageExternalPackage, CoverageInput, Edge, ExternalNode, Fill, Finding, Layer, Placement } from "./types.js";
 
 const packageRoot = resolve(dirname(fileURLToPath(import.meta.url)), "../../../..");
 export const defaultCatalogRoot = existsSync(join(packageRoot, "src/catalog")) ? join(packageRoot, "src/catalog") : join(packageRoot, "dist/catalog");
@@ -96,7 +96,7 @@ export function loadCoverageInput(options: LoadOptions = {}): CoverageInput {
     }
   } else needs.push("No hash-bound per-fill executed check records supplied: existing fills remain draft, never inferred checked/approved from metadata labels.");
 
-  const unavailablePackages: ("writer" | "publisher")[] = [];
+  const unavailablePackages: CoverageExternalPackage[] = [];
   const writer = options.writerCatalogRoot ?? defaultWriterRoot();
   const passagePath = writer && join(writer, "slots/passages.json");
   if (passagePath && existsSync(passagePath)) {
