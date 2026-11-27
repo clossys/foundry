@@ -11,6 +11,7 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 import { afterAll, describe, expect, it } from "vitest";
 import { runCli } from "../cli/main.js";
 import { buildContext } from "../constitution/index.js";
+import { importOwners, installOwners } from "../constitution/checks/shared.js";
 import { r05_1 } from "../constitution/rules/r05.js";
 import { PRODUCER_ROOT } from "../package-path.js";
 import { CODE_ADOPT, CODE_ADOPT_RUNG, stockFilesOf, stockItemOf } from "./code-adopt.js";
@@ -167,6 +168,22 @@ describe("derive.uses derives an unpinned slot from its stock reference item", (
     expect(usesRefsOf(consumer, `designer/${ITEM}`)).toEqual([SEPARATOR]);
     expect(importRows()).toEqual([]);
   }, 300_000);
+
+  it("an import maps to the slot that installs it, not the slot named after it", async () => {
+    const { root, consumer } = world();
+    const { writeUses } = await script();
+    // No slot is named after either file; R05.1 and R07.1's install-path map names the slot that installs each.
+    for (const stem of ["progress", "collapsible"]) expect(existsSync(join(consumer, "agents", "designer", `components.${stem}`)), stem).toBe(false);
+    const owners = installOwners(buildContext(root, consumer));
+    expect(importOwners("components/ui/progress", owners)).toEqual(["components.progress-bar"]);
+    expect(importOwners("components/ui/collapsible", owners)).toEqual(["components.disclosure"]);
+    const result = writeUses(consumer, { root: REPO, at: AT });
+    expect(result.unresolved.filter(gap => /\/components\/ui\/(?:progress|collapsible)$/.test(gap.spec))).toEqual([]);
+    expect(usesRefsOf(consumer, "designer/sections.usage")).toContain("designer/components.progress-bar");
+    for (const frame of ["frames.app-header", "frames.app-shell", "frames.app-sidebar"]) {
+      expect(usesRefsOf(consumer, `designer/${frame}`), frame).toContain("designer/components.disclosure");
+    }
+  }, 120_000);
 
   it("an import no slot installs is reported, not written", async () => {
     const { consumer } = world();

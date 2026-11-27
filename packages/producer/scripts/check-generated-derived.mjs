@@ -50,6 +50,9 @@ import { tags } from '../dist/constitution/criteria/core/lib.js';
 // The adopt path's source ladder (the stock reference item a slot with no pin will adopt) and the step's logged writer.
 import { stockFilesOf } from '../dist/records/code-adopt.js';
 import { repairStrayUses, writeDerivedUses } from '../dist/records/derived-uses.js';
+// The install-path map R05.1 and R07.1 resolve an `@/` import with: the slot that installs the imported file.
+import { buildContext } from '../dist/constitution/index.js';
+import { importOwners, installOwners } from '../dist/constitution/checks/shared.js';
 // The consumer's flavor file, from the Designer's flavor generator (one writer for every components.json): the functions
 // `clossys config --init` writes it with; the check regenerates it with them and the fixture seeder writes it with them.
 import { CONSUMER_STYLESHEET, consumerStylesheet, flavorJson, writeFlavor } from '../dist/records/consumer-flavor.js';
@@ -294,24 +297,23 @@ export function deriveUses(clossysRoot, root = repo, unresolved = undefined) {
     if (!source.stock) pins.set(`${agent}/${slot}`, source);
   }
   // Lucide icon name -> pinned icon slot; pinned element name -> slot (sibling section imports).
-  const lucide = new Map(), elements = new Map(), stems = new Map();
+  const lucide = new Map(), elements = new Map();
   for (const [key, entry] of pins) {
     if (!entry?.item || !key.startsWith('designer/')) continue;
     const ref = (entry.item.meta?.source?.ref ?? []).find(value => typeof value === 'string' && value.startsWith('lucide/'));
     const name = ref ? /^lucide\/([a-z0-9-]+)@/.exec(ref)?.[1] : undefined;
     if (name && entry.slot.startsWith('assets.icon-') && !lucide.has(name)) lucide.set(name, entry.slot);
     if (typeof entry.item.name === 'string' && !elements.has(entry.item.name)) elements.set(entry.item.name, entry.slot);
-    // A component layer file stem -> the stock components.* slots whose pin vendors that file (breadcrumb.tsx -> components.breadcrumbs).
-    const kind = entry.item.meta?.source?.kind;
-    if ((kind === 'registry' || kind === 'npm') && entry.slot.startsWith('components.')) for (const file of entry.item.files ?? []) {
-      const stem = /(?:^|\/)([a-z0-9-]+)\.tsx?$/.exec(String(file?.path ?? ''))?.[1];
-      if (stem) stems.set(stem, new Set([...(stems.get(stem) ?? []), entry.slot]));
-    }
   }
-  // `components.<stem>`; in a composition (whose uses ref-verbatim holds equal to its declared stock parts) a stem
-  // with no such slot resolves to the one stock slot vendoring `<stem>.tsx`, and an ambiguous stem adds nothing.
-  const component = (stem, composed) => known.has(`components.${stem}`) ? `components.${stem}`
-    : composed && stems.get(stem)?.size === 1 ? [...stems.get(stem)][0] : undefined;
+  // `@/components/ui/<stem>` resolves to the slot that installs that file, through the install-path map R05.1 and R07.1
+  // use (constitution/checks/shared.ts installOwners, importOwners), a pinned installer first; the importing slot's own
+  // install is no uses. A file no candidate installs yet resolves to the IA-placed `components.<stem>` that adopts it.
+  let owners;
+  const component = (stem, slot) => {
+    const ids = importOwners(`components/ui/${stem}`, owners ??= installOwners(buildContext(dirname(clossysRoot), clossysRoot))).filter(id => known.has(id));
+    if (ids.includes(slot)) return slot;
+    return ids.find(id => pins.has(`designer/${id}`)) ?? ids[0] ?? (known.has(`components.${stem}`) ? `components.${stem}` : undefined);
+  };
   const uses = new Map();
   for (const [key, entry] of sources) {
     const [agent, slot] = key.split('/');
@@ -319,7 +321,6 @@ export function deriveUses(clossysRoot, root = repo, unresolved = undefined) {
     const add = id => { if (id && id !== slot && known.has(id)) out.add(id); };
     if (entry?.item && agent === 'designer') {
       const item = entry.item;
-      const composed = item.meta?.source?.kind === 'composition';
       for (const ref of strings(item.registryDependencies ?? [])) add(toSlotId(ref, known));
       for (const ref of strings([item.meta?.element?.deps?.registry ?? [], item.meta?.element?.deps?.elements ?? []])) add(toSlotId(ref, known));
       for (const file of item.files ?? []) {
@@ -332,11 +333,11 @@ export function deriveUses(clossysRoot, root = repo, unresolved = undefined) {
         for (const { spec, names } of importsOf(file.content)) {
           const ui1 = /^@\/(?:registry\/[^/]+\/)?components\/ui\/([a-z0-9-]+)$/.exec(spec)?.[1];
           if (ui1) {
-            const id = component(ui1, composed);
+            const id = component(ui1, slot);
             if (id) add(id);
             else if (unresolved && !unresolved.some(gap => gap.slot === key && gap.spec === spec)) unresolved.push({ slot: key, spec });
           }
-          else if (spec === '@clossys/designer-ui') for (const name of names) { const stem = ui.get(name); if (stem) add(component(stem, composed)); }
+          else if (spec === '@clossys/designer-ui') for (const name of names) { const stem = ui.get(name); if (stem) add(component(stem, slot)); }
           else if (spec === 'lucide-react') for (const name of names) add(lucide.get(kebab(name)));
           else if (/^\.\.\/[a-z0-9-]+$/.test(spec)) add(elements.get(spec.slice(3)));
         }
