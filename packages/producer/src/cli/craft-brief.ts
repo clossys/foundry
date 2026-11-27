@@ -17,6 +17,7 @@ import type { SlotAgent } from "../records/slot-model/types.js";
 import { readiness, readPin, readSlot, slotIndex } from "../records/slots.js";
 import { loadStandards, standardFor } from "../records/standards.js";
 import { loadRecipes, standardRecipe } from "../records/recipes.js";
+import { craftLineageOf, type CraftLineage } from "../records/code-adopt.js";
 
 export interface BriefInput { readonly agent: string; readonly slot: string; readonly candidate: string; readonly sha256: string }
 export interface AssembledBrief {
@@ -28,6 +29,12 @@ export interface AssembledBrief {
     readonly taste: readonly { readonly id: string; readonly anchors: Readonly<Record<string, string>> }[];
   };
   readonly recipe: { readonly id: string; readonly axes: readonly string[] };
+  /**
+   * A Designer frames or sections slot: the stock row its contract fixture gives, cited as the lineage source (ref and
+   * hash; a registry:example may be one), the candidate's own type (registry:block) and the gallery imports the craft
+   * removes (records/code-adopt.ts craftLineageOf). Absent when no stock row ships the fixture.
+   */
+  readonly lineage?: CraftLineage;
 }
 
 const sha = (bytes: string | Buffer) => createHash("sha256").update(bytes).digest("hex");
@@ -71,6 +78,7 @@ export function assembleBrief(root: string, consumer: string, agent: SlotAgent, 
   if (recipeId !== undefined && recipeId !== chosen.recipe.id) return { refusal: `recipe ${recipeId} is not the recipe code chooses for ${standardId} (${chosen.recipe.id}, its one producing recipe) (R15.5); fix: omit --recipe or name ${chosen.recipe.id}` };
   const recipe: AssembledBrief["recipe"] = { id: chosen.recipe.id, axes: [...(chosen.recipe.doc?.axes ?? [])] };
   const contract = doc.contract ?? {};
+  const lineage = agent === "designer" && /^(frames|sections)\./.test(slot) ? craftLineageOf(root, slot) : undefined;
   return {
     brief: {
       inputs,
@@ -81,6 +89,7 @@ export function assembleBrief(root: string, consumer: string, agent: SlotAgent, 
         taste: (standard.taste?.criteria ?? []).map(each => ({ id: each.id, anchors: Object.fromEntries(Object.entries(each.anchors)) as Record<string, string> })),
       },
       recipe,
+      ...(lineage && "lineage" in lineage ? { lineage: lineage.lineage } : {}),
     },
   };
 }

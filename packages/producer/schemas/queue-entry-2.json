@@ -29,14 +29,15 @@
       "pattern": "^[0-9]{8}T[0-9]{4}Z-[a-z0-9][a-z0-9-]*$"
     },
     "kind": {
-      "description": "What is asked. pick, approve, clarify and fix are the clossys.queue-entry/1 queues; slot: a slot that does not exist yet; change: a change to a placed slot.",
+      "description": "What is asked. pick, approve, clarify and fix are the clossys.queue-entry/1 queues; slot: a slot that does not exist yet; change: a change to a placed slot; report: the tool itself is wrong or missing a step (a bug, gap or ask about a verb, skill or agent), owned by Producer (records/report.ts).",
       "enum": [
         "pick",
         "approve",
         "clarify",
         "fix",
         "slot",
-        "change"
+        "change",
+        "report"
       ]
     },
     "from": {
@@ -305,7 +306,7 @@
       }
     },
     "route": {
-      "description": "Written by the router only (queue/routing.ts routeEntry, foundry-build-0048 U7): the routing.json row that matched, the table's sha256, the assignee and either the agent's declared handler or the owner's MC packet. Re-deriving it from the table gives the same route.",
+      "description": "Written by the router only (queue/routing.ts routeEntry, foundry-build-0048 U7): the routing.json row that matched, the table's sha256, the assignee and either the agent's declared handler or the owner's MC packet. Re-deriving it from the table gives the same route. A kind report is routed by Producer's one upstream rule (records/report.ts REPORT_RULE), never a routing.json row: row upstream, the rule's sha256, assignee producer.",
       "type": "object",
       "required": [
         "row",
@@ -431,6 +432,43 @@
         },
         "additionalProperties": false
       }
+    },
+    "about": {
+      "description": "kind report: what the report is about, <verb|skill|agent>/<name> (a clossys verb, an installed skill or an agent).",
+      "type": "string",
+      "pattern": "^(verb|skill|agent)/[a-z][a-z0-9-]*$"
+    },
+    "what": {
+      "description": "kind report: a bug (it is wrong), a gap (a step has no verb) or an ask (it should do more).",
+      "enum": [
+        "bug",
+        "gap",
+        "ask"
+      ]
+    },
+    "evidence": {
+      "description": "kind report: what shows it. A repo file (path and its sha256 when filed), or a check command (`clossys check ...`) with the exit code and output it gave when filed; a fixed close re-runs the check.",
+      "type": "object",
+      "properties": {
+        "path": {
+          "type": "string",
+          "minLength": 1
+        },
+        "sha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "check": {
+          "type": "string",
+          "pattern": "^clossys check( .*)?$"
+        },
+        "exitCode": {
+          "type": "integer"
+        },
+        "output": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
     },
     "want": {
       "description": "kind change: what the requester wants of the placed slot.",

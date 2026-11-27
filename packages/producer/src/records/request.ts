@@ -37,6 +37,7 @@ import { AGENT_KIND } from "./slot-model/types.js";
 import { listSlots, modelExists, readModelText, readSlot, readSlotEntry } from "./slots.js";
 import { appendSlotDocEvent, replaceModelFile } from "./slot-write.js";
 import type { Actor, EntryRoute, OptionStep, Overlap, OwnerOption, PinRecord, Proposal, ProposedSteps, Ref, RequestEvent, RequestOp, Slot, SlotRequest } from "./types.js";
+import { REPORT_KIND, reportIssues, type ReportEntry } from "./report-shape.js";
 
 export const REQUEST_SCHEMA = "clossys.queue-entry/2";
 /** The decision-entry schema queue.fix still holds runner-raised fixes in (queue/entry.ts). */
@@ -61,9 +62,14 @@ export function targetOf(request: Pick<SlotRequest, "target">): { agent: Content
 }
 
 /** The queue folder of a work kind: `queue.slot`, `queue.change`, `queue.fix` (one queue; the folder is the kind). */
-export const workQueue = (kind: WorkKind): string => `queue.${kind}`;
-export const requestsDir = (consumer: string, kind: WorkKind = "slot") => join(consumer, "agents", "producer", workQueue(kind), "entries");
-const requestPath = (consumer: string, id: string, kind: WorkKind = "slot") => join(requestsDir(consumer, kind), `${id}.json`);
+/** The queue-entry/2 stores: the work kinds, and CP1-REPORT's kind report (records/report.ts). */
+export type StoreKind = WorkKind | typeof REPORT_KIND;
+export const workQueue = (kind: StoreKind): string => `queue.${kind}`;
+export const requestsDir = (consumer: string, kind: StoreKind = "slot") => join(consumer, "agents", "producer", workQueue(kind), "entries");
+const requestPath = (consumer: string, id: string, kind: StoreKind = "slot") => join(requestsDir(consumer, kind), `${id}.json`);
+/** A stored entry's issues: a report by its own shape (records/report-shape.ts), any other kind by requestIssues. */
+const entryIssues = (doc: unknown, root?: string): string[] => (doc as { kind?: unknown } | null)?.kind === REPORT_KIND ? reportIssues(doc) : requestIssues(doc, root);
+type StoredEntry = SlotRequest | ReportEntry;
 
 /**
  * The outcomes each work kind closes with (foundry-build-0048 U7 r3): a fix closes fixed or declined, a change changed
@@ -347,8 +353,8 @@ export class CheckFailure extends RequestError {
 }
 
 /** Writes a request whole (temp file, then rename); refuses an invalid one. Call under the entry's lock only. */
-export function writeRequest(consumer: string, request: SlotRequest): string {
-  const issues = requestIssues(request, dirname(consumer));
+export function writeRequest(consumer: string, request: StoredEntry): string {
+  const issues = entryIssues(request, dirname(consumer));
   if (issues.length) throw new RequestError(`request ${request.id} would be invalid: ${issues.slice(0, 5).join("; ")}`);
   refuseLegacyState(dirname(consumer));
   const dir = requestsDir(consumer, request.kind);
@@ -357,7 +363,7 @@ export function writeRequest(consumer: string, request: SlotRequest): string {
   const temp = join(dir, `.${request.id}.${process.pid}.${Date.now()}.tmp`);
   writeFileSync(temp, `${JSON.stringify(request, null, 2)}\n`);
   renameSync(temp, file);
-  recordEvent([file], { actor: requestActor(request), kind: "request.write", subject: `request:${request.id}` });
+  recordEvent([file], { actor: requestActor(request as SlotRequest), kind: "request.write", subject: `request:${request.id}` });
   return file;
 }
 /** Who made a request's last change: its last event's `by`, else who raised it. */
@@ -369,21 +375,21 @@ export const requestActor = (request: SlotRequest): string => actorLine(request.
  * parallel raise never overwrites another's entry.
  */
 /** A draft under the id it is written as: the draft's own, or a `-2`..`-9` suffix of it when that one is taken. */
-const addressed = (draft: SlotRequest, id: string): SlotRequest => ({ ...draft, id, opened: `${id}#1`, events: draft.events.map((event, index) => ({ ...event, id: `${id}#${index + 1}` })) });
-function createRequest(consumer: string, draft: SlotRequest): SlotRequest {
+const addressed = <T extends StoredEntry>(draft: T, id: string): T => ({ ...draft, id, opened: `${id}#1`, events: draft.events.map((event, index) => ({ ...event, id: `${id}#${index + 1}` })) });
+export function createRequest<T extends StoredEntry>(consumer: string, draft: T): T {
   refuseLegacyState(dirname(consumer));
   const dir = requestsDir(consumer, draft.kind);
   mkdirSync(dir, { recursive: true });
   for (let attempt = 1; attempt <= 9; attempt++) {
     const id = attempt === 1 ? draft.id : `${draft.id}-${attempt}`;
     const doc = addressed(draft, id);
-    const issues = requestIssues(doc);
+    const issues = entryIssues(doc);
     if (issues.length) throw new RequestError(`request ${id} would be invalid: ${issues.slice(0, 5).join("; ")}`);
     const temp = join(dir, `.${id}.${process.pid}.${Date.now()}.tmp`);
     writeFileSync(temp, `${JSON.stringify(doc, null, 2)}\n`);
     try {
       linkSync(temp, requestPath(consumer, id, draft.kind));
-      recordEvent([requestPath(consumer, id, draft.kind)], { actor: requestActor(doc), kind: "request.create", subject: `request:${id}` });
+      recordEvent([requestPath(consumer, id, draft.kind)], { actor: requestActor(doc as SlotRequest), kind: "request.create", subject: `request:${id}` });
       return doc;
     } catch (error) {
       if ((error as NodeJS.ErrnoException).code !== "EEXIST") throw error;

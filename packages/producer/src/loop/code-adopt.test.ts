@@ -18,7 +18,7 @@ import { buildContext } from "../constitution/index.js";
 import { R14 } from "../constitution/checks/R14-provenance.js";
 import { r03_2, r03_4 } from "../constitution/rules/r03.js";
 import { CODE_ADOPT, CODE_ADOPT_RUNG, codeAdoptRefusal, codeAdoptSlotRefusal, stockItemOf } from "../records/code-adopt.js";
-import { PINNED_THEME_READER } from "../read/theme-pins.js";
+import { PINNED_THEME_READER, pinnedThemeReader, pinnedThemeValues } from "../read/theme-pins.js";
 import { writeCandidate } from "../records/slot-write.js";
 import { readLedger } from "../records/slots.js";
 import { startRun, type AgentPacket, type CodeCall, type RunHooks } from "./runner.js";
@@ -30,8 +30,12 @@ const FIXTURE = fileURLToPath(new URL("../../test-fixtures/consumer/", import.me
 const CHECKBOX = "components.checkbox";
 /** shadcn-aria/sonner reads --border, --popover, --popover-foreground and --radius bare: every one a fixture theme pin. */
 const TOAST = "components.toast";
+/** shadcn-aria/button reads --foreground and --secondary (fixture theme pins) and --radius-md, brand-optional, which no fixture pin emits. */
+const BUTTON = "components.button";
+/** The line an adopted file ends with when a brand-optional read took Foundry's declared value (CP1-TOKENFALL). */
+const FOUNDRY_LINE = "// Foundry declared fallbacks (brand-optional, no pinned theme emits them): --radius-md: var(--radius-control, 6px)";
 const roots: string[] = [];
-afterAll(() => { for (const root of roots) rmSync(root, { recursive: true, force: true }); });
+afterAll(() => { for (const root of roots) rmSync(root, { recursive: true, force: true }); }, 60_000);
 
 function world(): { root: string; consumer: string } {
   const root = realpathSync(mkdtempSync(join(tmpdir(), "code-adopt-")));
@@ -39,6 +43,9 @@ function world(): { root: string; consumer: string } {
   cpSync(FIXTURE, root, { recursive: true });
   return { root, consumer: join(root, "clossys") };
 }
+let unchanged: { root: string; consumer: string } | undefined;
+/** One fixture world the read-only tests share (they write nothing into it). */
+const readOnlyWorld = () => (unchanged ??= world());
 
 /** loop.create's hooks: `certify` exits as `certify` says; the agent seat's create is recorded and writes nothing. */
 function hooks(certify: (call: CodeCall, count: number) => number = () => 0): RunHooks & { readonly agentSteps: string[]; readonly codeSteps: string[] } {
@@ -203,7 +210,7 @@ const toastStock = (root: string) => {
 };
 const adoptFields = (seed: string) => ({ basis: "code", rung: CODE_ADOPT_RUNG, seed, ladder: { rung: CODE_ADOPT_RUNG, seed } });
 
-describe("a consumer adoption writes the consumer's pinned theme values as its token fallbacks (D5-2D)", () => {
+describe("a consumer adoption writes the consumer's pinned theme values as its token fallbacks, Foundry's declared value only for a brand-optional id no pin emits (D5-2D, CP1-TOKENFALL)", () => {
   it("every bare read of the stock item carries the consumer's pinned value, and the record names the reader and output sha", () => {
     const { root } = world();
     expect(codeAdoptSlotRefusal(root, "designer", TOAST)).toBeUndefined();
@@ -235,11 +242,70 @@ describe("a consumer adoption writes the consumer's pinned theme values as its t
     expect(codeAdoptRefusal(root, "designer", TOAST, { ...stock.item, meta: { ...stock.item.meta, refVerbatim: { ...stock.item.meta.refVerbatim as object, outputSha256: { [file!.path]: "0".repeat(64) } } } }, fields)).toMatch(/records .* output sha256/);
   });
 
-  it("refuses the adoption when the pins do not declare a name the stock item reads (mutation 2): no default, no package value", () => {
+  it("refuses the adoption when the pins do not declare a name the stock item reads that is not brand-optional (mutation 2): no default, no package value", () => {
     const { root, consumer } = world();
     repinTheme(consumer, "radius", item => { delete item.cssVars.light!.radius; });
     expect(() => stockItemOf(root, TOAST)).toThrow(expect.objectContaining({ name: "UndeclaredTokenFallbackError", message: expect.stringContaining("--radius") }));
     expect(codeAdoptRefusal(root, "designer", TOAST, {}, adoptFields("shadcn-aria/sonner"))).toMatch(/stock item cannot be read: .*--radius/);
+  });
+
+  it("a consumer with no theme pinned adopts the stock button", () => {
+    const { root, consumer } = readOnlyWorld();
+    // No pinned themes.* slot emits --radius-md; the catalog marks it brand-optional, so Foundry's declared value stands in.
+    expect(pinnedThemeValues(consumer)["--radius-md"]).toBeUndefined();
+    const found = stockItemOf(root, BUTTON);
+    if (!("stock" in found)) throw new Error(found.none);
+    expect(found.stock.ref).toMatch(/^shadcn-aria\/button@/);
+    const [file] = found.stock.item.files;
+    expect(file!.content).toContain("rounded-[min(var(--radius-md,var(--radius-control,_6px)),10px)]");
+    expect(file!.content).toContain("var(--secondary,oklch(0.97 0 0))".replace(/ /g, "_"));
+    expect(file!.content).not.toMatch(/var\(--[a-zA-Z0-9_-]+\)/);
+    expect(found.stock.item.meta.refVerbatim).toMatchObject({ reader: PINNED_THEME_READER, outputSha256: { [file!.path]: sha256(file!.content) } });
+  });
+
+  it("a brand-required token with no pinned theme is still refused", () => {
+    const { consumer } = readOnlyWorld();
+    expect(pinnedThemeValues(consumer)["--color-surface-base"]).toBeUndefined();
+    const reader = pinnedThemeReader(consumer);
+    // Foundry's tokens.css declares --color-surface-base, but the catalog marks it brand-required: only a pin may supply it.
+    expect(() => reader.fallback("--color-surface-base")).toThrow(expect.objectContaining({
+      name: "UndeclaredTokenFallbackError",
+      message: expect.stringMatching(/Foundry's declared fallback was not taken for --color-surface-base because the token catalog marks it brand-required/),
+    }));
+    expect(reader.fromFoundry?.("--color-surface-base")).toBe(false);
+    // A fixed-standard id no pin emits (--ease-out, which Foundry declares) and a name outside the catalog (--sidebar-width) are refused exactly as before.
+    expect(pinnedThemeValues(consumer)["--ease-out"]).toBeUndefined();
+    for (const name of ["--ease-out", "--sidebar-width"]) {
+      expect(() => reader.fallback(name)).toThrow(expect.objectContaining({ name: "UndeclaredTokenFallbackError", message: expect.not.stringMatching(/brand-required/) }));
+    }
+  });
+
+  it("a pinned theme value wins over the fallback", () => {
+    const { root, consumer } = world();
+    repinTheme(consumer, "radius", item => { item.cssVars.light!["radius-md"] = "0.4rem"; });
+    expect(pinnedThemeValues(consumer)["--radius-md"]).toBe("0.4rem");
+    const found = stockItemOf(root, BUTTON);
+    if (!("stock" in found)) throw new Error(found.none);
+    const [file] = found.stock.item.files;
+    expect(file!.content).toContain("rounded-[min(var(--radius-md,0.4rem),10px)]");
+    expect(file!.content).not.toContain("--radius-control");
+    expect(file!.content).not.toContain("Foundry declared fallbacks");
+    expect(pinnedThemeReader(consumer).fromFoundry?.("--radius-md")).toBe(false);
+  });
+
+  it("compiled css marks fallback values", () => {
+    const { root } = readOnlyWorld();
+    const found = stockItemOf(root, BUTTON);
+    if (!("stock" in found)) throw new Error(found.none);
+    const [file] = found.stock.item.files;
+    const lines = file!.content.trimEnd().split("\n");
+    expect(lines.at(-1)).toBe(FOUNDRY_LINE);
+    expect(lines.filter(line => line.includes("Foundry declared fallbacks"))).toHaveLength(1);
+    // The mark is part of the normalized reference, so the adoption proves byte-exact; an adoption with every read pinned carries none.
+    expect(codeAdoptRefusal(root, "designer", BUTTON, found.stock.item, adoptFields(found.stock.seed))).toBeUndefined();
+    const edited = { ...found.stock.item, files: [{ ...file!, content: file!.content.replace(`${FOUNDRY_LINE}\n`, "") }] };
+    expect(codeAdoptRefusal(root, "designer", BUTTON, edited, adoptFields(found.stock.seed))).toMatch(/is not byte-exact to shadcn-aria\/button@/);
+    expect(toastStock(root).item.files[0]!.content).not.toContain("Foundry declared fallbacks");
   });
 
   it("the submit guard and R03.4 prove a written consumer adoption byte-exact through the same reader", () => {

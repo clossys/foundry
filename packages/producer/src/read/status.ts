@@ -163,7 +163,7 @@ export function slotState(row: CensusRow, pin: PinDoc | undefined, check: Return
   return hasDefault ? "sample" : "unresolved";
 }
 
-const QUEUES: readonly string[] = ["queue.pick", "queue.approve", "queue.clarify", "queue.fix", "queue.slot", "queue.change"];
+const QUEUES: readonly string[] = ["queue.pick", "queue.approve", "queue.clarify", "queue.fix", "queue.slot", "queue.change", "queue.report"];
 function readQueue(consumer: string): QueueItem[] {
   const producer = join(consumer, "agents", "producer");
   const items: QueueItem[] = [];

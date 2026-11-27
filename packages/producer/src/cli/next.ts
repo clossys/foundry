@@ -50,6 +50,7 @@ import { CliUsageError } from "./args.js";
 import type { CliResult } from "./main.js";
 import { discoverRoot } from "./root.js";
 import { SUBMIT_TIERS, submitValueIssue } from "./submit-values.js";
+import { licenceRequestLine } from "./licence-request.js";
 import { errorMessage } from "../errors.js";
 
 /** The step a Producer seat slot crafts under: the seats action (`clossys seat` writes the seat). */
@@ -320,7 +321,11 @@ export async function runNextSubmitCli(argv: readonly string[], cwd: string, ste
       header: { createdBy },
     });
   } catch (error) {
-    if (error instanceof GuardRefusal) return { ...reject(error.message), output: { schema: "clossys.next-submit-refused/1", slot: target, verb: error.verb, checks: error.checks, findings: error.findings } };
+    if (error instanceof GuardRefusal) {
+      // CP1-REFS (c): a licence failure on an original asset names the standard's licences and the owner's verb.
+      const licence = licenceRequestLine(target, viewSourceKind(probe, probeRead.view), error.findings);
+      return { ...reject(`${error.message}${licence ? `\n${licence}` : ""}`), output: { schema: "clossys.next-submit-refused/1", slot: target, verb: error.verb, checks: error.checks, findings: error.findings, ...(licence ? { licence } : {}) } };
+    }
     return reject(error instanceof Error ? error.message : String(error));
   }
   const writtenFile = join(candidatesDir(slotDir(consumer, agent as SlotAgent, slot)), written.name);

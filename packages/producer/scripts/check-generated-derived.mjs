@@ -9,8 +9,9 @@
  *   provenance  studio/generated/studio-provenance.json (not shipped): per assembled frame and section the
  *               data-clossys-slot/candidate/hash markers, from the page records and pins
  *               (R-PROVENANCE-GENERATED).
- *   uses        every slot.json `uses`: what the pinned candidate actually imports or
- *               references (R-USES-COMPUTED).
+ *   uses        every slot's uses (a clossys.slot/2 slot's `uses` refs, a slot/1 slot's `uses`): what its
+ *               pinned candidate, else its stock reference item, actually imports or references
+ *               (R-USES-COMPUTED). A slot with neither has no derived uses and is not compared.
  *   brand       studio/generated/studio-brand.json (not shipped): the workspace name and the mark, favicon,
  *               app icon, lockup and image, resolved from the consumer's pinned assets.* slots
  *               (R-BRAND-ONE).
@@ -29,8 +30,10 @@
  * brand path in consumer brand resolution.
  *
  *   node scripts/check-generated-derived.mjs            check; exit 1 with findings
- *   node scripts/check-generated-derived.mjs --write    write slot.json `uses` and the pin-derived studio/generated icons
- *                                                       and brand (the build step); the flavor is `clossys config --init`'s
+ *   node scripts/check-generated-derived.mjs --write    write each changed slot's `uses` refs through the logged slot writer
+ *                                                       (records/derived-uses.ts, one slot event per changed slot) and the
+ *                                                       pin-derived studio/generated icons and brand (the build step); the
+ *                                                       flavor is `clossys config --init`'s
  *   node scripts/check-generated-derived.mjs --root <checkout>   check another tree (a fixture)
  *
  * Icons and brand read their pins and candidates through the Producer's one slot reader
@@ -44,10 +47,18 @@ import { tmpdir } from 'node:os';
 import { dirname, join, relative, resolve, sep } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { tags } from '../dist/constitution/criteria/core/lib.js';
+// The adopt path's source ladder (the stock reference item a slot with no pin will adopt) and the step's logged writer.
+import { stockFilesOf } from '../dist/records/code-adopt.js';
+import { repairStrayUses, writeDerivedUses } from '../dist/records/derived-uses.js';
+// The install-path map R05.1 and R07.1 resolve an `@/` import with: the slot that installs the imported file.
+import { buildContext } from '../dist/constitution/index.js';
+import { importOwners, installOwners } from '../dist/constitution/checks/shared.js';
 // The consumer's flavor file, from the Designer's flavor generator (one writer for every components.json): the functions
 // `clossys config --init` writes it with; the check regenerates it with them and the fixture seeder writes it with them.
 import { CONSUMER_STYLESHEET, consumerStylesheet, flavorJson, writeFlavor } from '../dist/records/consumer-flavor.js';
 import { readCandidate, readPin } from '../dist/records/slots.js';
+// The one Writer row-key rule (a key its slot's contract declares registers as `<slot>.<key>`), as the pinned copy reads it.
+import { contractCopyKeys, writerRowKey } from '../dist/records/writer-copy.js';
 import { consumerPath, consumerUnder } from './consumer-root.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -233,15 +244,18 @@ function designerUiExports(root = repo) {
   return map;
 }
 
-/** Writer copy key -> the pinned writer slot defining it. */
+/** Writer copy key -> the pinned writer slot defining it; each row keyed as the pinned copy registers it (writer-copy.ts `writerRowKey`). */
 function writerKeys(clossysRoot) {
   const map = new Map();
   for (const slot of slotIds(clossysRoot, 'writer')) {
     const entry = pinned(clossysRoot, 'writer', slot);
     if (!entry) continue;
+    const declared = contractCopyKeys(join(clossysRoot, 'agents', 'writer', slot));
     for (const match of entry.text.matchAll(/<!--\s*(\{[\s\S]*?\})\s*-->/g)) {
       let record; try { record = JSON.parse(match[1]); } catch { continue; }
-      if (typeof record?.id === 'string' && !map.has(record.id)) map.set(record.id, slot);
+      if (typeof record?.id !== 'string') continue;
+      const key = writerRowKey(slot, record.id, declared);
+      if (!map.has(key)) map.set(key, slot);
     }
   }
   return map;
@@ -255,40 +269,63 @@ function strings(value, out = []) {
   return out;
 }
 
-/** The computed `uses` of every slot, keyed `<agent>/<slot>`: what its pinned candidate imports or references. */
-export function deriveUses(clossysRoot, root = repo) {
+/**
+ * What a slot's `uses` is derived from: its pinned candidate (the current-format view, pinnedView), else, for a Designer
+ * slot with no pin.json, the stock reference item the adopt path installs (records/code-adopt.ts stockFilesOf: the
+ * stock registry row that ships its contract fixture file, its files normalized to the consumer). Undefined: no
+ * source, so no derived uses. A pin.json naming no intact candidate is no source, never the stock item instead.
+ */
+export function usesSource(clossysRoot, agent, slot) {
+  if (existsSync(join(clossysRoot, 'agents', agent, slot, 'pin.json'))) return pinnedView(clossysRoot, agent, slot);
+  if (agent !== 'designer') return undefined;
+  let found;
+  try { found = stockFilesOf(dirname(clossysRoot), slot); } catch { return undefined; }
+  if (!found || 'none' in found) return undefined;
+  return { slot, agent, stock: found.ref, item: { files: found.files, meta: { source: { kind: 'registry', ref: [found.ref] } } } };
+}
+
+/**
+ * The computed `uses` of every slot with a source (usesSource), keyed `<agent>/<slot>`: what its pinned candidate,
+ * else its stock reference item, imports or references. A slot with no source has no entry (a missing value is not
+ * []). `unresolved`, when given, receives `{ slot, spec }` for each `@/components/ui/<stem>` import no slot installs:
+ * an IA gap, never a uses ref.
+ */
+export function deriveUses(clossysRoot, root = repo, unresolved = undefined) {
   const known = new Set(AGENTS.flatMap(agent => slotIds(clossysRoot, agent)));
   const ui = designerUiExports(root);
   const keys = writerKeys(clossysRoot);
-  const pins = new Map();
-  for (const agent of AGENTS) for (const slot of slotIds(clossysRoot, agent)) pins.set(`${agent}/${slot}`, pinned(clossysRoot, agent, slot));
+  const pins = new Map(), sources = new Map();
+  for (const agent of AGENTS) for (const slot of slotIds(clossysRoot, agent)) {
+    const source = usesSource(clossysRoot, agent, slot);
+    if (!source) continue;
+    sources.set(`${agent}/${slot}`, source);
+    if (!source.stock) pins.set(`${agent}/${slot}`, source);
+  }
   // Lucide icon name -> pinned icon slot; pinned element name -> slot (sibling section imports).
-  const lucide = new Map(), elements = new Map(), stems = new Map();
+  const lucide = new Map(), elements = new Map();
   for (const [key, entry] of pins) {
     if (!entry?.item || !key.startsWith('designer/')) continue;
     const ref = (entry.item.meta?.source?.ref ?? []).find(value => typeof value === 'string' && value.startsWith('lucide/'));
     const name = ref ? /^lucide\/([a-z0-9-]+)@/.exec(ref)?.[1] : undefined;
     if (name && entry.slot.startsWith('assets.icon-') && !lucide.has(name)) lucide.set(name, entry.slot);
     if (typeof entry.item.name === 'string' && !elements.has(entry.item.name)) elements.set(entry.item.name, entry.slot);
-    // A component layer file stem -> the stock components.* slots whose pin vendors that file (breadcrumb.tsx -> components.breadcrumbs).
-    const kind = entry.item.meta?.source?.kind;
-    if ((kind === 'registry' || kind === 'npm') && entry.slot.startsWith('components.')) for (const file of entry.item.files ?? []) {
-      const stem = /(?:^|\/)([a-z0-9-]+)\.tsx?$/.exec(String(file?.path ?? ''))?.[1];
-      if (stem) stems.set(stem, new Set([...(stems.get(stem) ?? []), entry.slot]));
-    }
   }
-  // `components.<stem>`; in a composition (whose uses ref-verbatim holds equal to its declared stock parts) a stem
-  // with no such slot resolves to the one stock slot vendoring `<stem>.tsx`, and an ambiguous stem adds nothing.
-  const component = (stem, composed) => known.has(`components.${stem}`) ? `components.${stem}`
-    : composed && stems.get(stem)?.size === 1 ? [...stems.get(stem)][0] : undefined;
+  // `@/components/ui/<stem>` resolves to the slot that installs that file, through the install-path map R05.1 and R07.1
+  // use (constitution/checks/shared.ts installOwners, importOwners), a pinned installer first; the importing slot's own
+  // install is no uses. A file no candidate installs yet resolves to the IA-placed `components.<stem>` that adopts it.
+  let owners;
+  const component = (stem, slot) => {
+    const ids = importOwners(`components/ui/${stem}`, owners ??= installOwners(buildContext(dirname(clossysRoot), clossysRoot))).filter(id => known.has(id));
+    if (ids.includes(slot)) return slot;
+    return ids.find(id => pins.has(`designer/${id}`)) ?? ids[0] ?? (known.has(`components.${stem}`) ? `components.${stem}` : undefined);
+  };
   const uses = new Map();
-  for (const [key, entry] of pins) {
+  for (const [key, entry] of sources) {
     const [agent, slot] = key.split('/');
     const out = new Set();
     const add = id => { if (id && id !== slot && known.has(id)) out.add(id); };
     if (entry?.item && agent === 'designer') {
       const item = entry.item;
-      const composed = item.meta?.source?.kind === 'composition';
       for (const ref of strings(item.registryDependencies ?? [])) add(toSlotId(ref, known));
       for (const ref of strings([item.meta?.element?.deps?.registry ?? [], item.meta?.element?.deps?.elements ?? []])) add(toSlotId(ref, known));
       for (const file of item.files ?? []) {
@@ -300,8 +337,12 @@ export function deriveUses(clossysRoot, root = repo) {
         if (!/\.(?:tsx?|jsx?|mjs)$/.test(String(file.path))) continue;
         for (const { spec, names } of importsOf(file.content)) {
           const ui1 = /^@\/(?:registry\/[^/]+\/)?components\/ui\/([a-z0-9-]+)$/.exec(spec)?.[1];
-          if (ui1) add(component(ui1, composed));
-          else if (spec === '@clossys/designer-ui') for (const name of names) { const stem = ui.get(name); if (stem) add(component(stem, composed)); }
+          if (ui1) {
+            const id = component(ui1, slot);
+            if (id) add(id);
+            else if (unresolved && !unresolved.some(gap => gap.slot === key && gap.spec === spec)) unresolved.push({ slot: key, spec });
+          }
+          else if (spec === '@clossys/designer-ui') for (const name of names) { const stem = ui.get(name); if (stem) add(component(stem, slot)); }
           else if (spec === 'lucide-react') for (const name of names) add(lucide.get(kebab(name)));
           else if (/^\.\.\/[a-z0-9-]+$/.test(spec)) add(elements.get(spec.slice(3)));
         }
@@ -321,30 +362,40 @@ export function deriveUses(clossysRoot, root = repo) {
 /** `uses` as one JSON document keyed `<agent>/<slot>`, for a temp-dir diff. */
 export function usesJson(uses) { return json(Object.fromEntries([...uses].sort(([a], [b]) => a.localeCompare(b)))); }
 
-/** The `uses` committed in every slot.json, in the same shape. */
+const SLOT_REF = /^(?:director|designer|writer|publisher|producer)\/([a-z][a-z0-9-]*(?:\.[a-z0-9][a-z0-9-]*){1,3})$/;
+/**
+ * The `uses` committed in every slot.json, in the same shape, read where the certifier reads it: a clossys.slot/2
+ * slot's `uses` refs (records/slot-current.ts refIds, the reader's view), a slot/1 slot's top-level `uses`. A stray
+ * top-level `uses` key on a slot/2 doc is not a slot/2 field and is not read.
+ */
 export function committedUses(clossysRoot) {
   const out = new Map();
   for (const agent of AGENTS) for (const slot of slotIds(clossysRoot, agent)) {
     const doc = JSON.parse(readFileSync(join(clossysRoot, 'agents', agent, slot, 'slot.json'), 'utf8'));
-    out.set(`${agent}/${slot}`, Array.isArray(doc.uses) ? doc.uses : []);
+    if (doc?.schema === 'clossys.slot/2') {
+      const ids = [];
+      for (const ref of Array.isArray(doc.refs) ? doc.refs : []) {
+        const id = ref?.rel === 'uses' && typeof ref.to === 'string' ? SLOT_REF.exec(ref.to)?.[1] : undefined;
+        if (id !== undefined && !ids.includes(id)) ids.push(id);
+      }
+      out.set(`${agent}/${slot}`, ids.sort());
+    } else out.set(`${agent}/${slot}`, Array.isArray(doc.uses) ? doc.uses : []);
   }
   return out;
 }
 
-/** Write computed `uses` into each slot.json, keeping every other byte of the document. */
-export function writeUses(clossysRoot, uses = deriveUses(clossysRoot)) {
-  let changed = 0;
-  for (const [key, list] of uses) {
-    const [agent, slot] = key.split('/');
-    const path = join(clossysRoot, 'agents', agent, slot, 'slot.json');
-    const text = readFileSync(path, 'utf8');
-    const doc = JSON.parse(text);
-    if (JSON.stringify(doc.uses) === JSON.stringify(list)) continue;
-    doc.uses = list;
-    writeFileSync(path, json(doc));
-    changed++;
-  }
-  return changed;
+/**
+ * The derive.uses step: repair every slot/2 doc a raw write left a top-level `uses` key on, then write each slot whose
+ * derived uses differ from its `uses` refs, all through the logged slot writer (records/derived-uses.ts; one slot event
+ * per changed slot). A slot with no source is not touched; a package-synced slot is reported, not written. Returns what
+ * was written, refused, left to the package and left unresolved.
+ */
+export function writeUses(clossysRoot, { root = repo, at = new Date().toISOString() } = {}) {
+  const repaired = repairStrayUses(clossysRoot, { at });
+  const unresolved = [];
+  const derived = deriveUses(clossysRoot, root, unresolved);
+  const result = writeDerivedUses(clossysRoot, derived, { at });
+  return { repaired: repaired.written, written: result.written, refused: [...repaired.refused, ...result.refused], synced: result.synced ?? [], unresolved };
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -610,9 +661,13 @@ if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1]
     if (!process.env.CLOSSYS_ROOT) console.log('check-generated-derived: no $CLOSSYS_ROOT consumer; wrote nothing');
     else {
       // clossys/components.json is the workspace.config step's output (`clossys config --init`), not this step's.
-      const changed = writeUses(consumerPath());
+      const uses = writeUses(consumerPath());
+      for (const { slot, spec } of uses.unresolved) console.log(`derive.uses: unresolved ${slot} imports ${spec}, which no slot installs (an IA gap, not a uses ref)`);
+      for (const line of uses.synced) console.log(`derive.uses: package-synced ${line}: its uses refs are computed from the package base (change them there, then clossys ia)`);
+      for (const line of uses.refused) console.error(`derive.uses: refused ${line}`);
       const studio = writeStudioDerived(consumerPath());
-      console.log(`check-generated-derived: wrote computed uses into ${changed} slot.json file(s); studio/generated ${studio.length ? studio.join(', ') : 'unchanged'}`);
+      console.log(`check-generated-derived: wrote computed uses refs into ${uses.written.length} slot.json file(s)${uses.repaired.length ? `, removed a stray top-level uses from ${uses.repaired.length}` : ''}; studio/generated ${studio.length ? studio.join(', ') : 'unchanged'}`);
+      if (uses.refused.length) process.exitCode = 1;
     }
   } else {
     // --root <checkout> checks another tree's clossys/ and generated Studio data (a fixture).

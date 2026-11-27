@@ -79,11 +79,12 @@ export function pinnedThemeValues(library: string): Record<string, string> {
 
 /**
  * The declared-fallback reader a consumer adoption writes its token fallbacks through: the consumer's pinned
- * `themes.*` values only. A name the pins do not declare is refused (`UndeclaredTokenFallbackError`); there is no
- * default and no package value.
+ * `themes.*` values first. A name the pins do not declare takes Foundry's declared value (`styles/tokens.css`,
+ * `styles/theme-keys.css`) only when the token catalog marks it brand-optional (CP1-TOKENFALL); a brand-required
+ * name is refused and says so, and any other name is refused (`UndeclaredTokenFallbackError`): no default, no fallback chain.
  */
 export function pinnedThemeReader(library: string): DeclaredFallbackReader {
-  return pinnedThemeFallbackReader(pinnedThemeValues(library), PINNED_THEME_READER);
+  return pinnedThemeFallbackReader(pinnedThemeValues(library), PINNED_THEME_READER, { foundryBrandOptional: true });
 }
 
 /** The pinned `themes.*` slots as CSS, or undefined when they declare no variable. */

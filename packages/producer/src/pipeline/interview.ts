@@ -50,7 +50,7 @@ import { SLOT_AGENTS } from "../records/slot-model/types.js";
 import type { SlotAgent } from "../records/slot-model/types.js";
 import { directorStoreReader, listSlots, modelExists, readCandidate, readiness, readSlot, slotIndex } from "../records/slots.js";
 import type { SlotEntry } from "../records/slots.js";
-import { WRITER_KEY, writerCopy } from "../records/writer-copy.js";
+import { contractCopyKeys, WRITER_KEY, writerCopy, writerRowKey } from "../records/writer-copy.js";
 import { writerCopyPins } from "../records/writer-copy-slots.js";
 import { writerWording, type WordingRow } from "../records/writer-wording.js";
 import { ARCHETYPE_RECORD_ID, directorContent } from "./director-interview.js";
@@ -213,13 +213,19 @@ function keysNamed(value: unknown, namespaces: ReadonlySet<string>, out = new Se
   return out;
 }
 /**
- * The keys each pinned Writer copy slot records, by slot id in IA order: every pinned record of every Writer copy
- * slot (records/writer-copy-slots.ts: Writer's tree data, never a `strings.` prefix). A key a pinned Publisher record
- * names and the pinned copy lacks is asked of the slot whose keys are nearest it.
+ * The keys each pinned Writer copy slot records, by slot id in IA order, as the pinned copy registers them
+ * (writer-copy.ts `writerRowKey`: a key the slot's contract declares, or an undotted row id, as `<slot>.<key>`; an
+ * authored dotted id as itself): every pinned record of every Writer copy slot (records/writer-copy-slots.ts:
+ * Writer's tree data, never a `strings.` prefix). A key a pinned Publisher record names and the pinned copy lacks
+ * is asked of the slot whose keys are nearest it.
  */
 export function writerKeyHolders(consumer: string): Map<string, string[]> {
   const holders = new Map<string, string[]>();
-  for (const { entry, pin } of writerCopyPins(consumer)) holders.set(entry.id, [...(holders.get(entry.id) ?? []), ...keysIn(readCandidate(consumer, "writer", entry.id, pin.candidate).bytes)]);
+  for (const { entry, pin } of writerCopyPins(consumer)) {
+    const declared = contractCopyKeys(entry.dir);
+    const keys = keysIn(readCandidate(consumer, "writer", entry.id, pin.candidate).bytes).map(id => writerRowKey(entry.id, id, declared));
+    holders.set(entry.id, [...(holders.get(entry.id) ?? []), ...keys]);
+  }
   return holders;
 }
 const sharedPrefix = (a: string, b: string): number => {
@@ -375,8 +381,9 @@ function allGaps(root: string, options: InterviewOptions): { gaps: Gap[]; notes:
   let keysChecked = 0;
   if (copy) {
     const pinnedWriter = [...writerKeyHolders(consumer)].map(([id, keys]) => ({ entry: { id }, keys }));
-    // Namespaces of the authored dotted row ids only: a contract row registered as `<slot>.<row>` (writer-copy.ts) names no namespace.
-    const namespaces = new Set(pinnedWriter.flatMap(row => row.keys).filter(id => id.includes(".")).map(id => id.slice(0, id.indexOf("."))));
+    // Namespaces of the authored global ids only: a row registered as `<slot>.<key>` (writer-copy.ts `writerRowKey`: a
+    // key its slot's contract declares, or an undotted row id) names no namespace.
+    const namespaces = new Set(pinnedWriter.flatMap(row => row.keys.filter(key => !key.startsWith(`${row.entry.id}.`))).map(id => id.slice(0, id.indexOf("."))));
     const unapproved = writerKeysUnapproved(root);
     const missing = new Map<string, { keys: Set<string>; need: Set<string> }>();
     for (const entry of entries.get("publisher") ?? []) {

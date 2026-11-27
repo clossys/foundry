@@ -84,6 +84,25 @@
         }
       },
       {
+        "id": "reports",
+        "does": "take the tool feedback back (clossys request --kind report --recheck): after a reinstall, re-run each open queue.report entry's recorded check and close the passing ones fixed; a report whose check still fails stays open",
+        "decider": {
+          "by": "code"
+        },
+        "cli": "clossys request --kind report --recheck",
+        "reads": [
+          "producer/queue.report/entries/"
+        ],
+        "writes": [
+          "producer/queue.report/entries/"
+        ],
+        "checks": [],
+        "onFail": {
+          "raise": "queue.clarify",
+          "then": "retry"
+        }
+      },
+      {
         "id": "e2e",
         "does": "prove a fresh consumer end to end: pack the installed cohort, install the tarballs into an empty directory, drive the shipped scenario with public verbs only and assert the rendered page",
         "decider": {

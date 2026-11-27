@@ -65,6 +65,7 @@ import { codeSlotRefusals, scorecardTopRefusal } from "./code-pin.js";
 import { pinTargetSlot } from "../cli/pin.js";
 import { agentWorkRaiseIssues, closeWork, decideRequest, exactReuseOf, freshRaiseIssues, isContentAgent, readRequest, REQUEST_ID, RequestError, targetOf, unfiledNeeds, workQueue, type SlotRequest } from "../records/request.js";
 import { FIX_CHECKS } from "../queue/requester-check.js";
+import { fileStepReport, readReport, REPORT_QUEUE } from "../records/report.js";
 import { handlerMismatch } from "../queue/routing.js";
 import { cascadeClean, runCascade } from "./cascade.js";
 import { RERENDER_CLI, rerender } from "./rerender.js";
@@ -339,6 +340,12 @@ function readWork(root: string, name: string): SlotRequest | undefined {
 /** The entry a run starts from (`--from`): a /2 change or fix, else a clossys.queue-entry/1 decision entry. */
 interface FromEntry { readonly name: string; readonly queue: string; readonly id: string; readonly status: string; readonly about: string; readonly byOwner: boolean }
 function readFrom(root: string, name: string): FromEntry | undefined {
+  // CP1-REPORT: a report (queue.report#<id>) is taken back by loop.audit, whose reports step rechecks it.
+  if (name.startsWith(`${REPORT_QUEUE}#`)) {
+    let report;
+    try { report = readReport(join(root, "clossys"), name.slice(REPORT_QUEUE.length + 1)); } catch (error) { if (error instanceof RequestError) return undefined; throw error; }
+    return report && { name, queue: REPORT_QUEUE, id: report.id, status: report.status, about: report.target, byOwner: report.createdBy.actor === "owner" };
+  }
   const work = readWork(root, name);
   if (work) return { name, queue: workQueue(work.kind), id: work.id, status: work.status, about: work.target, byOwner: work.createdBy.actor === "owner" };
   const entry = readEntry(root, name);
@@ -388,7 +395,7 @@ export function planRun(root: string, input: StartInput, at: Iso): StartPlan {
   const needs = LOOP_SUBJECT[input.loop];
   // B8: every id the caller hands in is checked before it reaches a path or an argv.
   if (input.slot !== undefined && !SLOT_REF.test(input.slot)) return { ok: false, reason: `--slot ${JSON.stringify(input.slot)} is not a slot ref (<agent>/<slot-id>)` };
-  if (input.from !== undefined && !ENTRY_NAME.test(input.from)) return { ok: false, reason: `--from ${JSON.stringify(input.from)} is not a queue entry (queue.<pick|approve|clarify|change|fix>#<id>)` };
+  if (input.from !== undefined && !ENTRY_NAME.test(input.from)) return { ok: false, reason: `--from ${JSON.stringify(input.from)} is not a queue entry (queue.<pick|approve|clarify|change|fix|report>#<id>)` };
   if (input.publication !== undefined && !PUBLICATION_ID.test(input.publication)) return { ok: false, reason: `--publication ${JSON.stringify(input.publication)} is not a publication id` };
   if (input.trigger !== undefined && !TRIGGER_CODE.test(input.trigger)) return { ok: false, reason: `--trigger ${JSON.stringify(input.trigger)} is not a trigger (T1-T8)` };
   let from: FromEntry | undefined;
@@ -396,6 +403,7 @@ export function planRun(root: string, input: StartInput, at: Iso): StartPlan {
     from = readFrom(root, input.from);
     if (!from) return { ok: false, reason: `--from ${input.from}: no such queue entry` };
     if (from.status !== "open") return { ok: false, reason: `--from ${from.name} is ${from.status}; a run starts from an open entry` };
+    if (from.queue === REPORT_QUEUE && input.loop !== "loop.audit") return { ok: false, reason: `--from ${from.name}: a report is taken back by loop.audit (its reports step), not ${input.loop}` };
   }
   let subject: SlotSubject | undefined;
   if (needs === "slot") {
@@ -794,12 +802,12 @@ async function advance(root: string, state: RunState, version: LoopVersion, hook
     }
     const recorded = recordStep(ctx, step, ledgerDecider, cli, exit, wrote, vars, ran);
     state.findings = [...findings];
-    if (recorded.exit === 2 && couldNot) return stop(ctx, `step ${step.id} could not run: ${couldNot}`, 2);
+    if (recorded.exit === 2 && couldNot) return deadEnd(ctx, step, `step ${step.id} could not run: ${couldNot}`, 2);
     for (const name of raisedHere) if (!state.raised.includes(name)) state.raised.push(name);
     // LOOP-STEPS: a create step that could not make its candidates and asked upstream parks on that request; the run
     // resumes the step once it closes (readRetry), never stops on it.
     if (raisedHere.length && recorded.exit !== 0) return waitOnRaised(ctx, step, raisedHere[0]!);
-    if (recorded.why && !step.onFail) return stop(ctx, `step ${step.id} failed: ${recorded.why}`, 1);
+    if (recorded.why && !step.onFail) return deadEnd(ctx, step, `step ${step.id} failed: ${recorded.why}`, 1);
     const result = await afterStep(ctx, step, recorded.exit, findings, subject, raisedByStep, recorded.why ?? (recorded.exit === 1 ? failedWhy : undefined));
     if (result) return result;
   }
@@ -1231,12 +1239,12 @@ function declaredQueueEntries(root: string, step: LoopStep): Set<string> {
 async function afterStep(ctx: Context, step: LoopStep, exit: Exit, findings: readonly Finding[], subject: SlotSubject | undefined, raisedByStep = false, why?: string): Promise<RunResult | null> {
   const { root, state, version } = ctx;
   if (exit === 0) { state.cursor++; saveState(root, state); return null; }
-  if (exit === 2) return stop(ctx, `step ${step.id} could not run (exit 2)`, 2);
+  if (exit === 2) return deadEnd(ctx, step, `step ${step.id} could not run (exit 2)`, 2);
   const next = version.steps[state.cursor + 1];
   if (!step.onFail) {
     // A failing check whose next step routes findings hands them on (flows.md F6: route after check).
     if (routesFindings(next) && routeHandsOn(state, step, next!, root)) { state.cursor++; saveState(root, state); return null; }
-    return stop(ctx, `step ${step.id} failed`, 1);
+    return deadEnd(ctx, step, `step ${step.id} failed`, 1);
   }
   const at = iso(ctx.now());
   const label = `${state.loop} ${step.id}`;
@@ -1701,6 +1709,18 @@ function resolveSlotCandidate(root: string, state: RunState): string {
 
 function stop(ctx: Context, why: string, exitCode: Exit): Promise<RunResult> {
   return Promise.resolve(writeLedger(ctx, "stopped", why, exitCode));
+}
+
+/**
+ * CP1-REPORT: a step that could not run, or failed with no route on, leaves the run no next step. The run files a
+ * report about the step's verb (records/report.ts fileStepReport, the same filing as `clossys request --kind report`;
+ * an open one with the same about and what is reused) and stops, naming the report.
+ */
+function deadEnd(ctx: Context, step: LoopStep, why: string, exitCode: Exit): Promise<RunResult> {
+  let filed: string;
+  try { filed = `; filed ${fileStepReport(ctx.root, { loop: ctx.state.loop, runId: ctx.state.runId, step: step.id, cli: step.cli, why, at: iso(ctx.now()) })}`; }
+  catch (error) { if (!(error instanceof RequestError)) throw error; filed = `; no report filed: ${error.message}`; }
+  return stop(ctx, `${why}${filed}`, exitCode);
 }
 
 /** A run whose ledger entry was written before its state was saved: adopt the entry, never write a second (B9). */

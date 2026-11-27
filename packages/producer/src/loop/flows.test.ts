@@ -520,7 +520,7 @@ describe("F6 failed check (T6)", () => {
     expect(second.state!.raised).toEqual([]);
     const ledger = w.ledger("loop.audit");
     expect(ledger.map(entry => entry.outcome)).toEqual([`raised ${raised.join(", ")}`, "no new entry"]);
-    expect(stepLine(ledger[0]!)).toEqual(["strict:code:1", "route:code:0", "interview:code:0", "e2e:code:0"]);
+    expect(stepLine(ledger[0]!)).toEqual(["strict:code:1", "route:code:0", "interview:code:0", "reports:code:0", "e2e:code:0"]);
     expect(ledger[0]!.checks).toEqual({ "constitution.strict": "fail", "consumer.e2e": "pass", "ia.orphans": "fail", "refs.dangling": "fail" });
 
     const hooks = stub(w.root);
@@ -883,7 +883,7 @@ describe("review rulings (foundry-build-0013 fix r1)", () => {
     const hooks = stub(w.root);
     const now = clock();
     expect((await startRun(w.root, { loop: "loop.fill", slot: "designer/../../etc" }, hooks, { now })).message).toBe('run: --slot "designer/../../etc" is not a slot ref (<agent>/<slot-id>)');
-    expect((await startRun(w.root, { loop: "loop.fill", from: "queue.fix#../../x" }, hooks, { now })).message).toBe('run: --from "queue.fix#../../x" is not a queue entry (queue.<pick|approve|clarify|change|fix>#<id>)');
+    expect((await startRun(w.root, { loop: "loop.fill", from: "queue.fix#../../x" }, hooks, { now })).message).toBe('run: --from "queue.fix#../../x" is not a queue entry (queue.<pick|approve|clarify|change|fix|report>#<id>)');
     expect((await startRun(w.root, { loop: "loop.release", publication: "../site" }, hooks, { now })).message).toBe('run: --publication "../site" is not a publication id');
     expect((await resumeRun(w.root, "../../x", hooks, { now })).message).toBe('run: "../../x" is not a run id (<yyyymmdd>T<hhmm>Z-<slug>)');
     const cli = await runRunCli(["loop.fill", "--resume", "--run", "../../x", "--step-exit", "0", "--model", MODEL, "--root", w.root], w.root);

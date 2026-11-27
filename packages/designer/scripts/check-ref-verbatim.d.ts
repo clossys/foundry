@@ -103,9 +103,12 @@ export type RefVerbatimOptions = {
 };
 
 /** A declared-source fallback reader (`src/importers/declared-fallback-reader.ts`): `fallback` refuses an undeclared name. */
-export type DeclaredFallbackReader = { readonly source: string; fallback(name: string): string };
-/** A consumer's pinned `themes.*` values (by custom-property name) as a declared-fallback reader. */
-export declare function pinnedThemeFallbackReader(values: Readonly<Record<string, string>>, source?: string): DeclaredFallbackReader;
+export type DeclaredFallbackReader = { readonly source: string; fallback(name: string): string; fromFoundry?(name: string): boolean };
+/**
+ * A consumer's pinned `themes.*` values (by custom-property name) as a declared-fallback reader. With
+ * `foundryBrandOptional`, a name no pin declares that the token catalog marks brand-optional takes Foundry's declared value.
+ */
+export declare function pinnedThemeFallbackReader(values: Readonly<Record<string, string>>, source?: string, options?: { readonly foundryBrandOptional?: boolean }): DeclaredFallbackReader;
 /** Whether `error` is the reader's refusal of a name with no declared value (`UndeclaredTokenFallbackError`). */
 export declare function isUndeclaredTokenFallback(error: unknown): boolean;
 

@@ -53,7 +53,7 @@ export const ENGINE_SURFACE: readonly { readonly file: string; readonly function
 export const SCRIPT_WRITERS = Object.freeze([
   "appendEvent", "recordEvent", "writePinDoc", "writeRequest", "writeElementVersion", "createQueueEntry", "replaceQueueEntry",
   "writeCandidate", "writeCandidateBytes", "writePin", "writeConfirm", "writeNotNeeded", "writeTargetDecision", "writeTargetConfirm",
-  "writeTargetNotNeeded", "writeSeatDecision", "writeVerdict", "writeReissue", "writeCritique", "writeSlotSeed", "writeSlotOptions",
+  "writeTargetNotNeeded", "writeSeatDecision", "writeVerdict", "writeReissue", "writeCritique", "writeSlotSeed", "writeSlotOptions", "writeSlotUses",
   "writeSyncedSlot", "replaceModelFile", "createModelFile", "removeModelFile", "moveModelEntry",
 ]);
 /**

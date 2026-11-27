@@ -80,7 +80,8 @@
               "queue.clarify",
               "queue.fix",
               "queue.slot",
-              "queue.change"
+              "queue.change",
+              "queue.report"
             ]
           },
           "decider": {
