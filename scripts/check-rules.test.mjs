@@ -177,24 +177,20 @@ test("a rule with no owner agent fails the registry check", async () => {
   assert.deepEqual(kinds(await ruleFindings(repository([held()]))), []);
 });
 
-test("an owner agent that is neither a package nor a factory home fails the registry check", async () => {
+test("an owner agent that is not a package fails the registry check", async () => {
   assert.deepEqual(kinds(await ruleFindings(repository([held({ owner_agent: "ghost" })]))), ["unknown-owner R-HOLDS"]);
   const root = repository([held()]);
   assert.deepEqual(checkRules.ownerFindings({ rules: [held(), held({ id: "R-GHOST", owner_agent: "ghost" })] }, root), [
-    { rule: "unknown-owner", id: "R-GHOST", message: "owner_agent ghost is neither a package (packages/ghost/package.json does not exist) nor a factory home" },
+    { rule: "unknown-owner", id: "R-GHOST", message: "owner_agent ghost is not a package: packages/ghost/package.json does not exist" },
   ]);
-  // A directory without a manifest is not a package, and a factory/ folder is not a declared home.
+  // A directory without a manifest is not a package.
   mkdirSync(join(root, "packages/ghost"), { recursive: true });
-  mkdirSync(join(root, "factory/ghost"), { recursive: true });
-  writeFileSync(join(root, "factory/ghost/SKILL.md"), "# ghost\n");
-  assert.deepEqual(checkRules.ownerFindings({ rules: [held({ owner_agent: "ghost" })] }, root, ["keeper"]).map(finding => finding.rule), ["unknown-owner", "owner-list"]);
-  // A declared factory home is a valid owner without a package.
-  assert.deepEqual(checkRules.ownerFindings({ rules: [held({ owner_agent: "ghost" })] }, root, ["ghost"]).map(finding => finding.rule), ["owner-list"]);
+  assert.deepEqual(checkRules.ownerFindings({ rules: [held({ owner_agent: "ghost" })] }, root).map(finding => finding.rule), ["unknown-owner"]);
 });
 
 test("each home's skill lists exactly the rules it owns", () => {
   const { FACTORY_HOMES, DEFAULT_FLOOR, OWNED_RULES_START, OWNED_RULES_END, ownerFindings, ownedRulesListed } = checkRules;
-  // This repository: every rule's owner is a package or a factory home, and each home's skill lists exactly the rules it owns.
+  // This repository: every rule's owner is a package, and each factory home's skill lists exactly the rules it owns.
   const here = dirname(fileURLToPath(import.meta.url));
   const repo = resolve(here, "..");
   const real = JSON.parse(readFileSync(join(here, "rules/registry.json"), "utf8"));
@@ -202,18 +198,18 @@ test("each home's skill lists exactly the rules it owns", () => {
   assert.equal(DEFAULT_FLOOR.homes, FACTORY_HOMES);
   assert.deepEqual(ownerFindings(real, repo, FACTORY_HOMES), []);
   for (const home of FACTORY_HOMES) {
-    const listed = ownedRulesListed(readFileSync(join(repo, "factory", home, "SKILL.md"), "utf8"));
+    const listed = ownedRulesListed(readFileSync(join(repo, "packages", home, "skill/SKILL.md"), "utf8"));
     assert.deepEqual(listed, real.rules.filter(row => row.owner_agent === home).map(row => row.id), `${home}'s skill lists exactly the rules it owns`);
   }
   // A fixture home: a missing block, a dropped rule, an extra rule and reordered rules each fail.
   const rows = [held({ id: "R-ONE" }), held({ id: "R-TWO" }), held({ id: "R-ELSE", owner_agent: "other" })];
   const skill = lines => `---\nname: clossys-home\n---\n# home\n\n${[OWNED_RULES_START, ...lines, OWNED_RULES_END].join("\n")}\n`;
   const check = text => {
-    const root = tree({ "packages/other/package.json": { name: "other" }, ...(text === undefined ? {} : { "factory/home/SKILL.md": text }) });
+    const root = tree({ "packages/home/package.json": { name: "home" }, "packages/other/package.json": { name: "other" }, ...(text === undefined ? {} : { "packages/home/skill/SKILL.md": text }) });
     return ownerFindings({ rules: rows }, root, ["home"]).map(finding => `${finding.rule} ${finding.id}`);
   };
   assert.deepEqual(check(skill(["- R-ONE", "- R-TWO"])), []);
   for (const text of [undefined, "# home\n", skill(["- R-ONE"]), skill(["- R-ONE", "- R-TWO", "- R-ELSE"]), skill(["- R-TWO", "- R-ONE"]), skill(["- R-ONE", "- R-TWO", "R-THREE"])]) {
-    assert.deepEqual(check(text), ["owner-list factory/home/SKILL.md"]);
+    assert.deepEqual(check(text), ["owner-list packages/home/skill/SKILL.md"]);
   }
 });

@@ -24,10 +24,10 @@
  *                        rule names its `owner_agent`), or
  *                        the registry falls below RULE_FLOOR: a rule row it lists is gone, or a check
  *                        it lists no longer enforces that rule;
- *   unknown-owner        a rule's `owner_agent` is neither a package (packages/<owner_agent>/package.json)
- *                        nor a factory home (FACTORY_HOMES);
- *   owner-list           a factory home has no factory/<home>/SKILL.md, or its owned-rules block does
- *                        not list exactly the rules whose owner_agent it is, in registry order;
+ *   unknown-owner        a rule's `owner_agent` names no package: packages/<owner_agent>/package.json
+ *                        does not exist;
+ *   owner-list           a factory home (FACTORY_HOMES) has no skill/SKILL.md, or its owned-rules block
+ *                        does not list exactly the rules whose owner_agent it is, in registry order;
  *   fixture-missing      also: an enforcing check has fewer fixture runs than RULE_FLOOR records;
  *   unknown-check        also: a root script in ROOT_SCRIPT_FLOOR (`check`, `test`, the meta-checks)
  *                        is gone from the root package.json.
@@ -100,15 +100,15 @@ export const RULE_FLOOR = Object.freeze({
 /** Root scripts that must exist: the two entries every reachability trace starts from, and the meta-checks. */
 export const ROOT_SCRIPT_FLOOR = Object.freeze(["check", "test", ...META_CHECKS]);
 /**
- * The factory homes under factory/: agents with no package and no verbs yet that own the rules about
- * the build process itself. Each one's factory/<home>/SKILL.md carries an owned-rules block (OWNED_RULES_START .. OWNED_RULES_END) that
+ * The factory homes: the agent packages that own the rules about the build process itself.
+ * Each one's skill/SKILL.md carries an owned-rules block (OWNED_RULES_START .. OWNED_RULES_END) that
  * must list exactly the registry rules whose owner_agent it is, so the skill and the registry cannot drift.
  */
 export const FACTORY_HOMES = Object.freeze(["planner", "developer", "reviewer"]);
 export const DEFAULT_FLOOR = Object.freeze({ rules: RULE_FLOOR, scripts: ROOT_SCRIPT_FLOOR, homes: FACTORY_HOMES });
-export const OWNED_RULES_START = "<!-- owned-rules:start: the rules in scripts/rules/registry.json whose owner_agent is this factory home; check:rules fails on drift -->";
+export const OWNED_RULES_START = "<!-- owned-rules:start: the rules in scripts/rules/registry.json whose owner_agent is this package; check:rules fails on drift -->";
 export const OWNED_RULES_END = "<!-- owned-rules:end -->";
-/** An owner_agent is a directory name under packages/ or a factory home id. */
+/** An owner_agent is a directory name under packages/. */
 const AGENT = /^[a-z][a-z0-9-]*$/;
 /** The repository the floor belongs to (its root package name). */
 export const FLOOR_REPOSITORY = "foundry-packages";
@@ -138,7 +138,7 @@ export function shapeFindings(doc) {
     seen.add(id);
     if (!oneLine(row?.owner_words?.quote) || row.owner_words.quote.length > 200) bad(id, "owner_words.quote must be one short line");
     if (!DATE.test(row?.owner_words?.date ?? "")) bad(id, "owner_words.date must be YYYY-MM-DD");
-    if (typeof row?.owner_agent !== "string" || !AGENT.test(row.owner_agent)) bad(id, "owner_agent must name the package or factory home that owns this rule");
+    if (typeof row?.owner_agent !== "string" || !AGENT.test(row.owner_agent)) bad(id, "owner_agent must name the package under packages/ that owns this rule");
     if (!["enforced", "unenforced", "pending-wire"].includes(row?.status)) bad(id, 'status must be "enforced", "unenforced" or "pending-wire"');
     if (row?.status === "pending-wire" && (!oneLine(row?.pending_wire?.check) || !oneLine(row?.pending_wire?.branch))) bad(id, "a pending-wire rule needs pending_wire { check, branch }");
     for (const key of ["checks", "related"]) if (row?.[key] !== undefined && (!Array.isArray(row[key]) || row[key].some(ref => typeof ref !== "string"))) bad(id, `${key} must be a list of check references`);
@@ -182,19 +182,17 @@ export function ownedRulesListed(text) {
 }
 
 /**
- * Owner findings: every owner_agent names a package under packages/ or one of `homes` (unknown-owner),
- * and every home in `homes` lists, in factory/<home>/SKILL.md, exactly the rules it owns in registry
- * order (owner-list).
+ * Owner findings: every owner_agent names a package under packages/ (unknown-owner), and every home in
+ * `homes` lists, in its skill, exactly the rules it owns in registry order (owner-list).
  */
 export function ownerFindings(doc, root, homes = []) {
   const out = [];
   const rows = (doc?.rules ?? []).filter(row => typeof row?.owner_agent === "string" && AGENT.test(row.owner_agent));
   for (const row of rows) {
-    if (homes.includes(row.owner_agent)) continue;
-    if (!existsSync(join(root, "packages", row.owner_agent, "package.json"))) out.push({ rule: "unknown-owner", id: row.id, message: `owner_agent ${row.owner_agent} is neither a package (packages/${row.owner_agent}/package.json does not exist) nor a factory home` });
+    if (!existsSync(join(root, "packages", row.owner_agent, "package.json"))) out.push({ rule: "unknown-owner", id: row.id, message: `owner_agent ${row.owner_agent} is not a package: packages/${row.owner_agent}/package.json does not exist` });
   }
   for (const home of homes) {
-    const skill = `factory/${home}/SKILL.md`;
+    const skill = `packages/${home}/skill/SKILL.md`;
     const owned = rows.filter(row => row.owner_agent === home).map(row => row.id);
     const listed = existsSync(join(root, skill)) ? ownedRulesListed(readFileSync(join(root, skill), "utf8")) : null;
     const block = [OWNED_RULES_START, ...owned.map(id => `- ${id}`), OWNED_RULES_END].join("\n");

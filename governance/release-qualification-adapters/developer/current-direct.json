@@ -1,0 +1,10 @@
+{
+  "schemaVersion": 1,
+  "role": "@clossys/developer",
+  "cases": [
+    {
+      "id": "scaffold-conforms",
+      "description": "The scaffolded package reports zero gaps against the Stage A framework."
+    }
+  ]
+}
