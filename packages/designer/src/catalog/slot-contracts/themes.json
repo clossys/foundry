@@ -4,7 +4,7 @@
     "slot": "themes.accent",
     "package": "designer",
     "layer": "themes",
-    "purpose": "Color token emitted as --accent (role tier; light and dark modes), under Color / Emphasis.",
+    "purpose": "Color token emitted as --accent (role tier; light and dark modes), under Colors / Emphasis.",
     "inputs": [
       {
         "name": "default",
@@ -37,7 +37,7 @@
     "slot": "themes.accent-foreground",
     "package": "designer",
     "layer": "themes",
-    "purpose": "Color token emitted as --accent-foreground (role tier; light and dark modes), under Color / Emphasis.",
+    "purpose": "Color token emitted as --accent-foreground (role tier; light and dark modes), under Colors / Emphasis.",
     "inputs": [
       {
         "name": "default",
@@ -176,7 +176,7 @@
     "slot": "themes.background",
     "package": "designer",
     "layer": "themes",
-    "purpose": "Color token emitted as --background (role tier; light and dark modes), under Color / Surfaces.",
+    "purpose": "Color token emitted as --background (role tier; light and dark modes), under Colors / Surfaces.",
     "inputs": [
       {
         "name": "default",
@@ -209,7 +209,7 @@
     "slot": "themes.border",
     "package": "designer",
     "layer": "themes",
-    "purpose": "Color token emitted as --border (role tier; light and dark modes), under Color / Neutrals.",
+    "purpose": "Color token emitted as --border (role tier; light and dark modes), under Colors / Neutrals.",
     "inputs": [
       {
         "name": "default",
@@ -242,7 +242,7 @@
     "slot": "themes.card",
     "package": "designer",
     "layer": "themes",
-    "purpose": "Color token emitted as --card (role tier; light and dark modes), under Color / Surfaces.",
+    "purpose": "Color token emitted as --card (role tier; light and dark modes), under Colors / Surfaces.",
     "inputs": [
       {
         "name": "default",
@@ -275,7 +275,7 @@
     "slot": "themes.card-foreground",
     "package": "designer",
     "layer": "themes",
-    "purpose": "Color token emitted as --card-foreground (role tier; light and dark modes), under Color / Surfaces.",
+    "purpose": "Color token emitted as --card-foreground (role tier; light and dark modes), under Colors / Surfaces.",
     "inputs": [
       {
         "name": "default",
@@ -308,7 +308,7 @@
     "slot": "themes.chart-1",
     "package": "designer",
     "layer": "themes",
-    "purpose": "Color token emitted as --chart-1 (role tier; light and dark modes), under Color / Chart palette.",
+    "purpose": "Color token emitted as --chart-1 (role tier; light and dark modes), under Colors / Chart palette.",
     "inputs": [
       {
         "name": "default",
@@ -341,7 +341,7 @@
     "slot": "themes.chart-2",
     "package": "designer",
     "layer": "themes",
-    "purpose": "Color token emitted as --chart-2 (role tier; light and dark modes), under Color / Chart palette.",
+    "purpose": "Color token emitted as --chart-2 (role tier; light and dark modes), under Colors / Chart palette.",
     "inputs": [
       {
         "name": "default",
@@ -374,7 +374,7 @@
     "slot": "themes.chart-3",
     "package": "designer",
     "layer": "themes",
-    "purpose": "Color token emitted as --chart-3 (role tier; light and dark modes), under Color / Chart palette.",
+    "purpose": "Color token emitted as --chart-3 (role tier; light and dark modes), under Colors / Chart palette.",
     "inputs": [
       {
         "name": "default",
@@ -407,7 +407,7 @@
     "slot": "themes.chart-4",
     "package": "designer",
     "layer": "themes",
-    "purpose": "Color token emitted as --chart-4 (role tier; light and dark modes), under Color / Chart palette.",
+    "purpose": "Color token emitted as --chart-4 (role tier; light and dark modes), under Colors / Chart palette.",
     "inputs": [
       {
         "name": "default",
@@ -440,7 +440,7 @@
     "slot": "themes.chart-5",
     "package": "designer",
     "layer": "themes",
-    "purpose": "Color token emitted as --chart-5 (role tier; light and dark modes), under Color / Chart palette.",
+    "purpose": "Color token emitted as --chart-5 (role tier; light and dark modes), under Colors / Chart palette.",
     "inputs": [
       {
         "name": "default",
@@ -473,7 +473,7 @@
     "slot": "themes.destructive",
     "package": "designer",
     "layer": "themes",
-    "purpose": "Color token emitted as --destructive (role tier; light and dark modes), under Color / Emphasis.",
+    "purpose": "Color token emitted as --destructive (role tier; light and dark modes), under Colors / Emphasis.",
     "inputs": [
       {
         "name": "default",
@@ -638,7 +638,7 @@
     "slot": "themes.foreground",
     "package": "designer",
     "layer": "themes",
-    "purpose": "Color token emitted as --foreground (role tier; light and dark modes), under Color / Surfaces.",
+    "purpose": "Color token emitted as --foreground (role tier; light and dark modes), under Colors / Surfaces.",
     "inputs": [
       {
         "name": "default",
@@ -671,7 +671,7 @@
     "slot": "themes.input",
     "package": "designer",
     "layer": "themes",
-    "purpose": "Color token emitted as --input (role tier; light and dark modes), under Color / Neutrals.",
+    "purpose": "Color token emitted as --input (role tier; light and dark modes), under Colors / Neutrals.",
     "inputs": [
       {
         "name": "default",
@@ -704,7 +704,7 @@
     "slot": "themes.muted",
     "package": "designer",
     "layer": "themes",
-    "purpose": "Color token emitted as --muted (role tier; light and dark modes), under Color / Neutrals.",
+    "purpose": "Color token emitted as --muted (role tier; light and dark modes), under Colors / Neutrals.",
     "inputs": [
       {
         "name": "default",
@@ -737,7 +737,7 @@
     "slot": "themes.muted-foreground",
     "package": "designer",
     "layer": "themes",
-    "purpose": "Color token emitted as --muted-foreground (role tier; light and dark modes), under Color / Neutrals.",
+    "purpose": "Color token emitted as --muted-foreground (role tier; light and dark modes), under Colors / Neutrals.",
     "inputs": [
       {
         "name": "default",
@@ -770,7 +770,7 @@
     "slot": "themes.popover",
     "package": "designer",
     "layer": "themes",
-    "purpose": "Color token emitted as --popover (role tier; light and dark modes), under Color / Surfaces.",
+    "purpose": "Color token emitted as --popover (role tier; light and dark modes), under Colors / Surfaces.",
     "inputs": [
       {
         "name": "default",
@@ -803,7 +803,7 @@
     "slot": "themes.popover-foreground",
     "package": "designer",
     "layer": "themes",
-    "purpose": "Color token emitted as --popover-foreground (role tier; light and dark modes), under Color / Surfaces.",
+    "purpose": "Color token emitted as --popover-foreground (role tier; light and dark modes), under Colors / Surfaces.",
     "inputs": [
       {
         "name": "default",
@@ -836,7 +836,7 @@
     "slot": "themes.primary",
     "package": "designer",
     "layer": "themes",
-    "purpose": "Color token emitted as --primary (role tier; light and dark modes), under Color / Emphasis.",
+    "purpose": "Color token emitted as --primary (role tier; light and dark modes), under Colors / Emphasis.",
     "inputs": [
       {
         "name": "default",
@@ -869,7 +869,7 @@
     "slot": "themes.primary-foreground",
     "package": "designer",
     "layer": "themes",
-    "purpose": "Color token emitted as --primary-foreground (role tier; light and dark modes), under Color / Emphasis.",
+    "purpose": "Color token emitted as --primary-foreground (role tier; light and dark modes), under Colors / Emphasis.",
     "inputs": [
       {
         "name": "default",
@@ -935,7 +935,7 @@
     "slot": "themes.ring",
     "package": "designer",
     "layer": "themes",
-    "purpose": "Color token emitted as --ring (role tier; light and dark modes), under Color / Neutrals.",
+    "purpose": "Color token emitted as --ring (role tier; light and dark modes), under Colors / Neutrals.",
     "inputs": [
       {
         "name": "default",
@@ -968,7 +968,7 @@
     "slot": "themes.secondary",
     "package": "designer",
     "layer": "themes",
-    "purpose": "Color token emitted as --secondary (role tier; light and dark modes), under Color / Emphasis.",
+    "purpose": "Color token emitted as --secondary (role tier; light and dark modes), under Colors / Emphasis.",
     "inputs": [
       {
         "name": "default",
@@ -1001,7 +1001,7 @@
     "slot": "themes.secondary-foreground",
     "package": "designer",
     "layer": "themes",
-    "purpose": "Color token emitted as --secondary-foreground (role tier; light and dark modes), under Color / Emphasis.",
+    "purpose": "Color token emitted as --secondary-foreground (role tier; light and dark modes), under Colors / Emphasis.",
     "inputs": [
       {
         "name": "default",
@@ -1109,7 +1109,7 @@
     "slot": "themes.sidebar",
     "package": "designer",
     "layer": "themes",
-    "purpose": "Color token emitted as --sidebar (role tier; light and dark modes), under Color / Sidebar.",
+    "purpose": "Color token emitted as --sidebar (role tier; light and dark modes), under Colors / Sidebar.",
     "inputs": [
       {
         "name": "default",
@@ -1142,7 +1142,7 @@
     "slot": "themes.sidebar-accent",
     "package": "designer",
     "layer": "themes",
-    "purpose": "Color token emitted as --sidebar-accent (role tier; light and dark modes), under Color / Sidebar.",
+    "purpose": "Color token emitted as --sidebar-accent (role tier; light and dark modes), under Colors / Sidebar.",
     "inputs": [
       {
         "name": "default",
@@ -1175,7 +1175,7 @@
     "slot": "themes.sidebar-accent-foreground",
     "package": "designer",
     "layer": "themes",
-    "purpose": "Color token emitted as --sidebar-accent-foreground (role tier; light and dark modes), under Color / Sidebar.",
+    "purpose": "Color token emitted as --sidebar-accent-foreground (role tier; light and dark modes), under Colors / Sidebar.",
     "inputs": [
       {
         "name": "default",
@@ -1208,7 +1208,7 @@
     "slot": "themes.sidebar-border",
     "package": "designer",
     "layer": "themes",
-    "purpose": "Color token emitted as --sidebar-border (role tier; light and dark modes), under Color / Sidebar.",
+    "purpose": "Color token emitted as --sidebar-border (role tier; light and dark modes), under Colors / Sidebar.",
     "inputs": [
       {
         "name": "default",
@@ -1241,7 +1241,7 @@
     "slot": "themes.sidebar-foreground",
     "package": "designer",
     "layer": "themes",
-    "purpose": "Color token emitted as --sidebar-foreground (role tier; light and dark modes), under Color / Sidebar.",
+    "purpose": "Color token emitted as --sidebar-foreground (role tier; light and dark modes), under Colors / Sidebar.",
     "inputs": [
       {
         "name": "default",
@@ -1274,7 +1274,7 @@
     "slot": "themes.sidebar-primary",
     "package": "designer",
     "layer": "themes",
-    "purpose": "Color token emitted as --sidebar-primary (role tier; light and dark modes), under Color / Sidebar.",
+    "purpose": "Color token emitted as --sidebar-primary (role tier; light and dark modes), under Colors / Sidebar.",
     "inputs": [
       {
         "name": "default",
@@ -1307,7 +1307,7 @@
     "slot": "themes.sidebar-primary-foreground",
     "package": "designer",
     "layer": "themes",
-    "purpose": "Color token emitted as --sidebar-primary-foreground (role tier; light and dark modes), under Color / Sidebar.",
+    "purpose": "Color token emitted as --sidebar-primary-foreground (role tier; light and dark modes), under Colors / Sidebar.",
     "inputs": [
       {
         "name": "default",
@@ -1340,7 +1340,7 @@
     "slot": "themes.sidebar-ring",
     "package": "designer",
     "layer": "themes",
-    "purpose": "Color token emitted as --sidebar-ring (role tier; light and dark modes), under Color / Sidebar.",
+    "purpose": "Color token emitted as --sidebar-ring (role tier; light and dark modes), under Colors / Sidebar.",
     "inputs": [
       {
         "name": "default",

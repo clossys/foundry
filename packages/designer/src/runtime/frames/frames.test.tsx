@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 /** Frame runtime renderers: every designer Frames leaf renders its real package export from fill JSON. */
 import "@testing-library/jest-dom/vitest";
-import { cleanup, render, screen, waitFor } from "@testing-library/react";
+import { cleanup, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import type { ReactNode } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -77,6 +77,27 @@ describe("designer Frame runtime renderers", () => {
     for (const group of F.command.groups) expect(screen.getByText(group.label)).toBeInTheDocument();
   });
 
+  it("the video frame runtime renders the stage and the stock controls, paused", async () => {
+    draw("frames.video");
+    const root = document.querySelector('[data-provenance-leaf="frames.video"]');
+    expect(root).toHaveAttribute("data-aspect", "16:9");
+    expect(root).toHaveAttribute("data-playing", "false");
+    const stage = screen.getByRole("main");
+    expect(stage).toHaveClass("aspect-video");
+    expect(stage.querySelectorAll("section")).toHaveLength(1);
+    expect(stage).toHaveTextContent(F.video.scenes[0]);
+    const controls = screen.getByRole("region", { name: F.video.label });
+    const play = within(controls).getByRole("button", { name: F.video.play });
+    expect(play).toHaveAttribute("data-slot", "button");
+    const scrubber = within(controls).getByRole("slider", { name: F.video.scrubber });
+    expect(scrubber.closest('[data-slot="slider"]')).not.toBeNull();
+    expect([scrubber.getAttribute("min"), scrubber.getAttribute("max"), scrubber.getAttribute("value")]).toEqual(["0", String(F.video.scenes.length - 1), "0"]);
+    expect(within(controls).getByText(`1 / ${F.video.scenes.length}`)).toBeInTheDocument();
+    await userEvent.click(play);
+    expect(within(controls).getByRole("button", { name: F.video.pause })).toBeInTheDocument();
+    expect(root).toHaveAttribute("data-playing", "true");
+  });
+
   it("draws every Frame sample from the shared specimen dataset, never from renderer literals", () => {
     // Structural keys (ids, action commands, kinds, variants, sizes) are not copy; every other string is a dataset value.
     const STRUCTURAL = new Set(["id", "action", "kind", "variant", "size"]);
@@ -91,6 +112,7 @@ describe("designer Frame runtime renderers", () => {
       "frames.auth-shell": "app",
       "frames.app-shell": "app", "frames.app-header": "appHeader", "frames.app-sidebar": "appSidebar", "frames.inspector": "inspector",
       "frames.sheet": "sheet", "frames.site-header": "siteHeader", "frames.site-footer": "siteFooter", "frames.command": "command",
+      "frames.video": "video",
     };
     expect(Object.keys(records).sort()).toEqual(Object.keys(frameRenderers).filter(id => id !== "frames.site-shell").sort());
     for (const [leaf, record] of Object.entries(records)) {

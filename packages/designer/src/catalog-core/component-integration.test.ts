@@ -191,9 +191,10 @@ describe("SYNTHETIC components through the public composite facade", () => {
     // The independent rail inventory proof checks the complete new join.
     const added = new Set(["assets.icon-panel-left", ...["command", "dropdown-menu", "empty", "item", "scroll-area", "sheet", "sidebar"].map(leaf => `components.${leaf}`)]);
     // The runtime catalog holds the 42 themes and 49 assets leaves (components resolve through the component registry);
-    // the build catalog holds the 252 owner-signed build slots (build-ia-integration.test.ts).
+    // the build catalog holds the 253 owner-signed build slots (build-ia-integration.test.ts), frames.video joining by
+    // CP1-VIDEO1 amendment (owner 2026-11-26, "Ok include video"): 244 -> 245.
     expect(client.loadCatalog().slots.filter(slot => !added.has(slot.id))).toHaveLength(90);
-    expect(client.loadBuildCatalog().slots.filter(slot => !added.has(slot.id))).toHaveLength(244);
+    expect(client.loadBuildCatalog().slots.filter(slot => !added.has(slot.id))).toHaveLength(245);
   });
 });
 

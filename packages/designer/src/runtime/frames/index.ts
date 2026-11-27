@@ -11,6 +11,7 @@ import { sheetRenderer } from "./sheet.js";
 import { siteFooterRenderer } from "./site-footer.js";
 import { siteShellRuntimeRenderer } from "./site-shell.js";
 import { siteHeaderRenderer } from "./site-header.js";
+import { videoRenderer } from "./video.js";
 
 export const frameRenderers: SurfaceRendererGroup = mergeRendererGroups({
   "frames.site-shell": siteShellRuntimeRenderer,
@@ -23,4 +24,5 @@ export const frameRenderers: SurfaceRendererGroup = mergeRendererGroups({
   "frames.site-footer": siteFooterRenderer,
   "frames.sheet": sheetRenderer,
   "frames.command": commandRenderer,
+  "frames.video": videoRenderer,
 });
