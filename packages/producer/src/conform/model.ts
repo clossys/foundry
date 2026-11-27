@@ -147,6 +147,11 @@ export interface Machinery {
   readonly criteria: ReadonlySet<string>;
   /** The Q rows' Producer facts: routing table, owner classes, fix raisers, release gates and run ledgers. */
   readonly requests: RequestMachinery;
+  /**
+   * M1 (CP1-PLAN): the admin publication and pages `clossys init` hard-wires in every consumer (admin-plan.ts), read
+   * from the Publisher package's own `admin` starter: its pages and its publication. Absent, nothing is exempt.
+   */
+  readonly adminSlots?: ReadonlySet<string>;
 }
 
 export interface ConformModel {
@@ -443,7 +448,9 @@ function readMachinery(repo: string, consumer: string): Machinery {
     const doc = json(join(dir, "index.json"));
     for (const item of object(doc) && Array.isArray(doc.criteria) ? doc.criteria.filter(object) : []) criteria.add(String(item.id));
   }
-  return { rules, loops, slotRequestSchema: existsSync(join(producer, "schemas/queue-entry-2.json")), certifiers, contractSchemas, criteria, requests: readRequestMachinery(repo, consumer) };
+  const admin = json(join(repo, "packages/publisher/starters/admin/publication.json"));
+  const adminSlots = new Set(object(admin) && typeof admin.id === "string" ? [...strings(admin.pages), `publication.${admin.id}`] : []);
+  return { rules, loops, slotRequestSchema: existsSync(join(producer, "schemas/queue-entry-2.json")), certifiers, contractSchemas, criteria, requests: readRequestMachinery(repo, consumer), adminSlots };
 }
 
 /** Reads the whole model: the repo's packages and the consumer's placed records. */

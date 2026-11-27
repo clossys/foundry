@@ -151,6 +151,8 @@ A page candidate (`clossys.page/1`):
 
 ## Loop (one page)
 
+Loop order for the content map: Director release, then `clossys plan`, then the owner approves, then `clossys ia`.
+
 A page with no fitting candidate goes through CREATE: record the slot's verdict
 (`clossys verdict`), craft the page record with the `assemble.page` recipe (assembly only: brief,
 diverge, render, critique), then submit;

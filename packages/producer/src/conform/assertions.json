@@ -294,6 +294,14 @@
       "check": "agent-loop-standard",
       "status": "building",
       "enforcedFor": []
+    },
+    {
+      "id": "M1",
+      "lens": "plan",
+      "statement": "every placed page or publication slot reads the Director's next release (director/execution.roadmap.release), placed through clossys plan; the admin publication and pages are exempt because clossys init hard-wires them in every consumer (admin-plan.ts, from the Publisher admin starter)",
+      "check": "content-map-planned",
+      "status": "building",
+      "enforcedFor": []
     }
   ],
   "producer": [

@@ -15,6 +15,8 @@ export interface CatalogCell {
   names: { l1: string; l2: string; l3: string; display: string };
   question: string;
   mustContain: { key: string; hint: string }[];
+  /** Criteria this cell's contract adds to its standard's (`[{check, params}]`), as the slot contract carries them. */
+  requirements?: { check: string; params: Record<string, unknown> }[];
   functions: string[];
   links: { cites: string; label: string }[];
 }

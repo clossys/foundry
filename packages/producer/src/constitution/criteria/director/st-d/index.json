@@ -63,6 +63,13 @@
       "export": "boundary",
       "fixtures": "__fixtures__/brief.boundary.json",
       "summary": "A profile says what it is not: a Not, Never or Avoid line, or an exclusion."
+    },
+    {
+      "id": "brief.release-scope",
+      "module": "release",
+      "export": "releaseScope",
+      "fixtures": "__fixtures__/brief.release-scope.json",
+      "summary": "A release states its Stage, Scope rows <kind> (<pages>): <use case naming the stage>, a Not-in-scope list, at most the contract page cap at an early stage, and derives from the customer need."
     }
   ]
 }

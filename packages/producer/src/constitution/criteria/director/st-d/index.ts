@@ -4,6 +4,7 @@
  */
 import type { Criterion } from "../../core/types.js";
 import { becauseCited, boundary, derivedUpstream, directionValues, keys, plainDirection, quantified, sections, watchTrigger } from "./brief.js";
+import { releaseScope } from "./release.js";
 
 export const DIRECTOR_CRITERIA: Readonly<Record<string, Criterion>> = Object.freeze({
   "brief.sections": sections,
@@ -15,4 +16,5 @@ export const DIRECTOR_CRITERIA: Readonly<Record<string, Criterion>> = Object.fre
   "brief.direction-values": directionValues,
   "brief.quantified": quantified,
   "brief.boundary": boundary,
+  "brief.release-scope": releaseScope,
 });

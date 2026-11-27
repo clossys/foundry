@@ -103,7 +103,7 @@ export const DESIGNER_LAYERS = ["themes", "assets", "components", "sections", "f
 export function directorIa(): FoundryIa {
   const root = resolveAgent("director").packageRoot;
   const ia = readJson(root, DIRECTOR_IA_FILE) as { nodes: { id: string; name: string; children: { id: string; name: string; leaves: string[] }[] }[]; layers?: IaLayer[]; axes?: IaAxes };
-  const cells = new Map((readJson(root, join("src", "catalog", "cells", "strategy.json")) as { id: string; question: string; mustContain: unknown }[]).map(cell => [cell.id, cell]));
+  const cells = new Map((readJson(root, join("src", "catalog", "cells", "strategy.json")) as { id: string; question: string; mustContain: unknown; requirements?: unknown }[]).map(cell => [cell.id, cell]));
   // Older director builds carry no slot contracts: inputs stay undeclared.
   const raw = readOptionalJson(root, "src/slot-contracts/contracts.json") as { fixture?: Record<string, unknown>; slots: { id: string; inputs: string[]; feeds: string[] }[] } | undefined;
   const contracts = new Map<string, { inputs: string[]; feeds: string[] }>((raw?.slots ?? []).map(slot => [slot.id, { inputs: strings(slot.inputs), feeds: strings(slot.feeds) }]));
@@ -117,7 +117,8 @@ export function directorIa(): FoundryIa {
     const cell = cells.get(id), contract = contracts.get(id);
     slots.set(id, {
       // The brief fixture (DIR-CERT: Direction, Because, Watch) is the package default for every Director contract.
-      id, kind: "brief", contract: { question: cell?.question ?? "", mustContain: cell?.mustContain ?? [], ...(raw?.fixture ? { fixture: raw.fixture } : {}) },
+      // A cell's own requirements (the release cell's Scope rows, CP1-PLAN) ride in its contract over the standard's.
+      id, kind: "brief", contract: { question: cell?.question ?? "", mustContain: cell?.mustContain ?? [], ...(Array.isArray(cell?.requirements) ? { requirements: cell.requirements } : {}), ...(raw?.fixture ? { fixture: raw.fixture } : {}) },
       declaredInputs: (contract?.inputs ?? []).map(stripAgent), declaredUses: [], feeds: (contract?.feeds ?? []).map(stripAgent),
       defaults: defaults.get(id) ?? {},
     });

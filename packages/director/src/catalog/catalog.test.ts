@@ -53,7 +53,7 @@ describe("strategy catalog", () => {
   it("preserves packet cell contracts and grouping mechanically", () => {
     const packet = JSON.parse(readFileSync(new URL("../../docs/v2/catalog/tree.json", import.meta.url), "utf8"));
     const catalog = loadCatalog();
-    expect(catalog.cells).toEqual(packet.cells.map(({ id, names, question, mustContain, functions, links }: StrategyCatalog["cells"][number]) => ({ id, names, question, mustContain, functions, links })));
+    expect(catalog.cells).toEqual(packet.cells.map(({ id, names, question, mustContain, requirements, functions, links }: StrategyCatalog["cells"][number]) => ({ id, names, question, mustContain, ...(requirements ? { requirements } : {}), functions, links })));
     expect(catalog.ia.nodes).toEqual(packet.tree.map((node: {children: {cells: string[]}[]}) => ({ ...node, children: node.children.map(({cells, ...child}) => ({ ...child, leaves: cells })) })));
     expect(catalog.freeze.leaves).toEqual(packet.cells.map((cell: {id: string}) => cell.id));
     expect(catalog.coherence).toEqual(packet.coherence);

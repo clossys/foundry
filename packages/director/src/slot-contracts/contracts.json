@@ -2156,7 +2156,10 @@
       "layer": "strategy",
       "purpose": "What do we release next, to whom, and through which channel?",
       "inputs": [
-        "director:focus.lifecycle.acquisition"
+        "director:focus.lifecycle.acquisition",
+        "director:context.customer.need",
+        "director:focus.reach.channel",
+        "director:focus.offer.included"
       ],
       "limits": {
         "requiredKeys": [
