@@ -12,7 +12,10 @@
  *   over the package's declared sources (`compiledCssDeclaredSources`): tokens.css, theme.css and the
  *   package default theme.
  * - `pinnedThemeFallbackReader(values)`: a consumer's adoption, over the values its pinned `themes.*`
- *   slots declare. A name the pins do not declare is refused the same way.
+ *   slots declare. A name the pins do not declare is refused the same way. With `foundryBrandOptional`
+ *   (CP1-TOKENFALL, the consumer adopt reader), a name no pin declares that the token catalog marks
+ *   `brand-optional` takes Foundry's declared value from `styles/tokens.css` and `styles/theme-keys.css`
+ *   instead; a `brand-required` name is still refused, and says so.
  *
  * Wherever the theme is loaded every read is in scope and its fallback is never used, so the
  * fallbacks change no computed style.
@@ -22,6 +25,7 @@ import { fileURLToPath } from "node:url";
 import { compiledCssDeclaredSources } from "../compiled-css/generate.js";
 import { globalDeclaredFallback, RUNTIME_ONLY_FALLBACK, UndeclaredTokenFallbackError } from "../compiled-css/declared-fallbacks.js";
 import { runtimeSetNames, scanRuntimeSetters } from "../compiled-css/runtime-setters.js";
+import { TOKEN_ENTRIES } from "../catalog/tokens.js";
 
 export { UndeclaredTokenFallbackError };
 
@@ -30,6 +34,8 @@ export interface DeclaredFallbackReader {
   readonly source: string;
   /** The declared value a read of `name` carries as its fallback. Throws `UndeclaredTokenFallbackError` when none is declared. */
   fallback(name: string): string;
+  /** Whether `name`'s fallback is Foundry's declared value rather than the reader's own (a brand-optional id no pin declares). */
+  fromFoundry?(name: string): boolean;
 }
 
 let packageReader: DeclaredFallbackReader | undefined;
@@ -54,16 +60,60 @@ export function packageDeclaredFallbackReader(): DeclaredFallbackReader {
   return packageReader;
 }
 
-/** A consumer's pinned `themes.*` values, by custom-property name. */
-export function pinnedThemeFallbackReader(values: Readonly<Record<string, string>>, source = "consumer pinned themes"): DeclaredFallbackReader {
+/** The token catalog's tier of each id (`designer/src/catalog/tokens.ts`). */
+const TOKEN_TIER = new Map<string, string>(TOKEN_ENTRIES.map(entry => [entry.id, entry.tier]));
+
+let foundryDeclared: ((name: string) => string) | undefined;
+
+/**
+ * Foundry's declared value of `name`: `globalDeclaredFallback` over the package's `styles/tokens.css` and
+ * `styles/theme-keys.css` (inlined by theme.css) alone; no package default theme, no Tailwind default theme, no
+ * inline setter. Read once per process. Throws `UndeclaredTokenFallbackError` when they declare none.
+ */
+function foundryDeclaredValue(name: string): string {
+  foundryDeclared ??= globalDeclaredFallback({
+    ...compiledCssDeclaredSources(resolve(dirname(fileURLToPath(import.meta.url)), "../../styles")),
+    defaultThemeCss: "", tailwindThemeCss: "", runtimeSetVariables: new Set(),
+  }, "");
+  return foundryDeclared(name);
+}
+
+/** The refusal of a brand-required id no pin declares: the base refusal, plus why Foundry's declared value was not taken. */
+export class BrandRequiredTokenFallbackError extends UndeclaredTokenFallbackError {
+  constructor(name: string) {
+    super([name]);
+    this.message += ` Foundry's declared fallback was not taken for ${name} because the token catalog marks it brand-required: pin a themes.* slot that emits ${name}.`;
+  }
+}
+
+export interface PinnedThemeFallbackOptions {
+  /** A name no pin declares that the token catalog marks brand-optional takes Foundry's declared value (CP1-TOKENFALL). */
+  readonly foundryBrandOptional?: boolean;
+}
+
+/**
+ * A consumer's pinned `themes.*` values, by custom-property name. A pinned value always wins. With
+ * `foundryBrandOptional`, a name no pin declares falls back to Foundry's declared value only when the token catalog
+ * marks it brand-optional; a brand-required name is refused (`BrandRequiredTokenFallbackError`), and any other name
+ * is refused exactly as without the option.
+ */
+export function pinnedThemeFallbackReader(values: Readonly<Record<string, string>>, source = "consumer pinned themes", options: PinnedThemeFallbackOptions = {}): DeclaredFallbackReader {
   const own = new Map(Object.entries(values));
+  const pinned = (name: string): string | undefined => {
+    const value = own.get(name);
+    return value === undefined || !value.trim() ? undefined : value;
+  };
+  const fromFoundry = (name: string): boolean => options.foundryBrandOptional === true && pinned(name) === undefined && TOKEN_TIER.get(name) === "brand-optional";
   return Object.freeze({
     source,
     fallback(name: string): string {
-      const value = own.get(name);
-      if (value === undefined || !value.trim()) throw new UndeclaredTokenFallbackError([name]);
-      return value;
+      const value = pinned(name);
+      if (value !== undefined) return value;
+      if (fromFoundry(name)) return foundryDeclaredValue(name);
+      if (options.foundryBrandOptional === true && TOKEN_TIER.get(name) === "brand-required") throw new BrandRequiredTokenFallbackError(name);
+      throw new UndeclaredTokenFallbackError([name]);
     },
+    fromFoundry,
   });
 }
 
@@ -165,6 +215,7 @@ function withInlineSetters(reader: DeclaredFallbackReader, text: string): Declar
   let inline: ReadonlySet<string> | undefined;
   return {
     source: reader.source,
+    fromFoundry: reader.fromFoundry,
     fallback(name: string): string {
       try { return reader.fallback(name); }
       catch (error) {
@@ -181,14 +232,22 @@ function withInlineSetters(reader: DeclaredFallbackReader, text: string): Declar
  * `text` (an emitted `.ts`/`.tsx` source) with every bare `var(--x)` outside comments given the
  * reader's value: Tailwind form inside a class, CSS form elsewhere. Reads that already carry a
  * fallback are left as written. A name the reader does not declare is refused, unless `text` sets
- * it inline at run time (then `unset`).
+ * it inline at run time (then `unset`). When any read took Foundry's declared value (`reader.fromFoundry`), one
+ * comment line at the end names each such token and its value, so the consumer can see which values are Foundry's.
  */
 export function alignImportedReads(text: string, reader: DeclaredFallbackReader): string {
   const comments = commentSpans(text);
   const own = withInlineSetters(reader, text);
-  return text.replace(BARE_READ, (whole, name: string, offset: number) =>
-    comments.some(([start, end]) => offset >= start && offset < end) ? whole
-      : inClass(text, offset) ? classRead(own, name) : cssRead(own, name));
+  const foundry = new Map<string, string>();
+  const aligned = text.replace(BARE_READ, (whole, name: string, offset: number) => {
+    if (comments.some(([start, end]) => offset >= start && offset < end)) return whole;
+    const read = inClass(text, offset) ? classRead(own, name) : cssRead(own, name);
+    if (own.fromFoundry?.(name)) foundry.set(name, own.fallback(name));
+    return read;
+  });
+  if (!foundry.size) return aligned;
+  const listed = [...foundry].sort(([a], [b]) => a.localeCompare(b)).map(([name, value]) => `${name}: ${value}`).join("; ");
+  return `${aligned}${aligned.endsWith("\n") ? "" : "\n"}// Foundry declared fallbacks (brand-optional, no pinned theme emits them): ${listed}\n`;
 }
 
 /** Every bare `var(--x)` left outside comments in `text`. */
