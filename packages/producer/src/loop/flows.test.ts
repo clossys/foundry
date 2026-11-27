@@ -22,7 +22,8 @@ import { runReleaseCli } from "../cli/release.js";
 import { releaseWorld, geographyBrief, stubBuilder, type ReleaseWorld } from "../release/__fixtures__/world.js";
 import { sha256Hex } from "../records/hash.js";
 import { writeSlot } from "../records/slot.js";
-import { writeCandidate } from "../records/slot-write.js";
+import { appendSlotDocEvent, writeCandidate } from "../records/slot-write.js";
+import { skillPath } from "../records/ledger.js";
 import type { AgentId, LedgerEntry, QueueEntry, Slot, SlotRequest } from "../records/types.js";
 import { decideRequest, exactReuseOf, readRequest, requestLockPath } from "../records/request.js";
 import { readPackageLoop } from "./files.js";
@@ -188,6 +189,12 @@ const ownerAnswer = (root: string, entry: string, answer: string, now: () => Dat
   answerQueueEntry(root, { entry, answer, by: "owner", via: "chat", quote: `owner said: ${answer}` }, now());
 
 const stepLine = (entry: LedgerEntry) => entry.steps.map(step => `${step.id}:${step.decider.by}${step.decider.by === "agent" ? `/${step.decider.model}` : ""}:${step.exit}`);
+
+/** Setup: log a hand-edited fixture slot.json through the slot-doc record writer, so the engine index stays the rebuild of the log. */
+function logSlotDoc(root: string, slot: string) {
+  const [agent, id] = slot.split("/") as [AgentId, string];
+  appendSlotDocEvent(join(root, "clossys"), agent, id, { by: "planner", at: "2026-11-17T09:00:00Z", verb: "ia", skill: skillPath("producer", "ia"), fields: { kind: "ia", note: "test setup: cite a need" } });
+}
 
 describe("F1 init (T1)", () => {
   // The prelude judges each check from the files (CONSISTENCY round 2), so the init world is one whose checks pass:
@@ -1094,6 +1101,8 @@ describe("loop.slot and loop.scope through the operator CLI (no stub; foundry-bu
     const doc = JSON.parse(readFileSync(file, "utf8"));
     doc.refs.push({ to: need, rel: "input" });
     writeFileSync(file, `${JSON.stringify(doc, null, 2)}\n`);
+    // A ref with no agent segment is a malformed slot doc the record writer refuses, so that edit stays unlogged.
+    if (need.includes("/")) logSlotDoc(w.root, REQUESTER);
   }
   const waitingRun = (message: string | undefined) => /run (\S+):/.exec(message ?? "")![1]!;
 
@@ -1246,6 +1255,7 @@ describe("loop.slot and loop.scope through the operator CLI (no stub; foundry-bu
     const doc = JSON.parse(readFileSync(file, "utf8"));
     doc.refs.push({ to: need, rel: "input" });
     writeFileSync(file, `${JSON.stringify(doc, null, 2)}\n`);
+    logSlotDoc(w.root, slot);
   }
   const DIRECTOR_SLOT = "director/context.customer.need";
   const DESIGNER_SLOT = "designer/assets.app-icon";

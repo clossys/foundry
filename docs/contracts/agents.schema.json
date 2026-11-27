@@ -1,0 +1,29 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "agents.schema.json",
+  "title": "Foundry agent definitions",
+  "description": "The one definition of every agent: one row per package under packages/. scripts/check-agents-definition.mjs reads this schema and joins every other declaration of an agent to the rows.",
+  "type": "object",
+  "required": ["schemaVersion", "agents"],
+  "additionalProperties": false,
+  "properties": {
+    "$schema": { "type": "string" },
+    "$comment": { "type": "string" },
+    "schemaVersion": { "const": 1 },
+    "agents": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "package", "class", "definitionOwner", "rung"],
+        "additionalProperties": false,
+        "properties": {
+          "id": { "type": "string", "pattern": "^[a-z][a-z0-9-]*$", "description": "The package directory under packages/." },
+          "package": { "type": "string", "pattern": "^@[a-z0-9][a-z0-9._-]*/[a-z0-9][a-z0-9._-]*$", "description": "The workspace package name in packages/<id>/package.json." },
+          "class": { "enum": ["content", "factory", "tooling", "other"], "description": "How the code treats the agent: content agents own slots and loops, factory agents plan, build and review Foundry's own work, tooling ships deterministic mechanics and is not a role, other is every other role." },
+          "definitionOwner": { "const": "controller", "description": "The agent that owns this definition." },
+          "rung": { "type": "null", "description": "The readiness rung. Null until the readiness ladder computes it." }
+        }
+      }
+    }
+  }
+}

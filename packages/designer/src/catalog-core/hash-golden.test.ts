@@ -207,13 +207,18 @@ describe("real package-surface library golden", () => {
     // Both sides combine: BR-SEED3 drops the retired frames.document fill and row; U-K4-CASCADE's stock shadcn reads and
     // TableOfContents font-normal move the measured surfaces. Values and components unchanged (component f74c3c3c on both
     // sides): composite 771cc0a9/935fa6fa -> fdfbf36e, surface b979dd89/619b0b22 -> 012ef6e4, whole ab711bb2/54b74d82 -> 60968c88.
-    expect(compositeLibraryHash(library)).toMatchInlineSnapshot(`"sha256:fdfbf36e9aee5adedb7544d9f20ded42aef00b9cd21c8e3e42ac2e98050089b9"`);
+    // Re-pinned by CP1-VIDEO1 by hand from a green scratch vitest probe computing these five hashes from the same
+    // packageSurfaceLibrary inputs (no `-u`). With the frames.video importer mapping removed the probe reproduces every
+    // pin above byte for byte; with it, the frames.video package default joins the surfaces and its stock slider joins the
+    // component closure. Values unchanged: composite fdfbf36e -> bba03b0f, component f74c3c3c -> 02936da6,
+    // surface 012ef6e4 -> c1fa6fd8, whole 60968c88 -> 62500305.
+    expect(compositeLibraryHash(library)).toMatchInlineSnapshot(`"sha256:bba03b0f185dee7405cebcb7f2487cb4e679e862fb0f2afc944f3823f84156dd"`);
     const values = { ...library.values, source: library.source, adoptedAt: library.adoptedAt } as LibraryData;
     expect(libraryHash(values)).toMatchInlineSnapshot(`"fnv1a64:149d271dd68aea6f"`);
     expect(libraryHash(values)).toBe(referenceLibraryHash(values));
-    expect(componentLibraryHash({ ...library.components, source: library.source, adoptedAt: library.adoptedAt })).toMatchInlineSnapshot(`"sha256:f74c3c3c8b50cdb4e2420bedd4224d772f4930c1ec4c7aadd927000ba91dc21d"`);
-    expect(surfacePortionHash(library.surfaces!)).toMatchInlineSnapshot(`"sha256:012ef6e4b7081a18ec9973afb5035688ba126899be518b11fb82adabdd9cd013"`);
-    expect(nodeSha256(stableStringify(library))).toMatchInlineSnapshot(`"60968c88c4c14e11fa5a47a10f2e2fbd1f144651ed45670ad2966910024834d0"`);
+    expect(componentLibraryHash({ ...library.components, source: library.source, adoptedAt: library.adoptedAt })).toMatchInlineSnapshot(`"sha256:02936da6452995b8fc3b5094d8b392835cc8c40a5eb88d6f40339173f1bd4284"`);
+    expect(surfacePortionHash(library.surfaces!)).toMatchInlineSnapshot(`"sha256:c1fa6fd810284654d00ec93874628aa011594348d1a2ca1ac9acfc7ec4b687c3"`);
+    expect(nodeSha256(stableStringify(library))).toMatchInlineSnapshot(`"625003050d6fd1b3d8d604b43d229cbeae9c483749b387c679f17d197d618d47"`);
     expect(stableStringify(library)).toBe(referenceStringify(library));
   });
 });
