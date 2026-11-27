@@ -207,18 +207,29 @@ describe("real package-surface library golden", () => {
     // Both sides combine: BR-SEED3 drops the retired frames.document fill and row; U-K4-CASCADE's stock shadcn reads and
     // TableOfContents font-normal move the measured surfaces. Values and components unchanged (component f74c3c3c on both
     // sides): composite 771cc0a9/935fa6fa -> fdfbf36e, surface b979dd89/619b0b22 -> 012ef6e4, whole ab711bb2/54b74d82 -> 60968c88.
+    // Re-pinned by CP1-VIDEO1 by hand from a green scratch vitest probe computing these five hashes from the same
+    // packageSurfaceLibrary inputs (no `-u`). With the frames.video importer mapping removed the probe reproduces every
+    // pin above byte for byte; with it, the frames.video package default joins the surfaces and its stock slider joins the
+    // component closure. Values unchanged: composite fdfbf36e -> bba03b0f, component f74c3c3c -> 02936da6,
+    // surface 012ef6e4 -> c1fa6fd8, whole 60968c88 -> 62500305.
     // Re-pinned by foundry-build-0048 CP1-TOKENPARITY run 2 (by hand from a green probe run computing these same five
     // hashes, no `-u`). With frames/AppFrame.tsx and styles/section-reveal.tsx at base c1589043a the probe reproduces every
     // pin above; run 1's ROOT_FILL_CLASSES rename and inlined reveal fallbacks move the measured surfaces (FrameDock's
     // max-w-display and Toaster's cx do not), and generate-surface-consumption.mjs --write refreshes the app-shell rows.
     // Values and components unchanged: composite fdfbf36e -> c7a2d29a, surface 012ef6e4 -> 8b183b42, whole 60968c88 -> 93624413.
-    expect(compositeLibraryHash(library)).toMatchInlineSnapshot(`"sha256:c7a2d29af1f7c4af9ef23d8013c3a51ed09f0d90022e0eede0adf375fd534934"`);
+    // Re-pinned by foundry-build-0048 CP1-TOKENPARITY carry on the merge of int2 67bb25580 (by hand from a green scratch
+    // vitest probe computing these same five hashes from the same packageSurfaceLibrary inputs, no `-u`), after
+    // generate-surface-consumption.mjs --check exit 0 on the merged tree. Both sides change disjoint inputs and combine:
+    // CP1-VIDEO1 adds the frames.video surface and its stock slider component; TOKENPARITY moves the app-shell measured
+    // surfaces. Values unchanged; component = CP1-VIDEO1's 02936da6 (TOKENPARITY touches no component source);
+    // composite bba03b0f/c7a2d29a -> 222b7b66, surface c1fa6fd8/8b183b42 -> c9064fce, whole 62500305/93624413 -> 613ef6a6.
+    expect(compositeLibraryHash(library)).toMatchInlineSnapshot(`"sha256:222b7b665dba8813d5f60927e99a0c30082ffb95d8f4c5ec33f316c179be1555"`);
     const values = { ...library.values, source: library.source, adoptedAt: library.adoptedAt } as LibraryData;
     expect(libraryHash(values)).toMatchInlineSnapshot(`"fnv1a64:149d271dd68aea6f"`);
     expect(libraryHash(values)).toBe(referenceLibraryHash(values));
-    expect(componentLibraryHash({ ...library.components, source: library.source, adoptedAt: library.adoptedAt })).toMatchInlineSnapshot(`"sha256:f74c3c3c8b50cdb4e2420bedd4224d772f4930c1ec4c7aadd927000ba91dc21d"`);
-    expect(surfacePortionHash(library.surfaces!)).toMatchInlineSnapshot(`"sha256:8b183b4261b3febc0c8b37fa57bb1835f36fc275736c28336b9a4fc1accfd57f"`);
-    expect(nodeSha256(stableStringify(library))).toMatchInlineSnapshot(`"9362441353d714fa456213b6f695536e518ff8010b9212276bf8db09c9d429d9"`);
+    expect(componentLibraryHash({ ...library.components, source: library.source, adoptedAt: library.adoptedAt })).toMatchInlineSnapshot(`"sha256:02936da6452995b8fc3b5094d8b392835cc8c40a5eb88d6f40339173f1bd4284"`);
+    expect(surfacePortionHash(library.surfaces!)).toMatchInlineSnapshot(`"sha256:c9064fcef285a96ae9dc1e49783ade3161974864aec64bf812fd9d57daceb536"`);
+    expect(nodeSha256(stableStringify(library))).toMatchInlineSnapshot(`"613ef6a6755f3d35fb59ef6c940ad61e938dcbd92b690ca9c3d0c8918e73bda2"`);
     expect(stableStringify(library)).toBe(referenceStringify(library));
   });
 });

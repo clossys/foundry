@@ -17,14 +17,15 @@ const fixtures = [tokens, assets, components, sections, frames];
 // components.specimen-* leaves (ia/components.specimen-leaf-amendments.json): 236 + 8 = 244. The later signed
 // additions leaf-freeze.test.ts counts in LOADED_LEAVES follow: the two canvas leaves (owner LAD-3, 2026-11-11),
 // frames.deck (foundry-build-0032) and the five admin record sections (foundry-build-0048, A3): 244 + 2 + 1 + 5 = 252.
-const OWNER_SIGNED_LEAVES = 252;
+// CP1-VIDEO1 (owner 2026-11-26, "Ok include video"): frames.video joins by amendment: 252 + 1 = 253.
+const OWNER_SIGNED_LEAVES = 253;
 const BUILD_SLOTS = loadBuildCatalog().slots.map(slot => slot.id);
 // Group/family/leaf counts of the committed IA trees (components and sections re-measured in GATES-RED round 4;
 // both were already 68 and 7/24/66 at 35c58c51f, so the old literals failed there too). Components
 // re-measured at d42a35110: the owner-signed display-specimens family holds the eight specimen leaves.
 // foundry-build-0018 recut (designer.md): each layer is one L1 under the Theme/Art/Interface L0; retired leaves stay placed.
 // foundry-build-0035 (audit P16/P17): themes 11 -> 8 families, components 8 -> 10, sections 6 -> 7.
-const counts = { themes: [4, 8, 42], assets: [3, 10, 49], components: [1, 10, 78], sections: [1, 7, 71], frames: [1, 3, 12] };
+const counts = { themes: [4, 8, 42], assets: [3, 10, 49], components: [1, 10, 78], sections: [1, 7, 71], frames: [1, 3, 13] };
 // foundry-build-0032 (audit P3): frames.deck registers in a third frames family (Deck): frames 1/2/11 -> 1/3/12.
 // foundry-build-0048 (Amendment 2026-11-18b, A3): five admin record sections join Sections Records: sections 1/7/66 -> 1/7/71.
 const leafIds = (tree: Placement): string[] => tree.nodes.flatMap(group => "children" in group ? group.children.flatMap(family => "leaves" in family ? family.leaves : []) : []);

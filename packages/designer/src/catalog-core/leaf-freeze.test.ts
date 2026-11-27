@@ -32,7 +32,9 @@ const DECK_LEAVES = ["frames.deck"] as const;
 // foundry-build-0048 (Amendment 2026-11-18b, owner-signed 2026-11-18, A3): the five admin record sections register in the
 // unfrozen Sections layer; loaded leaves 247 -> 252.
 const ADMIN_RECORD_LEAVES = ["sections.slot-gallery", "sections.slot-detail", "sections.candidate-preview", "sections.question-packet", "sections.queue-list"] as const;
-const LOADED_LEAVES = OWNER_RESIGN.leaves + SPECIMEN_LEAVES.length + CANVAS_LEAVES.length + DECK_LEAVES.length + ADMIN_RECORD_LEAVES.length;
+// CP1-VIDEO1 (owner 2026-11-26, "Ok include video"): frames.video joins the unfrozen Frames layer by amendment; loaded leaves 252 -> 253.
+const VIDEO_LEAVES = ["frames.video"] as const;
+const LOADED_LEAVES = OWNER_RESIGN.leaves + SPECIMEN_LEAVES.length + CANVAS_LEAVES.length + DECK_LEAVES.length + ADMIN_RECORD_LEAVES.length + VIDEO_LEAVES.length;
 const loadedAssets = () => ({ ia: structuredClone(assetIA) as Placement, slots: structuredClone(assetSlots) });
 const view = (layer: string, ia: unknown, slots: unknown) => layer === "assets" ? loadedAssets() : { ia: structuredClone(ia) as Placement, slots: structuredClone(slots) as typeof assetSlots };
 
