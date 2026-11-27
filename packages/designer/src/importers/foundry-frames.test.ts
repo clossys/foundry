@@ -37,16 +37,16 @@ describe("Foundry frame descriptors", () => {
   // no fill, since no Designer package export exists for it yet.
   // BR-SEED3: the retired frames.document (src/catalog/retired.json:152) left FOUNDRY_FRAME_MAP with its fill, so its
   // slot row joins deck as unavailable and the fills go 11 -> 10, as the importer regenerates them.
-  // CP1-VIDEO1: frames.video has no Designer package export either, so it joins deck as unavailable (13 leaves, fills stay 10).
-  it("accounts for exactly thirteen leaves, ten fills, the deck and video gaps and the retired document, and regenerates committed bytes", () => {
+  // CP1-VIDEO1: frames.video is the thirteenth leaf and the Designer VideoFrame export fills it (fills 10 -> 11).
+  it("accounts for exactly thirteen leaves, eleven fills, the deck gap and the retired document, and regenerates committed bytes", () => {
     const files = generatedFoundryFrameFiles({ exports });
     if (process.env.UPDATE_FOUNDRY_FRAME_FILLS === "1") for (const [name, bytes] of Object.entries(files)) writeFileSync(resolve(directory, name), bytes);
     expect(readdirSync(directory).filter(name => /^frames\..*\.json$/.test(name)).sort()).toEqual(Object.keys(files).sort());
     for (const [name, bytes] of Object.entries(files)) expect(readFileSync(resolve(directory, name), "utf8"), name).toBe(bytes);
     expect(result().coverage.map(row => row.slot)).toEqual(slots.map(slot => slot.id).sort());
     expect(result().coverage).toHaveLength(13);
-    expect(result().coverage.filter(row => row.status === "unavailable").map(row => row.slot)).toEqual(["frames.deck", "frames.document", "frames.video"]);
-    expect(result().fills).toHaveLength(10);
+    expect(result().coverage.filter(row => row.status === "unavailable").map(row => row.slot)).toEqual(["frames.deck", "frames.document"]);
+    expect(result().fills).toHaveLength(11);
     expect(generatedFoundryFrameFiles({ slots: [...slots].reverse() as unknown as readonly FrameSlot[], exports })).toEqual(files);
   });
   it("pins independently available public exports at actual manifest versions", () => {

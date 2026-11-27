@@ -1646,6 +1646,7 @@
       },
       "composes": [
         "components.button",
+        "components.semantic-content",
         "components.slider"
       ],
       "copy": {

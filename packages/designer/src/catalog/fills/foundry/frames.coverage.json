@@ -238,29 +238,20 @@
       ]
     },
     {
-      "missing": [
-        "aspect.16-9",
-        "start.paused"
-      ],
-      "missingRequiredSlots": [
-        "controls",
-        "stage"
-      ],
-      "missingSlots": [
-        "controls",
-        "stage"
-      ],
-      "missingStatePorts": [
-        "playing",
-        "scene"
-      ],
+      "missing": [],
+      "missingRequiredSlots": [],
+      "missingSlots": [],
+      "missingStatePorts": [],
       "notes": [
-        "No package implementation is available.",
+        "VideoFrame is a 16:9 main stage showing one scene section and a named controls region of the stock Button (play/pause) and Slider (scene scrubber) with the scene count. The 16:9 aspect is fixed and it always starts paused; playing and scene are host-ownable state.",
         "Descriptor only; anatomy, source, accessibility, contrast, layout and rendered conformance are unmeasured."
       ],
       "slot": "frames.video",
-      "status": "unavailable",
-      "supported": []
+      "status": "candidate",
+      "supported": [
+        "aspect.16-9",
+        "start.paused"
+      ]
     }
   ],
   "source": "foundry"
