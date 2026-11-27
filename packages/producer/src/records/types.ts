@@ -521,7 +521,7 @@ export interface StatusView {
   workspace: string;
   stateSha256?: Sha256;                   // system.md 14.9
   agents: Record<AgentId, AgentCensus>;
-  queue: { id: string; queue: QueueName | "queue.slot" | "queue.change"; decider: QueueEntry["decider"]; subject: string; ask: string; default: string | null; raisedAt: Iso }[];
+  queue: { id: string; queue: QueueName | "queue.slot" | "queue.change" | "queue.report"; decider: QueueEntry["decider"]; subject: string; ask: string; default: string | null; raisedAt: Iso }[];
   ledger: { id: string; loop: string; status: LedgerEntry["status"]; outcome: string; at: Iso }[];
   releases: { publication: string; pinned: CandidateName | null; stale: boolean; reason?: string }[];
 }

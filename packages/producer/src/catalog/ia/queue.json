@@ -47,6 +47,13 @@
           ]
         },
         {
+          "id": "problems-reports",
+          "label": "Reports",
+          "leaves": [
+            "queue.report"
+          ]
+        },
+        {
           "id": "problems-requests",
           "label": "Requests",
           "leaves": [

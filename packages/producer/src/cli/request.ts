@@ -11,11 +11,14 @@
  * An entry the owner answers carries options (U7 r4): `<id> --answer <option>` records the chosen id only and Producer
  * runs that option's step (records/request.ts answerRequest); free text never closes or decides anything.
  * CP1-L3: `<id> --receipt` writes the entry's lap metrics, `clossys.lap/1` (read/lap.ts).
+ * CP1-REPORT: `--kind report --about <verb|skill|agent>/<name> --what bug|gap|ask` files tool feedback Producer owns
+ * (records/report.ts); `--kind report --recheck` is loop.audit's step that takes reports back; `--list` shows ageHours.
  */
 import { join, relative, resolve, sep } from "node:path";
 import { readFileSync } from "node:fs";
 import { runStep } from "../pipeline/runner.js";
 import { writeLapReceipt } from "../read/lap.js";
+import { ageHours, closeReport, evidenceOf, fileReport, listReports, readReport, recheckReports, REPORT_QUEUE, type CheckRunner, type ReportEntry } from "../records/report.js";
 import {
   answerRequest, checkRequest, closeRequest, closeWork, decideRequest, isContentAgent, listWorkEntries, outcomesFor, raiseRequest, raiseWork, readRequest, REQUEST_SEATS, RequestError, slotlessNeeds, targetOf, type SlotRequest,
 } from "../records/request.js";
@@ -25,10 +28,13 @@ import { discoverRoot } from "./root.js";
 
 export const REQUEST_USAGE = "Usage: clossys request --target <agent>/<slot> --from <agent>/<slot>|owner --why <text> [--rel input|uses] [--by <seat>] [--at <iso>] [--root <dir>]\n"
   + "       clossys request --kind change|fix --subject <agent>/<slot> --from <agent>/<slot>|owner --why <text> [--want repin|candidate|contract] [--check <id> --findings <a;b> --cause <text>] [--by <seat>] [--at <iso>] [--root <dir>]\n"
-  + "       clossys request --list [--open] [--agent <id>] [--json] [--root <dir>]\n"
+  + "       clossys request --kind report --about <verb|skill|agent>/<name> --what bug|gap|ask --why <text> [--evidence <path in repo>|\"clossys check ...\"] [--from <agent>/<slot>|owner] [--by <seat>] [--at <iso>] [--root <dir>]\n"
+  + "       clossys request --kind report --recheck [--at <iso>] [--root <dir>]\n"
+  + "       clossys request --list [--open] [--kind slot|change|fix|report] [--agent <id>] [--json] [--root <dir>]\n"
   + "       clossys request --scan [--dry] [--at <iso>] [--root <dir>]\n"
   + "       clossys request <id> --check | --decide reuse --slot <agent>/<slot> | --decide create --propose <slot> --under <l1>/<l2> [--kind <kind>] --inputs <ref,...> --contract <file> [--overlap-reason <text>] | --close [--approved queue.approve#<id>] [--owner-ref <ref>]\n"
   + "       clossys request <id> --close --outcome changed|declined (change) | fixed|declined (fix) --result <agent>/<slot>|<queue>#<id> --by <assignee> [--at <iso>] [--root <dir>]\n"
+  + "       clossys request <id> --close --outcome fixed|declined --result foundry@<version-or-sha>|queue.report#<id> --by owner|producer [--at <iso>] [--root <dir>] (a report)\n"
   + "       clossys request <id> --answer <option> --via cli|chat|app --quote <owner's words, verbatim> [--note <text>] [--at <iso>] [--root <dir>]\n"
   + "       clossys request <id> --receipt [--changed-since <text>] [--root <dir>]\n"
   + "  --by is the seat acting (director, designer, writer, publisher, owner, planner, producer); a raise defaults to the\n"
@@ -52,10 +58,19 @@ export const REQUEST_USAGE = "Usage: clossys request --target <agent>/<slot> --f
   + "  a pass closes it and notifies --from.\n"
   + "  --receipt writes the entry's lap metrics (clossys.lap/1) to clossys/.state/laps/<id>.json from the entry, the engine\n"
   + "  log, the queues and git; it reads records only, and a value no record holds is \"unknown\". --changed-since names the\n"
-  + "  change the lap tests (free text).";
+  + "  change the lap tests (free text).\n"
+  + "  --kind report is tool feedback: a clossys verb refused with no next step, a step has no verb, or the tool should do\n"
+  + "  more (--what bug, gap or ask; --about the verb, skill or agent). It is a queue entry at\n"
+  + "  clossys/agents/producer/queue.report/entries/<id>.json, routed upstream and assigned to producer, one open per\n"
+  + "  --about and --what (a second filing returns the open one). --evidence is a file in the repository (its sha256 is\n"
+  + "  kept) or a clossys check command, run now: it must fail, and its exit code and output are kept. A fixed close\n"
+  + "  re-runs that check: a fail records rejected and the report stays open. A declined duplicate names the report it\n"
+  + "  merges into (--result queue.report#<id>). --recheck (loop.audit's reports step, after a reinstall) re-runs each\n"
+  + "  open report's check and closes the passing ones fixed as foundry@<installed version>. --from defaults to owner.\n"
+  + "  --list --json gives every entry its ageHours (hours since it was raised), so a stale queue shows.";
 
-const VALUED = new Set(["--target", "--from", "--why", "--rel", "--at", "--root", "--decide", "--slot", "--propose", "--under", "--kind", "--contract", "--owner-ref", "--approved", "--by", "--inputs", "--overlap-reason", "--subject", "--want", "--check", "--findings", "--cause", "--agent", "--outcome", "--result", "--answer", "--note", "--via", "--quote", "--changed-since"]);
-const BARE = new Set(["--list", "--open", "--scan", "--dry", "--close", "--receipt"]);
+const VALUED = new Set(["--target", "--from", "--why", "--rel", "--at", "--root", "--decide", "--slot", "--propose", "--under", "--kind", "--contract", "--owner-ref", "--approved", "--by", "--inputs", "--overlap-reason", "--subject", "--want", "--check", "--findings", "--cause", "--agent", "--outcome", "--result", "--answer", "--note", "--via", "--quote", "--changed-since", "--about", "--what", "--evidence"]);
+const BARE = new Set(["--list", "--open", "--scan", "--dry", "--close", "--receipt", "--recheck"]);
 
 interface Flags { positional: string[]; values: Map<string, string>; bare: Set<string> }
 function parse(argv: readonly string[]): Flags | "help" {
@@ -84,6 +99,11 @@ const atOf = (flags: Flags): string => {
 };
 const refuse = (message: string): CliResult => ({ exitCode: 1, message: `request refused: ${message}` });
 const summary = (request: SlotRequest) => `${request.id} ${request.status} ${request.from} -> ${request.target}${request.decision ? ` (${request.decision}${request.link ? ` ${request.link}` : ""})` : ""}`;
+const reportLine = (report: ReportEntry) => `${report.id} ${report.status} ${report.from} -> producer (report ${report.what} ${report.about})`;
+/** A report's check, run in process in the consumer root (the verb's own exit and message; a throw is exit 2). */
+const runCheck: CheckRunner = async (argv, root) => {
+  try { const result = await runStep([...argv, "--root", root], root); return { exitCode: result.exitCode, message: result.message }; } catch (error) { return { exitCode: 2, message: error instanceof Error ? error.message : String(error) }; }
+};
 /** The owner's options of an entry, one line each (`--answer <id>`: label, then the step it runs). */
 const optionLines = (request: SlotRequest): string[] => (request.options ?? []).map(option => `  --answer ${option.id}: ${option.label} (${option.then.verb}${option.then.args.length ? ` ${option.then.args.join(" ")}` : ""})`);
 
@@ -98,19 +118,43 @@ export async function runRequestCli(argv: readonly string[], cwd: string): Promi
   let by = given ?? "producer";
   try {
     if (flags.bare.has("--list")) {
-      const read = listWorkEntries(consumer);
+      const listKind = flags.values.get("--kind");
+      if (listKind !== undefined && !["slot", "change", "fix", "report"].includes(listKind)) throw new CliUsageError(`--list --kind must be slot, change, fix or report\n${REQUEST_USAGE}`);
+      const read = [...listWorkEntries(consumer).map(item => ({ ...item, entry: item.request as SlotRequest | ReportEntry | undefined })), ...listReports(consumer).map(item => ({ ...item, entry: item.report }))];
       const agent = flags.values.get("--agent");
-      const shown = read.filter(item => (!flags.bare.has("--open") || item.request?.status === "open")
-        && (agent === undefined || !item.request || item.request.assignee === agent || item.request.from.split("/")[0] === agent));
+      const shown = read.filter(item => (!flags.bare.has("--open") || item.entry?.status === "open")
+        && (listKind === undefined || item.entry?.kind === listKind)
+        && (agent === undefined || !item.entry || item.entry.assignee === agent || item.entry.from.split("/")[0] === agent));
       const bad = read.filter(item => item.issues.length);
+      const now = atOf(flags);
       return {
-        exitCode: bad.length ? 1 : 0, root, output: { requests: shown.map(item => item.request ?? { file: item.file, issues: item.issues }) },
-        message: [`request --list: ${shown.length} request${shown.length === 1 ? "" : "s"}${bad.length ? `, ${bad.length} invalid` : ""}`, ...shown.map(item => `  ${item.request ? summary(item.request) : `${item.file}: ${item.issues.join("; ")}`}`)].join("\n"),
+        exitCode: bad.length ? 1 : 0, root, output: { requests: shown.map(item => item.entry ? { ...item.entry, ageHours: ageHours(item.entry.createdAt, now) } : { file: item.file, issues: item.issues }) },
+        message: [`request --list: ${shown.length} request${shown.length === 1 ? "" : "s"}${bad.length ? `, ${bad.length} invalid` : ""}`, ...shown.map(item => `  ${item.entry ? `${item.entry.kind === "report" ? reportLine(item.entry as ReportEntry) : summary(item.entry as SlotRequest)} (${ageHours(item.entry.createdAt, now)}h)` : `${item.file}: ${item.issues.join("; ")}`}`)].join("\n"),
       };
     }
     if (flags.bare.has("--scan")) return scan(consumer, root, atOf(flags), by, flags.bare.has("--dry"));
     const [id, ...extra] = flags.positional;
     const kind = flags.values.get("--kind");
+    if (flags.bare.has("--recheck")) {
+      if (kind !== "report" || id !== undefined) throw new CliUsageError(`--recheck takes --kind report and no <id>\n${REQUEST_USAGE}`);
+      const done = await recheckReports(consumer, atOf(flags), runCheck);
+      return {
+        exitCode: done.invalid.length ? 1 : 0, root, output: done,
+        message: [`request --kind report --recheck: ${done.closed.length} closed fixed, ${done.open.length} still failing, ${done.unchecked.length} with no check`, ...done.closed.map(each => `  closed ${REPORT_QUEUE}#${each}`), ...done.invalid.map(each => `  invalid: ${each}`)].join("\n"),
+      };
+    }
+    if (id === undefined && kind === "report") {
+      const about = flags.values.get("--about"), what = flags.values.get("--what"), why = flags.values.get("--why");
+      if (!about || !what || !why) throw new CliUsageError(`a report takes --about, --what and --why\n${REQUEST_USAGE}`);
+      const from = flags.values.get("--from") ?? "owner";
+      const head = from.split("/")[0]!;
+      if (given === undefined) by = from === "owner" ? "owner" : (REQUEST_SEATS as readonly string[]).includes(head) ? head : by;
+      const value = flags.values.get("--evidence");
+      const evidence = value !== undefined ? await evidenceOf(root, value, runCheck) : undefined;
+      const filed = fileReport(consumer, { about, what, why, from, by, at: atOf(flags), source: "cli", ...(evidence ? { evidence } : {}) }, { dry: flags.bare.has("--dry") });
+      return { exitCode: 0, root, output: filed.report, message: `request: ${filed.created ? "filed" : "already open"} ${reportLine(filed.report)} (route ${filed.report.route.row} -> ${filed.report.route.assignee})` };
+    }
+    if (["--about", "--what", "--evidence"].some(flag => flags.values.has(flag))) throw new CliUsageError(`--about, --what and --evidence go with --kind report\n${REQUEST_USAGE}`);
     if (id === undefined && flags.values.has("--subject")) {
       if (kind !== "change" && kind !== "fix") throw new CliUsageError(`--subject takes --kind change or fix\n${REQUEST_USAGE}`);
       const subject = flags.values.get("--subject")!, from = flags.values.get("--from"), why = flags.values.get("--why");
@@ -141,6 +185,14 @@ export async function runRequestCli(argv: readonly string[], cwd: string): Promi
       return { exitCode: 0, root, output: raised.request, message: [`request: ${raised.created ? "raised" : "already open"} ${summary(raised.request)}`, ...optionLines(raised.request)].join("\n") };
     }
     if (extra.length) throw new CliUsageError(`request takes one <id>\n${REQUEST_USAGE}`);
+    const report = readReport(consumer, id);
+    if (report) {
+      if (!flags.bare.has("--close")) return { exitCode: 0, root, output: report, message: `request ${reportLine(report)}` };
+      const outcome = flags.values.get("--outcome"), result = flags.values.get("--result");
+      if (!outcome || !result || given === undefined) throw new CliUsageError(`a report closes with --outcome fixed|declined, --result foundry@<version-or-sha>|queue.report#<id> and --by owner|producer\n${REQUEST_USAGE}`);
+      const closed = await closeReport(consumer, id, { outcome, result, by: given, at: atOf(flags) }, runCheck);
+      return { exitCode: 0, root, output: closed, message: `request ${id}: closed ${closed.outcome} (${closed.result})${closed.events.at(-2)?.op === "verified" ? ", its check passed" : ""}; notified ${closed.from}` };
+    }
     if (flags.bare.has("--receipt")) {
       const changedSince = flags.values.get("--changed-since");
       const { receipt, file } = writeLapReceipt(root, id, changedSince !== undefined ? { changedSince } : {});
