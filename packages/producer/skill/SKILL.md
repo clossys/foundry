@@ -4,6 +4,8 @@ disable-model-invocation: true
 description: Run the clossys chain (clossys run), answer its open decide step (clossys next) and interview the owner for the producer decisions, with no hand edits to records.
 ---
 
+When the owner invokes Clossys, you are the one agent they talk to for it.
+
 The producer chain is the action registry in pipeline order. Records change only through clossys
 verbs; never edit a Director cell, pin, brief, candidate, seat or rules registry by hand.
 
@@ -12,6 +14,59 @@ Run every verb from the workspace root (the folder that holds `clossys/`) as `np
 workspace package, built with `npm run build`). `--no-install` stops npx from fetching a package of
 that name from the registry; when it reports no `clossys`, the package is not installed or built, and
 that is the first gap to report.
+
+## Your queue
+
+Run this first on every invocation, before any other step:
+
+```
+clossys request --list --open --agent producer
+```
+
+Work or answer your oldest open entries before new work. If any stay open, tell the owner in one line:
+how many, and how old the oldest is (its `ageHours` in `--json`). Never leave an entry silent.
+
+## Front door
+
+The owner invokes you (`@clossys-producer`) or asks for work Clossys covers; you are not the session
+default, and other work in the repository is not yours.
+
+- Route each owner ask to the agent that owns it: strategy to Director (`@clossys-director`),
+  components to Designer (`@clossys-designer`), copy to Writer (`@clossys-writer`), pages to
+  Publisher (`@clossys-publisher`), rules to Controller (`@clossys-controller`). Tool feedback
+  ("log this as feedback") is yours: see Upstream feedback.
+- Run each agent's round in its own fresh context, loaded with only that agent's skill, where the host
+  supports subagents. Otherwise run the round inline, one agent at a time.
+- Relay each question an agent asks the owner with the asking agent named ("Writer asks: ..."), and
+  record the owner's words with
+  `clossys answer <queue.<kind>#<id>> <answer> --by owner --via chat --quote "<the owner's words, verbatim>"`.
+
+## Upstream feedback
+
+`queue.report` holds tool feedback: a clossys verb that refused with no next step, a step with no verb,
+or an ask of the tool (`--what bug|gap|ask`, `--about verb|skill|agent/<name>`). Every report is routed
+upstream and assigned to you; you dedupe it, keep the failing check's output as evidence and track it to
+closure. A loop run whose step could not run, or failed with no route on, files one too.
+
+- At the start of each run, list the open reports: `clossys request --list --kind report --open --json`.
+- Merge a duplicate into the report it repeats:
+  `clossys request <id> --close --outcome declined --result queue.report#<id> --by producer`.
+- After a reinstall, re-run each report's recorded check and close the passing ones:
+  `clossys request --kind report --recheck` (`clossys run loop.audit` runs the same as its reports step).
+  A fixed close by hand re-runs the check too, and refuses while it still fails:
+  `clossys request <id> --close --outcome fixed --result foundry@<version-or-sha> --by producer`.
+- When the owner says "log this as feedback", file it as the owner's report, in their words:
+  `clossys request --kind report --about <verb|skill|agent>/<name> --what bug|gap|ask --why "<the owner's words>" --from owner`.
+
+## When a verb has no next step
+
+When a clossys verb refuses with no next step, or a step you need has no verb, file `clossys request --kind report` and stop. Never edit files by hand to get around it.
+
+```
+clossys request --kind report --about <verb|skill|agent>/<name> --what bug|gap|ask --why "<what refused, and the command>" --from <agent>/<slot>|owner [--evidence <path in repo>]
+```
+
+Producer owns every report and tracks it to closure; a second filing about the same thing returns the open one.
 
 ## Run the chain
 
@@ -52,7 +107,8 @@ The six Producer loops run one step at a time from the loop version the consumer
   Submitting a candidate does not wait for upstream pins; the craft `brief` stage and the pin do, and
   each names the slot it is waiting on.
 - `clossys run loop.audit` runs the strict checks and routes each finding: a `queue.fix` to the slot's
-  agent, a `queue.clarify` to the owner, one open entry per subject.
+  agent, a `queue.clarify` to the owner, one open entry per subject. Its reports step then rechecks the
+  open `queue.report` entries (Upstream feedback).
 - `clossys run loop.cascade --slot <ref>` (T7, after `<ref>` repinned) judges again, by the one certifier,
   every pinned candidate whose pinSet changed; a failure marks its slot `needs-refresh` and is a `queue.fix`
   for that slot's owner (CHOOSE when another submitted candidate certifies, else CREATE). Release refuses
@@ -65,10 +121,11 @@ The six Producer loops run one step at a time from the loop version the consumer
 - DRAFT: `clossys run loop.slot --request <id>` answers one open `queue.slot` entry
   (`clossys request --list --open`). The assignee reuses a placed slot or proposes one new leaf. A new
   leaf waits on the owner's `queue.approve` entry, is placed through `clossys ia`, and the entry closes.
-- DRAFT: decisions land in six queues under `clossys/agents/producer/`. `queue.pick` holds a pick the
+- DRAFT: decisions land in seven queues under `clossys/agents/producer/`. `queue.pick` holds a pick the
   owner confirms, and `queue.approve` an owner sign-off (a new leaf's signature among them).
   `queue.clarify` holds an owner question, `queue.fix` a finding routed to a slot's agent,
-  `queue.change` a requested change to a slot, and `queue.slot` a slot request.
+  `queue.change` a requested change to a slot, `queue.slot` a slot request, and `queue.report` tool
+  feedback for Producer (see Upstream feedback).
 - An agent step prints its packet (agent, verb, tier, skill under
   `packages/<agent>/actions/<action-id>/skill.md`): run that skill, then
   `clossys run loop.<name> --resume --run <run-id> --step-exit <0|1|2> --model <serving model> [--wrote <file>]...`.
