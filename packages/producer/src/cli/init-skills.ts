@@ -4,7 +4,7 @@
  * folder is copied (never linked) to `.claude/skills/clossys-<role>/` and `.agents/skills/clossys-<role>/`. A file is
  * written only when its bytes differ, so a second init on an unchanged install changes nothing and a changed package
  * overwrites its copy; a file the package does not ship is never touched. `CLAUDE.md` gets the `@AGENTS.md` line once.
- * `AGENTS.md` gets the managed entry block (views/entry-block.ts): the covered scope generated from the installed agents
+ * `AGENTS.md` gets the managed entry block (views/entry-block.ts, `placeEntry`, which init runs last): the covered scope generated from the installed agents
  * and the workspace records, when to use the `clossys-producer` skill (on invocation or a covered ask only), and that
  * records change only through `clossys` verbs. Only the text between its markers is managed.
  * `skillFindings` is the check init runs after placing: a role with a package skill and no discoverable copy fails.
@@ -21,10 +21,11 @@ export interface InitSkills {
   /** Workspace-relative files written by this run (absent or different bytes before). */
   readonly written: readonly string[];
   readonly claude: "added" | "present";
-  /** The AGENTS.md entry block: added, updated between its markers, present (same bytes), or refused (unpaired markers, in issues). */
-  readonly entry: EntryBlockResult["outcome"] | "refused";
   readonly issues: readonly string[];
 }
+
+/** The AGENTS.md entry block: added, updated between its markers, present (same bytes), none, or refused (unpaired markers). */
+export type InitEntry = EntryBlockResult["outcome"] | "refused";
 
 /** The installed `@clossys/<role>` packages at `root` that ship `skill/SKILL.md`, by role, sorted. */
 export function skillRoles(root: string): { role: string; skill: string }[] {
@@ -42,7 +43,7 @@ const filesOf = (dir: string): string[] => readdirSync(dir).sort().flatMap(name 
 
 const target = (root: string, home: string, role: string) => join(root, home, `clossys-${role}`);
 
-/** Copies each role's skill folder into both skill homes, then ensures CLAUDE.md imports AGENTS.md, then checks. */
+/** Copies each role's skill folder into both skill homes, then ensures CLAUDE.md imports AGENTS.md, then checks (the entry block is placeEntry's). */
 export function placeSkills(root: string): InitSkills {
   const roles = skillRoles(root);
   const written: string[] = [];
@@ -60,10 +61,16 @@ export function placeSkills(root: string): InitSkills {
   }
   const claude = ensureClaudeImport(root);
   const issues = skillFindings(root);
-  let entry: InitSkills["entry"];
-  try { entry = ensureEntryBlock(root).outcome; }
-  catch (error) { entry = "refused"; issues.push(`entry: ${error instanceof Error ? error.message : String(error)}`); }
-  return { roles: roles.map(item => item.role), written, claude, entry, issues };
+  return { roles: roles.map(item => item.role), written, claude, issues };
+}
+
+/**
+ * Writes the AGENTS.md entry block (views/entry-block.ts). `clossys init` runs it once, last, after the IA seats and the
+ * loop adoption, so the covered scope it reads is the one init leaves and a re-run on unchanged inputs writes the same bytes.
+ */
+export function placeEntry(root: string): { entry: InitEntry; issues: string[] } {
+  try { return { entry: ensureEntryBlock(root).outcome, issues: [] }; }
+  catch (error) { return { entry: "refused", issues: [`entry: ${error instanceof Error ? error.message : String(error)}`] }; }
 }
 
 /** Writes `CLAUDE.md` as the one line `@AGENTS.md` when missing; adds the line only when an existing file lacks it. */

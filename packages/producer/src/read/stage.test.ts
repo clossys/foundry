@@ -3,7 +3,7 @@
  * exact step a resumed session runs first, with the model tier its subagent uses and that tier's seat-policy model.
  * Run on temp workspaces through the real CLI, so the dry walk is the one `clossys run --dry` takes.
  */
-import { mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
@@ -48,10 +48,13 @@ describe("clossys status: stage and next", { timeout: 300_000 }, () => {
     expect(JSON.stringify({ stage: again.stage, next: again.next })).toBe(JSON.stringify({ stage, next }));
   });
 
-  it("a workspace with Director pinned moves next to Designer or Writer", async () => {
+  it("a workspace whose Director IA init adopted moves next to Designer or Writer", async () => {
     const root = workspace();
     const init = await runInitCli(["--at", "2026-11-25T09:00:00Z"], root);
     expect(init.exitCode).toBe(0);
+    // What moves next: init adopted the Director IA (the step a fresh workspace stops at); it pins no Director slot.
+    expect((init.output as { director?: string }).director).toBe("adopted");
+    expect(existsSync(join(root, "clossys", "agents", "director", "ia.json"))).toBe(true);
     const { stage, next } = await where(root);
     expect(["designer", "writer"]).toContain(next?.agent);
     expect(stage).toBe("fill");

@@ -22,7 +22,7 @@ import { seatAdmin } from "./init-admin.js";
 import { adminPlan, adminUnder } from "./admin-plan.js";
 import { runStep } from "../pipeline/runner.js";
 import { adoptIa } from "./owner.js";
-import { placeSkills } from "./init-skills.js";
+import { type InitEntry, type InitSkills, placeEntry, placeSkills } from "./init-skills.js";
 import { seatStarter, type StarterSeat, starterLines } from "./init-starters.js";
 import { adoptInitLoops } from "./init-loops.js";
 import { INIT_OUTPUTS_USAGE, runInitOutputsCli } from "./init-outputs.js";
@@ -117,26 +117,30 @@ async function initWorkspace(workspace: string, at: string | undefined, cwd: str
   const pointerSaid = pointer.outcome === "added" ? `added the views pointer to ${pointer.file}` : `${pointer.file} already has the views pointer`;
   // The installed packages' agent skills, copied where Claude and Codex discover them (init-skills.ts), then checked.
   const skills = placeSkills(workspace);
-  const said = [`placed ${skills.roles.length} agent skill${skills.roles.length === 1 ? "" : "s"} (${skills.roles.join(", ") || "none installed"}); ${skills.written.length} file${skills.written.length === 1 ? "" : "s"} written${skills.claude === "added" ? "; CLAUDE.md imports @AGENTS.md" : ""}${skills.entry === "added" || skills.entry === "updated" ? `; ${skills.entry} the clossys entry block in AGENTS.md` : ""}`, pointerSaid].join("\n");
+  const sayWith = (entry?: InitEntry): string => [`placed ${skills.roles.length} agent skill${skills.roles.length === 1 ? "" : "s"} (${skills.roles.join(", ") || "none installed"}); ${skills.written.length} file${skills.written.length === 1 ? "" : "s"} written${skills.claude === "added" ? "; CLAUDE.md imports @AGENTS.md" : ""}${entry === "added" || entry === "updated" ? `; ${entry} the clossys entry block in AGENTS.md` : ""}`, pointerSaid].join("\n");
+  const said = sayWith();
   if (skills.issues.length) return { exitCode: 1, root: workspace, output: { ...pointer, skills }, message: (refused === "init refused" ? [said, ...skills.issues.map(issue => `${refused}: ${issue}`)] : [...skills.issues.map(issue => `${refused}: ${issue}`), said]).join("\n") };
   // The slot model follows no symbolic link (records/slots.ts), so the seat runs on the workspace's real path (a tmp
   // or home folder reached through a link still seats).
   // Plain mode keeps said-then-reason; the outputs mode leads with its own refusal (one refusal form per mode).
   const refusal = (reasons: readonly string[]): string => (refused === "init refused" ? [said, ...reasons] : [...reasons, said]).join("\n");
-  if (!seatPack) return suggestOnly(workspace, at, cwd, refused, { pointer, skills, said, refusal });
+  if (!seatPack) return suggestOnly(workspace, at, cwd, refused, { pointer, skills, sayWith, refusal });
   const { result, seat } = await seatAdmin(realpathSync(workspace), at ?? new Date().toISOString());
   if (result) return { ...result, output: { ...pointer, skills, admin: seat }, message: refusal([result.message.replace(/^init refused: /, `${refused}: `)]) };
   const director = adoptDirector(realpathSync(workspace));
   if (director && director.exitCode !== 0) return { ...director, root: workspace, output: { ...pointer, skills, admin: seat }, message: refusal([`${refused}: director ${director.message ?? ""}`]) };
   const loops = await adoptInitLoops(realpathSync(workspace), at ?? new Date().toISOString(), cwd);
   if (loops.issues.length) return { exitCode: 1, root: workspace, output: { ...pointer, skills, admin: seat, loops }, message: refusal(loops.issues.map(issue => `${refused}: loops ${issue}`)) };
+  // The entry block last: its covered scope reads the IA this init seated (a re-run writes the same bytes).
+  const placed = placeEntry(workspace);
+  if (placed.issues.length) return { exitCode: 1, root: workspace, output: { ...pointer, skills: entered(skills, placed), admin: seat, loops }, message: refusal(placed.issues.map(issue => `${refused}: ${issue}`)) };
   const raised = seat.requests.filter(item => item.created);
   const admin = seat.placed.length
     ? `seated the admin workspace: ${seat.placed.length} Publisher slot${seat.placed.length === 1 ? "" : "s"} placed${seat.started ? " in a new Publisher IA" : ""}`
     : "the admin workspace is already seated";
   return {
-    exitCode: 0, root: workspace, output: { ...pointer, skills, admin: seat, director: director ? "adopted" : "present", loops },
-    message: [admin, ...(seat.rewired.length ? [`rewired ${seat.rewired.length} admin slot${seat.rewired.length === 1 ? "" : "s"} to the units the workspace now holds: ${seat.rewired.join(", ")}`] : []), ...(raised.length ? [`raised ${raised.length} Designer slot request${raised.length === 1 ? "" : "s"} for admin units no workspace slot holds: ${raised.map(item => item.target).join(", ")}`] : []), ...(seat.seeded.length || seat.waiting.length ? [`seeded ${seat.seeded.length} admin record${seat.seeded.length === 1 ? "" : "s"}; pinned ${seat.pinned.length}${seat.waiting.length ? `; ${seat.waiting.length} wait (upstream pins, or citations that are not the declared inputs and uses): ${seat.waiting.map(item => item.slot).join(", ")}` : ""}`] : []), ...(director ? [director.message ?? "adopted the Director IA"] : []), ...(loops.pinned.length ? [`adopted and pinned ${loops.pinned.length} agent loop${loops.pinned.length === 1 ? "" : "s"} (${loops.agents.join(", ")})`] : []), said].join("\n"),
+    exitCode: 0, root: workspace, output: { ...pointer, skills: entered(skills, placed), admin: seat, director: director ? "adopted" : "present", loops },
+    message: [admin, ...(seat.rewired.length ? [`rewired ${seat.rewired.length} admin slot${seat.rewired.length === 1 ? "" : "s"} to the units the workspace now holds: ${seat.rewired.join(", ")}`] : []), ...(raised.length ? [`raised ${raised.length} Designer slot request${raised.length === 1 ? "" : "s"} for admin units no workspace slot holds: ${raised.map(item => item.target).join(", ")}`] : []), ...(seat.seeded.length || seat.waiting.length ? [`seeded ${seat.seeded.length} admin record${seat.seeded.length === 1 ? "" : "s"}; pinned ${seat.pinned.length}${seat.waiting.length ? `; ${seat.waiting.length} wait (upstream pins, or citations that are not the declared inputs and uses): ${seat.waiting.map(item => item.slot).join(", ")}` : ""}`] : []), ...(director ? [director.message ?? "adopted the Director IA"] : []), ...(loops.pinned.length ? [`adopted and pinned ${loops.pinned.length} agent loop${loops.pinned.length === 1 ? "" : "s"} (${loops.agents.join(", ")})`] : []), sayWith(placed.entry)].join("\n"),
   };
 }
 
@@ -145,8 +149,8 @@ async function initWorkspace(workspace: string, at: string | undefined, cwd: str
  * no admin page, publication or release is placed, seeded, pinned, rewired or requested. The starter is printed as a
  * suggestion: the `clossys ia publisher/...` calls that would place it, or `--starters admin` to seat it whole.
  */
-async function suggestOnly(workspace: string, at: string | undefined, cwd: string, refused: string, done: { pointer: ReturnType<typeof ensureAgentsPointer>; skills: ReturnType<typeof placeSkills>; said: string; refusal: (reasons: readonly string[]) => string }): Promise<CliResult> {
-  const { pointer, skills, said, refusal } = done;
+async function suggestOnly(workspace: string, at: string | undefined, cwd: string, refused: string, done: { pointer: ReturnType<typeof ensureAgentsPointer>; skills: InitSkills; sayWith: (entry?: InitEntry) => string; refusal: (reasons: readonly string[]) => string }): Promise<CliResult> {
+  const { pointer, skills, sayWith, refusal } = done;
   const real = realpathSync(workspace);
   const suggested = adminSuggestion(real);
   const admin = { seated: false, suggested };
@@ -165,17 +169,23 @@ async function suggestOnly(workspace: string, at: string | undefined, cwd: strin
     return { exitCode: 1, root: workspace, output: { ...pointer, skills, admin }, message: refusal([`${refused}: ${error instanceof Error ? error.message : String(error)}`]) };
   }
   if (loops.issues.length) return { exitCode: 1, root: workspace, output: { ...pointer, skills, admin, loops }, message: refusal(loops.issues.map(issue => `${refused}: loops ${issue}`)) };
+  // The entry block last: its covered scope reads the IA this init started (a re-run writes the same bytes).
+  const placed = placeEntry(workspace);
+  if (placed.issues.length) return { exitCode: 1, root: workspace, output: { ...pointer, skills: entered(skills, placed), admin, loops }, message: refusal(placed.issues.map(issue => `${refused}: ${issue}`)) };
   return {
-    exitCode: 0, root: workspace, output: { ...pointer, skills, admin, director: director ? "adopted" : "present", loops },
+    exitCode: 0, root: workspace, output: { ...pointer, skills: entered(skills, placed), admin, director: director ? "adopted" : "present", loops },
     message: [
       "seated no admin page, publication or release: the consumer owns its pages. Suggested admin starter (clossys init --starters admin seats it whole):",
       ...suggested.map(call => `  ${call}`),
       ...(director ? [director.message ?? "adopted the Director IA"] : []),
       ...(loops.pinned.length ? [`adopted and pinned ${loops.pinned.length} agent loop${loops.pinned.length === 1 ? "" : "s"} (${loops.agents.join(", ")})`] : []),
-      said,
+      sayWith(placed.entry),
     ].join("\n"),
   };
 }
+
+/** The skills output with the entry block outcome and any entry refusal folded in, as init reports it. */
+const entered = (skills: InitSkills, placed: ReturnType<typeof placeEntry>) => ({ ...skills, entry: placed.entry, issues: [...skills.issues, ...placed.issues] });
 
 /**
  * The `clossys ia publisher/...` calls that would place the admin starter (the installed Publisher package's plan), one
