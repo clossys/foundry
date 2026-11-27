@@ -15,7 +15,7 @@ import { join, resolve } from "node:path";
 import { parseReleaseScope, releaseScopeParams, type ReleaseScope } from "../constitution/criteria/director/st-d/release.js";
 import { candidateDocument, readPinned } from "../records/pinned.js";
 import { producerVersion } from "../loop/route.js";
-import { raiseWork, RequestError, type SlotRequest } from "../records/request.js";
+import { appendRaise, raiseWork, RequestError, type SlotRequest } from "../records/request.js";
 import { iaPath } from "../records/slot-model/layout.js";
 import { listSlots, modelExists, readSlot } from "../records/slots.js";
 import { SLOT_AGENTS } from "../records/slot-model/types.js";
@@ -37,7 +37,8 @@ export const PLAN_USAGE = "Usage: clossys plan [--dry] [--at <iso>] [--root <dir
   + "  kind no row names gets nothing.\n"
   + "  The proposal is filed as one owner request on the release (clossys request --list shows it); nothing else is\n"
   + "  written. The owner approves it, then the Publisher runs its ia lines (writing each listed contract to the file\n"
-  + "  its line names first). --dry prints the proposal and files nothing.\n"
+  + "  its line names first). --dry prints the proposal and files nothing. A re-plan while that request is open\n"
+  + "  refreshes its proposal (one more raised event, the latest is current) and says filed, updated or unchanged.\n"
   + "  Loop order: Director release, then clossys plan, then the owner approves, then clossys ia.\n"
   + "  Refuses (exit 1) when the release is not pinned, its pin does not clear, or its slot contract states no\n"
   + `  ${CRITERION} requirement: the plan never falls back to a guess.`;
@@ -175,18 +176,44 @@ export async function runPlanCli(argv: readonly string[], cwd: string): Promise<
   const detail = planDetail(plan);
   const placed = plan.placements.length;
   const why = `Approve the content map the ${plan.stage} release asks for: ${placed} Publisher ia line${placed === 1 ? "" : "s"}${plan.unserved.length ? `, ${plan.unserved.length} row or page the menu cannot serve` : ""}.`;
+  const dry = flags.bare.has("--dry");
+  const consumer = join(root, "clossys");
   let request: SlotRequest;
+  let outcome: PlanOutcome;
   try {
-    ({ request } = raiseWork(join(root, "clossys"), {
+    const raised = raiseWork(consumer, {
       kind: "change", target: RELEASE_REF, from: "owner", want: "contract", why, detail, source: "cli", by: "producer", at,
-      createdBy: { actor: "code", cli: "clossys plan", version: producerVersion() },
-    }, { dry: flags.bare.has("--dry") }));
+      createdBy: { actor: "code", cli: PLAN_CLI, version: producerVersion() },
+    }, { dry });
+    request = raised.request;
+    if (raised.created) outcome = "filed";
+    else if (request.createdBy?.actor !== "code" || request.createdBy.cli !== PLAN_CLI) {
+      // The open owner change on the release slot is someone else's: the plan is never merged into it.
+      return { exitCode: 1, root, output: { error: "RequestError", request: request.id }, message: `plan refused: ${request.id} is an open owner change on ${RELEASE_REF} that clossys plan did not file; answer or close it, then plan again` };
+    } else if (currentProposal(request) === detail) outcome = "unchanged";
+    else {
+      // A re-plan (the release was re-pinned, or the IA moved): the fresh proposal is one more raised event on the open
+      // entry, through the record writer, and it replaces every earlier one (proposalOf reads the latest).
+      ({ request } = appendRaise(consumer, request.id, { at, by: "producer", detail: `${REPLANNED(at)}\n${detail}` }, { dry }));
+      outcome = "updated";
+    }
   } catch (error) {
     if (error instanceof RequestError) return { exitCode: 1, root, output: { error: "RequestError" }, message: `plan refused: ${error.message}` };
     throw error;
   }
+  const said = dry ? { filed: "would file", updated: "would update", unchanged: "unchanged" }[outcome] : outcome;
   return {
-    exitCode: 0, root, output: { plan, request: flags.bare.has("--dry") ? undefined : request.id },
-    message: [`plan: ${flags.bare.has("--dry") ? "would file" : "filed"} ${request.id} for the owner (${why})`, detail].join("\n"),
+    exitCode: 0, root, output: { plan, request: dry && outcome === "filed" ? undefined : request.id, outcome },
+    message: [`plan: ${said} ${request.id} for the owner (${outcome === "unchanged" ? "its proposal is already this plan" : why})`, detail].join("\n"),
   };
+}
+
+/** What a plan run did to the owner's request: filed it, refreshed its proposal on the open entry, or found it current. */
+export type PlanOutcome = "filed" | "updated" | "unchanged";
+const PLAN_CLI = "clossys plan";
+const REPLANNED = (at: string) => `Re-planned at ${at}: this proposal replaces every earlier one on this request.`;
+/** The proposal a plan request holds now: its latest raised event's detail, without the re-plan line. */
+export function currentProposal(request: Pick<SlotRequest, "events">): string | undefined {
+  const raised = request.events.filter(event => event.op === "raised").at(-1)?.detail;
+  return raised?.replace(/^Re-planned at \S+: this proposal replaces every earlier one on this request\.\n/, "");
 }

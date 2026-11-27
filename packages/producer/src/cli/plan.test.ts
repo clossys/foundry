@@ -5,7 +5,8 @@ import { join, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { runCli } from "./main.js";
-import { contentPlan, PLAN_USAGE, PlanError, RELEASE_REF, RELEASE_SLOT } from "./plan.js";
+import type { SlotRequest } from "../records/request.js";
+import { contentPlan, currentProposal, PLAN_USAGE, PlanError, planDetail, RELEASE_REF, RELEASE_SLOT } from "./plan.js";
 import { starterPlan } from "./starter-plan.js";
 
 // The plan runs the real ia, request and pinned readers on a scratch copy of the fixture consumer.
@@ -64,17 +65,22 @@ async function world(options: { publisher?: boolean; scope?: string; requirement
     expect(placed.exitCode, placed.message).toBe(0);
     rmSync(file);
   }
-  const name = "release-v1.md";
+  pinRelease(consumer, "release-v1.md", options.scope ?? SCOPE);
+  return { root, consumer };
+}
+
+/** Lays down release candidate `name` stating `scope` and pins it (planner basis), the way the fixture world's pins are. */
+function pinRelease(consumer: string, name: string, scope: string): void {
+  const dir = join(consumer, "agents/director", RELEASE_SLOT);
   const header = { schema: "clossys.candidate/1", id: `${RELEASE_REF}/${name}`, agent: "director", kind: "candidate", status: "submitted", slot: RELEASE_REF,
     createdBy: fixtureAuthor(consumer), createdAt: AT, refs: [],
     source: { kind: "derived", ref: ["director:context.customer.need", "director:focus.reach.channel"] }, rationale: [] };
-  const text = `---\nclossys: ${JSON.stringify(header)}\nslot: "${RELEASE_SLOT}"\nfeeds: []\nfunctions: []\n---\n${body(options.scope ?? SCOPE)}`;
+  const text = `---\nclossys: ${JSON.stringify(header)}\nslot: "${RELEASE_SLOT}"\nfeeds: []\nfunctions: []\n---\n${body(scope)}`;
   mkdirSync(join(dir, "candidates"), { recursive: true });
   writeFileSync(join(dir, "candidates", name), text);
   const pin = { schema: "clossys.pin/2", id: `${RELEASE_REF}/pin`, agent: "director", kind: "pin", status: "confirm", createdBy: { actor: "code", cli: "clossys pin", version: "0.1.0" }, createdAt: AT, updatedAt: AT,
     refs: [{ to: "producer/checks.scorecard", rel: "cites", record: RELEASE_REF, sha256: "0".repeat(64) }], candidate: name, sha256: createHash("sha256").update(text).digest("hex"), decidedBy: "planner:fixture-world", basis: "planner", at: AT };
   writeFileSync(join(dir, "pin.json"), `${JSON.stringify(pin, null, 2)}\n`);
-  return { root, consumer };
 }
 
 describe("clossys plan (CP1-PLAN)", () => {
@@ -152,6 +158,50 @@ describe("clossys plan (CP1-PLAN)", () => {
     // Nothing is placed: the Publisher's slots are byte for byte what they were.
     expect(Object.keys(after).filter(path => path.startsWith("clossys/agents/publisher/") && after[path] !== before[path])).toEqual([]);
     expect(consumer).toBe(join(root, "clossys"));
+  });
+
+  it("re-plan after a re-pin refreshes the open request's proposal", async () => {
+    const { root, consumer } = await world();
+    const entryOf = (id: string) => JSON.parse(readFileSync(join(consumer, "agents/producer/queue.change/entries", `${id}.json`), "utf8")) as SlotRequest;
+    const plan = (at: string, ...more: string[]) => runCli(["plan", "--at", at, "--root", root, ...more], root);
+    const first = await plan(AT);
+    expect(first.exitCode, first.message).toBe(0);
+    const id = (first.output as { request: string }).request;
+    expect(first.message).toMatch(new RegExp(`^plan: filed ${id} `));
+    const v1 = planDetail(contentPlan(root));
+    expect(currentProposal(entryOf(id))).toBe(v1);
+    // The same plan again: nothing to refresh, nothing written, and it says so.
+    const before = bytes(root);
+    const again = await plan("2026-11-26T10:05:00Z");
+    expect(again.message).toMatch(new RegExp(`^plan: unchanged ${id} `));
+    expect(bytes(root)).toEqual(before);
+    // Re-pin a release with a smaller scope: the open request's proposal becomes the new plan, and the run says updated.
+    pinRelease(consumer, "release-v2.md", "site (home, contact): launch site that shows founders the claim export");
+    const v2 = planDetail(contentPlan(root));
+    expect(v2).not.toBe(v1);
+    expect(v2).toContain("(release-v2.md)");
+    expect((await plan("2026-11-26T10:10:00Z", "--dry")).message).toMatch(new RegExp(`^plan: would update ${id} `));
+    expect(currentProposal(entryOf(id))).toBe(v1);
+    const updated = await plan("2026-11-26T10:10:00Z");
+    expect(updated.exitCode, updated.message).toBe(0);
+    expect(updated.message).toMatch(new RegExp(`^plan: updated ${id} `));
+    expect(updated.output).toMatchObject({ request: id, outcome: "updated" });
+    expect(currentProposal(entryOf(id))).toBe(v2);
+    expect(entryOf(id)).toMatchObject({ status: "open", assignee: "owner" });
+    expect((await plan("2026-11-26T10:15:00Z")).message).toMatch(new RegExp(`^plan: unchanged ${id} `));
+    // Back to the first release: an earlier event already holds that proposal, yet the latest is v2, so it refreshes.
+    pinRelease(consumer, "release-v1.md", SCOPE);
+    expect((await plan("2026-11-26T10:20:00Z")).message).toMatch(new RegExp(`^plan: updated ${id} `));
+    expect(currentProposal(entryOf(id))).toBe(v1);
+    // An open owner change on the release that clossys plan did not file never takes the plan.
+    const other = await world();
+    const foreign = await runCli(["request", "--kind", "change", "--subject", RELEASE_REF, "--from", "owner", "--want", "contract", "--why", "tighten the release scope", "--by", "owner", "--at", AT, "--root", other.root], other.root);
+    expect(foreign.exitCode, foreign.message).toBe(0);
+    const held = bytes(other.root);
+    const refused = await runCli(["plan", "--at", "2026-11-26T10:05:00Z", "--root", other.root], other.root);
+    expect(refused.exitCode).toBe(1);
+    expect(refused.message).toMatch(/^plan refused: \S+ is an open owner change on director\/execution\.roadmap\.release that clossys plan did not file/);
+    expect(bytes(other.root)).toEqual(held);
   });
 
   it("refuses with no fallback: no pinned release, or a release contract with no brief.release-scope", async () => {
