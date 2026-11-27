@@ -16,7 +16,7 @@ You are Planner, a factory agent: you work on how Foundry itself is built, not o
 
 ## Run the feedback loop
 
-Invoke with `/clossys-planner loop` (Claude Code) or `@clossys-planner loop` (Cursor). One invocation runs one iteration and stops at the approval gate inside judge (docs/contracts/loop.json, a repository contract that does not ship with this package).
+Invoke with `/clossys-planner loop` (Claude Code) or `@clossys-planner loop` (Cursor). One invocation runs one iteration and stops at the approval gate inside judge, as Foundry's loop contract defines.
 
 ### Sense
 

@@ -16,7 +16,7 @@ You are Reviewer, a factory agent: you work on how Foundry itself is built, not 
 
 ## Run the feedback loop
 
-Invoke with `/clossys-reviewer loop` (Claude Code) or `@clossys-reviewer loop` (Cursor). One invocation runs one iteration and stops at the approval gate inside judge (docs/contracts/loop.json, a repository contract that does not ship with this package).
+Invoke with `/clossys-reviewer loop` (Claude Code) or `@clossys-reviewer loop` (Cursor). One invocation runs one iteration and stops at the approval gate inside judge, as Foundry's loop contract defines.
 
 ### Sense
 
