@@ -165,6 +165,23 @@ describe("kind slot entries (clossys.queue-entry/2)", () => {
     expect(refs).toContainEqual({ to: "writer/narratives.guide", rel: "input" });
     expect(existsSync(join(consumer, "agents", "writer", "narratives.how-to"))).toBe(false);
   });
+
+  it("a reuse of a slot the requester already reads by key keeps the key on the reused ref", () => {
+    const { consumer } = world();
+    const file = join(consumer, "agents", REQUESTER, "slot.json");
+    const doc = JSON.parse(readFileSync(file, "utf8")) as { refs: { to: string; rel: string; key?: string }[]; brief: { inputs?: { to: string; rel: string; key?: string }[] } };
+    const keyed = { to: "writer/narratives.guide", rel: "input", key: "Steps" };
+    doc.refs = [...doc.refs.filter(ref => ref.to !== keyed.to), keyed];
+    doc.brief.inputs = [...(doc.brief.inputs ?? []).filter(ref => ref.to !== keyed.to), keyed];
+    writeFileSync(file, `${JSON.stringify(doc, null, 2)}\n`);
+    const request = raise(consumer, "writer/narratives.how-to");
+    checkRequest(consumer, request.id, { by: "writer", at: AT });
+    decideRequest(consumer, request.id, { decision: "reuse", slot: "writer/narratives.guide", by: "writer", at: AT });
+    closeRequest(consumer, request.id, { by: "producer", at: AT });
+    const after = JSON.parse(readFileSync(file, "utf8")) as typeof doc;
+    expect(after.refs.filter(ref => ref.to === keyed.to)).toEqual([keyed]);
+    expect((after.brief.inputs ?? []).filter(ref => ref.to === keyed.to)).toEqual([keyed]);
+  });
 });
 
 // U5 fix round 1: who may raise for a slot, what a reuse or close may write, the overlap gate, and one raise under a lock.

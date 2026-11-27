@@ -63,6 +63,25 @@
       ]
     },
     {
+      "op": "slot",
+      "at": "2026-11-19T00:00:00Z",
+      "by": "planner",
+      "verb": "ia",
+      "skill": {
+        "path": "packages/producer/actions/ia/skill.md",
+        "sha256": "147a7eaf66267728953e0c8111a9c20b93475f95f8063745d9d1d1087658fe73"
+      },
+      "model": "none",
+      "tier": "none",
+      "kind": "ia",
+      "records": [
+        {
+          "file": "slot.json",
+          "sha256": "da0204f6bb99c58820359fabb3089aaf27f0aee205b859c5d25d024d187e8c4f"
+        }
+      ]
+    },
+    {
       "op": "verdict",
       "at": "2026-11-19T00:00:00Z",
       "by": "agent:designer.verdict",
@@ -149,6 +168,7 @@
           "value": {
             "kind": "asset",
             "valueKind": "glyph",
+            "glyph": "payment",
             "members": {
               "mode": "closed",
               "names": [
@@ -171,7 +191,7 @@
               }
             ]
           },
-          "sha256": "c27a34cdbddf494d906073009cfb808a334a0f4f260862cd5cdf1819553cd94b"
+          "sha256": "bdb32a8b63f803249c7a964ced1a10be5daa5209e24f00594de8aae41ff89623"
         },
         "standard": {
           "id": "asset.glyph",
@@ -412,7 +432,7 @@
       "records": [
         {
           "file": "slot.json",
-          "sha256": "29dd1eb00c272be9810614459d2e92f20c9ab6be208e36f6e07b281c846318db"
+          "sha256": "da0204f6bb99c58820359fabb3089aaf27f0aee205b859c5d25d024d187e8c4f"
         }
       ]
     }

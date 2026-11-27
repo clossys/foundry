@@ -7,8 +7,14 @@ provenance: {"voice":"director:identity.verbal.voice"}
 ---
 ## en
 
-### headings
-<!-- {"id":"headings","bindings":[]} -->
+### byRole
+<!-- {"id":"byRole","bindings":[]} -->
 ```json
-{"id":"headings","context":"headings","kind":"format","format":"sentence-case","value":"headings, labels and actions"}
+{"id":"byRole","context":"byRole","kind":"format","format":"sentence-case","value":"headings, labels and actions"}
+```
+
+### exceptionsFrom
+<!-- {"id":"exceptionsFrom","bindings":[]} -->
+```json
+{"id":"exceptionsFrom","context":"exceptionsFrom","kind":"format","format":"name-casing","value":"director/identity.naming.name#Casing"}
 ```

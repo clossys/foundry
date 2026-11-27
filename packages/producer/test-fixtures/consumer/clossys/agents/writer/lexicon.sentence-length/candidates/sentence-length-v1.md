@@ -7,8 +7,8 @@ provenance: {"voice":"director:identity.verbal.voice"}
 ---
 ## en
 
-### max-words
-<!-- {"id":"max-words","bindings":[]} -->
+### byLocale
+<!-- {"id":"byLocale","bindings":[]} -->
 ```json
-{"id":"max-words","context":"max-words","kind":"voice-rule","rule":"Keep a sentence to twenty words or fewer","value":20}
+{"id":"byLocale","context":"byLocale","kind":"voice-rule","rule":"Keep a sentence to twenty words or fewer","value":{"en":{"maxWords":20}}}
 ```

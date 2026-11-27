@@ -16,7 +16,7 @@
       "to": "producer/checks.scorecard",
       "rel": "cites",
       "record": "designer/frames.site-shell",
-      "sha256": "344c1d2746f43feded4cfce05e522210dfe8cf58c0f014e2484803585669426c"
+      "sha256": "bdfdfca7aa3a6c4c80de559249f12bdb2e56ebcba9dd47a75695d12669763560"
     }
   ],
   "candidate": "site-shell-v1.json",

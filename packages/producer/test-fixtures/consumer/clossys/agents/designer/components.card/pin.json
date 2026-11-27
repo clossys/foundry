@@ -16,7 +16,7 @@
       "to": "producer/checks.scorecard",
       "rel": "cites",
       "record": "designer/components.card",
-      "sha256": "c2eca66fb9544cb507a8a8ea9c6c22308cd8eb32a3d2c881f4e16f8463337649"
+      "sha256": "49222cc58e3435b7ea81637afa0158bc717685613e689e8c795d2ec5751bb899"
     }
   ],
   "candidate": "card-v1.json",

@@ -160,7 +160,6 @@
         "tooltip"
       ]
     },
-    "props": [],
     "allowedReads": {
       "themes": [
         "themes.border",
@@ -206,7 +205,8 @@
       {
         "check": "composes.allowed"
       }
-    ]
+    ],
+    "props": []
   },
   "tighten": [],
   "family": {

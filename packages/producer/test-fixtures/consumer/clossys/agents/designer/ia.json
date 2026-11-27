@@ -5,7 +5,7 @@
   "nodes": [
     {
       "id": "themes.colors",
-      "label": "Color",
+      "label": "Colors",
       "children": [
         {
           "id": "colors-surfaces",
@@ -545,6 +545,118 @@
       ]
     }
   ],
+  "layers": [
+    {
+      "id": "themes",
+      "label": "Themes",
+      "nodes": [
+        "themes.colors",
+        "themes.typography",
+        "themes.layout",
+        "themes.motion"
+      ]
+    },
+    {
+      "id": "assets",
+      "label": "Assets",
+      "nodes": [
+        "assets.logos",
+        "assets.imagery",
+        "assets.icons"
+      ]
+    },
+    {
+      "id": "components",
+      "label": "Components",
+      "nodes": [
+        "components.components",
+        "components.studio"
+      ]
+    },
+    {
+      "id": "sections",
+      "label": "Sections",
+      "nodes": [
+        "sections.sections",
+        "sections.producer"
+      ]
+    },
+    {
+      "id": "frames",
+      "label": "Frames",
+      "nodes": [
+        "frames.frames"
+      ]
+    },
+    {
+      "id": "loops",
+      "label": "Loops",
+      "nodes": [
+        "loops.design-loops"
+      ]
+    }
+  ],
+  "axes": {
+    "L0": {
+      "name": "Composition layer",
+      "values": [
+        "Themes",
+        "Assets",
+        "Components",
+        "Sections",
+        "Frames",
+        "Loops"
+      ]
+    },
+    "L1": {
+      "themes": {
+        "name": "Domain",
+        "values": [
+          "Colors",
+          "Typography",
+          "Layout",
+          "Motion"
+        ]
+      },
+      "assets": {
+        "name": "Asset type",
+        "values": [
+          "Logos",
+          "Imagery",
+          "Icons"
+        ]
+      },
+      "components": {
+        "name": "Interaction role",
+        "values": [
+          "Components"
+        ]
+      },
+      "sections": {
+        "name": "User purpose",
+        "values": [
+          "Sections"
+        ]
+      },
+      "frames": {
+        "name": "Shell type",
+        "values": [
+          "Frames"
+        ]
+      },
+      "loops": {
+        "name": "Loop owner",
+        "values": [
+          "Design loops"
+        ]
+      }
+    },
+    "shared": [
+      "Components",
+      "Sections",
+      "Frames"
+    ]
+  },
   "retired": [
     {
       "schema": "clossys.retire/1",

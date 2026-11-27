@@ -354,7 +354,7 @@
             "agent": "designer",
             "slot": "themes.radius",
             "candidate": "radius-v1.json",
-            "sha256": "ca32a189cfb1dc134c0da8e5ce5aec2819431ee8553bed432e9f5b723ffbe926"
+            "sha256": "2d7d621acfaed15f45ba9abecaf5d40ed6b5ddfd1ae98eda8638342c73f3d84a"
           },
           {
             "agent": "designer",
@@ -366,13 +366,13 @@
             "agent": "designer",
             "slot": "themes.shadow",
             "candidate": "shadow-v1.json",
-            "sha256": "63e1669ef08144306dd5625ba7a5788476929ea314ff951bda707f93d4e26881"
+            "sha256": "d877d3073d6a822a3986d06bf7cf8cfd41eda1430ea4baa3349fe429d94f3d7d"
           },
           {
             "agent": "designer",
             "slot": "themes.spacing",
             "candidate": "spacing-v1.json",
-            "sha256": "a5aba621c5fe45e0796c659e09e30cb319a8e71fc1a0704d8003a36ebfe1857e"
+            "sha256": "697d3c13c3febfa59d70edd414eff1221393ff2e23a5c75f88ad4a47d42f22be"
           }
         ],
         "contract": {
@@ -751,7 +751,7 @@
       "records": [
         {
           "file": "pin.json",
-          "sha256": "afae301dd7113760d0f3a423e183b1d1bd91debb7213a3f3e0e288fa3f1ee929"
+          "sha256": "5391edc5b5a5fa5fda4ce0ea80072554002992465f59edb592ec84b65834b9b9"
         }
       ]
     },

@@ -7,8 +7,8 @@ provenance: {"voice":"director:identity.verbal.voice"}
 ---
 ## en
 
-### mood
-<!-- {"id":"mood","bindings":[]} -->
+### byRole
+<!-- {"id":"byRole","bindings":[]} -->
 ```json
-{"id":"mood","context":"mood","kind":"voice-rule","rule":"Use the imperative for actions and the indicative for facts","value":"imperative-actions"}
+{"id":"byRole","context":"byRole","kind":"voice-rule","rule":"Use the imperative for actions and the indicative for facts","value":{"action":"imperative","body":"indicative"}}
 ```

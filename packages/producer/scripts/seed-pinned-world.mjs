@@ -1074,8 +1074,9 @@ async function interview(w) {
 /**
  * After the interview (foundry-build-0048 CPA): slot requests flow through `clossys request` to a closed reuse, as a
  * consumer's slot loop does, so the request-flow conformance rows judge real entries: every content agent raises one
- * (its requester row) and holds one as assignee. Each requester is a placed slot with no keyed ref (`clossys ia --inputs`
- * takes bare ids, so a keyed ref would not survive the re-cut). It names one need no slot holds through `clossys ia`
+ * (its requester row) and holds one as assignee. Each requester is a placed slot whose keyed refs must survive the flow
+ * (`clossys ia --inputs` takes bare ids and keeps a stored keyed ref; the close keeps it on a reused ref): a requester
+ * that ends without one of its keyed refs, key included, is refused. It names one need no slot holds through `clossys ia`
  * (which files the request, to the agent holding the need's first id segment, along a declared issuing edge), an
  * owner-routed entry is handed to that agent with a made-up fixture answer, and the agent reuses a placed slot the
  * requester already reads, so its inputs end as the package declares them (never create: a new leaf is not a package
@@ -1098,7 +1099,7 @@ async function reuseRequests(w) {
     const [assignee, need] = target.split("/");
     if (entryFor(target)) continue;
     const raw = JSON.parse(readFileSync(join(w.consumer, "agents", agent, id, "slot.json"), "utf8"));
-    if ((raw.refs ?? []).some(ref => ref.key !== undefined)) throw new Refused(from, "the requester holds a keyed ref, which clossys ia --inputs would drop");
+    const keyed = (refs = []) => refs.filter(ref => ref.key !== undefined).map(ref => JSON.stringify([ref.to, ref.rel, ref.key]));
     const doc = readSlot(w.consumer, agent, id);
     const inputs = [...(doc.inputs ?? []), need];
     await w.run(from, "ia", from, "--contract", w.file(`${id}.request-contract.json`, doc.contract), "--inputs", inputs.join(","), "--at", AT);
@@ -1109,6 +1110,9 @@ async function reuseRequests(w) {
     await w.run(from, "request", entry.id, "--close", "--at", AT);
     const after = readSlot(w.consumer, agent, id).inputs ?? [];
     if ([...new Set(after)].sort().join() !== [...new Set(doc.inputs ?? [])].sort().join()) throw new Refused(from, `the reuse of ${reuse} changed the requester's inputs`);
+    const kept = keyed(JSON.parse(readFileSync(join(w.consumer, "agents", agent, id, "slot.json"), "utf8")).refs);
+    const lost = keyed(raw.refs).filter(ref => !kept.includes(ref));
+    if (lost.length) throw new Refused(from, `the requester lost a keyed ref (${lost.join(", ")}), which clossys ia --inputs or the close dropped`);
   }
 }
 

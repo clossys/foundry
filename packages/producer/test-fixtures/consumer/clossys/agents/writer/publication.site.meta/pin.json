@@ -16,7 +16,7 @@
       "to": "producer/checks.scorecard",
       "rel": "cites",
       "record": "writer/publication.site.meta",
-      "sha256": "e9c74b95c38502c2cd045c91a03b4148c6898e63fc27e5e8711877f9362a246c"
+      "sha256": "ad08f6df637bff1c73891ab526d5f312cf1973ae233b5866b5dfd84c9d5624f8"
     }
   ],
   "records": {

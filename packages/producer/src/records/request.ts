@@ -1568,11 +1568,15 @@ function closeLocked(consumer: string, id: string, input: { readonly by: string;
     if (doc.schema !== SLOT_SCHEMA) throw new RequestError(`the requester ${request.from} is not a ${SLOT_SCHEMA}`);
     const rel = request.rel;
     const stale = (ref: Ref) => ref.rel === rel && (ref.to === `${target.agent}/${target.need}` || ref.to === link);
-    const edge = { to: link as Ref["to"], rel } as Ref;
+    // A reused slot the requester already reads by key keeps those keyed refs; otherwise the link is one plain edge.
+    const edges = (refs: readonly Ref[]): Ref[] => {
+      const held = refs.filter(ref => ref.rel === rel && ref.to === link && ref.key !== undefined);
+      return held.length ? held : [{ to: link as Ref["to"], rel } as Ref];
+    };
     const next: Slot = {
       ...doc, updatedAt: input.at as Slot["updatedAt"],
-      refs: [...doc.refs.filter(ref => !stale(ref)), edge],
-      ...(rel === "input" ? { brief: { ...doc.brief, inputs: [...(doc.brief.inputs ?? []).filter(ref => !stale(ref)), { to: link as Ref["to"], rel: "input" } as Ref] } } : {}),
+      refs: [...doc.refs.filter(ref => !stale(ref)), ...edges(doc.refs)],
+      ...(rel === "input" ? { brief: { ...doc.brief, inputs: [...(doc.brief.inputs ?? []).filter(ref => !stale(ref)), ...edges(doc.brief.inputs ?? [])] } } : {}),
     };
     const issues = validateSlot(next);
     if (issues.length) throw new RequestError(`the requester's slot.json would be invalid: ${issues.slice(0, 5).map(issue => `${issue.path} ${issue.message}`).join("; ")}`);

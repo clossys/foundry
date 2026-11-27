@@ -1030,11 +1030,19 @@ function currentSlotWrite(root: string, doc: SlotV1, position: { l1: string; l2:
   if (!kind) return { error: `${doc.agent}/${doc.id} kind ${doc.kind} has no ${SLOT_V2_SCHEMA} kind` };
   // An id no consumer slot folder holds is left out of the refs and returned: the caller raises a slot request for it.
   const missing: { id: string; rel: "input" | "uses" }[] = [];
+  // A bare id the stored slot already holds as keyed refs keeps those refs, key included (each once): --inputs and
+  // --uses name ids, and a re-cut that keeps an id must not drop which part of it the slot reads.
+  const kept = new Set<string>();
   const refsOf = (ids: readonly string[] | undefined, rel: "input" | "uses"): Ref[] => (ids ?? []).flatMap(id => {
     const agents = holders.get(id) ?? [];
     const agent = agents.includes(doc.agent) ? doc.agent : agents[0];
     if (!agent) { missing.push({ id, rel }); return []; }
-    return [{ to: `${agent}/${id}` as Ref["to"], rel }];
+    const to = `${agent}/${id}` as Ref["to"];
+    const held = (stored?.refs ?? []).filter(ref => ref.rel === rel && ref.to === to);
+    if (!held.some(ref => ref.key !== undefined)) return [{ to, rel }];
+    if (kept.has(`${rel} ${to}`)) return [];
+    kept.add(`${rel} ${to}`);
+    return structuredClone(held);
   });
   const inputs = refsOf(doc.inputs, "input"), uses = refsOf(doc.uses, "uses");
   const made = slotFromV1(doc, { kind, status: stored?.status ?? (options.live ? "live" : "starter"), ia, inputs, uses, createdBy: stored?.createdBy ?? cliActor("clossys ia"), at: stored?.createdAt ?? at });

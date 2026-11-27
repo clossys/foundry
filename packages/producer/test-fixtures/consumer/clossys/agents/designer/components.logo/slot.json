@@ -211,7 +211,6 @@
         "ground.inverse"
       ]
     },
-    "props": [],
     "allowedReads": {
       "themes": [
         "themes.primary",
@@ -242,6 +241,7 @@
         "check": "composes.allowed"
       }
     ],
+    "props": [],
     "fixture": {
       "schema": "clossys.element-preview/1",
       "fixtures": {

@@ -20,11 +20,13 @@
   "refs": [
     {
       "to": "director/identity.verbal.voice",
-      "rel": "input"
+      "rel": "input",
+      "key": "Do"
     },
     {
       "to": "director/identity.naming.name",
-      "rel": "input"
+      "rel": "input",
+      "key": "Name"
     },
     {
       "to": "director/focus.category.definition",
@@ -32,7 +34,8 @@
     },
     {
       "to": "director/identity.naming.architecture",
-      "rel": "input"
+      "rel": "input",
+      "key": "Rule"
     }
   ],
   "base": null,
@@ -43,11 +46,13 @@
     "inputs": [
       {
         "to": "director/identity.verbal.voice",
-        "rel": "input"
+        "rel": "input",
+        "key": "Do"
       },
       {
         "to": "director/identity.naming.name",
-        "rel": "input"
+        "rel": "input",
+        "key": "Name"
       },
       {
         "to": "director/focus.category.definition",
@@ -55,7 +60,8 @@
       },
       {
         "to": "director/identity.naming.architecture",
-        "rel": "input"
+        "rel": "input",
+        "key": "Rule"
       }
     ],
     "acceptance": []
@@ -65,6 +71,14 @@
     "value": "map avoid to use",
     "check": "deterministic",
     "defaults": "defaults/lexicon.preferred-terms/",
+    "fixture": {
+      "keys": [
+        "terms"
+      ],
+      "locales": [
+        "en"
+      ]
+    },
     "requirements": [
       {
         "check": "copy.voice-derived"
@@ -78,15 +92,7 @@
       {
         "check": "lexicon.record"
       }
-    ],
-    "fixture": {
-      "keys": [
-        "site"
-      ],
-      "locales": [
-        "en"
-      ]
-    }
+    ]
   },
   "tighten": [],
   "family": {

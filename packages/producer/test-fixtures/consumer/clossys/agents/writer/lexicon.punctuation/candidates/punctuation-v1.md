@@ -7,8 +7,8 @@ provenance: {"voice":"director:identity.verbal.voice"}
 ---
 ## en
 
-### terminal-period
-<!-- {"id":"terminal-period","bindings":[]} -->
+### byLocale
+<!-- {"id":"byLocale","bindings":[]} -->
 ```json
-{"id":"terminal-period","context":"terminal-period","kind":"format","format":"terminal-period","value":"body sentences only, never headings or labels"}
+{"id":"byLocale","context":"byLocale","kind":"format","format":"terminal-period","value":"body sentences only, never headings or labels"}
 ```

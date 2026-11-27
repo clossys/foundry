@@ -7,8 +7,8 @@ provenance: {"voice":"director:identity.verbal.voice"}
 ---
 ## en
 
-### leverage
-<!-- {"id":"leverage","bindings":[]} -->
+### terms
+<!-- {"id":"terms","bindings":[]} -->
 ```json
-{"id":"leverage","context":"leverage","kind":"term","term":"leverage","forms":["leverage","leveraging"],"termStatus":"avoid","reason":"jargon the voice never uses"}
+{"id":"terms","context":"terms","kind":"term","term":"leverage","forms":["leverage","leveraging"],"termStatus":"avoid","reason":"jargon the voice never uses"}
 ```

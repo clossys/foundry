@@ -72,7 +72,7 @@
         "sha256": "5d5fec5f8d9dbb928995a8847776ee06e4a3ba12b44223e2f3230768a6dbbc15"
       },
       "model": "fixture-model",
-      "tier": "mid",
+      "tier": "high",
       "verdict": "create",
       "create": true,
       "reason": "fixture world: a synthetic consumer, so the craft standard's candidate is made from its reference and pinned upstream",
@@ -92,7 +92,7 @@
         "sha256": "8632e4fb40c3974a5c81a578b7be27606713121b027f120a346e5fba09e31930"
       },
       "model": "fixture-model",
-      "tier": "mid",
+      "tier": "high",
       "goal": "fixture world: fill themes.radius to token.scale",
       "assembled": {
         "inputs": [
@@ -270,7 +270,7 @@
         "sha256": "8632e4fb40c3974a5c81a578b7be27606713121b027f120a346e5fba09e31930"
       },
       "model": "fixture-model",
-      "tier": "mid",
+      "tier": "high",
       "directions": [
         {
           "id": "d1",
@@ -311,7 +311,7 @@
         "sha256": "8632e4fb40c3974a5c81a578b7be27606713121b027f120a346e5fba09e31930"
       },
       "model": "fixture-model",
-      "tier": "mid"
+      "tier": "high"
     },
     {
       "op": "craft:critique",
@@ -323,7 +323,7 @@
         "sha256": "6a0d22415447bfa5dc020f5058edcedb2a5a771d660cb4e81bf66f8f4f276c06"
       },
       "model": "fixture-critic",
-      "tier": "mid",
+      "tier": "high",
       "critique": "critiques/radius-v1.json",
       "sha256": "7add1d2c044f8263f5bec4b64599758c606821e8ffdbcbd58aaf45f28ea51921"
     },
@@ -337,7 +337,7 @@
         "sha256": "8632e4fb40c3974a5c81a578b7be27606713121b027f120a346e5fba09e31930"
       },
       "model": "fixture-model",
-      "tier": "mid",
+      "tier": "high",
       "basis": "agent",
       "rung": "L4",
       "reason": "fixture world: a synthetic consumer, so the craft standard's candidate is made from its reference and pinned upstream",
@@ -346,7 +346,7 @@
         "reason": "fixture world: a synthetic consumer, so the craft standard's candidate is made from its reference and pinned upstream"
       },
       "name": "radius-v1.json",
-      "sha256": "ca32a189cfb1dc134c0da8e5ce5aec2819431ee8553bed432e9f5b723ffbe926"
+      "sha256": "2d7d621acfaed15f45ba9abecaf5d40ed6b5ddfd1ae98eda8638342c73f3d84a"
     },
     {
       "op": "pin",
@@ -360,13 +360,13 @@
       "model": "none",
       "tier": "none",
       "candidate": "radius-v1.json",
-      "sha256": "ca32a189cfb1dc134c0da8e5ce5aec2819431ee8553bed432e9f5b723ffbe926",
+      "sha256": "2d7d621acfaed15f45ba9abecaf5d40ed6b5ddfd1ae98eda8638342c73f3d84a",
       "decidedBy": "planner:fixture-world",
       "basis": "planner",
       "records": [
         {
           "file": "pin.json",
-          "sha256": "e806b6de9d39cce2ac28b318729329e3767bf037dc5dfc30ec71f9536f711bca"
+          "sha256": "ec1071097b0c714f038e5d97f26425f0cdbfb5fce65a99e04e903d6316a88eba"
         }
       ]
     },

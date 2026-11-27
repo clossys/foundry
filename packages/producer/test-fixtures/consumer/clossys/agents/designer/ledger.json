@@ -168,11 +168,30 @@
       "model": "none",
       "tier": "none",
       "kind": "ia",
+      "records": [
+        {
+          "file": "ia.json",
+          "sha256": "84b9e4fcdbd2586554f29acce947867c0451a173df733b2ed7f9361f48232c34"
+        }
+      ]
+    },
+    {
+      "op": "ia",
+      "at": "2026-11-19T00:00:00Z",
+      "by": "planner",
+      "verb": "ia",
+      "skill": {
+        "path": "packages/producer/actions/ia/skill.md",
+        "sha256": "147a7eaf66267728953e0c8111a9c20b93475f95f8063745d9d1d1087658fe73"
+      },
+      "model": "none",
+      "tier": "none",
+      "kind": "ia",
       "decision": "adopt-loops",
       "records": [
         {
           "file": "ia.json",
-          "sha256": "e898e49d520599835fff68b4316e86c280d5c30f64fddad015616ad1cebf5c5c"
+          "sha256": "eba775568a41c7cc7fa2542f850a9483598a28b3c08f051b8ddad4beafc95a03"
         }
       ]
     }

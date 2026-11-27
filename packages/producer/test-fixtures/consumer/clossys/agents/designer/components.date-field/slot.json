@@ -320,7 +320,6 @@
         "state.invalid"
       ]
     },
-    "props": [],
     "allowedReads": {
       "themes": [
         "themes.primary",
@@ -363,7 +362,8 @@
       {
         "check": "composes.allowed"
       }
-    ]
+    ],
+    "props": []
   },
   "tighten": [],
   "family": {

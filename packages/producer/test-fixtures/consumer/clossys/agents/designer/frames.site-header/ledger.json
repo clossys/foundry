@@ -342,13 +342,13 @@
             "agent": "designer",
             "slot": "themes.radius",
             "candidate": "radius-v1.json",
-            "sha256": "ca32a189cfb1dc134c0da8e5ce5aec2819431ee8553bed432e9f5b723ffbe926"
+            "sha256": "2d7d621acfaed15f45ba9abecaf5d40ed6b5ddfd1ae98eda8638342c73f3d84a"
           },
           {
             "agent": "designer",
             "slot": "themes.spacing",
             "candidate": "spacing-v1.json",
-            "sha256": "a5aba621c5fe45e0796c659e09e30cb319a8e71fc1a0704d8003a36ebfe1857e"
+            "sha256": "697d3c13c3febfa59d70edd414eff1221393ff2e23a5c75f88ad4a47d42f22be"
           }
         ],
         "contract": {
@@ -726,7 +726,7 @@
       "records": [
         {
           "file": "pin.json",
-          "sha256": "4145e3faf9514e11d4ecc7fe3640215767cd7b32ee5da7030854b9ee114e8933"
+          "sha256": "142dca98d255e3abd312441c39e9ebca3412f215cfa3be4f95ed3aaabcea807b"
         }
       ]
     },

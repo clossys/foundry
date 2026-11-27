@@ -16,11 +16,11 @@
       "to": "producer/checks.scorecard",
       "rel": "cites",
       "record": "writer/lexicon.person",
-      "sha256": "93978aada2cfc5fdd1a8d86de61862965a5548a2c977d663ffa6259a18edcca2"
+      "sha256": "9ebfb8be0544c593ca742327dc8475ce2ac1c25d121f7234631ce758e5551e18"
     }
   ],
   "candidate": "person-v1.md",
-  "sha256": "7ea8c63557945aba4135a76dada3af015ebbecae9d5ce233be639f7e4bfc2359",
+  "sha256": "fc092317e8110e0f1ebd4b29c1715e90f16061300b3c3cfabefc1002246395bb",
   "decidedBy": "planner:fixture-world",
   "basis": "planner",
   "at": "2026-11-19T00:00:00Z"

@@ -16,7 +16,7 @@
       "to": "producer/checks.scorecard",
       "rel": "cites",
       "record": "designer/components.dialog",
-      "sha256": "785c548818b547ce6dd35781566c5e095f9b478a05e6335e5f8ec39df3bba0a3"
+      "sha256": "9b706f7ee83c092f0b4d9444f47baf7fa17968a5d2ce00e623213d3b9daac882"
     }
   ],
   "candidate": "dialog-v1.json",

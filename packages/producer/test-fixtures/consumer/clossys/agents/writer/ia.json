@@ -342,6 +342,85 @@
       ]
     }
   ],
+  "layers": [
+    {
+      "id": "voice",
+      "label": "Voice",
+      "nodes": [
+        "voice.tone",
+        "voice.wording"
+      ]
+    },
+    {
+      "id": "prose",
+      "label": "Prose",
+      "nodes": [
+        "prose.editorial",
+        "prose.reference"
+      ]
+    },
+    {
+      "id": "copy",
+      "label": "Copy",
+      "nodes": [
+        "copy.component-text",
+        "copy.section-copy",
+        "copy.frame-copy",
+        "copy.asset-text",
+        "copy.page-metadata"
+      ]
+    },
+    {
+      "id": "loops",
+      "label": "Loops",
+      "nodes": [
+        "loops.writing-loops"
+      ]
+    }
+  ],
+  "axes": {
+    "L0": {
+      "name": "Writing layer",
+      "values": [
+        "Voice",
+        "Prose",
+        "Copy",
+        "Loops"
+      ]
+    },
+    "L1": {
+      "voice": {
+        "name": "Voice facet",
+        "values": [
+          "Tone",
+          "Wording"
+        ]
+      },
+      "prose": {
+        "name": "Text kind",
+        "values": [
+          "Editorial",
+          "Reference"
+        ]
+      },
+      "copy": {
+        "name": "Text kind",
+        "values": [
+          "Component text",
+          "Section copy",
+          "Frame copy",
+          "Asset text",
+          "Page metadata"
+        ]
+      },
+      "loops": {
+        "name": "Loop owner",
+        "values": [
+          "Writing loops"
+        ]
+      }
+    }
+  },
   "retired": [
     {
       "schema": "clossys.retire/1",

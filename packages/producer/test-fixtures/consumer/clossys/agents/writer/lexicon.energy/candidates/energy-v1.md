@@ -7,8 +7,14 @@ provenance: {"voice":"director:identity.verbal.voice"}
 ---
 ## en
 
-### energy
-<!-- {"id":"energy","bindings":[]} -->
+### level
+<!-- {"id":"level","bindings":[]} -->
 ```json
-{"id":"energy","context":"energy","kind":"voice-rule","rule":"Keep a steady pace with no exclamation","value":"steady"}
+{"id":"level","context":"level","kind":"voice-rule","rule":"Keep a steady pace","value":"steady"}
+```
+
+### maxExclamationsPer1k
+<!-- {"id":"maxExclamationsPer1k","bindings":[]} -->
+```json
+{"id":"maxExclamationsPer1k","context":"maxExclamationsPer1k","kind":"voice-rule","rule":"Use no exclamation marks","value":0}
 ```

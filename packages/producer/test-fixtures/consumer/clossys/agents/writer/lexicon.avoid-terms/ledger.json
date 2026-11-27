@@ -59,7 +59,7 @@
       "records": [
         {
           "file": "slot.json",
-          "sha256": "d1f21fa5642060d7d603fdaacc672c1bd0e5cde80f931d4cfe56604f56bd7cc3"
+          "sha256": "d95f857db9c18056677a6d484907a3a949bd044e50caa401d96c526705629a04"
         }
       ]
     },
@@ -116,6 +116,14 @@
             "value": "term list (absorbs the quoted words from Director voice Never)",
             "check": "deterministic",
             "defaults": "defaults/lexicon.avoid-terms/",
+            "fixture": {
+              "keys": [
+                "terms"
+              ],
+              "locales": [
+                "en"
+              ]
+            },
             "requirements": [
               {
                 "check": "copy.voice-derived"
@@ -129,17 +137,9 @@
               {
                 "check": "lexicon.record"
               }
-            ],
-            "fixture": {
-              "keys": [
-                "leverage"
-              ],
-              "locales": [
-                "en"
-              ]
-            }
+            ]
           },
-          "sha256": "c3d952e7a57c5cc2a95baf9e5501daa965990b19b0ff668b0c9877454dfbf3c3"
+          "sha256": "6eaab5015df1b42982d3fab9e39fb9f9562c0c450225ffa19d145a64ea557715"
         },
         "standard": {
           "id": "lexicon.term-list",
@@ -296,7 +296,7 @@
         "reason": "fixture world: a synthetic consumer, so its copy is written from its own pinned upstream"
       },
       "name": "avoid-terms-v1.md",
-      "sha256": "f4210351deedc5745002ec55ecb87892efa79a22368d2a6442a40c1c5fa16a83"
+      "sha256": "f9c579847d619c3d6a4eb570c916b6b590b65dfcb3175c63ffdd8018ed2d7359"
     },
     {
       "op": "pin",
@@ -310,13 +310,13 @@
       "model": "none",
       "tier": "none",
       "candidate": "avoid-terms-v1.md",
-      "sha256": "f4210351deedc5745002ec55ecb87892efa79a22368d2a6442a40c1c5fa16a83",
+      "sha256": "f9c579847d619c3d6a4eb570c916b6b590b65dfcb3175c63ffdd8018ed2d7359",
       "decidedBy": "planner:fixture-world",
       "basis": "planner",
       "records": [
         {
           "file": "pin.json",
-          "sha256": "2960cc8930143e0ee0d745a4dfbb4ec92a2fea8afe3f2e7941039d4da08655d4"
+          "sha256": "9602bc1fe6e97d9b5cd89e5409c3f38fe503b36f818c59c14bd06db17892ed19"
         }
       ]
     },
@@ -342,7 +342,7 @@
       "records": [
         {
           "file": "slot.json",
-          "sha256": "d1f21fa5642060d7d603fdaacc672c1bd0e5cde80f931d4cfe56604f56bd7cc3"
+          "sha256": "d95f857db9c18056677a6d484907a3a949bd044e50caa401d96c526705629a04"
         }
       ]
     }

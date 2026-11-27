@@ -7,8 +7,8 @@ provenance: {"voice":"director:identity.verbal.voice"}
 ---
 ## en
 
-### person
-<!-- {"id":"person","bindings":[]} -->
+### point
+<!-- {"id":"point","bindings":[]} -->
 ```json
-{"id":"person","context":"person","kind":"voice-rule","rule":"Write in the second person to the owner","value":"second"}
+{"id":"point","context":"point","kind":"voice-rule","rule":"Write in the second person to the owner","value":"second"}
 ```

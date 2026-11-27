@@ -7,8 +7,8 @@ provenance: {"voice":"director:identity.verbal.voice"}
 ---
 ## en
 
-### grade
-<!-- {"id":"grade","bindings":[]} -->
+### maxGrade
+<!-- {"id":"maxGrade","bindings":[]} -->
 ```json
-{"id":"grade","context":"grade","kind":"voice-rule","rule":"Write for a grade seven reader","value":7}
+{"id":"maxGrade","context":"maxGrade","kind":"voice-rule","rule":"Write for a grade seven reader","value":{"en":7}}
 ```

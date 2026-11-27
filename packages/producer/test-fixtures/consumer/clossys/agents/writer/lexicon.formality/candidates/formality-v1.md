@@ -7,14 +7,8 @@ provenance: {"voice":"director:identity.verbal.voice"}
 ---
 ## en
 
-### register
-<!-- {"id":"register","bindings":[]} -->
+### byLocale
+<!-- {"id":"byLocale","bindings":[]} -->
 ```json
-{"id":"register","context":"register","kind":"voice-rule","rule":"Use a neutral everyday register","value":"neutral"}
-```
-
-### address
-<!-- {"id":"address","bindings":[]} -->
-```json
-{"id":"address","context":"address","kind":"voice-rule","rule":"Address the reader as you","value":"informal-you"}
+{"id":"byLocale","context":"byLocale","kind":"voice-rule","rule":"Use a neutral everyday register and address the reader as you","value":{"en":{"register":"neutral","address":"informal-you"}}}
 ```

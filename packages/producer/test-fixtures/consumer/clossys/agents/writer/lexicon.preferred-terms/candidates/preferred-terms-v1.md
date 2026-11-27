@@ -7,8 +7,8 @@ provenance: {"voice":"director:identity.verbal.voice"}
 ---
 ## en
 
-### site
-<!-- {"id":"site","bindings":[]} -->
+### terms
+<!-- {"id":"terms","bindings":[]} -->
 ```json
-{"id":"site","context":"site","kind":"term","term":"site","forms":["site","sites"],"termStatus":"preferred","reason":"the plain word owners already use"}
+{"id":"terms","context":"terms","kind":"term","term":"site","forms":["site","sites"],"termStatus":"preferred","reason":"the plain word owners already use"}
 ```

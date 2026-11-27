@@ -59,7 +59,7 @@
       "records": [
         {
           "file": "slot.json",
-          "sha256": "9e5316d33f04609aa196283322fc68c9843b72a1a0170633ad55a473ba2bd8e7"
+          "sha256": "9794d76b41a9bf026a66666c54f24d1e854f668769d198698f75ec5b3b16f74d"
         }
       ]
     },
@@ -116,6 +116,14 @@
             "value": "rule set per locale",
             "check": "deterministic",
             "defaults": "defaults/lexicon.punctuation/",
+            "fixture": {
+              "keys": [
+                "byLocale"
+              ],
+              "locales": [
+                "en"
+              ]
+            },
             "requirements": [
               {
                 "check": "copy.voice-derived"
@@ -129,17 +137,9 @@
               {
                 "check": "lexicon.record"
               }
-            ],
-            "fixture": {
-              "keys": [
-                "terminal-period"
-              ],
-              "locales": [
-                "en"
-              ]
-            }
+            ]
           },
-          "sha256": "9aa0f2f8fe1efd1610670532525a417d5ba3fde3eb1e674d89cf4bce19a3fb2c"
+          "sha256": "9a1b85df448fa6cbc917631b90a46bef383d54b73692770fc68ae488debb3af1"
         },
         "standard": {
           "id": "lexicon.format-rule",
@@ -295,7 +295,7 @@
         "reason": "fixture world: a synthetic consumer, so its copy is written from its own pinned upstream"
       },
       "name": "punctuation-v1.md",
-      "sha256": "93dc684c1a1e67527519c85939ac4db852d8441982694528c844f5a43d644f35"
+      "sha256": "e6092445f0af57583d36f276306a6099bb3c5fc512224b6b3411c22a000dcb23"
     },
     {
       "op": "pin",
@@ -309,13 +309,13 @@
       "model": "none",
       "tier": "none",
       "candidate": "punctuation-v1.md",
-      "sha256": "93dc684c1a1e67527519c85939ac4db852d8441982694528c844f5a43d644f35",
+      "sha256": "e6092445f0af57583d36f276306a6099bb3c5fc512224b6b3411c22a000dcb23",
       "decidedBy": "planner:fixture-world",
       "basis": "planner",
       "records": [
         {
           "file": "pin.json",
-          "sha256": "a837b823094d4b0f8a47889de14afee8d86589e9d0469afaf85eaef07367bdee"
+          "sha256": "80b5700fe2327521022612ab0c4dbcee3038c4c88a0c89c0c9911116002de18b"
         }
       ]
     },
@@ -336,7 +336,7 @@
       "records": [
         {
           "file": "slot.json",
-          "sha256": "9e5316d33f04609aa196283322fc68c9843b72a1a0170633ad55a473ba2bd8e7"
+          "sha256": "9794d76b41a9bf026a66666c54f24d1e854f668769d198698f75ec5b3b16f74d"
         }
       ]
     }

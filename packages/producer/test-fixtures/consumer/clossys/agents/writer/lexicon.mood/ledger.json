@@ -59,7 +59,7 @@
       "records": [
         {
           "file": "slot.json",
-          "sha256": "367d739a9cb21c5b5e2de23442795c602f848b120ec9c3871b1c9da87169a119"
+          "sha256": "da4d84b900649bf24905c26a79c1e0e3f6dae02e63d99b6fb311ab21ee42b376"
         }
       ]
     },
@@ -110,6 +110,14 @@
             "value": "per field role: imperative, declarative or question",
             "check": "deterministic",
             "defaults": "defaults/lexicon.mood/",
+            "fixture": {
+              "keys": [
+                "byRole"
+              ],
+              "locales": [
+                "en"
+              ]
+            },
             "requirements": [
               {
                 "check": "copy.voice-derived"
@@ -123,17 +131,9 @@
               {
                 "check": "lexicon.record"
               }
-            ],
-            "fixture": {
-              "keys": [
-                "mood"
-              ],
-              "locales": [
-                "en"
-              ]
-            }
+            ]
           },
-          "sha256": "ce2767848ed169d4663eabf3349fe6d994be91c1b6eb51c9ef283fd9d0789dd7"
+          "sha256": "676e90ec49a39170e9d940be3bc961036bfe06bcecbdf040b2c233793ea3aaeb"
         },
         "standard": {
           "id": "lexicon.voice-rule",
@@ -289,7 +289,7 @@
         "reason": "fixture world: a synthetic consumer, so its copy is written from its own pinned upstream"
       },
       "name": "mood-v1.md",
-      "sha256": "b870de040965102112276c5efb99f4737910cca66a7e6a06ffa4b7740f41c11b"
+      "sha256": "2dc8caa87e0774adc714d3e3957a6db1fca6d67653efe27bfe2219a1c60c116e"
     },
     {
       "op": "pin",
@@ -303,13 +303,13 @@
       "model": "none",
       "tier": "none",
       "candidate": "mood-v1.md",
-      "sha256": "b870de040965102112276c5efb99f4737910cca66a7e6a06ffa4b7740f41c11b",
+      "sha256": "2dc8caa87e0774adc714d3e3957a6db1fca6d67653efe27bfe2219a1c60c116e",
       "decidedBy": "planner:fixture-world",
       "basis": "planner",
       "records": [
         {
           "file": "pin.json",
-          "sha256": "5fbd877f33751c4e168ed827f854d55f0106de36b612346b00ea62caf83f2c19"
+          "sha256": "e2de630892fe7eb372a5326539a5f1b372772b6efb8ba3338fe72f65e540ba97"
         }
       ]
     },
@@ -335,7 +335,7 @@
       "records": [
         {
           "file": "slot.json",
-          "sha256": "367d739a9cb21c5b5e2de23442795c602f848b120ec9c3871b1c9da87169a119"
+          "sha256": "da4d84b900649bf24905c26a79c1e0e3f6dae02e63d99b6fb311ab21ee42b376"
         }
       ]
     }

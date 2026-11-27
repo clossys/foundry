@@ -16,11 +16,11 @@
       "to": "producer/checks.scorecard",
       "rel": "cites",
       "record": "writer/lexicon.sentence-length",
-      "sha256": "65ccd8e1fec30af945e6712ca12aeabc32ff3e2c0e28d5b92ea55db9e957c95a"
+      "sha256": "0cd85c793cab9012adecbb18fa4a24b07acb2e694abc68d23c70875adc03724e"
     }
   ],
   "candidate": "sentence-length-v1.md",
-  "sha256": "6fc6e201be7d1af55ad428c133d2bdc513abec2381b323a7699f737b21be83b5",
+  "sha256": "4bd993348ccf39ba4985aac71476c3bf8ff31b47b42e81ccbfff259b710dac11",
   "decidedBy": "planner:fixture-world",
   "basis": "planner",
   "at": "2026-11-19T00:00:00Z"

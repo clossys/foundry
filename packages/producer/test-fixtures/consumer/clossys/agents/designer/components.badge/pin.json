@@ -16,7 +16,7 @@
       "to": "producer/checks.scorecard",
       "rel": "cites",
       "record": "designer/components.badge",
-      "sha256": "0a9b7dbbb97f0cc77b5feb3a3642ca088517c316462ae43a97cb7226927442b4"
+      "sha256": "4dd1b2ebcd4ca3378eb16c6c443cadc5b57818af4d5d0ea41a66b1e4aa08a8b5"
     }
   ],
   "candidate": "badge-v1.json",

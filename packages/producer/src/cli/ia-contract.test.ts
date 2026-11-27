@@ -162,3 +162,24 @@ describe("clossys ia --contract on a slot/2 slot with an option family", () => {
     expect((JSON.parse(readFileSync(path, "utf8")) as { family: unknown }).family).toEqual(before.family);
   });
 });
+
+// CP1-BASEGREEN2: --inputs names bare ids; a slot that reads part of an input by key keeps that key across the re-cut.
+describe("clossys ia --inputs on a slot with keyed input refs", () => {
+  it("ia --inputs keeps a keyed input ref", async () => {
+    const root = realpathSync(mkdtempSync(join(tmpdir(), "ia-keyed-")));
+    cpSync(new URL("../../test-fixtures/consumer/", import.meta.url), root, { recursive: true });
+    const path = join(root, "clossys", "agents", "writer", "sections.hero.copy", "slot.json");
+    type Doc = { contract: unknown; refs: { to: string; rel: string; key?: string }[]; brief: { inputs?: unknown[] } };
+    const before = JSON.parse(readFileSync(path, "utf8")) as Doc;
+    const inputs = before.refs.filter(ref => ref.rel === "input");
+    expect(inputs.filter(ref => ref.key !== undefined).length).toBeGreaterThan(1);
+    put(join(root, "contract.json"), JSON.stringify(before.contract));
+    const ids = [...new Set(inputs.map(ref => ref.to.slice(ref.to.indexOf("/") + 1)))];
+    const result = await runIaCli(["writer/sections.hero.copy", "--contract", join(root, "contract.json"), "--inputs", ids.join(",")], root);
+    expect(result.exitCode, result.message).toBe(0);
+    const after = JSON.parse(readFileSync(path, "utf8")) as Doc;
+    const sorted = (refs: Doc["refs"]) => refs.filter(ref => ref.rel === "input").map(ref => JSON.stringify(ref)).sort();
+    expect(sorted(after.refs)).toEqual(sorted(before.refs));
+    expect(after.brief.inputs).toEqual(after.refs.filter(ref => ref.rel === "input"));
+  });
+});

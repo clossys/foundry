@@ -132,9 +132,6 @@
         "as.ul"
       ]
     },
-    "props": [
-      "as"
-    ],
     "allowedReads": {
       "themes": [],
       "assets": []
@@ -149,6 +146,9 @@
       {
         "check": "composes.allowed"
       }
+    ],
+    "props": [
+      "as"
     ],
     "fixture": {
       "schema": "clossys.element-preview/1",

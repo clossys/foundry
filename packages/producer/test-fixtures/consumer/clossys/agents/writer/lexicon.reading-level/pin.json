@@ -16,11 +16,11 @@
       "to": "producer/checks.scorecard",
       "rel": "cites",
       "record": "writer/lexicon.reading-level",
-      "sha256": "b078401d172fc6a37191425b84016a61b909a99f1399ba75f538e70105d18b21"
+      "sha256": "c5c9d862ee668b311c494f22ed4782b1c70f95ad1f7702eb713a8d08b38f80d0"
     }
   ],
   "candidate": "reading-level-v1.md",
-  "sha256": "728a317a4e0a1fa73426544848ea997b4c3ab0e2f6086b8d322a9960bd707b2b",
+  "sha256": "dd443ad009b963652520a07844d3e07efaeba38b3f281778e3ef4694b418cdcb",
   "decidedBy": "planner:fixture-world",
   "basis": "planner",
   "at": "2026-11-19T00:00:00Z"

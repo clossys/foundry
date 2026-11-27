@@ -205,7 +205,8 @@
     "allowedComposes": [
       "components.button",
       "components.badge",
-      "components.semantic-content"
+      "components.semantic-content",
+      "components.card"
     ],
     "parts": [
       "sections.band"

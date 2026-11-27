@@ -328,16 +328,6 @@
         "state.editable"
       ]
     },
-    "props": [
-      "value",
-      "readOnly",
-      "onChange",
-      "className",
-      "id",
-      "dir",
-      "aria-label",
-      "aria-labelledby"
-    ],
     "allowedReads": {
       "themes": [
         "themes.font-sans",
@@ -385,6 +375,16 @@
       {
         "check": "composes.allowed"
       }
+    ],
+    "props": [
+      "value",
+      "readOnly",
+      "onChange",
+      "className",
+      "id",
+      "dir",
+      "aria-label",
+      "aria-labelledby"
     ]
   },
   "tighten": [],

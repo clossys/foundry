@@ -7,8 +7,8 @@ provenance: {"voice":"director:identity.verbal.voice"}
 ---
 ## en
 
-### click-here
-<!-- {"id":"click-here","bindings":[]} -->
+### patterns
+<!-- {"id":"patterns","bindings":[]} -->
 ```json
-{"id":"click-here","context":"click-here","kind":"pattern-rule","pattern":{"source":"\\bclick here\\b","flags":"i"},"severity":"warning","reason":"names the gesture, not the destination"}
+{"id":"patterns","context":"patterns","kind":"pattern-rule","pattern":{"source":"\\bclick here\\b","flags":"i"},"severity":"warning","reason":"names the gesture, not the destination"}
 ```

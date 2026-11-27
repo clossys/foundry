@@ -16,11 +16,12 @@
     "version": "0.1.0"
   },
   "createdAt": "2026-11-17T00:00:00Z",
-  "updatedAt": "2026-11-19T00:00:00Z",
+  "updatedAt": "2026-11-17T00:00:00Z",
   "refs": [
     {
       "to": "director/identity.verbal.voice",
-      "rel": "input"
+      "rel": "input",
+      "key": "Do"
     }
   ],
   "base": null,
@@ -31,7 +32,8 @@
     "inputs": [
       {
         "to": "director/identity.verbal.voice",
-        "rel": "input"
+        "rel": "input",
+        "key": "Do"
       }
     ],
     "acceptance": []
@@ -41,6 +43,14 @@
     "value": "we-you, you-only or third",
     "check": "pronoun scan",
     "defaults": "defaults/lexicon.person/",
+    "fixture": {
+      "keys": [
+        "point"
+      ],
+      "locales": [
+        "en"
+      ]
+    },
     "requirements": [
       {
         "check": "copy.voice-derived"
@@ -54,15 +64,7 @@
       {
         "check": "lexicon.record"
       }
-    ],
-    "fixture": {
-      "keys": [
-        "person"
-      ],
-      "locales": [
-        "en"
-      ]
-    }
+    ]
   },
   "tighten": [],
   "family": {

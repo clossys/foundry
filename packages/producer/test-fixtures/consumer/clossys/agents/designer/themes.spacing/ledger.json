@@ -72,7 +72,7 @@
         "sha256": "5d5fec5f8d9dbb928995a8847776ee06e4a3ba12b44223e2f3230768a6dbbc15"
       },
       "model": "fixture-model",
-      "tier": "mid",
+      "tier": "high",
       "verdict": "create",
       "create": true,
       "reason": "fixture world: a synthetic consumer, so the craft standard's candidate is made from its reference and pinned upstream",
@@ -92,7 +92,7 @@
         "sha256": "8632e4fb40c3974a5c81a578b7be27606713121b027f120a346e5fba09e31930"
       },
       "model": "fixture-model",
-      "tier": "mid",
+      "tier": "high",
       "goal": "fixture world: fill themes.spacing to token.scale",
       "assembled": {
         "inputs": [
@@ -270,7 +270,7 @@
         "sha256": "8632e4fb40c3974a5c81a578b7be27606713121b027f120a346e5fba09e31930"
       },
       "model": "fixture-model",
-      "tier": "mid",
+      "tier": "high",
       "directions": [
         {
           "id": "d1",
@@ -311,7 +311,7 @@
         "sha256": "8632e4fb40c3974a5c81a578b7be27606713121b027f120a346e5fba09e31930"
       },
       "model": "fixture-model",
-      "tier": "mid"
+      "tier": "high"
     },
     {
       "op": "craft:critique",
@@ -323,7 +323,7 @@
         "sha256": "6a0d22415447bfa5dc020f5058edcedb2a5a771d660cb4e81bf66f8f4f276c06"
       },
       "model": "fixture-critic",
-      "tier": "mid",
+      "tier": "high",
       "critique": "critiques/spacing-v1.json",
       "sha256": "07f9582197e9cb8764c07cdfb61443c2fcef556d62805575a039e68e68d0de25"
     },
@@ -337,7 +337,7 @@
         "sha256": "8632e4fb40c3974a5c81a578b7be27606713121b027f120a346e5fba09e31930"
       },
       "model": "fixture-model",
-      "tier": "mid",
+      "tier": "high",
       "basis": "agent",
       "rung": "L4",
       "reason": "fixture world: a synthetic consumer, so the craft standard's candidate is made from its reference and pinned upstream",
@@ -346,7 +346,7 @@
         "reason": "fixture world: a synthetic consumer, so the craft standard's candidate is made from its reference and pinned upstream"
       },
       "name": "spacing-v1.json",
-      "sha256": "a5aba621c5fe45e0796c659e09e30cb319a8e71fc1a0704d8003a36ebfe1857e"
+      "sha256": "697d3c13c3febfa59d70edd414eff1221393ff2e23a5c75f88ad4a47d42f22be"
     },
     {
       "op": "pin",
@@ -360,13 +360,13 @@
       "model": "none",
       "tier": "none",
       "candidate": "spacing-v1.json",
-      "sha256": "a5aba621c5fe45e0796c659e09e30cb319a8e71fc1a0704d8003a36ebfe1857e",
+      "sha256": "697d3c13c3febfa59d70edd414eff1221393ff2e23a5c75f88ad4a47d42f22be",
       "decidedBy": "planner:fixture-world",
       "basis": "planner",
       "records": [
         {
           "file": "pin.json",
-          "sha256": "51b7ca82f91f83a0d7af5e472b1a39674a51b346c9a07cfaaff47927fe5e7c28"
+          "sha256": "b48ee7e0e8bd23b604803bada8e1708f08ec9420c9619822e3b04b9acabbcf78"
         }
       ]
     },

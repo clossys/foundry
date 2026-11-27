@@ -95,6 +95,7 @@
   "contract": {
     "kind": "asset",
     "valueKind": "glyph",
+    "glyph": "settings",
     "members": {
       "mode": "closed",
       "names": [

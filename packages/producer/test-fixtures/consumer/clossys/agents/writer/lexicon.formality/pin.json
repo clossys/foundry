@@ -16,11 +16,11 @@
       "to": "producer/checks.scorecard",
       "rel": "cites",
       "record": "writer/lexicon.formality",
-      "sha256": "6275659d824a54168cbbf3ecd942f7c0e59c9dae545c5a5afa2b36cdd4b9b27c"
+      "sha256": "462c5834a10b3d3d1da7004bd2607e1bb5a40fc97b2a0a7e26ee0f9a8b8e7b7b"
     }
   ],
   "candidate": "formality-v1.md",
-  "sha256": "c2c822a7ca8f596ddc0514d7c7a6618dcdd4e656b172640fd470880202cffdc4",
+  "sha256": "914e105f8302bc88e35f92f69974e461f6053a67c34c41890d6b01a26b650bf7",
   "decidedBy": "planner:fixture-world",
   "basis": "planner",
   "at": "2026-11-19T00:00:00Z"

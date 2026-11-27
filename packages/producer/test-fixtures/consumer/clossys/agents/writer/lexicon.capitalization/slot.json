@@ -16,15 +16,17 @@
     "version": "0.1.0"
   },
   "createdAt": "2026-11-17T00:00:00Z",
-  "updatedAt": "2026-11-19T00:00:00Z",
+  "updatedAt": "2026-11-17T00:00:00Z",
   "refs": [
     {
       "to": "director/identity.verbal.voice",
-      "rel": "input"
+      "rel": "input",
+      "key": "Do"
     },
     {
       "to": "director/identity.naming.name",
-      "rel": "input"
+      "rel": "input",
+      "key": "Casing"
     }
   ],
   "base": null,
@@ -35,11 +37,13 @@
     "inputs": [
       {
         "to": "director/identity.verbal.voice",
-        "rel": "input"
+        "rel": "input",
+        "key": "Do"
       },
       {
         "to": "director/identity.naming.name",
-        "rel": "input"
+        "rel": "input",
+        "key": "Casing"
       }
     ],
     "acceptance": []
@@ -49,6 +53,15 @@
     "value": "case per role; exceptions from Director naming.name:Casing",
     "check": "deterministic",
     "defaults": "defaults/lexicon.capitalization/",
+    "fixture": {
+      "keys": [
+        "byRole",
+        "exceptionsFrom"
+      ],
+      "locales": [
+        "en"
+      ]
+    },
     "requirements": [
       {
         "check": "copy.voice-derived"
@@ -62,15 +75,7 @@
       {
         "check": "lexicon.record"
       }
-    ],
-    "fixture": {
-      "keys": [
-        "headings"
-      ],
-      "locales": [
-        "en"
-      ]
-    }
+    ]
   },
   "tighten": [],
   "family": {

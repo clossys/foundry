@@ -16,11 +16,11 @@
       "to": "producer/checks.scorecard",
       "rel": "cites",
       "record": "writer/lexicon.punctuation",
-      "sha256": "c1bd6a8f6ffaf7a282d7bad7d7b84292f496bbd4c71daace1c672e32bffb728e"
+      "sha256": "7df826bb09c8032d122750ba51aca1f4b9f4643f8171cf3e514efd7a83acc560"
     }
   ],
   "candidate": "punctuation-v1.md",
-  "sha256": "93dc684c1a1e67527519c85939ac4db852d8441982694528c844f5a43d644f35",
+  "sha256": "e6092445f0af57583d36f276306a6099bb3c5fc512224b6b3411c22a000dcb23",
   "decidedBy": "planner:fixture-world",
   "basis": "planner",
   "at": "2026-11-19T00:00:00Z"

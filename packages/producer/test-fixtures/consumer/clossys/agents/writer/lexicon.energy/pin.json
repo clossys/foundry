@@ -16,11 +16,11 @@
       "to": "producer/checks.scorecard",
       "rel": "cites",
       "record": "writer/lexicon.energy",
-      "sha256": "851bf13dc434a646065cb1cf3979f95e637a8e8e5d68c9e84a77d7b9b08d46ef"
+      "sha256": "cd68f07a50cff63cbc2dcc37c02a43cb0cf9b52a982de54fb4cc3a927a9787b6"
     }
   ],
   "candidate": "energy-v1.md",
-  "sha256": "076e9035be78ab5bea89da0ea1bb59f0f2fec12707a690a3a912bb65efe0ad74",
+  "sha256": "f57ef64e7c33a013d8d37db1211a5580588d17c4257306a74bda028834c90bb1",
   "decidedBy": "planner:fixture-world",
   "basis": "planner",
   "at": "2026-11-19T00:00:00Z"
