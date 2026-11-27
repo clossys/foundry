@@ -463,6 +463,69 @@
         "cadence": { "status": "unsupported", "reason": "Cadence is not established by a disposable installation canary." },
         "closeWindow": { "status": "unsupported", "reason": "Close-window evidence is not established by a disposable installation canary." }
       }
+    },
+    "@clossys/planner": {
+      "packageKey": "planner",
+      "recordStem": "clossys-planner",
+      "packageDir": "packages/planner",
+      "adapterPath": "governance/release-qualification-adapters/planner/current-direct.json",
+      "fixturePath": "governance/release-qualification-fixtures/planner/current-direct",
+      "archetypes": {
+        "current-direct": { "status": "required" },
+        "prior-minor": { "status": "unsupported", "reason": "No supported prior-minor consumer line is declared." },
+        "oldest-supported": { "status": "unsupported", "reason": "No oldest supported migration line is declared." },
+        "control-plane": { "status": "unsupported", "reason": "The factory agent ships no control-plane topology." }
+      },
+      "dimensions": {
+        "position": { "status": "unsupported", "reason": "A disposable consumer makes no installed position claim." },
+        "completion": { "status": "unsupported", "reason": "Owned-rules agreement is not consumer completion." },
+        "rollback": { "status": "required" },
+        "duplicate": { "status": "unsupported", "reason": "Peer installation does not establish consumer dependency deduplication." },
+        "cadence": { "status": "unsupported", "reason": "Cadence is not established by a disposable installation canary." },
+        "closeWindow": { "status": "unsupported", "reason": "Close-window evidence is not established by a disposable installation canary." }
+      }
+    },
+    "@clossys/developer": {
+      "packageKey": "developer",
+      "recordStem": "clossys-developer",
+      "packageDir": "packages/developer",
+      "adapterPath": "governance/release-qualification-adapters/developer/current-direct.json",
+      "fixturePath": "governance/release-qualification-fixtures/developer/current-direct",
+      "archetypes": {
+        "current-direct": { "status": "required" },
+        "prior-minor": { "status": "unsupported", "reason": "No supported prior-minor consumer line is declared." },
+        "oldest-supported": { "status": "unsupported", "reason": "No oldest supported migration line is declared." },
+        "control-plane": { "status": "unsupported", "reason": "The factory agent ships no control-plane topology." }
+      },
+      "dimensions": {
+        "position": { "status": "unsupported", "reason": "A disposable consumer makes no installed position claim." },
+        "completion": { "status": "unsupported", "reason": "Owned-rules agreement is not consumer completion." },
+        "rollback": { "status": "required" },
+        "duplicate": { "status": "unsupported", "reason": "Peer installation does not establish consumer dependency deduplication." },
+        "cadence": { "status": "unsupported", "reason": "Cadence is not established by a disposable installation canary." },
+        "closeWindow": { "status": "unsupported", "reason": "Close-window evidence is not established by a disposable installation canary." }
+      }
+    },
+    "@clossys/reviewer": {
+      "packageKey": "reviewer",
+      "recordStem": "clossys-reviewer",
+      "packageDir": "packages/reviewer",
+      "adapterPath": "governance/release-qualification-adapters/reviewer/current-direct.json",
+      "fixturePath": "governance/release-qualification-fixtures/reviewer/current-direct",
+      "archetypes": {
+        "current-direct": { "status": "required" },
+        "prior-minor": { "status": "unsupported", "reason": "No supported prior-minor consumer line is declared." },
+        "oldest-supported": { "status": "unsupported", "reason": "No oldest supported migration line is declared." },
+        "control-plane": { "status": "unsupported", "reason": "The factory agent ships no control-plane topology." }
+      },
+      "dimensions": {
+        "position": { "status": "unsupported", "reason": "A disposable consumer makes no installed position claim." },
+        "completion": { "status": "unsupported", "reason": "Owned-rules agreement is not consumer completion." },
+        "rollback": { "status": "required" },
+        "duplicate": { "status": "unsupported", "reason": "Peer installation does not establish consumer dependency deduplication." },
+        "cadence": { "status": "unsupported", "reason": "Cadence is not established by a disposable installation canary." },
+        "closeWindow": { "status": "unsupported", "reason": "Close-window evidence is not established by a disposable installation canary." }
+      }
     }
   }
 }
