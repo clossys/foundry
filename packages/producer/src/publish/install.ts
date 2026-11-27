@@ -32,7 +32,7 @@ import { firstComponentSource } from "@clossys/publisher/build";
 import { hasSlotModel, readCandidate, readIa, readPin, readSlot, slotCandidateIssues, viewPlacedAt } from "../records/slots.js";
 import { slotPositions, validateCandidate } from "../records/slot-model/index.js";
 import { libraryRecordSource } from "../specimen/library-source.js";
-import { readWriter } from "./site-source.js";
+import { readWriter, writerKeyedCopy } from "./site-source.js";
 import { writerKeyFold } from "../records/writer-copy.js";
 import { specimenRoots } from "./publish.js";
 import { defaultInstallOut, INSTALL_MARKER } from "@clossys/publisher/build";
@@ -450,14 +450,10 @@ export function pageModule(page: BoundPage, substrate: string, options: { readon
   ].join("\n");
 }
 
-/** Writer copy by key: compiled records, aliases to them, and a record's context when no alias names it. */
+/** Writer copy by key (site-source.ts `writerKeyedCopy`): each pinned row under its registered key, aliases to them, and a row's context when no alias names it. */
 export async function writerCopy(root: string): Promise<Record<string, string>> {
   const writer = await readWriter(root);
-  const copy: Record<string, string> = {};
-  for (const record of writer.records) copy[record.id] = record.text;
-  for (const [alias, id] of Object.entries(writer.aliases)) if (Object.hasOwn(copy, id)) copy[alias] = copy[id]!;
-  for (const record of writer.records) if (typeof record.context === "string" && record.context && !Object.hasOwn(copy, record.context)) copy[record.context] = record.text;
-  return copy;
+  return writerKeyedCopy(writer, writer.locale);
 }
 
 /** The fields of a clossys.page/1 candidate install reads. `copy` maps copy slot to `<writer slot>#<key>`; `bindings` does per section instance key. */

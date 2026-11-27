@@ -11,7 +11,7 @@ import { join } from "node:path";
 import { planSiteOutputs, type SiteOutputsPlan } from "@clossys/publisher/install";
 import type { ContentMap, PublicationOutputs } from "@clossys/publisher/content-map";
 import { pinnedBrand } from "../server/consumer-brand.js";
-import { readWriter } from "./site-source.js";
+import { readWriter, writerKeyedCopy } from "./site-source.js";
 
 /** The pinned Writer copy of one consumer, per locale. */
 export interface WriterLocaleCopy {
@@ -34,11 +34,7 @@ export async function writerLocaleCopy(root: string): Promise<WriterLocaleCopy> 
     copy(locale: string) {
       const cached = cache.get(locale);
       if (cached) return cached;
-      const records = rows.filter(row => row.locale === locale && typeof row.record.text === "string").map(row => row.record as { id: string; text: string; context?: unknown });
-      const copy: Record<string, string> = {};
-      for (const record of records) copy[record.id] = record.text;
-      for (const [alias, id] of Object.entries(writer.aliases)) if (Object.hasOwn(copy, id)) copy[alias] = copy[id]!;
-      for (const record of records) if (typeof record.context === "string" && record.context && !Object.hasOwn(copy, record.context)) copy[record.context] = record.text;
+      const copy = writerKeyedCopy(writer, locale);
       cache.set(locale, copy);
       return copy;
     },

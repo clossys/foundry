@@ -7,7 +7,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { serializeFrontmatter } from './slot-model/index.js';
 import { writerKeysUnapproved } from '../pipeline/status.js';
 import { contractCopyKeys, writerCopy, writerCopyDuplicates, writerKeyFold, writerRowKey } from './writer-copy.js';
-import { installCopy } from '../publish/install.js';
+import { installCopy, pageRecordFromCell, writerCopy as installWriterCopy } from '../publish/install.js';
 import { resolvePublicationTitles } from '../publish/pinned-publication.js';
 import { writeTargetPin } from './pin-map.js';
 import { writeCandidate } from './slot-write.js';
@@ -162,6 +162,28 @@ describe('a contract key is its own slot\'s key (CP1-COPYKEY)', () => {
       { id: 'footer', title: 'frames.site-footer.copy#navigation.label' }, { id: 'header', title: 'frames.site-header.copy#navigation.label' },
     ] } } as never);
     expect(titled.map.entries.map(entry => entry.title)).toEqual(['Footer navigation', 'Main navigation']);
+  });
+
+  it('install renders each slot\'s own copy for a shared contract key', async () => {
+    // Through install's own Writer map (publish/install.ts writerCopy), as publish --install, install-site,
+    // install-next-bind and publish --check read it: two pinned slots hold `navigation.label` with different texts.
+    const clossys = fixtureConsumer(), root = join(clossys, '..');
+    pinFooter(clossys, { 'navigation.label': 'Footer navigation' });
+    const page = {
+      schema: 'clossys.page/1', path: '/', title: 'frames.site-footer.copy#navigation.label', frame: 'frames.site-header', sections: [],
+      copy: { 'header.navigation': 'frames.site-header.copy#navigation.label', 'footer.navigation': 'frames.site-footer.copy#navigation.label' },
+      meta: { source: { kind: 'original', ref: [] } },
+    };
+    const { name } = writeCandidate(clossys, 'publisher', 'page.home', 'page', page);
+    writeTargetPin(root, { agent: 'publisher', slotId: 'page.home', candidate: name, decidedBy: 'planner', basis: 'planner', at: AT, createdBy: { actor: 'code', cli: 'clossys pin', version: '0.1.0' } });
+    const writer = await installWriterCopy(root);
+    expect(Object.hasOwn(writer, 'navigation.label')).toBe(false);
+    const record = await pageRecordFromCell(root, 'home', {}, writer);
+    expect(record.copy).toEqual({ 'header.navigation': 'frames.site-header.copy.navigation.label', 'footer.navigation': 'frames.site-footer.copy.navigation.label' });
+    const text = (key: string) => (Object.hasOwn(writer, key) ? writer[key] : undefined);
+    expect(Object.fromEntries(Object.entries(record.copy!).map(([slot, key]) => [slot, text(key)])))
+      .toEqual({ 'header.navigation': 'Main navigation', 'footer.navigation': 'Footer navigation' });
+    expect(text(record.title!)).toBe('Footer navigation');
   });
 
   it('publication meta camelCase key is stored kebab-case and resolves', () => {
