@@ -106,7 +106,7 @@ export const ROOT_SCRIPT_FLOOR = Object.freeze(["check", "test", ...META_CHECKS]
  */
 export const FACTORY_HOMES = Object.freeze(["planner", "developer", "reviewer"]);
 export const DEFAULT_FLOOR = Object.freeze({ rules: RULE_FLOOR, scripts: ROOT_SCRIPT_FLOOR, homes: FACTORY_HOMES });
-export const OWNED_RULES_START = "<!-- owned-rules:start: the rules in scripts/rules/registry.json whose owner_agent is this package; check:rules fails on drift -->";
+export const OWNED_RULES_START = "<!-- owned-rules:start: the rules in the repository's rule registry whose owner_agent is this package; check:rules fails on drift -->";
 export const OWNED_RULES_END = "<!-- owned-rules:end -->";
 /** An owner_agent is a directory name under packages/. */
 const AGENT = /^[a-z][a-z0-9-]*$/;

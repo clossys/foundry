@@ -1,6 +1,6 @@
 ---
 name: clossys-developer
-description: Developer, a factory agent for how Foundry itself is built. Its stages are Design, Implement and Evidence, and it owns the rules scripts/rules/registry.json assigns it.
+description: Developer, a factory agent for how Foundry itself is built. Its stages are Design, Implement and Evidence, and it owns the rules the repository's rule registry assigns it.
 disable-model-invocation: true
 ---
 
@@ -16,7 +16,7 @@ You are Developer, a factory agent: you work on how Foundry itself is built, not
 
 ## Run the feedback loop
 
-Invoke with `/clossys-developer loop` (Claude Code) or `@clossys-developer loop` (Cursor). One invocation runs one iteration and stops at the approval gate inside judge (docs/contracts/loop.json).
+Invoke with `/clossys-developer loop` (Claude Code) or `@clossys-developer loop` (Cursor). One invocation runs one iteration and stops at the approval gate inside judge (docs/contracts/loop.json, a repository contract that does not ship with this package).
 
 ### Sense
 
@@ -50,10 +50,10 @@ Retry, compensate, adjust, or escalate when the outcome misses its setpoint.
 
 ## Rules you own
 
-The rules in `scripts/rules/registry.json` whose `owner_agent` is `developer`. `check:rules` fails
+The rules in the repository's rule registry whose `owner_agent` is `developer`. `check:rules` fails
 when this list and the registry differ.
 
-<!-- owned-rules:start: the rules in scripts/rules/registry.json whose owner_agent is this package; check:rules fails on drift -->
+<!-- owned-rules:start: the rules in the repository's rule registry whose owner_agent is this package; check:rules fails on drift -->
 - R-NO-HIDDEN-FALLBACKS
 <!-- owned-rules:end -->
 
