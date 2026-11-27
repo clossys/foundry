@@ -138,7 +138,7 @@ describe("component consumer checks K1-K12", () => {
     expect(checkComponentProfile(deduplicated).findings.filter(f => f.code === "K11")).toEqual([]);
   });
   it("K4 rejects hardcoded colours, lengths, fallback literals and unbound utilities", () => {
-    for (const value of ['"#ff0000"', '"13px"', '"var(--text, 12px)"', '"h-8"', '"var(--foreign)"']) {
+    for (const value of ['"#ff0000"', '"13px"', '"var(--foreground, 12px)"', '"h-8"', '"var(--foreign)"']) {
       const profile = fixture(); source(profile, profile.observations["components.button"]!.files[0]!.content + ` const bad = ${value};`); code(profile, "K4");
     }
   });
@@ -460,12 +460,12 @@ describe("qualification rule groups (QUAL-RECOUNT G1, G2, G7a, G11)", () => {
     }
   });
   it("K4 unbound-property rule exempts RAC runtime and file-local properties", () => {
-    const exempt = ' const cls = "w-(--trigger-width) origin-(--trigger-anchor-point) h-(--disclosure-panel-height) [--cell-size:var(--text)] data-[size=sm]:[--cell-size:var(--surface)] size-(--cell-size)";'
-      + ' const style = { "--gap": "var(--surface)", gap: "var(--gap)" };';
+    const exempt = ' const cls = "w-(--trigger-width) origin-(--trigger-anchor-point) h-(--disclosure-panel-height) [--cell-size:var(--foreground)] data-[size=sm]:[--cell-size:var(--background)] size-(--cell-size)";'
+      + ' const style = { "--gap": "var(--background)", gap: "var(--gap)" };';
     const profile = fixture(); append(profile, exempt);
     expect(k4(profile)).toEqual([]);
     // RAC runtime properties are exempt only where the observed source imports react-aria-components.
-    const native = fixture(); source(native, 'export const X = () => <div className="w-(--trigger-width)" style={{color:"var(--text)"}} />;');
+    const native = fixture(); source(native, 'export const X = () => <div className="w-(--trigger-width)" style={{color:"var(--foreground)"}} />;');
     expect(k4(native)).toEqual(["Unbound CSS property --trigger-width in button.tsx"]);
     // Must still flag: an unknown property not defined in the file, a non-RAC overlay property, the Tailwind theme
     // --spacing (judged as a length needs the compiled CSS, which this check is not given), and the defining value itself.
@@ -477,7 +477,7 @@ describe("qualification rule groups (QUAL-RECOUNT G1, G2, G7a, G11)", () => {
     }
     // A property defined in another file is not local to the file that uses it.
     const split = fixture(); const observation = split.observations["components.button"]!;
-    observation.files.push({ path: "theme.tsx", content: 'const cls = "[--foo:var(--text)]";' }); observation.sourceHash = componentSourceHash(observation.files);
+    observation.files.push({ path: "theme.tsx", content: 'const cls = "[--foo:var(--foreground)]";' }); observation.sourceHash = componentSourceHash(observation.files);
     append(split, ' const cls = "w-(--foo)";');
     expect(k4(split)).toEqual(["Unbound CSS property --foo in button.tsx"]);
   });
@@ -485,7 +485,7 @@ describe("qualification rule groups (QUAL-RECOUNT G1, G2, G7a, G11)", () => {
     const unique = (profile: ComponentCheckInput) => [...new Set(k4(profile))];
     // Exempt: a token var() or a calc() of token vars, as an arbitrary property, a string style value or a CSS declaration.
     const exempt = ' const cls = "[--pad:calc(var(--control)_*_2)] p-(--pad)"; const style = { "--gap": "calc(var(--control) * -0.5)", gap: "var(--gap)" };'
-      + ' const css = `.x { --inset: var(--surface); margin: var(--inset); }`;';
+      + ' const css = `.x { --inset: var(--background); margin: var(--inset); }`;';
     const profile = fixture(); append(profile, exempt);
     expect(k4(profile)).toEqual([]);
     // Must flag: a named colour, a %, theme(), a JS expression, a type annotation, a ternary, a template interpolation
@@ -496,9 +496,9 @@ describe("qualification rule groups (QUAL-RECOUNT G1, G2, G7a, G11)", () => {
       [' const cls = "[--g:theme(spacing.2)] gap-(--g)";', ["--g"]],
       [' const el = <div style={{"--js": props.gap, gap: "var(--js)"}} />;', ["--js"]],
       [' type Vars = { "--v": string }; const cls = "h-(--v)";', ["--v"]],
-      [' const s = { "--t": wide ? "var(--text)" : "var(--surface)", color: "var(--t)" };', ["--t"]],
+      [' const s = { "--t": wide ? "var(--foreground)" : "var(--background)", color: "var(--t)" };', ["--t"]],
       [' const s = { ...style, "--tg": `calc(var(--control) * ${spacing})` }; const cls = "gap-(--tg)";', ["--tg"]],
-      [' const cls = "[--f:var(--text,black)] text-(--f)";', ["--f"]],
+      [' const cls = "[--f:var(--foreground,black)] text-(--f)";', ["--f"]],
       [' const cls = "[--a:var(--b)] [--b:var(--a)] w-(--a)";', ["--a", "--b"]],
       [' const more = { "--gap": props.gap };', ["--gap"]],
     ] as const) {
@@ -506,13 +506,13 @@ describe("qualification rule groups (QUAL-RECOUNT G1, G2, G7a, G11)", () => {
       expect.soft(unique(flagged), usage).toEqual(properties.map(property => `Unbound CSS property ${property} in button.tsx`));
     }
     // The real toggle-group source, standalone.
-    const toggle = fixture(); append(toggle, ' const s = { ...style, "--gap": `calc(var(--surface) * ${spacing})` }; const cls = "flex gap-(--gap)";');
+    const toggle = fixture(); append(toggle, ' const s = { ...style, "--gap": `calc(var(--background) * ${spacing})` }; const cls = "flex gap-(--gap)";');
     expect.soft(unique(toggle)).toEqual(["Unbound CSS property --gap in button.tsx"]);
   });
   it("K4 voids every file-local exemption when an object key is computed and is or could be a custom property", () => {
     const unique = (profile: ComponentCheckInput) => [...new Set(k4(profile))];
     const exempt = ' const cls = "[--pad:calc(var(--control)_*_2)] p-(--pad)"; const style = { "--gap": "calc(var(--control) * -0.5)", gap: "var(--gap)" };'
-      + ' const css = `.x { --inset: var(--surface); margin: var(--inset); }`;';
+      + ' const css = `.x { --inset: var(--background); margin: var(--inset); }`;';
     const all = ["--pad", "--gap", "--inset"];
     // Must flag: (a) the reviewer's case, a safe literal definition overridden by a template key; (b) a computed name;
     // (c) a template key with interpolation; plus a bracketed string, an escaped literal and a member expression.
@@ -572,7 +572,7 @@ describe("new Aria root protocols", () => {
     profile.fills[0]!.root = `rac:${root}`;
     const observation = profile.observations["components.button"]!;
     observation.root = `rac:${root}`;
-    source(profile, `import {${root}} from "react-aria-components"; export const Example = () => <${root} style={{color:"var(--text)",background:"var(--surface)"}}>Continue</${root}>;`);
+    source(profile, `import {${root}} from "react-aria-components"; export const Example = () => <${root} style={{color:"var(--foreground)",background:"var(--background)"}}>Continue</${root}>;`);
     for (const row of observation.measurements) {
       row.roles = [];
       row.keyboard = [...ROOT_PROTOCOL[root].keys];

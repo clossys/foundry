@@ -5,8 +5,8 @@ import type { ComponentSlot } from "../../types.js";
 /** Synthetic checker corpus, not accessibility evidence for any shipped component. */
 export function componentProfile(): ComponentCheckInput {
   const tokens: ComponentCheckInput["tokens"] = {
-    "themes.foreground.default": { property: "--text", light: "#000000", dark: "#ffffff" },
-    "themes.background.default": { property: "--surface", light: "#ffffff", dark: "#000000" },
+    "themes.foreground.default": { property: "--foreground", light: "#000000", dark: "#ffffff" },
+    "themes.background.default": { property: "--background", light: "#ffffff", dark: "#000000" },
     "themes.ring.default": { property: "--focus", light: "#000000", dark: "#ffffff" },
     "themes.spacing.default": { property: "--control", light: "32px", dark: "32px" },
     "themes.font-sans.default": { property: "--body", light: "16px" },
@@ -21,7 +21,7 @@ export function componentProfile(): ComponentCheckInput {
     impl: { kind: "package", module: "test-kit/components", export: "Button" }, license: "MIT", pin: { package: "test-kit", version: "1.0.0", export: "./components#Button" }, deps: [],
     rac: { range: "^1.19.0", peer: true, instance: "consumer-rac" },
   };
-  const files = [{ path: "button.tsx", content: 'import {Button} from "react-aria-components"; export const Example = () => <Button style={{color:"var(--text)",background:"var(--surface)"}}>Continue</Button>;' }];
+  const files = [{ path: "button.tsx", content: 'import {Button} from "react-aria-components"; export const Example = () => <Button style={{color:"var(--foreground)",background:"var(--background)"}}>Continue</Button>;' }];
   const observation: ComponentObservation = { files, sourceHash: componentSourceHash(files), tokensHash: componentTokensHash(tokens), root: "rac:Button", forwardsRef: true, forwardsRenderProps: true,
     rac: { version: "1.21.1", instance: "consumer-rac", dependency: "peer" }, calls: [], geometry: { "size.md": "themes.spacing.default" }, measurements: ["light", "dark"].flatMap(mode => ["base", "inverse"].map(ground => ({
       state: "hover", mode: mode as "light" | "dark", ground, roles: ["button"], keyboard: ["Enter", "Space"], axeViolations: [], focusTokens: ["themes.ring.default"],

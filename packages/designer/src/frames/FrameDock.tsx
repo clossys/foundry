@@ -95,7 +95,7 @@ export function FrameDock({ notices = [], dock, sheet = false }: { notices?: rea
     <SemanticContent as="div" ref={noticesRegion} data-frame-notices="" data-frame-notices-compact={short || undefined} className="flex w-full flex-col">
       {visible.map(notice => { const tone = ALERT_TONE[notice.severity === "error" ? "danger" : notice.severity]; return <Alert key={notice.id} {...tone}
         className={cx(tone.className, "w-full rounded-none", short && "items-center py-dock-compact first-child-shrink")}>
-        <SemanticContent as="div" className="mx-auto flex w-full max-w-wide items-center justify-between dock-notice-row"><SemanticContent as="span" className={cx(short && "min-w-0 truncate")}>{notice.text}</SemanticContent>{notice.action && <Button variant="ghost" onPress={notice.action.onAction}>{notice.action.label}</Button>}</SemanticContent>
+        <SemanticContent as="div" className="mx-auto flex w-full max-w-display items-center justify-between dock-notice-row"><SemanticContent as="span" className={cx(short && "min-w-0 truncate")}>{notice.text}</SemanticContent>{notice.action && <Button variant="ghost" onPress={notice.action.onAction}>{notice.action.label}</Button>}</SemanticContent>
       {notice.severity !== "error" && notice.dismissible !== false ? <AlertAction><Button variant="ghost" className="icon-control-sm rounded-control p-0" aria-label={copy(SHELL_COPY_REFS.banner.dismiss)} onPress={() => dismiss(notice.id)}><Icon glyph={closeGlyph} decorative size="sm" /></Button></AlertAction> : null}
       </Alert>; })}
     </SemanticContent>

@@ -207,13 +207,18 @@ describe("real package-surface library golden", () => {
     // Both sides combine: BR-SEED3 drops the retired frames.document fill and row; U-K4-CASCADE's stock shadcn reads and
     // TableOfContents font-normal move the measured surfaces. Values and components unchanged (component f74c3c3c on both
     // sides): composite 771cc0a9/935fa6fa -> fdfbf36e, surface b979dd89/619b0b22 -> 012ef6e4, whole ab711bb2/54b74d82 -> 60968c88.
-    expect(compositeLibraryHash(library)).toMatchInlineSnapshot(`"sha256:fdfbf36e9aee5adedb7544d9f20ded42aef00b9cd21c8e3e42ac2e98050089b9"`);
+    // Re-pinned by foundry-build-0048 CP1-TOKENPARITY run 2 (by hand from a green probe run computing these same five
+    // hashes, no `-u`). With frames/AppFrame.tsx and styles/section-reveal.tsx at base c1589043a the probe reproduces every
+    // pin above; run 1's ROOT_FILL_CLASSES rename and inlined reveal fallbacks move the measured surfaces (FrameDock's
+    // max-w-display and Toaster's cx do not), and generate-surface-consumption.mjs --write refreshes the app-shell rows.
+    // Values and components unchanged: composite fdfbf36e -> c7a2d29a, surface 012ef6e4 -> 8b183b42, whole 60968c88 -> 93624413.
+    expect(compositeLibraryHash(library)).toMatchInlineSnapshot(`"sha256:c7a2d29af1f7c4af9ef23d8013c3a51ed09f0d90022e0eede0adf375fd534934"`);
     const values = { ...library.values, source: library.source, adoptedAt: library.adoptedAt } as LibraryData;
     expect(libraryHash(values)).toMatchInlineSnapshot(`"fnv1a64:149d271dd68aea6f"`);
     expect(libraryHash(values)).toBe(referenceLibraryHash(values));
     expect(componentLibraryHash({ ...library.components, source: library.source, adoptedAt: library.adoptedAt })).toMatchInlineSnapshot(`"sha256:f74c3c3c8b50cdb4e2420bedd4224d772f4930c1ec4c7aadd927000ba91dc21d"`);
-    expect(surfacePortionHash(library.surfaces!)).toMatchInlineSnapshot(`"sha256:012ef6e4b7081a18ec9973afb5035688ba126899be518b11fb82adabdd9cd013"`);
-    expect(nodeSha256(stableStringify(library))).toMatchInlineSnapshot(`"60968c88c4c14e11fa5a47a10f2e2fbd1f144651ed45670ad2966910024834d0"`);
+    expect(surfacePortionHash(library.surfaces!)).toMatchInlineSnapshot(`"sha256:8b183b4261b3febc0c8b37fa57bb1835f36fc275736c28336b9a4fc1accfd57f"`);
+    expect(nodeSha256(stableStringify(library))).toMatchInlineSnapshot(`"9362441353d714fa456213b6f695536e518ff8010b9212276bf8db09c9d429d9"`);
     expect(stableStringify(library)).toBe(referenceStringify(library));
   });
 });

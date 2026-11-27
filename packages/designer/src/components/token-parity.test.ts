@@ -132,20 +132,141 @@ function stripComments(src: string): string {
 const CLASSNAME_ATTR_RE = /\bclassName\s*=\s*"([^"]*)"|\bclassName\s*=\s*'([^']*)'/g;
 
 /**
- * `typeof className === "function" ? className(renderProps) : className` —
- * the consumer-`style`/`className`-merging pattern `Button`, `Link`,
- * `Switch`, and `Checkbox` all share — sits INSIDE several of this
- * package's `cx(...)` calls (as one of the ternary's branches), and its
- * `"function"` string literal is not a class, it's a JS `typeof` comparison.
- * Stripped out before the quoted-string scan below runs over a `cx(...)`
- * call's argument text, the same way `stripComments` removes prose before
- * either scan runs — a targeted fix for a real, narrow idiom, not a second
- * hand-maintained exemption list.
+ * The string, template and regular-expression literals in `code`, as
+ * [start, end) ranges of their contents. A `className=`, a `cx(` or a map
+ * declaration that starts inside one is text the file holds (a source snapshot
+ * in a fixture, a pattern like `/className="[^"]*"/`), not code that renders,
+ * so the extractors below never read it. A `'` or `"` with no closing quote on
+ * its line is JSX text (an apostrophe), not a string; a `/` opens a regular
+ * expression only where an operand is expected, never after `<` (a closing
+ * tag), `}` or `)` (a `/>`), an identifier or another literal.
  */
-const TYPEOF_COMPARISON_RE = /\btypeof\s+[\w.]+\s*(?:===|!==|==|!=)\s*"[^"]*"/g;
+const REGEX_PRECEDERS = new Set(["(", ",", "=", ":", "[", "!", "&", "|", "?", "{", ";", "+", "-", "*", "%", "~", "^"]);
+const REGEX_KEYWORDS = new Set(["return", "typeof", "case", "do", "else", "in", "of", "new", "delete", "void", "throw", "yield", "await", "instanceof"]);
 
-function stripTypeofComparisons(text: string): string {
-  return text.replace(TYPEOF_COMPARISON_RE, " ");
+function literalSpans(code: string): ReadonlyArray<readonly [number, number]> {
+  const spans: Array<readonly [number, number]> = [];
+  const templates: number[] = [];
+  let depth = 0;
+  let prev = "";
+  let word = "";
+  let wordEnded = false;
+  const lineEnd = (from: number, close: string): number => {
+    let inClass = false;
+    for (let j = from; j < code.length && code[j] !== "\n"; j++) {
+      const ch = code[j];
+      if (ch === "\\") j++;
+      else if (close === "/" && ch === "[") inClass = true;
+      else if (close === "/" && ch === "]") inClass = false;
+      else if (ch === close && !inClass) return j;
+    }
+    return -1;
+  };
+  const template = (from: number): number => {
+    for (let j = from; j < code.length; j++) {
+      if (code[j] === "\\") j++;
+      else if (code[j] === "`") {
+        spans.push([from, j]);
+        return j + 1;
+      } else if (code[j] === "$" && code[j + 1] === "{") {
+        spans.push([from, j]);
+        templates.push(depth++);
+        return j + 2;
+      }
+    }
+    spans.push([from, code.length]);
+    return code.length;
+  };
+  let i = 0;
+  while (i < code.length) {
+    const ch = code[i] as string;
+    if (/\s/.test(ch)) {
+      wordEnded = true;
+      i++;
+      continue;
+    }
+    let end = -1;
+    if (ch === '"' || ch === "'") end = lineEnd(i + 1, ch);
+    else if (ch === "/" && (prev === "" || REGEX_PRECEDERS.has(prev) || (/[\w$]/.test(prev) && REGEX_KEYWORDS.has(word)))) end = lineEnd(i + 1, "/");
+    if (end !== -1) {
+      spans.push([i + 1, end]);
+      i = end + 1;
+      prev = ch;
+      word = "";
+      continue;
+    }
+    if (ch === "`" || (ch === "}" && templates.length > 0 && templates.at(-1) === depth - 1)) {
+      if (ch === "}") {
+        templates.pop();
+        depth--;
+      }
+      i = template(i + 1);
+      prev = "`";
+      word = "";
+      continue;
+    }
+    if (ch === "{") depth++;
+    else if (ch === "}") depth--;
+    word = /[\w$]/.test(ch) ? (wordEnded || !/[\w$]/.test(prev) ? ch : word + ch) : "";
+    wordEnded = false;
+    prev = ch;
+    i++;
+  }
+  return spans;
+}
+
+function insideLiteral(spans: ReadonlyArray<readonly [number, number]>, index: number): boolean {
+  let lo = 0;
+  let hi = spans.length - 1;
+  while (lo <= hi) {
+    const mid = (lo + hi) >> 1;
+    const [start, end] = spans[mid] as readonly [number, number];
+    if (index < start) hi = mid - 1;
+    else if (index >= end) lo = mid + 1;
+    else return true;
+  }
+  return false;
+}
+
+/**
+ * The literals of a `cx(...)` call's argument text that can be class lists.
+ * Two positions inside a call are values the call compares or passes on,
+ * never classes it renders, and are left out:
+ * - an operand of `===`, `!==`, `==` or `!=` (`variant === "inverse" ? ...`,
+ *   `typeof className === "function"`);
+ * - anything inside a nested call's arguments or an element access
+ *   (`buttonClassName("primary", "md")`, `TONE_CLASSES[tone ?? "neutral"]`).
+ *   A nested `cx(...)` is read as its own call by `extractCallArgs`.
+ * Every other literal, at any depth of a ternary, `&&` or grouping paren, is a
+ * candidate class list whenever it is the branch selected at runtime.
+ */
+function classLiteralsInCall(args: string): string[] {
+  const out: string[] = [];
+  const passedOn: boolean[] = [];
+  let prev = "";
+  for (let i = 0; i < args.length; i++) {
+    const ch = args[i] as string;
+    if (ch === '"' || ch === "'" || ch === "`") {
+      let j = i + 1;
+      while (j < args.length && args[j] !== ch) j += args[j] === "\\" ? 2 : 1;
+      let before = i - 1;
+      while (before >= 0 && /\s/.test(args[before] as string)) before--;
+      let after = j + 1;
+      while (after < args.length && /\s/.test(args[after] as string)) after++;
+      const comparand =
+        (args[before] === "=" && (args[before - 1] === "=" || args[before - 1] === "!")) ||
+        ((args[after] === "=" || args[after] === "!") && args[after + 1] === "=");
+      if (!comparand && !passedOn.includes(true)) out.push(args.slice(i + 1, j));
+      i = j;
+      prev = ch;
+      continue;
+    }
+    if (ch === "(" || ch === "[") passedOn.push(/[\w$)\].]/.test(prev));
+    else if (ch === "{") passedOn.push(false);
+    else if (ch === ")" || ch === "]" || ch === "}") passedOn.pop();
+    if (!/\s/.test(ch)) prev = ch;
+  }
+  return out;
 }
 
 /**
@@ -180,10 +301,11 @@ function stringLiteralsIn(text: string): string[] {
  * package has none, the same reason `ladder.test.ts` stays regex-based —
  * see its own header comment).
  */
-function extractCallArgs(code: string, calleeName: string): string[] {
+function extractCallArgs(code: string, calleeName: string, spans = literalSpans(code)): string[] {
   const args: string[] = [];
   const calleeRe = new RegExp(`\\b${calleeName}\\s*\\(`, "g");
   for (const match of code.matchAll(calleeRe)) {
+    if (insideLiteral(spans, match.index)) continue;
     const start = match.index + match[0].length;
     let depth = 1;
     let i = start;
@@ -232,6 +354,75 @@ const VARIANT_MAP_RE = /const\s+[A-Za-z_]*CLASSES\s*:\s*Record<[^=]*>\s*=\s*\{([
 const ANY_RECORD_MAP_RE = /const\s+([A-Za-z_]+)\s*:\s*Record</g;
 
 /**
+ * The initializer text of the declaration whose type annotation starts at
+ * `from`: everything after its first top-level `=` (not `=>`, `==` or a
+ * comparison) up to the top-level `;` that ends the statement (or the close
+ * of the enclosing block), quote-aware. `from` is the annotation's `<`.
+ * Empty when the declaration has no initializer.
+ */
+function declarationInitializer(code: string, from: number): string {
+  let depth = 0;
+  let start = -1;
+  for (let i = from; i < code.length; i++) {
+    const ch = code[i] as string;
+    if (ch === '"' || ch === "'" || ch === "`") {
+      let j = i + 1;
+      while (j < code.length && code[j] !== ch) j += code[j] === "\\" ? 2 : 1;
+      i = j;
+      continue;
+    }
+    if (ch === "(" || ch === "[" || ch === "{" || (start === -1 && ch === "<")) depth++;
+    else if (ch === ")" || ch === "]" || ch === "}" || (start === -1 && ch === ">" && code[i - 1] !== "=")) depth--;
+    else if (depth === 0 && start === -1 && ch === "=" && !/[=>]/.test(code[i + 1] ?? "") && !/[=!<>]/.test(code[i - 1] ?? "")) start = i + 1;
+    else if (depth === 0 && start !== -1 && ch === ";") return code.slice(start, i);
+    if (depth < 0) return start === -1 ? "" : code.slice(start, i);
+  }
+  return start === -1 ? "" : code.slice(start);
+}
+
+/**
+ * The string literals an initializer holds in value positions: every literal
+ * except an object key (one that follows `{` or `,` and is followed by `:`).
+ */
+function stringValuesIn(initializer: string): string[] {
+  const out: string[] = [];
+  let prev = "";
+  for (let i = 0; i < initializer.length; i++) {
+    const ch = initializer[i] as string;
+    if (ch === '"' || ch === "'" || ch === "`") {
+      let j = i + 1;
+      while (j < initializer.length && initializer[j] !== ch) j += initializer[j] === "\\" ? 2 : 1;
+      let after = j + 1;
+      while (after < initializer.length && /\s/.test(initializer[after] as string)) after++;
+      if (!((prev === "{" || prev === ",") && initializer[after] === ":")) out.push(initializer.slice(i + 1, j));
+      i = j;
+      prev = ch;
+      continue;
+    }
+    if (!/\s/.test(ch)) prev = ch;
+  }
+  return out;
+}
+
+/** A lone lowercase word: as much an English word or a prop value as a class. */
+const BARE_WORD_RE = /^[a-z]+$/;
+
+/**
+ * Whether a map is a style table: one of its string values holds a token
+ * Tailwind parses as a utility, compiled or not (`px-sm`, and a mistyped
+ * `bg-surface-elevated` alike), that is not a lone lowercase word. A map of
+ * numbers, nodes, an empty accumulator, or of strings that are no utility at
+ * all (slot ids, attribute names, export names) holds no style name to check,
+ * and neither does one whose only Tailwind-shaped strings are bare words such
+ * as a prop value `outline` or a property name `size`.
+ */
+function holdsStyleNames(initializer: string): boolean {
+  return stringValuesIn(initializer).some((value) =>
+    value.split(/\s+/).some((token) =>
+      token !== "" && !BARE_WORD_RE.test(token) && designSystem.parseCandidate(token).length > 0));
+}
+
+/**
  * Maps that are deliberately NOT class lists, and so are deliberately not
  * scanned. Each entry is a promise that the map holds something else —
  * `Stat`'s trend indicators hold a glyph and a label, because encoding
@@ -243,8 +434,8 @@ const ANY_RECORD_MAP_RE = /const\s+([A-Za-z_]+)\s*:\s*Record</g;
  * would otherwise fail open: a class map named `BUTTON_STYLES` would
  * silently never be checked, and a typo inside it would ship. The
  * assertion that consumes this list closes that hole — every `Record` map
- * must be either scanned or named here, so a new map cannot quietly
- * escape both.
+ * that holds a style name (see `holdsStyleNames`) must be either scanned or
+ * named here, so a new class map cannot quietly escape both.
  */
 const KNOWN_NON_CLASS_MAPS = new Set([
   // Foundry importer builds nested DTCG token groups, not Tailwind classes.
@@ -340,26 +531,82 @@ function isKnownNonClassMap(file: string, name: string): boolean {
   return KNOWN_NON_CLASS_MAPS.has(name) || KNOWN_NON_CLASS_MAPS.has(`${path}:${name}`);
 }
 
-function extractCandidateClasses(code: string): Set<string> {
+/**
+ * The style-table `Record` maps in `code` (see `holdsStyleNames`) that are
+ * neither scanned as classes (named `*CLASSES`) nor declared non-class. A map
+ * that holds no style name cannot hold a class list, so it needs neither; a
+ * declaration written inside a string literal is text, not a map.
+ */
+function unaccountedRecordMaps(file: string, code: string): string[] {
+  const spans = literalSpans(code);
+  const out: string[] = [];
+  for (const match of code.matchAll(ANY_RECORD_MAP_RE)) {
+    const name = match[1] as string;
+    if (insideLiteral(spans, match.index)) continue;
+    if (name.includes("CLASSES")) continue;
+    if (isKnownNonClassMap(file, name)) continue;
+    if (!holdsStyleNames(declarationInitializer(code, match.index + match[0].length - 1))) continue;
+    out.push(name);
+  }
+  return out;
+}
+
+interface CandidateClasses {
+  /** Every class token this file writes in a class position. */
+  classes: Set<string>;
+  /** Tokens written only inside a class list copied verbatim from the stock registry (see `STOCK_CLASS_LISTS`). */
+  stock: Set<string>;
+}
+
+function extractCandidateClasses(code: string): CandidateClasses {
+  const spans = literalSpans(code);
   const chunks: string[] = [];
 
   for (const match of code.matchAll(CLASSNAME_ATTR_RE)) {
-    chunks.push(match[1] ?? match[2] ?? "");
+    if (!insideLiteral(spans, match.index)) chunks.push(match[1] ?? match[2] ?? "");
   }
-  for (const args of extractCallArgs(code, "cx")) {
-    chunks.push(...stringLiteralsIn(stripTypeofComparisons(args)));
+  for (const args of extractCallArgs(code, "cx", spans)) {
+    chunks.push(...classLiteralsInCall(args));
   }
   for (const match of code.matchAll(VARIANT_MAP_RE)) {
-    chunks.push(...stringLiteralsIn(match[1] ?? ""));
+    if (!insideLiteral(spans, match.index)) chunks.push(...stringLiteralsIn(match[1] ?? ""));
   }
 
   const classes = new Set<string>();
+  const stock = new Set<string>();
   for (const chunk of chunks) {
+    const target = STOCK_CLASS_LISTS.has(chunk) ? stock : classes;
     for (const token of chunk.split(/\s+/)) {
-      if (token) classes.add(token);
+      if (token) target.add(token);
     }
   }
-  return classes;
+  for (const token of classes) stock.delete(token);
+  return { classes, stock };
+}
+
+/**
+ * The class tokens of one file that do not resolve, given which candidates
+ * Tailwind compiled. A token Tailwind compiles to no rule still resolves when
+ * it is one of three things a stylesheet, not a utility, gives meaning to:
+ * - a hook class the package's own stylesheets select (`PACKAGE_HOOK_CLASSES`);
+ * - a Tailwind marker class, `group` or `peer` (optionally `/name`), which
+ *   Tailwind's `group-*` and `peer-*` variants select;
+ * - a token of a class list copied verbatim from the stock registry that
+ *   Tailwind does not parse as a utility at all (stock's `toaster` hook).
+ *   A stock token Tailwind parses as a utility but cannot compile (a missing
+ *   keyframe, say) still fails.
+ */
+function unresolvedClasses(candidates: CandidateClasses, compiles: (className: string) => boolean): string[] {
+  const out: string[] = [];
+  for (const className of candidates.classes) {
+    if (compiles(className) || PACKAGE_HOOK_CLASSES.has(className) || TAILWIND_MARKER_RE.test(className)) continue;
+    out.push(className);
+  }
+  for (const className of candidates.stock) {
+    if (compiles(className) || designSystem.parseCandidate(className).length === 0) continue;
+    out.push(className);
+  }
+  return out;
 }
 
 // ── Raw var(--...) read validation — unchanged in approach ─────────────
@@ -387,6 +634,48 @@ const DECLARED_VARIABLES: ReadonlySet<string> = new Set([
   ...declaredTokenValues(DECLARED_SOURCES, "").keys(),
   ...DECLARED_SOURCES.runtimeSetVariables,
 ]);
+
+/**
+ * Class names the package's own stylesheets select (`.frame-header-grid`,
+ * `& .site-header-nav-inline`): read from the selector preludes of the same
+ * declared sources, tokens.css and theme.css with theme-keys.css inlined. A
+ * class Tailwind cannot compile is still real when the package styles it.
+ */
+const SELECTOR_CLASS_RE = /\.(-?[_a-zA-Z][\w-]*)(?![\w\\-])/g;
+
+function selectorClasses(css: string): Set<string> {
+  const out = new Set<string>();
+  const cleaned = css.replace(/\/\*[\s\S]*?\*\//g, "").replace(/"(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*'/g, '""');
+  for (const prelude of cleaned.matchAll(/([^{};]+)\{/g)) {
+    for (const match of (prelude[1] ?? "").matchAll(SELECTOR_CLASS_RE)) out.add(match[1] as string);
+  }
+  return out;
+}
+
+const PACKAGE_HOOK_CLASSES: ReadonlySet<string> = selectorClasses(`${DECLARED_SOURCES.tokensCss}\n${DECLARED_SOURCES.themeCss}`);
+
+/** Tailwind's marker classes: they emit no rule, and `group-*` / `peer-*` variants select them. */
+const TAILWIND_MARKER_RE = /^(?:group|peer)(?:\/[\w-]+)?$/;
+
+/**
+ * Every `className="..."` class list the stock registry snapshots this package
+ * vendors write (`references/shadcn-aria`, the registry its components are
+ * copied from). Only a whole class list equal to one of these counts as stock.
+ */
+const STOCK_REGISTRY_DIR = join(dirname(srcDir), "references", "shadcn-aria");
+
+function stockClassLists(dir: string, out = new Set<string>()): Set<string> {
+  for (const entry of readdirSync(dir)) {
+    const full = join(dir, entry);
+    if (statSync(full).isDirectory()) stockClassLists(full, out);
+    else if (extname(full) === ".tsx") {
+      for (const match of readFileSync(full, "utf8").matchAll(CLASSNAME_ATTR_RE)) out.add(match[1] ?? match[2] ?? "");
+    }
+  }
+  return out;
+}
+
+const STOCK_CLASS_LISTS: ReadonlySet<string> = stockClassLists(STOCK_REGISTRY_DIR);
 
 function isDeclaredVariable(property: string): boolean {
   return property in TOKENS || DECLARED_VARIABLES.has(property);
@@ -464,7 +753,7 @@ const findings: Finding[] = [];
 const sourceFiles = collectSourceFiles(srcDir);
 
 const allCandidateClasses = new Set<string>();
-const classesByFile = new Map<string, Set<string>>();
+const classesByFile = new Map<string, CandidateClasses>();
 const varsByFile = new Map<string, string[]>();
 
 for (const file of sourceFiles) {
@@ -472,9 +761,9 @@ for (const file of sourceFiles) {
   const code = stripComments(raw);
   const relFile = file.slice(srcDir.length + 1);
 
-  const classes = extractCandidateClasses(code);
-  classesByFile.set(file, classes);
-  for (const c of classes) allCandidateClasses.add(c);
+  const candidates = extractCandidateClasses(code);
+  classesByFile.set(file, candidates);
+  for (const c of [...candidates.classes, ...candidates.stock]) allCandidateClasses.add(c);
 
   const vars = [...code.matchAll(VAR_RE)].map((match) => match[1] as string);
   varsByFile.set(file, vars);
@@ -490,17 +779,15 @@ const invalidClasses = new Set(
   candidateList.filter((_, i) => compiledResults[i] === null),
 );
 
-for (const [file, classes] of classesByFile) {
+for (const [file, candidates] of classesByFile) {
   const relFile = file.slice(srcDir.length + 1);
-  for (const className of classes) {
-    if (invalidClasses.has(className)) {
-      findings.push({
-        file: relFile,
-        kind: "class",
-        text: className,
-        reason: "Tailwind compiled this to no CSS rule at all — not a real utility, not a token-derived class",
-      });
-    }
+  for (const className of unresolvedClasses(candidates, (c) => !invalidClasses.has(c))) {
+    findings.push({
+      file: relFile,
+      kind: "class",
+      text: className,
+      reason: "Tailwind compiled this to no CSS rule at all, and no package stylesheet, Tailwind marker or stock class list gives it meaning",
+    });
   }
 }
 
@@ -534,6 +821,43 @@ describe("token parity: every Tailwind class and var() read resolves against a r
     expect(isDeclaredVariable(unknown)).toBe(false);
     const probe = `<div style={{ color: "var(${unknown})", margin: "calc(var(--spacing) * 2)", borderColor: "var(--border)" }} />`;
     expect(unresolvedVarFindings("probe.tsx", probe).map((f) => f.text)).toEqual([unknown]);
+  });
+
+  /**
+   * The cx() precision rules leave out compared values, values passed on to a
+   * nested call or element access, and code written inside a string — never
+   * the class branches the call renders. A mistyped class in a ternary branch
+   * is still the one finding, beside every value the rules leave out.
+   */
+  it("a real unknown class inside cx() still fails", () => {
+    const probe = [
+      'const label = \'cx("not-a-class")\';',
+      'export const X = ({ variant, tone }) => <div className={cx(variant === "inverse" ? "bg-surface-elevated" : "bg-surface-raised", size("md"), TONE[tone ?? "neutral"], "group")} />;',
+    ].join("\n");
+    const compiles = (className: string) => designSystem.candidatesToCss([className])[0] !== null;
+    expect(unresolvedClasses(extractCandidateClasses(probe), compiles)).toEqual(["bg-surface-elevated"]);
+    // A stock class list copied verbatim keeps its non-utility hook (`toaster`), never a utility Tailwind cannot compile.
+    const stock = 'export const Y = () => <><div className="toaster group" /><div className="h-4 w-px animate-caret-blink bg-foreground duration-1000" /></>;';
+    expect(unresolvedClasses(extractCandidateClasses(stock), compiles)).toEqual(["animate-caret-blink"]);
+  });
+
+  /**
+   * The map check counts a `Record` map only when its values hold a style
+   * name, so a map of slot ids, numbers or prop values needs no declaration —
+   * but a string-valued class map under any other name than `*CLASSES` still
+   * fails, mistyped class and all, and a declaration written inside a string
+   * is not a map.
+   */
+  it("a string-valued class map without a declaration still fails", () => {
+    const probe = [
+      'const BUTTON_STYLES: Record<Size, string> = { sm: "px-sm bg-surface-elevated", md: "px-md" };',
+      'const ROW_CLASSES: Record<Size, string> = { sm: "px-sm" };',
+      'const SLOT_IDS: Record<Size, string> = { sm: "components.button", md: "Impl0" };',
+      "const ORDER: Record<Size, number> = { sm: 1, md: 2 };",
+      'const PROPS: Record<string, { property: string; value: string }> = { a: { property: "size", value: "outline" } };',
+      `const note = 'const TEXT_STYLES: Record<Size, string> = { sm: "px-sm" };';`,
+    ].join("\n");
+    expect(unaccountedRecordMaps(join(srcDir, "probe.ts"), probe)).toEqual(["BUTTON_STYLES"]);
   });
 
   /**
@@ -574,8 +898,9 @@ describe("token parity: every Tailwind class and var() read resolves against a r
    * inside it ships unnoticed. A test that quietly stops covering things
    * is worse than no test, because it still reads as green.
    *
-   * So: every `Record<...>` map in the source must be either scanned
-   * (named `*CLASSES`) or explicitly listed as a known non-class map.
+   * So: every `Record<...>` map in the source that holds a style name must
+   * be either scanned (named `*CLASSES`) or explicitly listed as a known
+   * non-class map.
    * Adding a map that is neither fails here, and the fix is to name it
    * correctly or declare why it holds something other than classes.
    */
@@ -584,10 +909,7 @@ describe("token parity: every Tailwind class and var() read resolves against a r
 
     for (const file of sourceFiles) {
       const code = stripComments(readFileSync(file, "utf8"));
-      for (const match of code.matchAll(ANY_RECORD_MAP_RE)) {
-        const name = match[1] as string;
-        if (name.includes("CLASSES")) continue;
-        if (isKnownNonClassMap(file, name)) continue;
+      for (const name of unaccountedRecordMaps(file, code)) {
         unaccounted.push(`  ${file.slice(srcDir.length + 1)}: ${name}`);
       }
     }

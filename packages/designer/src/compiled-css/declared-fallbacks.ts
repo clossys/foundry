@@ -261,11 +261,13 @@ export function addDeclaredFallbacks(css: string, sources: DeclaredSources): str
     return result;
   };
 
-  // Tailwind's own `@supports (<property>: var(--tw))`, never an authored one.
+  // Tailwind's own `@supports (<property>: var(--tw))`, never an authored one:
+  // the fallback goes into Tailwind's matched text before its two closing
+  // parens, so this file names no `--tw` read of its own.
   const withQueries = declared.has("--tw")
     ? css
-    : css.replace(TAILWIND_SUPPORTS_RE, (whole, property: string) =>
-        authored.includes(whole) ? whole : `@supports (${property}: var(--tw, ${RUNTIME_ONLY_FALLBACK}))`);
+    : css.replace(TAILWIND_SUPPORTS_RE, (whole: string) =>
+        authored.includes(whole) ? whole : whole.replace(/\s*\)\s*\)$/, `, ${RUNTIME_ONLY_FALLBACK}))`));
   const out = withQueries.replace(BARE_VAR_RE, (whole, name: string) => {
     const value = resolve(name, new Set());
     return value === undefined ? whole : `var(${name}, ${value})`;

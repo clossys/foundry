@@ -120,7 +120,7 @@ export function Toaster({ "aria-label": ariaLabel = "Notifications", className, 
       richColors
       visibleToasts={inContainer ? 1 : 5}
       {...(offset ? { offset } : {})}
-      className={cx(inContainer ? "toaster group" : "toaster group end-md", className)}
+      className={cx("toaster group", !inContainer && "end-md", className)}
       style={{ ...VARIANT_VARS, ["--border-radius" as string]: "var(--radius-control)", ...(inContainer ? { position: "relative", insetInline: "auto", insetBlock: "auto", transform: "none" } : { zIndex: UI_Z_TOAST }) } as CSSProperties}
       toastOptions={{ closeButtonAriaLabel: "Close", classNames: { toast: "cn-toast" }, style: { boxShadow: UI_ELEVATION_FLOATING } }}
     />

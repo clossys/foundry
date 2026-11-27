@@ -174,7 +174,7 @@
           },
           {
             "path": "packages/designer/src/frames/AppFrame.tsx",
-            "sha256": "ef00d5512a77e5dfe16d91c0f45b6178bec97e448587cdf8c2818bff104da50f"
+            "sha256": "47add18e001823e01d8c8b318b9a9654c83aa4f9e215842542bbc63591f56571"
           },
           {
             "path": "packages/designer/src/frames/AppFrameBrand.tsx",
@@ -198,7 +198,7 @@
           },
           {
             "path": "packages/designer/src/frames/FrameDock.tsx",
-            "sha256": "8327a47d3d66e228f728d17f9711a5739f517933f437a27c5bb97d3785683028"
+            "sha256": "363de0f70096dd3dc90343ca3f82f095a34a5951417dbcaa348f082860f661ed"
           },
           {
             "path": "packages/designer/src/icons/ChevronDown.ts",
@@ -246,7 +246,7 @@
           },
           {
             "path": "packages/designer/src/shell/Toaster.tsx",
-            "sha256": "5b9b4a0b332905876f9e956c6abd1b5aab0324c3ee3009865a1a7ffddf4eaab7"
+            "sha256": "22b965e79659a28776954e7a8f99e21857d7539528d7532c279bf735823aeb41"
           },
           {
             "path": "packages/designer/src/theme/internal/theme-core.ts",
