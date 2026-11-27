@@ -1,0 +1,307 @@
+{
+  "schema": "clossys.slot/2",
+  "id": "frames.video",
+  "agent": "designer",
+  "kind": "element/frame",
+  "status": "starter",
+  "ia": {
+    "l0": "frames",
+    "l1": "frames/frames",
+    "l2": "frames/frames/frames-shells",
+    "order": 202
+  },
+  "createdBy": {
+    "actor": "code",
+    "cli": "clossys ia",
+    "version": "0.1.0"
+  },
+  "createdAt": "2026-11-27T02:30:03.107Z",
+  "updatedAt": "2026-11-27T04:54:04.960Z",
+  "refs": [
+    {
+      "to": "director/advantage.proposition.promise",
+      "rel": "input"
+    },
+    {
+      "to": "director/focus.category.definition",
+      "rel": "input"
+    },
+    {
+      "to": "director/focus.segment.core",
+      "rel": "input"
+    },
+    {
+      "to": "director/identity.brand.essence",
+      "rel": "input"
+    },
+    {
+      "to": "director/identity.brand.personality",
+      "rel": "input"
+    },
+    {
+      "to": "director/identity.verbal.voice",
+      "rel": "input"
+    },
+    {
+      "to": "director/identity.visual.imagery",
+      "rel": "input"
+    },
+    {
+      "to": "director/identity.visual.style",
+      "rel": "input"
+    },
+    {
+      "to": "designer/themes.background",
+      "rel": "input"
+    },
+    {
+      "to": "designer/themes.border",
+      "rel": "input"
+    },
+    {
+      "to": "designer/themes.foreground",
+      "rel": "input"
+    },
+    {
+      "to": "designer/themes.muted",
+      "rel": "input"
+    },
+    {
+      "to": "designer/themes.primary",
+      "rel": "input"
+    },
+    {
+      "to": "designer/themes.radius",
+      "rel": "input"
+    },
+    {
+      "to": "designer/themes.ring",
+      "rel": "input"
+    },
+    {
+      "to": "designer/themes.spacing",
+      "rel": "input"
+    }
+  ],
+  "base": null,
+  "standard": "frame",
+  "brief": {
+    "purpose": "Fill designer/frames.video to the frame standard.",
+    "mustDo": [],
+    "inputs": [
+      {
+        "to": "director/advantage.proposition.promise",
+        "rel": "input"
+      },
+      {
+        "to": "director/focus.category.definition",
+        "rel": "input"
+      },
+      {
+        "to": "director/focus.segment.core",
+        "rel": "input"
+      },
+      {
+        "to": "director/identity.brand.essence",
+        "rel": "input"
+      },
+      {
+        "to": "director/identity.brand.personality",
+        "rel": "input"
+      },
+      {
+        "to": "director/identity.verbal.voice",
+        "rel": "input"
+      },
+      {
+        "to": "director/identity.visual.imagery",
+        "rel": "input"
+      },
+      {
+        "to": "director/identity.visual.style",
+        "rel": "input"
+      },
+      {
+        "to": "designer/themes.background",
+        "rel": "input"
+      },
+      {
+        "to": "designer/themes.border",
+        "rel": "input"
+      },
+      {
+        "to": "designer/themes.foreground",
+        "rel": "input"
+      },
+      {
+        "to": "designer/themes.muted",
+        "rel": "input"
+      },
+      {
+        "to": "designer/themes.primary",
+        "rel": "input"
+      },
+      {
+        "to": "designer/themes.radius",
+        "rel": "input"
+      },
+      {
+        "to": "designer/themes.ring",
+        "rel": "input"
+      },
+      {
+        "to": "designer/themes.spacing",
+        "rel": "input"
+      }
+    ],
+    "acceptance": []
+  },
+  "contract": {
+    "kind": "frame",
+    "root": "div",
+    "landmarks": [
+      {
+        "slot": "stage",
+        "role": "main",
+        "topLevel": true,
+        "nameRequired": false
+      },
+      {
+        "slot": "controls",
+        "role": "region",
+        "topLevel": false,
+        "nameRequired": true
+      }
+    ],
+    "slots": [
+      {
+        "id": "stage",
+        "required": true,
+        "accepts": "sections.*"
+      },
+      {
+        "id": "controls",
+        "required": true,
+        "accepts": "host-node"
+      }
+    ],
+    "members": {
+      "mode": "closed",
+      "names": [
+        "aspect.16-9",
+        "start.paused"
+      ]
+    },
+    "statePorts": [
+      {
+        "id": "playing",
+        "type": "boolean"
+      },
+      {
+        "id": "scene",
+        "type": "number"
+      }
+    ],
+    "rendering": "client",
+    "breakpoints": [],
+    "allowedReads": {
+      "themes": [
+        "themes.background",
+        "themes.card",
+        "themes.foreground",
+        "themes.border",
+        "themes.radius",
+        "themes.muted",
+        "themes.sidebar",
+        "themes.muted-foreground",
+        "themes.primary",
+        "themes.ring",
+        "themes.spacing"
+      ],
+      "assets": []
+    },
+    "composes": [
+      "components.button",
+      "components.semantic-content",
+      "components.slider"
+    ],
+    "copy": {
+      "sourceLocale": "en",
+      "fields": [
+        {
+          "key": "controls.label",
+          "kind": "plain",
+          "role": "label",
+          "required": true,
+          "maxLength": {
+            "en": 60
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "controls.play",
+          "kind": "plain",
+          "role": "action",
+          "required": true,
+          "maxLength": {
+            "en": 24
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "controls.pause",
+          "kind": "plain",
+          "role": "action",
+          "required": true,
+          "maxLength": {
+            "en": 24
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "controls.scrubber",
+          "kind": "plain",
+          "role": "label",
+          "required": true,
+          "maxLength": {
+            "en": 60
+          },
+          "dir": "auto"
+        }
+      ]
+    },
+    "props": [
+      "children"
+    ],
+    "fixture": {
+      "schema": "clossys.element-preview/1",
+      "fixtures": {
+        "file": "registry/aria-nova/ui/slider.tsx",
+        "export": "Slider",
+        "props": {
+          "children": [
+            "DRAFT stage (sections.*)",
+            "DRAFT controls"
+          ]
+        }
+      }
+    },
+    "requirements": [
+      {
+        "check": "compose.layers"
+      },
+      {
+        "check": "source.ref"
+      },
+      {
+        "check": "tokens.only"
+      }
+    ]
+  },
+  "tighten": [],
+  "family": {
+    "options": 1,
+    "varyOn": null,
+    "values": []
+  }
+}

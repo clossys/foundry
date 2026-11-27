@@ -58,6 +58,8 @@ const SLIDES_DEFAULT_PATHS = [
   "src/catalog/defaults/frames.deck/canvas-v1.json",
   ...["title", "agenda", "statement", "two-column", "quote", "closing"].map(kind => `src/catalog/defaults/sections.slide-${kind}/standard-v1.json`),
 ];
+/** CP1-VIDEO1: the frames.video package default, the only package default outside Slides. */
+const VIDEO_DEFAULT_PATHS = ["src/catalog/defaults/frames.video/stage-v1.json"];
 const packageDefaults = new Map<string, DefaultFile[]>((existsSync(defaultsDir) ? readdirSync(defaultsDir) : []).sort().map(id => [id,
   readdirSync(join(defaultsDir, id)).filter(name => name.endsWith(".json")).sort().map(name => JSON.parse(readFileSync(join(defaultsDir, id, name), "utf8")) as DefaultFile)]));
 const clone = <T>(value: T): T => structuredClone(value);
@@ -73,24 +75,25 @@ const STUDIO_IDS = [
 describe("Designer tree counts (3 L0)", () => {
   const counts = countTree(DESIGNER_TREES, DESIGNER_RETIRED);
 
-  it("has 3 L0, 10 L1, 37 L2 and 206 live L3 (209 before the owner's 2026-11-20 component retirements; 204 before build-0048's five admin record sections; 38 L2 before build-0035's regroup; 39 L2 and 212 L3 before build-0032)", () => {
-    expect({ l0: counts.l0, l1: counts.l1, l2: counts.l2, l3: counts.l3 }).toEqual({ l0: 3, l1: 10, l2: 37, l3: 206 });
+  it("has 3 L0, 10 L1, 37 L2 and 207 live L3 (206 before CP1-VIDEO1's frames.video; 209 before the owner's 2026-11-20 component retirements; 204 before build-0048's five admin record sections; 38 L2 before build-0035's regroup; 39 L2 and 212 L3 before build-0032)", () => {
+    expect({ l0: counts.l0, l1: counts.l1, l2: counts.l2, l3: counts.l3 }).toEqual({ l0: 3, l1: 10, l2: 37, l3: 207 });
   });
 
   it("counts per L0 in owner order: Theme, Art, Interface", () => {
     expect(counts.byL0).toEqual({
       theme: { l1: 4, l2: 8, l3: 42 },
       art: { l1: 3, l2: 10, l3: 47 },
-      interface: { l1: 3, l2: 19, l3: 117 },
+      interface: { l1: 3, l2: 19, l3: 118 },
     });
     // foundry-build-0048 (Amendment 2026-11-18b, A3): five data-bound admin record sections join Sections Records.
     // Owner 2026-11-20 (BR-RETIRE3): components.link, components.media-player and components.status-mark retire in place.
-    expect(counts.byLayer).toEqual({ themes: 42, assets: 47, components: 56, sections: 50, frames: 11 });
+    // CP1-VIDEO1 (owner 2026-11-26, "Ok include video"): frames.video joins Frames > Shells by amendment (frames 11 -> 12 live).
+    expect(counts.byLayer).toEqual({ themes: 42, assets: 47, components: 56, sections: 50, frames: 12 });
   });
 
-  it("keeps every one of the 258 placed ids (253 before build-0048); 52 retire in place (49 before the owner's 2026-11-20 retirements)", () => {
-    expect(counts.placed).toBe(258);
-    expect(new Set(placedLeaves(DESIGNER_TREES)).size).toBe(258);
+  it("keeps every one of the 259 placed ids (258 before CP1-VIDEO1; 253 before build-0048); 52 retire in place (49 before the owner's 2026-11-20 retirements)", () => {
+    expect(counts.placed).toBe(259);
+    expect(new Set(placedLeaves(DESIGNER_TREES)).size).toBe(259);
     expect(counts.retired).toBe(52);
     expect(counts.placed - counts.retired).toBe(counts.l3);
   });
@@ -315,11 +318,11 @@ describe("Slides: frames.deck registered, six slide sections retired into their 
     for (const id of ["frames.deck", ...SLIDE_SECTIONS]) expect(packageDefaults.get(id)?.[0]?.clossys.source.kind, id).toBe("package-default");
   });
 
-  it("the packed package ships all seven Slides defaults (npm pack --dry-run)", () => {
+  it("the packed package ships all seven Slides defaults and the frames.video default (npm pack --dry-run)", () => {
     const out = execFileSync("npm", ["pack", "--dry-run", "--json", "--ignore-scripts"], { cwd: packageRoot, encoding: "utf8", stdio: ["ignore", "pipe", "pipe"], maxBuffer: 64 * 1024 * 1024 });
     const packed = new Set((JSON.parse(out) as { files: { path: string }[] }[])[0]!.files.map(file => file.path));
-    expect(SLIDES_DEFAULT_PATHS.filter(path => !packed.has(path))).toEqual([]);
-    expect([...packageDefaults].flatMap(([id, files]) => files.map(file => `src/catalog/defaults/${id}/${file.clossys.id.split(":").pop()}`)).sort()).toEqual([...SLIDES_DEFAULT_PATHS].sort());
+    expect([...SLIDES_DEFAULT_PATHS, ...VIDEO_DEFAULT_PATHS].filter(path => !packed.has(path))).toEqual([]);
+    expect([...packageDefaults].flatMap(([id, files]) => files.map(file => `src/catalog/defaults/${id}/${file.clossys.id.split(":").pop()}`)).sort()).toEqual([...SLIDES_DEFAULT_PATHS, ...VIDEO_DEFAULT_PATHS].sort());
   }, 120_000);
 
   it("defaults hold no literal copy: words come from Writer through the copy prop", () => {
@@ -356,8 +359,10 @@ describe("Slides: frames.deck registered, six slide sections retired into their 
 describe("slot-defaults.json carries live leaves only (build-0032, audit P9)", () => {
   const rows = (slotDefaults as { slots: Record<string, unknown> }).slots;
 
-  it("has one row per live placed leaf, frames.deck included, and none for a retired leaf", () => {
-    expect(Object.keys(rows)).toHaveLength(206);
+  it("has one row per live placed leaf, frames.deck and frames.video included, and none for a retired leaf", () => {
+    // CP1-VIDEO1: frames.video adds a live leaf and its row (206 -> 207).
+    expect(Object.keys(rows)).toHaveLength(207);
+    expect(rows["frames.video"]).toEqual({ standard: "frame" });
     expect(rows["frames.deck"]).toEqual({ standard: "frame" });
     expect(slotDefaultFindings(rows, DESIGNER_TREES, DESIGNER_RETIRED)).toEqual([]);
   });
