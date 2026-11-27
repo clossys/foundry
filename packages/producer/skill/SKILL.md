@@ -73,6 +73,8 @@ The six Producer loops run one step at a time from the loop version the consumer
   `packages/<agent>/actions/<action-id>/skill.md`): run that skill, then
   `clossys run loop.<name> --resume --run <run-id> --step-exit <0|1|2> --model <serving model> [--wrote <file>]...`.
   The version names only the tier; the ledger records the model that served the step.
+  Exact tier: only the seat's model and tier may serve its step (`clossys next` refuses a higher tier
+  as well as a lower one), and only the owner's `clossys seat` verb changes a seat's model or tier.
   `--step-exit 0` means the step did its work, and the run moves on to the next step. `--step-exit 1`
   means the step ran and found a problem: the step's own failure rule runs (it raises a `queue.fix` or
   `queue.clarify` entry and the run waits on it, or tries again after a clarify), and a step with no

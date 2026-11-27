@@ -39,7 +39,9 @@ describe("clossys next --submit --name: the R08.1 stem rule", () => {
     expect(unnamed.message).toContain("critiques/meta-v2.json");
     expect(unnamed.message).not.toContain("R08.1");
     expect((await submit("meta")).message).toBe(unnamed.message);
-    expect((await submit("home.meta")).message).toBe(unnamed.message.replaceAll("critiques/meta-v2.json", "critiques/home.meta-v2.json"));
+    // c3-12: the refusal also names the candidate file the slot takes, under the given stem.
+    expect(unnamed.message).toContain("the slot takes candidate file meta-v2.md; its critique is critiques/meta-v2.json");
+    expect((await submit("home.meta")).message).toBe(unnamed.message.replaceAll("critiques/meta-v2.json", "critiques/home.meta-v2.json").replace("candidate file meta-v2.md", "candidate file home.meta-v2.md"));
   });
 
   it("refuses an undeclared stem and another slot's record, naming the declared records, and writes nothing", async () => {

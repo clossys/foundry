@@ -20,7 +20,7 @@ import { hostname, tmpdir } from "node:os";
 import { dirname, isAbsolute, join, relative, resolve, sep } from "node:path";
 import type { DirectorStore, DirectorStoreChange, DirectorStoreWriter } from "@clossys/director";
 import {
-  CANDIDATE_NAME, KIND_EXT, SEAT_AGENT, agentDir, candidatesDir, jsonBytes, pinFile, slotFile, validateCandidate, validatePin, validateSlotDoc,
+  CANDIDATE_NAME, KIND_EXT, SEAT_AGENT, agentDir, candidateStemIssue, candidatesDir, jsonBytes, pinFile, slotFile, validateCandidate, validatePin, validateSlotDoc,
   type ModelAgent, type NotNeeded, type PinBasis, type PinDoc, type SlotAgent, type SlotDoc,
 } from "./slot-model/index.js";
 import { directorStoreReader, forgetSlotReads, isModelDir, listModelDir, listSlots, readCandidate, readLedger, readSlot, readSlotEntry } from "./slots.js";
@@ -187,7 +187,7 @@ export class GuardRefusal extends Error {
   readonly findings: readonly string[];
   readonly checks: readonly string[];
   constructor(verb: GuardVerb, findings: readonly string[], checks: readonly string[]) {
-    super(`${verb} refused by the constitution guard: ${findings.slice(0, 8).join("; ")}${findings.length > 8 ? ` (+${findings.length - 8} more)` : ""}`);
+    super(`${verb} refused by the constitution guard: ${findings.join("; ")}`);
     this.name = "GuardRefusal";
     this.verb = verb;
     this.findings = findings;
@@ -587,10 +587,10 @@ function axesIssue(directions: readonly { readonly axes: Readonly<Record<string,
   for (const axis of axes) {
     const seen = new Map<string, number>();
     for (const [index, direction] of directions.entries()) {
-      if (!Object.hasOwn(direction.axes, axis) || direction.axes[axis] === undefined || direction.axes[axis] === "") return `craft:diverge refused: direction ${index + 1} has no value on axis ${axis}; fix: give every direction a value on every axis${recipeAxes?.length ? ` (the recipe's axes: ${recipeAxes.join(", ")})` : ""} (R15.7)`;
+      if (!Object.hasOwn(direction.axes, axis) || direction.axes[axis] === undefined || direction.axes[axis] === "") return `craft:diverge refused: direction ${index + 1} has no value on axis ${axis}; fix: give every direction a value on every axis (${recipeAxes?.length ? "the recipe's" : "the directions'"} axes: ${axes.join(", ")}) (R15.7)`;
       const value = JSON.stringify(direction.axes[axis]);
       const twin = seen.get(value);
-      if (twin !== undefined) return `craft:diverge refused: directions ${twin + 1} and ${index + 1} share ${axis} ${value}; fix: make every direction's value distinct on every axis, so no direction is a cosmetic variant (R15.7)`;
+      if (twin !== undefined) return `craft:diverge refused: directions ${twin + 1} and ${index + 1} share ${axis} ${value}; fix: make every direction's value distinct on every axis, so no direction is a cosmetic variant (${recipeAxes?.length ? "the recipe's" : "the directions'"} axes: ${axes.join(", ")}) (R15.7)`;
       seen.set(value, index);
     }
   }
@@ -691,8 +691,14 @@ export function writeCritique(consumer: string, agent: ModelAgent, id: string, r
     const order = craftOrderIssue(openCraftStages(events), "critique");
     if (order) throw new Error(order);
     const leaf = id.split(".").at(-1)!;
-    const name = input.candidate ? input.candidate.replace(/\.[^.]+$/, "") : `${leaf}-v${nextVersion(currentEntry.dir, currentEntry.candidates)}`;
-    if (!CANDIDATE_NAME.test(`${name}.json`)) throw new Error(`critique refused: ${name} is not a <leaf>-v<n> candidate name`);
+    const version = nextVersion(currentEntry.dir, currentEntry.candidates);
+    const name = input.candidate ? input.candidate.replace(/\.[^.]+$/, "") : `${leaf}-v${version}`;
+    const takes = `the open run's candidate is <stem>-v${version} (stem ${leaf}, or a contract records key), so its critique is ${CRITIQUES_DIR}/${leaf}-v${version}.json`;
+    const parts = CANDIDATE_NAME.exec(`${name}.json`);
+    if (!parts) throw new Error(`critique refused: ${name} is not a <leaf>-v<n> candidate name; ${takes}`);
+    const stemIssue = candidateStemIssue(id, isRecord(current.doc) ? (current.doc as { contract?: unknown }).contract : undefined, parts[1]!);
+    if (stemIssue) throw new Error(`critique refused: candidate ${name} stem ${parts[1]} ${stemIssue}; ${takes}`);
+    if (Number(parts[2]) !== version) throw new Error(`critique refused: candidate ${name} is not the open run's next version v${version}; ${takes}`);
     const directory = join(entry.dir, CRITIQUES_DIR);
     canonicalDirectory(directory);
     mkdirSync(directory, { recursive: true });

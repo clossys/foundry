@@ -59,6 +59,11 @@ candidate:
   `source.ref`.
 - `reason`: one line naming the Director slot the copy realises.
 
+A `publication.*.meta` slot does not declare the voice as an input. It still
+carries the voice in `provenance.voice` and cites it in its `reason` (for
+example "Realises director:identity.verbal.voice for the site meta"), and the
+guard accepts that: the voice is never added to its `source.ref` or its inputs.
+
 Each record is a `### <key>` heading, one metadata comment whose `id` is the
 same key, and the text:
 

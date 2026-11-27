@@ -30,7 +30,7 @@ import { readCandidate, readLedger, readSlot, readSlotEntry } from "../records/s
 import { CandidateRefusal } from "../records/candidate.js";
 import { readCandidateText, submissionSources, viewSourceKind } from "../records/slot-current.js";
 import type { Actor, AgentId, Tier } from "../records/types.js";
-import { appendCraftEvent, CRAFT_STAGES, GuardRefusal, openCraftEvents, submittedBytes, writeCandidate, type CraftStage, type WriteGuard } from "../records/slot-write.js";
+import { appendCraftEvent, CRAFT_STAGES, GuardRefusal, nextVersion, openCraftEvents, submittedBytes, writeCandidate, type CraftStage, type WriteGuard } from "../records/slot-write.js";
 import { craftRunRecipe, craftRunRecipeIssues, loadRecipes, recipeSourceIssue, recipeTierIssue } from "../records/recipes.js";
 import "../constitution/guard.js"; // registers the write guard's runner
 import { nextPacket, openItems, openPackets, skillFile } from "../pipeline/chain.js";
@@ -70,7 +70,11 @@ export const NEXT_USAGE = "Usage: clossys next [--json] [--root <dir>]\n"
   + "  create (for the latest options packet's inputsHash). The submit refuses on any finding of a constitution check whose\n"
   + "  rules.json guard lists submit, on the new file (absolute: findings the slot already had count too).\n"
   + "  --stage: one P2 craft stage (section 5b) as a craft:<stage> slot-ledger event, in order brief, diverge, render, critique,\n"
-  + "  then at most 2 refine rounds; diverge takes --file with 3 to 4 {id, idea, axes} directions (cap 4). Refused under a\n"
+  + "  then at most 2 refine rounds; diverge takes --file with 3 to 4 {id, idea, axes} directions (cap 4), each with a distinct\n"
+  + "  value on every recipe axis (the brief prints the axes). Writer create order: clossys verdict (a create), then next --stage\n"
+  + "  brief, next --stage diverge --file <directions.json>, next --stage render --file <renders.json>, clossys critique-packet\n"
+  + "  and clossys critique --record, then next --submit --rung create. The brief prints the candidate file the slot takes\n"
+  + "  (<leaf>-v<n>.<ext>) and its critique (critiques/<leaf>-v<n>.json). Refused under a\n"
   + "  plumb recipe (R15.7: its plumb action computes the candidate, so no craft stage is recorded). A Producer seat\n"
   + "  slot (producer/seat.<step>) crafts under the seats action's skill; clossys seat writes the seat.";
 
@@ -200,6 +204,25 @@ export function submitTarget(argv: readonly string[], cwd: string, steps: readon
 const reject = (message: string): CliResult => ({ exitCode: 1, unrecorded: true, message: `next --submit refused: ${message}` });
 
 /**
+ * The candidate file a slot takes next (`<leaf>-v<n>.<ext>`, nextVersion and KIND_EXT) and its critique record
+ * (`critiques/<leaf>-v<n>.json`), for the brief and the submit refusal. `stem` defaults to the slot leaf.
+ */
+export function craftNames(consumer: string, agent: ModelAgent, slot: string, stem = slot.split(".").at(-1)!): { candidate: string; critique: string } {
+  let version = 1, ext = "json";
+  try {
+    const entry = readSlotEntry(consumer, agent as SlotAgent, slot);
+    if (entry) version = nextVersion(entry.dir, entry.candidates);
+    ext = KIND_EXT[readSlot(consumer, agent as SlotAgent, slot).kind] ?? ext;
+  } catch { /* an unreadable slot keeps the defaults; its own refusal says why */ }
+  return { candidate: `${stem}-v${version}.${ext}`, critique: `critiques/${stem}-v${version}.json` };
+}
+/** A submit refusal with the candidate file the slot takes and its critique name appended. */
+const rejectNamed = (message: string, consumer: string, agent: string, slot: string, stem?: string): CliResult => {
+  const { candidate, critique } = craftNames(consumer, agent as ModelAgent, slot, stem);
+  return reject(`${message}\n  the slot takes candidate file ${candidate}; its critique is ${critique}`);
+};
+
+/**
  * Whether `--skill` names the step's skill: its logical id (`packages/<agent>/actions/<step>/skill.md`, what the run
  * records), or a path, relative to the working folder, that resolves to the same file as the installed skill the id
  * names (`node_modules/@clossys/<agent>/actions/<step>/skill.md` in a consumer; CHAT-DIR gap 13).
@@ -299,12 +322,12 @@ export async function runNextSubmitCli(argv: readonly string[], cwd: string, ste
   // P2 (adapt, create) only after the slot's latest verdict is create, for the latest options packet's inputs:
   // a slot-state precondition, refused after the submission's own content checks.
   const p2 = p2Refusal(entry.dir, agent, ladder!);
-  if (p2) return reject(p2);
+  if (p2) return rejectNamed(p2, consumer, agent, slot, stem);
   // The recipe code chooses for the slot's standard decides the source kinds a P2 candidate may carry (recipe.json
   // sources), judged on the kind of the view the guard reads (the probe's view, the bytes writeCandidate writes).
   const p2Rung = ["adapt", "create"].includes(String(rungKind(agent, ladder!.rung)));
   const recipeRefused = craftRecipeRefusal(root, entry.dir, agent, String(readSlot(consumer, agent as SlotAgent, slot).standard ?? ""), viewSourceKind(probe, probeRead.view), flags.tier!, p2Rung);
-  if (recipeRefused) return reject(recipeRefused);
+  if (recipeRefused) return rejectNamed(recipeRefused, consumer, agent, slot, stem);
   // The guard is absolute (section 4): the writer runs every constitution check whose rules.json
   // guard lists submit on the tree with the new file and its event in place, and refuses on any
   // finding about the new file, whatever the check's status and whether the slot had it before.
@@ -320,8 +343,8 @@ export async function runNextSubmitCli(argv: readonly string[], cwd: string, ste
       header: { createdBy },
     });
   } catch (error) {
-    if (error instanceof GuardRefusal) return { ...reject(error.message), output: { schema: "clossys.next-submit-refused/1", slot: target, verb: error.verb, checks: error.checks, findings: error.findings } };
-    return reject(error instanceof Error ? error.message : String(error));
+    if (error instanceof GuardRefusal) return { ...rejectNamed(error.message, consumer, agent, slot, stem), output: { schema: "clossys.next-submit-refused/1", slot: target, verb: error.verb, checks: error.checks, findings: error.findings } };
+    return rejectNamed(error instanceof Error ? error.message : String(error), consumer, agent, slot, stem);
   }
   const writtenFile = join(candidatesDir(slotDir(consumer, agent as SlotAgent, slot)), written.name);
   const outputPath = workspacePath(root, writtenFile) ?? `clossys/agents/${agent}/${slot}/candidates/${written.name}`;
@@ -446,5 +469,14 @@ export async function runNextStageCli(flags: Flags, cwd: string, steps: readonly
       by: `agent:${owning.id}`, skill: { path: contractSkill, sha256: sha(skillBytes) }, model: flags.model!, tier: flags.tier!,
     });
   } catch (error) { return refuse(error instanceof Error ? error.message : String(error)); }
-  return { exitCode: 0, root, output: { schema: "clossys.next-stage/1", slot: target, event }, message: `next --stage: ${target} ${event.op} by ${flags.model} (${flags.tier})` };
+  let message = `next --stage: ${target} ${event.op} by ${flags.model} (${flags.tier})`;
+  if (stage === "brief") {
+    const assembled = (event as unknown as { assembled?: { recipe?: { axes?: unknown } } }).assembled;
+    const axes = Array.isArray(assembled?.recipe?.axes) ? (assembled!.recipe!.axes as unknown[]).filter((axis): axis is string => typeof axis === "string") : [];
+    const { candidate, critique } = craftNames(consumer, agent as ModelAgent, slot);
+    message += `\n  recipe axes: ${axes.length ? axes.join(", ") : "(none: every direction names its own)"}; diverge gives 3 to 4 directions, each a distinct value on every axis`
+      + `\n  candidate file: ${candidate}; its critique: ${critique}`
+      + `\n  the critic's packet and every hash it carries: clossys critique-packet ${target} --standard <id> --render <path>...`;
+  }
+  return { exitCode: 0, root, output: { schema: "clossys.next-stage/1", slot: target, event }, message };
 }

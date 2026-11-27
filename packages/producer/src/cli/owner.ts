@@ -132,7 +132,13 @@ export const SEAT_USAGE = "Usage: clossys seat <step> --by <who> (--model <id> -
   + "       clossys seat --policy (--model <tier>=<id>... | --human-only) [--root <dir>]\n"
   + "  records who decides a decide step: a new seat candidate and its pin; places the seat in producer ia.json when it is not placed.\n"
   + "  --llm-from <step>: the llm (model and tier) of that step's assigned seat (a pick seat takes its candidates seat's llm).\n"
-  + "  --policy: writes clossys/seat-policy.json, the model id of each seat tier the seat answers fill (never guessed).";
+  + "  --policy: writes clossys/seat-policy.json, the model id of each seat tier the seat answers fill (never guessed).\n"
+  + "  --by: the seat's holder, who does the step: owner, planner or agent:<agent>. An llm seat held by agent:<agent> runs\n"
+  + "        packages/<agent>/actions/<step>/skill.md; an owner or planner seat runs a Producer skill (packages/producer/...).\n"
+  + "  --decided-by: who approved this seat change: the owner's queue answer (owner:queue.<kind>#<id>) or planner[:<ref>].\n"
+  + "  Exact tier: only the seat's model and tier may serve its step (clossys next refuses a higher tier as well as a lower\n"
+  + "  one), and only the owner's seat verb (this one) changes a seat's model or tier.\n"
+  + "  To see a seat as recorded (its holder, model, tier and prompt file): clossys slot producer/seat.<step> --full.";
 export const RULE_USAGE = "Usage: clossys rule --init [--root <dir>]\n"
   + "       clossys rule <R-ID> --quote <text> --date <YYYY-MM-DD> --status enforced|unenforced|pending-wire [--check <id>]... [--fixture <path>] [--fixture-run <cmd>]... [--note <text>] [--replace] [--root <dir>]\n"
   + "  adds (or with --replace, replaces) one owner rule row in scripts/rules/registry.json, starting the registry when it has none.";
@@ -1187,6 +1193,22 @@ export function seatPositionWrites(consumer: string, ia: IaDoc, except?: string)
   return { writes };
 }
 
+/**
+ * c3-2: the command that records the same seat with the holder its prompt file names (seat.prompt-owner): a
+ * packages/<agent>/actions/... prompt is held by agent:<agent>, a Producer one by owner (pipeline/seats.json's own holder of
+ * the Producer prompts; planner and agent:producer pass the rule too). Undefined when the prompt
+ * file names no agent package.
+ */
+export function seatHolderFix(argv: readonly string[], promptFile: string): string | undefined {
+  const agent = /^packages\/([a-z][a-z0-9-]*)\//.exec(promptFile)?.[1];
+  if (!agent) return undefined;
+  const holder = agent === "producer" ? "owner" : `agent:${agent}`;
+  const words = [...argv];
+  const at = words.indexOf("--by");
+  if (at >= 0 && at + 1 < words.length) words[at + 1] = holder; else words.push("--by", holder);
+  return `clossys seat ${words.map(word => (/^[\w@%+=:,./#<>-]+$/.test(word) ? word : JSON.stringify(word))).join(" ")}`;
+}
+
 export async function runSeatCli(argv: readonly string[], cwd: string, steps: readonly Step[] = STEPS): Promise<CliResult> {
   const flags = parseSeat(argv);
   if (flags.help) return { exitCode: 0, message: SEAT_USAGE };
@@ -1293,7 +1315,11 @@ export async function runSeatCli(argv: readonly string[], cwd: string, steps: re
       }
       writeSeatDecision(consumer, slotId, { name, bytes, pin: `${JSON.stringify(pin, null, 2)}\n`, at: atZ, seed: `@clossys/producer:pipeline/seats.json#${id}` });
     });
-  } catch (error) { return refuse("seat", error instanceof Error ? error.message : String(error)); }
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    const fix = /seat\.prompt-owner/.test(message) && seat.llm ? seatHolderFix(argv, seat.llm.promptFile) : undefined;
+    return refuse("seat", fix ? `${message}\n  the prompt file's agent holds the seat; type: ${fix}` : message);
+  }
   if (added.length) return refuse("seat", `the slot model check fails after the write: ${added.slice(0, 5).join("; ")}`);
   const state = readSeat(root, step);
   return { exitCode: 0, root, message: `seat: ${id} is ${state?.state ?? "unread"} (by ${seat.by}${seat.llm ? `, llm ${seat.llm.model} ${seat.llm.tier}` : ", no llm"}${seat.human ? `, human ${seat.human.command}` : ""}); pinned ${name}` };

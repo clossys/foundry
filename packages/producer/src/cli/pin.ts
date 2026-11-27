@@ -2,9 +2,9 @@
  * `clossys pin` and `clossys decisions`: the one writer and the one reader of slot decisions
  * (rule R-DECISIONS-BY-CLI). Decision files are never hand-edited.
  *
- *   clossys pin <agent>/<slot> <candidate-id> [--by <who>] [--basis picked|bulk|planner] [--at <iso>] [--root <dir>] [--json]
- *   clossys pin <agent>/<slot> --not-needed --reason <text> [--by <who>] [--at <iso>] [--root <dir>] [--json]
- *   clossys pin <agent>/<slot> <candidate-id> --confirm --ref <ledger ref> [--by owner[:<ref>]] [--at <iso>] [--root <dir>] [--json]
+ *   clossys pin <agent>/<slot>[#<record>] <candidate-file> --by <who> [--basis picked|bulk|planner] [--at <iso>] [--root <dir>] [--json]
+ *   clossys pin <agent>/<slot>[#<record>] --not-needed --reason <text> --by <who> [--at <iso>] [--root <dir>] [--json]
+ *   clossys pin <agent>/<slot>[#<record>] <candidate-file> --confirm --by owner:queue.<kind>#<id> [--ref <ledger ref>] [--at <iso>] [--root <dir>] [--json]
  *   clossys decisions [--root <dir>] [--json]
  */
 import { existsSync, readFileSync } from "node:fs";
@@ -35,16 +35,18 @@ import { CliUsageError } from "./args.js";
 import type { CliResult } from "./main.js";
 import { discoverRoot } from "./root.js";
 
-export const PIN_USAGE = "Usage: clossys pin <agent>/<slot> <candidate-id> [--by <who>] [--basis picked|bulk|planner] [--at <iso timestamp>] [--root <dir>] [--json]\n"
-  + "       clossys pin <agent>/<slot> --not-needed --reason <text> [--by <who>] [--at <iso>] [--root <dir>] [--json]\n"
-  + "       clossys pin <agent>/<slot> <candidate-id> --confirm --ref <ledger ref> [--by owner[:<ref>]] [--at <iso>] [--root <dir>] [--json]\n"
-  + "  <candidate-id> is a file in the slot's candidates/ (`hero-v2.json`) or that name without its extension (`hero-v2`).\n"
-  + "  --by: owner[:<ref>] (default owner), planner[:<ref>], migration[:<ref>], migrated, or code:scorecard (basis\n"
-  + "        scorecard: code pins the scorecard's single top row, never on an owner-pick or confirm slot).\n"
-  + "  --basis: how the pin was decided. --by planner[:<ref>] is always planner; any other --by needs an explicit\n"
-  + "           --basis: picked (the owner chose this candidate) or bulk (a blanket owner approval), or planner.\n"
-  + "  --confirm: the owner confirms the slot's agent or code pick of <candidate-id>; the pin keeps its basis (agent\n"
-  + "             or scorecard) and decider and records confirmed {by, ref, at}. --ref names where the owner's words are.\n"
+export const PIN_USAGE = "Usage: clossys pin <agent>/<slot>[#<record>] <candidate-file> --by <who> [--basis picked|bulk|planner] [--at <iso timestamp>] [--root <dir>] [--json]\n"
+  + "       clossys pin <agent>/<slot>[#<record>] --not-needed --reason <text> --by owner:queue.<kind>#<id>|planner[:<ref>] [--at <iso>] [--root <dir>] [--json]\n"
+  + "       clossys pin <agent>/<slot>[#<record>] <candidate-file> --confirm --by owner:queue.<kind>#<id> [--ref <ledger ref>] [--at <iso>] [--root <dir>] [--json]\n"
+  + "  <candidate-file> is a file name in the slot's candidates/ with its extension (`hero-v2.json`, `copy-v1.md`); a name\n"
+  + "  without its extension is refused. A Writer record slot pins one record at a time: <agent>/<slot>#<record>.\n"
+  + "  --by: planner[:<ref>] (basis planner), owner:queue.<kind>#<id> (the queue entry holding the owner's answer; basis\n"
+  + "        picked, or --basis bulk), or code:scorecard (basis scorecard: code pins the scorecard's single top row, never\n"
+  + "        on an owner-pick or confirm slot). A bare --by owner is refused; an agent seat picks with clossys pick.\n"
+  + "  --basis: picked or bulk for an owner pin; a planner pin is always planner.\n"
+  + "  --confirm: the owner confirms the slot's agent or code pick of <candidate-file>, --by owner:queue.<kind>#<id>; the pin\n"
+  + "             keeps its basis (agent or scorecard) and records confirmed {by, ref, at}. --ref (optional) cites the\n"
+  + "             ledger comment holding the owner's words; without it the queue entry is the ref.\n"
   + "  A pin refuses on any finding of a constitution check whose rules.json guard lists pin (pick for an agent:<seat>\n"
   + "  pick) about the pinned candidate, pin.json or slot.json: an uncertified candidate (R05), an unresolved citation\n"
   + "  (R07.1) or a region no frame composes (R07.6) is never pinned.\n"
