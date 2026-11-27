@@ -34,6 +34,8 @@ export const FAST_SCHEMA = "clossys.fast-check/1";
 export const BUDGET_MS = 300_000;
 /** A test file that takes longer than this run alone is listed under slow. */
 export const SLOW_MS = 2_000;
+/** A related-run time over this many times SLOW_MS lists a file as slow without an alone re-run. */
+export const SURE_SLOW = 4;
 
 export type FastVerdict = "FAST PASS" | "FAST FAIL" | "FAST INCOMPLETE";
 export type StepName = "typecheck" | "related" | "alone";
@@ -41,7 +43,8 @@ export interface FastStep { readonly step: StepName; readonly status: "pass" | "
 export interface FastCommand { readonly step: StepName | "base"; readonly run: string; readonly cwd: string; readonly exit: number; readonly seconds: number; readonly stopped?: boolean }
 /** One test unit: a test file (vitest or node --test) or a root check script. */
 export interface FastTest { readonly id: string; readonly pkg: string; readonly messages: readonly string[] }
-export interface SlowTest { readonly id: string; readonly pkg: string; readonly seconds: number; readonly owner?: string }
+/** measured: "alone" (its alone re-run) or "related" (over SURE_SLOW times the threshold in the related run). */
+export interface SlowTest { readonly id: string; readonly pkg: string; readonly seconds: number; readonly measured: "alone" | "related"; readonly owner?: string }
 export interface FastRecord {
   readonly schema: typeof FAST_SCHEMA;
   readonly owner_agent: typeof FAST_OWNER;
@@ -318,25 +321,46 @@ class Runner {
     return this.command("typecheck", ["npm", "run", "--silent", "typecheck"], this.repo, pkg);
   }
 
-  /** One vitest process over files of one package in tree; alone runs one file at a time on one worker. */
-  async vitest(step: FastCommand["step"], tree: string, pkg: string, units: readonly Unit[], alone: boolean, deadline?: number): Promise<UnitResult[]> {
+  /**
+   * One vitest process over files of one package in tree; alone runs one file at a time on one worker. onResult hears
+   * each file's result as soon as the reporter writes it, while the process still runs.
+   */
+  async vitest(step: FastCommand["step"], tree: string, pkg: string, units: readonly Unit[], alone: boolean, deadline?: number, onResult?: (result: UnitResult) => void): Promise<UnitResult[]> {
     let bin: string;
     try { bin = join(dirname(createRequire(join(tree, pkg, "package.json")).resolve("vitest/package.json")), "vitest.mjs"); }
     catch (error) { return units.map(unit => ({ unit, status: "fail" as const, ms: 0, messages: [`vitest does not resolve from ${pkg}: ${error instanceof Error ? error.message.split("\n")[0] : String(error)}`] })); }
     const out = join(scratch("clossys-fast-"), "results.jsonl");
     const argv = [process.execPath, bin, "run", "--reporter", REPORTER, ...(alone ? ["--maxWorkers=1", "--no-file-parallelism"] : []), ...units.map(unit => unit.file.slice(pkg.length + 1))];
-    const result = await this.command(step, argv, tree, pkg, { CLOSSYS_FAST_RESULTS: out, CI: "1" }, deadline);
-    const seen = new Map<string, { state: string; ms: number; messages: string[] }>();
+    const byFile = new Map(units.map(unit => [unit.file, unit]));
+    const done = new Map<string, UnitResult>();
     // A line a stop cut short names no file: that file has no result, so it counts as unrun (stopped) or failed.
     const parseErrors: string[] = [];
-    for (const line of (readText(out) ?? "").split("\n").filter(Boolean)) {
-      try { const row = JSON.parse(line) as { file: string; state: string; ms: number; messages: string[] }; seen.set(relative(tree, row.file), row); } catch (error) { parseErrors.push(String(error)); }
-    }
+    let read = 0;
+    const drain = (final: boolean) => {
+      const text = readText(out) ?? "";
+      const end = final ? text.length : text.lastIndexOf("\n") + 1;
+      for (const line of text.slice(read, end).split("\n").filter(Boolean)) {
+        let row: { file: string; state: string; ms: number; messages: string[] };
+        try { row = JSON.parse(line) as typeof row; } catch (error) { parseErrors.push(String(error)); continue; }
+        const unit = byFile.get(relative(tree, row.file));
+        if (!unit || done.has(unit.file) || row.state === "queued" || row.state === "pending") continue;
+        const each: UnitResult = { unit, status: row.state === "failed" ? "fail" : "pass", ms: row.ms, messages: row.messages };
+        done.set(unit.file, each);
+        onResult?.(each);
+      }
+      read = Math.max(read, end);
+    };
+    const poll = onResult ? setInterval(() => drain(false), 250) : undefined;
+    const result = await this.command(step, argv, tree, pkg, { CLOSSYS_FAST_RESULTS: out, CI: "1" }, deadline);
+    if (poll) clearInterval(poll);
+    drain(true);
     return units.map(unit => {
-      const row = seen.get(unit.file);
-      if (row && row.state !== "queued" && row.state !== "pending") return { unit, status: row.state === "failed" ? "fail" : "pass", ms: row.ms, messages: row.messages };
-      if (result.stopped) return { unit, status: "unrun", ms: 0, messages: [] };
-      return { unit, status: "fail", ms: 0, messages: [`vitest exited ${result.exit} with no result for this file`, ...parseErrors.slice(0, 1), ...tail(result.output)] };
+      const found = done.get(unit.file);
+      if (found) return found;
+      const each: UnitResult = result.stopped ? { unit, status: "unrun", ms: 0, messages: [] }
+        : { unit, status: "fail", ms: 0, messages: [`vitest exited ${result.exit} with no result for this file`, ...parseErrors.slice(0, 1), ...tail(result.output)] };
+      if (each.status !== "unrun") onResult?.(each);
+      return each;
     });
   }
 
@@ -346,31 +370,65 @@ class Runner {
     return { unit, status: result.exit === 0 ? "pass" : "fail", ms: result.ms, messages: result.exit === 0 ? [] : [`exit ${result.exit}`, ...tail(result.output)] };
   }
 
-  /** The related step: vitest per package and tier (sequential: each uses every core), node units in a pool. */
+  /**
+   * The related step, tier by tier: the vitest packages one after another (each process's pool uses the cores; two
+   * vitest processes of one package would race on its globalSetup build), and beside them the node units in a pool.
+   */
   async related(units: readonly Unit[], deadline: number): Promise<UnitResult[]> {
     const results: UnitResult[] = [];
+    const late = (unit: Unit): UnitResult => ({ unit, status: "unrun", ms: 0, messages: [] });
     for (const tier of [1, 2] as const) {
       const mine = units.filter(unit => unit.tier === tier);
-      const byPkg = new Map<string, Unit[]>();
-      for (const unit of mine.filter(item => item.kind === "vitest")) { const list = byPkg.get(unit.pkg) ?? []; list.push(unit); byPkg.set(unit.pkg, list); }
-      for (const [pkg, list] of [...byPkg].sort(([a], [b]) => a.localeCompare(b))) {
-        if (Date.now() >= deadline) { results.push(...list.map(unit => ({ unit, status: "unrun" as const, ms: 0, messages: [] }))); continue; }
-        results.push(...await this.vitest("related", this.repo, pkg, list, false, deadline));
-      }
-      results.push(...await pool(mine.filter(item => item.kind === "node"), this.width, async unit =>
-        Date.now() >= deadline ? { unit, status: "unrun" as const, ms: 0, messages: [] } : this.node("related", this.repo, unit, deadline)));
+      const vitest = async () => {
+        const out: UnitResult[] = [];
+        for (const [pkg, list] of byPackage(mine)) out.push(...(Date.now() >= deadline ? list.map(late) : await this.vitest("related", this.repo, pkg, list, false, deadline)));
+        return out;
+      };
+      const node = mine.filter(item => item.kind === "node");
+      const width = Math.max(1, Math.floor(this.width / 2));
+      const [ran, nodes] = await Promise.all([vitest(), pool(node, width, async unit => Date.now() >= deadline ? late(unit) : this.node("related", this.repo, unit, deadline))]);
+      results.push(...ran, ...nodes);
     }
     return results;
   }
 
-  /** Each unit alone, once, in tree: vitest files one at a time on one worker, node units one after another. */
-  async alone(step: FastCommand["step"], tree: string, units: readonly Unit[]): Promise<UnitResult[]> {
-    const results: UnitResult[] = [];
-    const byPkg = new Map<string, Unit[]>();
-    for (const unit of units.filter(item => item.kind === "vitest")) { const list = byPkg.get(unit.pkg) ?? []; list.push(unit); byPkg.set(unit.pkg, list); }
-    for (const [pkg, list] of [...byPkg].sort(([a], [b]) => a.localeCompare(b))) results.push(...await this.vitest(step, tree, pkg, list, true));
-    for (const unit of units.filter(item => item.kind === "node")) results.push(await this.node(step, tree, unit));
-    return results;
+  /**
+   * Each unit alone, once, in tree: a package's vitest files one at a time on one worker, and beside that process the
+   * node units one after another (two single-file runners, never a batch). onResult hears each result as it lands.
+   */
+  async alone(step: FastCommand["step"], tree: string, units: readonly Unit[], onResult?: (result: UnitResult) => void): Promise<UnitResult[]> {
+    const vitest = async () => {
+      const out: UnitResult[] = [];
+      for (const [pkg, list] of byPackage(units)) out.push(...await this.vitest(step, tree, pkg, list, true, undefined, onResult));
+      return out;
+    };
+    const node = async () => {
+      const out: UnitResult[] = [];
+      for (const unit of units.filter(item => item.kind === "node")) { const each = await this.node(step, tree, unit); onResult?.(each); out.push(each); }
+      return out;
+    };
+    const [ran, nodes] = this.width > 1 ? await Promise.all([vitest(), node()]) : [await vitest(), await node()];
+    return [...ran, ...nodes];
+  }
+}
+
+/** The vitest units by package, packages in name order. */
+const byPackage = (units: readonly Unit[]): [string, Unit[]][] => {
+  const map = new Map<string, Unit[]>();
+  for (const unit of units.filter(item => item.kind === "vitest")) { const list = map.get(unit.pkg) ?? []; list.push(unit); map.set(unit.pkg, list); }
+  return [...map].sort(([a], [b]) => a.localeCompare(b));
+};
+
+/** A queue a producer pushes to and one worker drains in batches; take() resolves undefined once closed and empty. */
+class Batches<T> {
+  private items: T[] = [];
+  private closed = false;
+  private wake: (() => void)[] = [];
+  push(item: T) { this.items.push(item); this.wake.splice(0).forEach(fn => fn()); }
+  close() { this.closed = true; this.wake.splice(0).forEach(fn => fn()); }
+  async take(): Promise<T[] | undefined> {
+    while (!this.items.length && !this.closed) await new Promise<void>(done => this.wake.push(done));
+    return this.items.length ? this.items.splice(0) : undefined;
   }
 }
 
@@ -457,36 +515,46 @@ export async function runFast(options: FastOptions): Promise<FastRecord> {
       : `related: pass (${ran} test unit(s))`,
   });
 
-  // 3. alone: the failures (and the slow candidates) once each by themselves, then the failures alone at base.
+  // 3. alone: the failures (and the borderline slow candidates) once each by themselves. Each file that fails alone
+  // goes, as soon as its result lands, to the merge-base tree, where it runs alone again beside the head runs (another
+  // tree, so no build race); only files that fail alone at head ever run at base.
   started = Date.now();
-  const slowCandidates = related.filter(result => result.status === "pass" && result.ms > slowMs);
-  const again = [...failed, ...slowCandidates].map(result => result.unit);
-  const alone = again.length ? await runner.alone("alone", repo, again) : [];
-  for (const result of alone) {
-    if (result.ms <= slowMs) continue;
-    const owner = owningAgent(repo, result.unit.pkg);
-    slow.push({ id: result.unit.id, pkg: result.unit.pkg, seconds: seconds(result.ms), ...(owner ? { owner } : {}) });
-  }
   const failedIds = new Set(failed.map(result => result.unit.id));
-  const stillRed = alone.filter(result => failedIds.has(result.unit.id) && result.status !== "pass");
-  for (const result of alone) if (failedIds.has(result.unit.id) && result.status === "pass") noise.push({ id: result.unit.id, pkg: result.unit.pkg, messages: failed.find(item => item.unit.id === result.unit.id)!.messages });
-  if (stillRed.length) {
-    let tree: Worktree | undefined;
-    let atBase: UnitResult[] = [];
-    let baseError: string | undefined;
-    try {
-      tree = baseTree(repo, base);
-      const present = stillRed.filter(result => existsSync(join(tree!.dir, result.unit.file)));
-      atBase = present.length ? await runner.alone("base", tree.dir, present.map(result => result.unit)) : [];
-    } catch (error) {
-      baseError = error instanceof Error ? error.message.split("\n")[0] : String(error);
-    } finally { tree?.remove(); }
-    for (const result of stillRed) {
-      const there = atBase.find(item => item.unit.id === result.unit.id);
-      const entry = { id: result.unit.id, pkg: result.unit.pkg, messages: result.messages };
-      if (there?.status === "fail") baseRed.push(entry);
-      else red.push({ ...entry, messages: [...entry.messages, there ? "passes alone at base" : baseError ? `base could not run: ${baseError}` : "absent at base"] });
+  const passing = related.filter(result => result.status === "pass" && result.ms > slowMs);
+  // A file over SURE_SLOW times the threshold in the related run is slow alone too (a shared core inflates a file's own
+  // time by far less): it is listed from that measurement and not re-run. Borderline files are re-run alone.
+  for (const result of passing.filter(item => item.ms > SURE_SLOW * slowMs)) slow.push({ id: result.unit.id, pkg: result.unit.pkg, seconds: seconds(result.ms), measured: "related", ...ownerOf(repo, result.unit.pkg) });
+  const again = [...failed.map(result => result.unit), ...passing.filter(item => item.ms <= SURE_SLOW * slowMs).map(result => result.unit)];
+  const toBase = new Batches<Unit>();
+  const atBase = new Map<string, UnitResult>();
+  let tree: Worktree | undefined;
+  let baseError: string | undefined;
+  const baseWorker = (async () => {
+    for (let batch = await toBase.take(); batch; batch = await toBase.take()) {
+      if (!tree && baseError === undefined) {
+        try { tree = baseTree(repo, base); } catch (error) { baseError = error instanceof Error ? error.message.split("\n")[0]! : String(error); }
+      }
+      if (!tree) continue;
+      const present = batch.filter(unit => existsSync(join(tree!.dir, unit.file)));
+      for (const result of present.length ? await runner.alone("base", tree.dir, present) : []) atBase.set(result.unit.id, result);
     }
+  })();
+  let alone: UnitResult[];
+  try {
+    alone = again.length ? await runner.alone("alone", repo, again, result => { if (failedIds.has(result.unit.id) && result.status !== "pass") toBase.push(result.unit); }) : [];
+  } finally {
+    toBase.close();
+    await baseWorker;
+    tree?.remove();
+  }
+  for (const result of alone) if (result.ms > slowMs) slow.push({ id: result.unit.id, pkg: result.unit.pkg, seconds: seconds(result.ms), measured: "alone", ...ownerOf(repo, result.unit.pkg) });
+  for (const result of alone) {
+    if (!failedIds.has(result.unit.id)) continue;
+    const entry = { id: result.unit.id, pkg: result.unit.pkg, messages: result.messages };
+    if (result.status === "pass") { noise.push({ ...entry, messages: failed.find(item => item.unit.id === result.unit.id)!.messages }); continue; }
+    const there = atBase.get(result.unit.id);
+    if (there?.status === "fail") baseRed.push(entry);
+    else red.push({ ...entry, messages: [...entry.messages, there ? "passes alone at base" : baseError ? `base could not run: ${baseError}` : "absent at base"] });
   }
   const parts = [
     `${again.length} re-run`, ...(red.length ? [`${red.length} red (${list(red.map(item => item.id))})`] : []),
@@ -506,12 +574,14 @@ export function formatFast(record: FastRecord): string {
     ...record.steps.map(step => step.line),
     ...record.red.map(item => `red: ${item.id}: ${item.messages.join(" | ")}`),
     ...record.baseRed.map(item => `base-red: ${item.id} (also fails alone at base ${record.base.slice(0, 12)})`),
-    ...(record.slow.length ? ["slow:", ...record.slow.map(item => `  ${item.id} ${item.seconds}s alone${item.owner ? ` (owner ${item.owner})` : ""}`)] : []),
+    ...(record.slow.length ? ["slow:", ...record.slow.map(item => `  ${item.id} ${item.seconds}s ${item.measured === "alone" ? "alone" : `in the related run, over ${SURE_SLOW}x the ${record.slowSeconds}s budget (not re-run)`}${item.owner ? ` (owner ${item.owner})` : ""}`)] : []),
     ...(record.reason && record.verdict !== "FAST PASS" && !["red", "typecheck"].includes(record.reason) ? [`reason: ${record.reason}`] : []),
     ...(record.requests ?? []),
     record.line,
   ].join("\n");
 }
+
+const ownerOf = (repo: string, pkg: string): { owner?: string } => { const owner = owningAgent(repo, pkg); return owner ? { owner } : {}; };
 
 /** The agent that owns a package's tests: its skill's `clossys-<agent>` name, else its enclosing package's, else its manifest name. */
 export function owningAgent(repo: string, pkg: string): string | undefined {
