@@ -40,6 +40,47 @@
           "sha256": "f6b6bf9437c12ada169004a1299a9b7a2629988df30a583bd7ee42cb7b9ddc8a"
         }
       ]
+    },
+    {
+      "op": "slot",
+      "at": "2026-11-27T04:53:03Z",
+      "by": "planner",
+      "verb": "migrate",
+      "skill": {
+        "path": "packages/producer/actions/migrate/action.json",
+        "sha256": "8b07b093fc4ab43ae85ccd8c821f1d2cc02970225d90a986b2521806d9024342"
+      },
+      "model": "none",
+      "tier": "none",
+      "migration": "contracts",
+      "changed": [
+        "family"
+      ],
+      "records": [
+        {
+          "file": "slot.json",
+          "sha256": "a413b7c2df2ee45eb32717cb73b88df708adc95ea3e854b7104ff8d7b206ca44"
+        }
+      ]
+    },
+    {
+      "op": "slot",
+      "at": "2026-11-27T04:54:04.968Z",
+      "by": "planner",
+      "verb": "ia",
+      "skill": {
+        "path": "packages/producer/actions/ia/skill.md",
+        "sha256": "147a7eaf66267728953e0c8111a9c20b93475f95f8063745d9d1d1087658fe73"
+      },
+      "model": "none",
+      "tier": "none",
+      "kind": "ia",
+      "records": [
+        {
+          "file": "slot.json",
+          "sha256": "7e03c733801b517c3ac1a27a6d6c4b5799c03a8042e63288ece4f96bc62a200b"
+        }
+      ]
     }
   ]
 }

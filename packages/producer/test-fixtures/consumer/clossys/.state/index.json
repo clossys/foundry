@@ -1,7 +1,7 @@
 {
   "schema": "clossys.index/1",
-  "events": 2977,
-  "head": "c32b3e84c894ef88b6f26b05de6c2c3c8857cfd01878d6c55d33f3121f3ba9c7",
+  "events": 2979,
+  "head": "e760fd45ab88ea062b9f2fd7b9bb5870d1b46d24aeb5f90708c81a2f0080d1fc",
   "subjects": {
     "designer": {
       "seq": 2959,
@@ -718,10 +718,10 @@
       "at": "2026-11-19T00:00:00.000Z"
     },
     "designer/frames.video": {
-      "seq": 2976,
+      "seq": 2978,
       "kind": "slot.slot",
       "actor": "planner",
-      "at": "2026-11-27T02:35:01.848Z"
+      "at": "2026-11-27T04:54:05.409Z"
     },
     "designer/loop.cascade": {
       "seq": 2975,
@@ -4501,14 +4501,14 @@
       "disk": "b990828ff55f0073d1d197b13deb56eac984d819e35b03bb7a4c55c754131996"
     },
     "clossys/agents/designer/frames.video/ledger.json": {
-      "seq": 2976,
-      "logged": "d20519fe52ae1189e65cf393bb1efdccc0512720c813636dc403dd40de2d82d8",
-      "disk": "d20519fe52ae1189e65cf393bb1efdccc0512720c813636dc403dd40de2d82d8"
+      "seq": 2978,
+      "logged": "0297142c5c1dba544ed5823105c42c96eaa7a4e03047162cb66617fda02439e9",
+      "disk": "0297142c5c1dba544ed5823105c42c96eaa7a4e03047162cb66617fda02439e9"
     },
     "clossys/agents/designer/frames.video/slot.json": {
-      "seq": 2976,
-      "logged": "f6b6bf9437c12ada169004a1299a9b7a2629988df30a583bd7ee42cb7b9ddc8a",
-      "disk": "f6b6bf9437c12ada169004a1299a9b7a2629988df30a583bd7ee42cb7b9ddc8a"
+      "seq": 2978,
+      "logged": "7e03c733801b517c3ac1a27a6d6c4b5799c03a8042e63288ece4f96bc62a200b",
+      "disk": "7e03c733801b517c3ac1a27a6d6c4b5799c03a8042e63288ece4f96bc62a200b"
     },
     "clossys/agents/designer/ia.json": {
       "seq": 2959,
