@@ -1578,5 +1578,139 @@
     },
     "requires": [],
     "status": "draft"
+  },
+  {
+    "id": "frames.video",
+    "layer": "frames",
+    "contract": {
+      "kind": "frame",
+      "root": "div",
+      "landmarks": [
+        {
+          "slot": "stage",
+          "role": "main",
+          "topLevel": true,
+          "nameRequired": false
+        },
+        {
+          "slot": "controls",
+          "role": "region",
+          "topLevel": false,
+          "nameRequired": true
+        }
+      ],
+      "slots": [
+        {
+          "id": "stage",
+          "required": true,
+          "accepts": "sections.*"
+        },
+        {
+          "id": "controls",
+          "required": true,
+          "accepts": "host-node"
+        }
+      ],
+      "members": {
+        "mode": "closed",
+        "names": [
+          "aspect.16-9",
+          "start.paused"
+        ]
+      },
+      "statePorts": [
+        {
+          "id": "playing",
+          "type": "boolean"
+        },
+        {
+          "id": "scene",
+          "type": "number"
+        }
+      ],
+      "rendering": "client",
+      "breakpoints": [],
+      "allowedReads": {
+        "themes": [
+          "themes.background",
+          "themes.foreground",
+          "themes.border",
+          "themes.radius",
+          "themes.muted",
+          "themes.muted-foreground",
+          "themes.primary",
+          "themes.ring",
+          "themes.spacing"
+        ],
+        "assets": []
+      },
+      "composes": [
+        "components.button",
+        "components.slider"
+      ],
+      "copy": {
+        "sourceLocale": "en",
+        "fields": [
+          {
+            "key": "controls.label",
+            "kind": "plain",
+            "role": "label",
+            "required": true,
+            "maxLength": {
+              "en": 60
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "controls.play",
+            "kind": "plain",
+            "role": "action",
+            "required": true,
+            "maxLength": {
+              "en": 24
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "controls.pause",
+            "kind": "plain",
+            "role": "action",
+            "required": true,
+            "maxLength": {
+              "en": 24
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "controls.scrubber",
+            "kind": "plain",
+            "role": "label",
+            "required": true,
+            "maxLength": {
+              "en": 60
+            },
+            "dir": "auto"
+          }
+        ]
+      },
+      "props": [
+        "children"
+      ],
+      "fixture": {
+        "schema": "clossys.element-preview/1",
+        "fixtures": {
+          "file": "registry/aria-nova/ui/slider.tsx",
+          "export": "Slider",
+          "props": {
+            "children": [
+              "DRAFT stage (sections.*)",
+              "DRAFT controls"
+            ]
+          }
+        }
+      }
+    },
+    "requires": [],
+    "status": "draft"
   }
 ]

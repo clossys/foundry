@@ -236,6 +236,31 @@
         "footer-placement.flow",
         "footer-placement.overlay"
       ]
+    },
+    {
+      "missing": [
+        "aspect.16-9",
+        "start.paused"
+      ],
+      "missingRequiredSlots": [
+        "controls",
+        "stage"
+      ],
+      "missingSlots": [
+        "controls",
+        "stage"
+      ],
+      "missingStatePorts": [
+        "playing",
+        "scene"
+      ],
+      "notes": [
+        "No package implementation is available.",
+        "Descriptor only; anatomy, source, accessibility, contrast, layout and rendered conformance are unmeasured."
+      ],
+      "slot": "frames.video",
+      "status": "unavailable",
+      "supported": []
     }
   ],
   "source": "foundry"
