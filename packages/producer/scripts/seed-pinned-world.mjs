@@ -232,20 +232,24 @@ function brief(consumer, id, doc) {
 
 const VOICE = "director:identity.verbal.voice";
 
-/** The lexicon records of each fixture lexicon slot (key -> record fields past id, context and kind). */
+/**
+ * The lexicon records of each fixture lexicon slot (key -> record fields past id, context and kind). The keys are the
+ * slot's contract fixture keys, which the Writer catalog ships (src/catalog/ia/voice.json `contract.fixture`), and a
+ * closed fixture holds no other key (certify/strings.ts).
+ */
 const LEXICON = {
-  "lexicon.formality": { kind: "voice-rule", records: { register: { rule: "Use a neutral everyday register", value: "neutral" }, address: { rule: "Address the reader as you", value: "informal-you" } } },
-  "lexicon.warmth": { kind: "voice-rule", records: { warmth: { rule: "Sound like a capable neighbour, never a salesperson", value: "warm" } } },
-  "lexicon.energy": { kind: "voice-rule", records: { energy: { rule: "Keep a steady pace with no exclamation", value: "steady" } } },
-  "lexicon.person": { kind: "voice-rule", records: { person: { rule: "Write in the second person to the owner", value: "second" } } },
-  "lexicon.mood": { kind: "voice-rule", records: { mood: { rule: "Use the imperative for actions and the indicative for facts", value: "imperative-actions" } } },
-  "lexicon.sentence-length": { kind: "voice-rule", records: { "max-words": { rule: "Keep a sentence to twenty words or fewer", value: 20 } } },
-  "lexicon.reading-level": { kind: "voice-rule", records: { grade: { rule: "Write for a grade seven reader", value: 7 } } },
-  "lexicon.capitalization": { kind: "format", records: { headings: { format: "sentence-case", value: "headings, labels and actions" } } },
-  "lexicon.punctuation": { kind: "format", records: { "terminal-period": { format: "terminal-period", value: "body sentences only, never headings or labels" } } },
-  "lexicon.preferred-terms": { kind: "term", records: { site: { term: "site", forms: ["site", "sites"], termStatus: "preferred", reason: "the plain word owners already use" } } },
-  "lexicon.avoid-terms": { kind: "term", records: { leverage: { term: "leverage", forms: ["leverage", "leveraging"], termStatus: "avoid", reason: "jargon the voice never uses" } } },
-  "lexicon.avoid-patterns": { kind: "pattern-rule", records: { "click-here": { pattern: { source: "\\bclick here\\b", flags: "i" }, severity: "warning", reason: "names the gesture, not the destination" } } },
+  "lexicon.formality": { kind: "voice-rule", records: { byLocale: { rule: "Use a neutral everyday register and address the reader as you", value: { en: { register: "neutral", address: "informal-you" } } } } },
+  "lexicon.warmth": { kind: "voice-rule", records: { level: { rule: "Sound like a capable neighbour, never a salesperson", value: "warm" } } },
+  "lexicon.energy": { kind: "voice-rule", records: { level: { rule: "Keep a steady pace", value: "steady" }, maxExclamationsPer1k: { rule: "Use no exclamation marks", value: 0 } } },
+  "lexicon.person": { kind: "voice-rule", records: { point: { rule: "Write in the second person to the owner", value: "second" } } },
+  "lexicon.mood": { kind: "voice-rule", records: { byRole: { rule: "Use the imperative for actions and the indicative for facts", value: { action: "imperative", body: "indicative" } } } },
+  "lexicon.sentence-length": { kind: "voice-rule", records: { byLocale: { rule: "Keep a sentence to twenty words or fewer", value: { en: { maxWords: 20 } } } } },
+  "lexicon.reading-level": { kind: "voice-rule", records: { maxGrade: { rule: "Write for a grade seven reader", value: { en: 7 } } } },
+  "lexicon.capitalization": { kind: "format", records: { byRole: { format: "sentence-case", value: "headings, labels and actions" }, exceptionsFrom: { format: "name-casing", value: "director/identity.naming.name#Casing" } } },
+  "lexicon.punctuation": { kind: "format", records: { byLocale: { format: "terminal-period", value: "body sentences only, never headings or labels" } } },
+  "lexicon.preferred-terms": { kind: "term", records: { terms: { term: "site", forms: ["site", "sites"], termStatus: "preferred", reason: "the plain word owners already use" } } },
+  "lexicon.avoid-terms": { kind: "term", records: { terms: { term: "leverage", forms: ["leverage", "leveraging"], termStatus: "avoid", reason: "jargon the voice never uses" } } },
+  "lexicon.avoid-patterns": { kind: "pattern-rule", records: { patterns: { pattern: { source: "\\bclick here\\b", flags: "i" }, severity: "warning", reason: "names the gesture, not the destination" } } },
 };
 
 /** The fixture copy of each copy slot (key -> English value), and the pin-map record a records contract places it in. */
@@ -253,7 +257,6 @@ const COPY = {
   "publication.site.meta": { siteName: "Fixture Works", "share.title": "Fixture Works keeps small business sites current", "share.description": "Plain help for owners who edit their own website and want every change live the same day." },
   "page.home.meta": { title: "Keep your site current without waiting", description: "Edit your own pages, publish the same day and keep every change in plain view." },
   "frames.site-header.copy": { "skip.label": "Skip to content", "navigation.label": "Main navigation", "navigation.open": "Open menu", "navigation.close": "Close menu" },
-  "sections.hero.copy": { "header.heading": "Keep your site current without waiting" },
 };
 
 /** The derived source of a Writer candidate: every upstream pin the slot reads (its inputs, R07.1). */
@@ -935,12 +938,14 @@ async function storeFormat(w) {
 
 /**
  * Closure slots the run cannot fill today, with why: no candidate shape passes the real verbs, or the slot's
- * standard is craft work the seeder has no generator for. The run seeds none of them, nor any slot that reads one
- * (its R02.2 upstream is unpinned); the world is pinned everywhere else. A slot leaves this list when its standard
- * or contract admits a candidate and the seeder can make one.
+ * standard is craft work the seeder has no generator for; or a slot left empty on purpose, because tests fill it
+ * from nothing (its upstream is still seeded). The run seeds none of them, nor any slot that reads one (its R02.2
+ * upstream is unpinned); the world is pinned everywhere else. A slot leaves this list when its standard or contract
+ * admits a candidate and the seeder can make one, or when no test fills it from nothing.
  */
 export const BLOCKED = {
   "designer/sections.hero": "contract gap R05.1 [fixture] (submit refused by the constitution guard): the shipped e2e/hero.json ships only registry/sections/hero.tsx (export SimpleHero), but the contract fixture mounts mist/blocks/hero-section/one/hero-section.tsx (export default)",
+  "writer/sections.hero.copy": "left empty on purpose: the pin-gate and loop.create tests submit and pin its first candidate (header.heading, actions.primary.label) from an empty slot",
 };
 
 /** The closure slots the run leaves unpinned: BLOCKED and everything that reads one, with the blocking slot. */

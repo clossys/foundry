@@ -40,7 +40,7 @@ import { consumedIds, consumedLeaves, filterFoundryIa, filterIa, scopedToConsume
 import { consumerGraph, PublisherDataError } from "../check/ia-orphans.js";
 import { pinRecords, validateIa, validatePin, validateSlotDoc } from "../records/slot-model/validate.js";
 import { isModelDir, listModelDir, listSlots, modelExists, readModelBytes, readModelText, readSlot, readSlotEntry, readSlotRecordText, usedBy, withModelOverlay } from "../records/slots.js";
-import { RETIRE_SCHEMA, appendIaEvent, appendRetireCandidate, appendRetireSlot, retireAnswerUses, retireBinding, appendSlotDocEvent, createModelFile, dropEmptyModelDir, moveModelEntry, removeModelFile, replaceModelFile, writeSeatDecision } from "../records/slot-write.js";
+import { RETIRE_SCHEMA, appendIaEvent, appendRetireCandidate, appendRetireSlot, retireAnswerUses, retireBinding, appendSlotDocEvent, createModelFile, dropEmptyModelDir, logSlotFolderMove, moveModelEntry, removeModelFile, replaceModelFile, writeSeatDecision } from "../records/slot-write.js";
 import "../constitution/guard.js"; // registers the write guard's runner (seat)
 import { LEDGER_FILE, skillPath } from "../records/ledger.js";
 import { readStandard, slotKinds, standardFits } from "../records/standards.js";
@@ -1548,6 +1548,9 @@ function retireSlot(consumer: string, root: string, agent: SlotAgent, slot: stri
     if (folder) moveModelEntry(dir, to);
   }, { undo: moveBack });
   if (added.length) return refuse("retire", `the slot model check fails after the removal: ${added.slice(0, 5).join("; ")}`);
+  // The folder move is an engine event of its own: the slot's logged records named gone at the old path and present
+  // under _retired/, so `clossys check --engine` finds no logged record missing.
+  if (folder) logSlotFolderMove(consumer, agent, slot, to, fields.by);
   return { exitCode: 0, root, decision: { slot: target, retired: "slot", sha256: record.sha256, by: fields.by, at: fields.at }, message: `retire: ${target} left ${agent} ia.json, retired by ${fields.by}${folder ? ` (its folder is clossys/agents/${agent}/${RETIRED_SLOTS_DIR}/${slot})` : ""}` };
 }
 

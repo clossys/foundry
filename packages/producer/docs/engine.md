@@ -128,6 +128,7 @@ Each wired writer keeps its on-disk record and adds one event per write.
 | `<slot\|agent>.backfill` | `packages/producer/src/records/slot-write.ts` | <agent>[/<slot>]: a ledger rewritten by the ledger migration |
 | `pin.probe-repoint / pin.probe-restore` | `packages/producer/src/records/slot-write.ts` | designer/<slot>: the theme probe's pin swap and its restore |
 | `migration.record` | `packages/producer/src/records/slot-write.ts` | migration:<id> |
+| `slot.folder-move` | `packages/producer/src/records/slot-write.ts` | <agent>/<slot>: a retired slot's folder moved under _retired/, its logged records named at both paths |
 | `<pin kind>.write` | `packages/producer/src/records/pin.ts` | <agent>/<slot>: a pin or pin-map document |
 | `request.create / request.write` | `packages/producer/src/records/request.ts` | request:<id> |
 | `queue.create / queue.replace` | `packages/producer/src/queue/entry.ts` | <queue>/<entry id>: every queue entry write, the chat answer path included |
@@ -188,7 +189,7 @@ The engine API (writes here log events):
 | `packages/producer/src/queue/entry.ts` | createQueueEntry, replaceQueueEntry | queue entries, the answer write path |
 | `packages/producer/src/loop/runner.ts` | writeLedger, revertPin, saveState, logRun | loop run records, the run state and the run's pin revert |
 
-Record writers a script must not call directly: `appendEvent`, `recordEvent`, `writePinDoc`, `writeRequest`, `writeElementVersion`, `createQueueEntry`, `replaceQueueEntry`, `writeCandidate`, `writeCandidateBytes`, `writePin`, `writeConfirm`, `writeNotNeeded`, `writeTargetDecision`, `writeTargetConfirm`, `writeTargetNotNeeded`, `writeSeatDecision`, `writeVerdict`, `writeReissue`, `writeCritique`, `writeSlotSeed`, `writeSlotOptions`, `writeSyncedSlot`, `replaceModelFile`, `createModelFile`, `removeModelFile`, `moveModelEntry`.
+Record writers a script must not call directly: `appendEvent`, `recordEvent`, `writePinDoc`, `writeRequest`, `writeElementVersion`, `createQueueEntry`, `replaceQueueEntry`, `writeCandidate`, `writeCandidateBytes`, `writePin`, `writeConfirm`, `writeNotNeeded`, `writeTargetDecision`, `writeTargetConfirm`, `writeTargetNotNeeded`, `writeSeatDecision`, `writeVerdict`, `writeReissue`, `writeCritique`, `writeSlotSeed`, `writeSlotOptions`, `writeSlotUses`, `writeSyncedSlot`, `replaceModelFile`, `createModelFile`, `removeModelFile`, `moveModelEntry`.
 
 Slot-model file primitives (`replaceModelFile`, `createModelFile`, `removeModelFile`, `moveModelEntry`, `dropEmptyModelDir`) must be paired in the same file with a ledger appender (`appendIaEvent`, `appendSlotDocEvent`, `appendRetireCandidate`, `appendRetireSlot`, `appendCraftEvent`, `appendMigrationEvents`, `writeSeatDecision`).
 

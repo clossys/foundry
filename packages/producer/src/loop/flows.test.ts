@@ -1269,9 +1269,13 @@ describe("loop.slot and loop.scope through the operator CLI (no stub; foundry-bu
     it(`files a cited need in code before the standard loop.scope agent steps; the agent's raise of it writes nothing (${scoped.length ? "--agent designer" : "no --agent"})`, async () => {
       const w = fixture();
       const seeded = slotEntries(w);
+      // With --agent designer the run is the Designer's own loop.scope (its demand step and scope-designer only), on
+      // purpose: 35ddad25c2a93327bffe0a8e938038ee91bd2457 (U9a, agent-owned loops) gave each agent a loop of its own steps,
+      // and a20382be5ccf067ce344c0ce180dc68766720692 placed those loops in the consumer fixture.
+      const own = scoped.length > 0;
       citeIn(w, DIRECTOR_SLOT, "director/narratives.origin");
       const start = await w.run("loop.scope", ...scoped);
-      expect(start.message).toMatch(/step scope-director waits for agent:director \(decide, mid\)/);
+      expect(start.message).toMatch(own ? /step scope-designer waits for agent:designer \(decide, mid\)/ : /step scope-director waits for agent:director \(decide, mid\)/);
       const runId = waitingRun(start.message);
       // DET-STEPS 1: the demand step (code) filed the need from the citing slot before the director's step.
       const filed = filedSince(w, seeded);
@@ -1284,31 +1288,36 @@ describe("loop.slot and loop.scope through the operator CLI (no stub; foundry-bu
       expect(await raiseFrom(w, DIRECTOR_SLOT, "director/narratives.origin", "director")).toBe(id);
       const next = await w.run("loop.scope", "--resume", "--run", runId, "--step-exit", "0", "--model", MODEL);
       expect(next.exitCode, next.message).toBe(0);
-      expect(next.message).toMatch(/step scope-designer waits for agent:designer/);
+      expect(next.message).toMatch(own ? /done: loop\.scope done/ : /step scope-designer waits for agent:designer/);
       expect(readFileSync(join(w.root, "clossys", "agents", "producer", "queue.slot", "entries", `${id}.json`), "utf8")).toBe(text);
       let last = next;
-      for (let step = 0; step < 3; step++) last = await w.run("loop.scope", "--resume", "--run", runId, "--step-exit", "0", "--model", MODEL);
+      for (let step = 0; step < (own ? 0 : 3); step++) last = await w.run("loop.scope", "--resume", "--run", runId, "--step-exit", "0", "--model", MODEL);
       expect(last.message).toMatch(/done: loop\.scope done/);
       const ledger = JSON.parse(readFileSync(join(w.root, "clossys", "agents", "producer", "ledger.scope", "entries", `${runId}.json`), "utf8")) as LedgerEntry;
       expect(ledger.steps[0]).toMatchObject({ id: "demand", exit: 0 });
-      const director = ledger.steps.find(step => step.id === "scope-director")!;
+      const director = ledger.steps.find(step => step.id === (own ? "scope-designer" : "scope-director"))!;
       expect(director.exit).toBe(0);
       expect(director.wrote ?? []).toEqual([]);
     });
 
     it(`refuses a standard loop.scope step that reports a request under another agent's name (${scoped.length ? "--agent designer" : "no --agent"})`, async () => {
       const w = fixture();
-      citeIn(w, DESIGNER_SLOT, "director/proof.case-study");
+      // With --agent designer the run is the Designer's own loop.scope, whose only agent step is scope-designer (on purpose:
+      // 35ddad25c2a93327bffe0a8e938038ee91bd2457, U9a agent-owned loops, placed in the fixture by
+      // a20382be5ccf067ce344c0ce180dc68766720692). There the Designer's step reports the Director's request instead.
+      const own = scoped.length > 0;
+      const [step, other, slot, need] = own ? ["designer", "director", DIRECTOR_SLOT, "director/narratives.origin"] : ["director", "designer", DESIGNER_SLOT, "director/proof.case-study"];
+      citeIn(w, slot, need);
       const start = await w.run("loop.scope", ...scoped);
-      expect(start.message).toMatch(/step scope-director waits for agent:director/);
+      expect(start.message).toMatch(new RegExp(`step scope-${step} waits for agent:${step}`));
       const runId = waitingRun(start.message);
-      // The director's step raises as the designer, from the designer's slot (the entry the demand step filed in code),
-      // and reports it: a write the director may not make.
-      const id = await raiseFrom(w, DESIGNER_SLOT, "director/proof.case-study", "designer");
+      // The step's agent raises as the other agent, from the other agent's slot (the entry the demand step filed in code),
+      // and reports it: a write the step's agent may not make.
+      const id = await raiseFrom(w, slot, need, other);
       const refused = await w.run("loop.scope", "--resume", "--run", runId, "--step-exit", "0", "--model", MODEL, "--wrote", `producer/queue.slot/entries/${id}.json`);
       expect(refused.exitCode, refused.message).toBe(1);
-      expect(refused.message).toMatch(new RegExp(`step scope-director wrote producer/queue\\.slot/entries/${id}\\.json, which producer/loop\\.scope\\S* does not declare it writes`));
-      expect(refused.message).not.toMatch(/scope-designer waits/);
+      expect(refused.message).toMatch(new RegExp(`step scope-${step} wrote producer/queue\\.slot/entries/${id}\\.json, which ${own ? "designer" : "producer"}/loop\\.scope\\S* does not declare it writes`));
+      expect(refused.message).not.toMatch(own ? /: done:/ : /scope-designer waits/);
     });
   }
 });

@@ -18,6 +18,7 @@ export const EVENT_KINDS: readonly { readonly kind: string; readonly file: strin
   { kind: "<slot|agent>.backfill", file: "packages/producer/src/records/slot-write.ts", literal: "\"backfill\"", subject: "<agent>[/<slot>]: a ledger rewritten by the ledger migration" },
   { kind: "pin.probe-repoint / pin.probe-restore", file: "packages/producer/src/records/slot-write.ts", literal: "\"pin.probe-repoint\"", subject: "designer/<slot>: the theme probe's pin swap and its restore" },
   { kind: "migration.record", file: "packages/producer/src/records/slot-write.ts", literal: "\"migration.record\"", subject: "migration:<id>" },
+  { kind: "slot.folder-move", file: "packages/producer/src/records/slot-write.ts", literal: "\"slot.folder-move\"", subject: "<agent>/<slot>: a retired slot's folder moved under _retired/, its logged records named at both paths" },
   { kind: "<pin kind>.write", file: "packages/producer/src/records/pin.ts", literal: "`${doc.kind}.write`", subject: "<agent>/<slot>: a pin or pin-map document" },
   { kind: "request.create / request.write", file: "packages/producer/src/records/request.ts", literal: "\"request.create\"", subject: "request:<id>" },
   { kind: "queue.create / queue.replace", file: "packages/producer/src/queue/entry.ts", literal: "\"queue.create\"", subject: "<queue>/<entry id>: every queue entry write, the chat answer path included" },

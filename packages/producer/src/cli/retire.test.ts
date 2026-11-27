@@ -12,7 +12,10 @@ import { candidateRetires, RETIRE_REASON } from "../constitution/checks/R10-reti
 import { buildContext } from "../constitution/context.js";
 import { validateAgainst } from "../constitution/schema.js";
 import { slotIndex } from "../records/slots.js";
-import { appendRetireCandidate, appendRetireSlot } from "../records/slot-write.js";
+import { appendRetireCandidate, appendRetireSlot, SLOT_FOLDER_MOVE_KIND } from "../records/slot-write.js";
+import { readEventLines } from "../engine/chain.js";
+import { runEngineCheck } from "../engine/check.js";
+import type { EngineEvent } from "../engine/types.js";
 import { SeatRefusal } from "../records/seat-owner.js";
 import { applySlotsMigration, planSlotsMigration } from "../migrate/slots.js";
 import { positionIa } from "../records/slot.js";
@@ -185,6 +188,19 @@ describe("clossys retire <agent>/<slot> --slot", () => {
     // The slots after it move up one place, and their slot.json follows.
     expect([OTHER, USER].map(id => load(join(agents, id, "slot.json")).ia.order)).toEqual([0, 1]);
     expect(checkSlotModel(join(workspace, "clossys"))).toEqual([]);
+  });
+
+  it("a retired slot's folder move is logged, and check --engine is clean after it", async () => {
+    expect((await retire(`designer/${ID}`, "--slot")).exitCode).toBe(0);
+    const old = `clossys/agents/designer/${ID}/ledger.json`, moved = `clossys/agents/designer/_retired/${ID}/ledger.json`;
+    const events = readEventLines(workspace).lines.map(line => JSON.parse(line) as EngineEvent);
+    const move = events.at(-1)!;
+    expect(move).toMatchObject({ actor: OWNER, kind: SLOT_FOLDER_MOVE_KIND, subject: `designer/${ID}` });
+    // The slot ledger the retire-slot event logged at the old path: gone there, its bytes now under _retired/.
+    expect(move.inputs).toEqual([{ path: moved, sha256: sha256Hex(readFileSync(join(workspace, moved))) }, { path: old, sha256: null }]);
+    const report = runEngineCheck(workspace);
+    expect(report.drift).toEqual([]);
+    expect(report).toMatchObject({ ok: true, chain: [], index: [], layout: [] });
   });
 
   it("renumbers a clossys.slot/2 store: each later slot.json takes the slash-path positionIa of its new place", async () => {

@@ -42,6 +42,7 @@ import { validateAgainst } from "../constitution/schema.js";
 import { fileState, MIGRATIONS_FILE, MIGRATIONS_SCHEMA, validateMigrations, type FileState, type FormatMigration, type MigratedEvent, type MigrationsDoc } from "./migrations.js";
 import { consumerEngineRoot, engineRootOf, inputsOf } from "../engine/chain.js";
 import { deferEvents, dropHeldEvents, logEvent, recordEvent } from "../engine/log.js";
+import { computeIndex } from "../engine/derived.js";
 import { refuseLegacyState } from "../engine/state-dir.js";
 
 // ---------------------------------------------------------------------------
@@ -489,6 +490,25 @@ export function appendRetireSlot(consumer: string, agent: SlotAgent, id: string,
   agentLocked(consumer, agent, () => appendEvent(base, "agent", event));
   events.push(event);
   return events;
+}
+
+/** The engine event kind of a retired slot's folder move (engine/doc.ts EVENT_KINDS). */
+export const SLOT_FOLDER_MOVE_KIND = "slot.folder-move";
+/**
+ * The engine event of a retired slot's folder move (`clossys retire --slot`), once the folder is at `to`: every record
+ * path the log names under the slot's old folder, absent there now, and the same path under `to` with its bytes now,
+ * so no record of the old folder stays logged but missing (`clossys check --engine` drift). Under the agent lock; a
+ * folder outside a workspace, or one the log names no record under, logs nothing.
+ */
+export function logSlotFolderMove(consumer: string, agent: SlotAgent, id: string, to: string, by: string): void {
+  const from = join(consumer, "agents", agent, id);
+  const root = engineRootOf(join(from, LEDGER_FILE));
+  if (root === undefined) return;
+  const prefix = `${relative(root, from).split(sep).join("/")}/`;
+  const logged = Object.entries(computeIndex(root).records).filter(([path, entry]) => path.startsWith(prefix) && entry.logged !== null).map(([path]) => path);
+  if (!logged.length) return;
+  const paths = logged.flatMap(path => [join(root, ...path.split("/")), join(to, ...path.slice(prefix.length).split("/"))]);
+  agentLocked(consumer, agent, () => recordEvent(paths, { actor: by, kind: SLOT_FOLDER_MOVE_KIND, subject: `${agent}/${id}` }));
 }
 
 /**
