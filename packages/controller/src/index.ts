@@ -70,15 +70,10 @@ export type {
   GovernanceReport,
   LifecycleFinding,
   LifecycleFindingRule,
-  NewPackagePlan,
-  NewPackagePlanInput,
-  NewPackagePlanProfile,
-  NewPackagePlanReadiness,
   PackageLifecycleDocument,
   PackageLifecycleEntry,
   PackageLifecyclePromotionEvidence,
   PackageLifecycleStatus,
-  PackageScaffoldFile,
   RuleConformanceAssessment,
   RuleConformanceEvidence,
   RuleConformanceFinding,
@@ -89,7 +84,6 @@ export type {
 
 export { validatePackageLifecycle, evaluateDependencyInstallability,
   evaluateLifecycleCoverage } from "./lifecycle.js";
-export { planNewPackage } from "./scaffold.js";
 export { runGovernanceCheck } from "./governance.js";
 export { preflightGovernedPackage } from "./preflight.js";
 export { assessRuleConformanceRate } from "./rule-conformance.js";

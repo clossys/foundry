@@ -1,0 +1,27 @@
+{
+  "$comment": "A world whose rungs file claims ghost at looped, though no rung check gives it anything, and whose root check runs none of the rung checks.",
+  "schemaVersion": 1,
+  "ladder": [
+    "declared",
+    "conforming",
+    "qualified",
+    "packed",
+    "looped"
+  ],
+  "needs": {
+    "install": {
+      "need": "packed",
+      "listed": 1,
+      "atOrAbove": 1
+    }
+  },
+  "agents": [
+    {
+      "id": "ghost",
+      "package": "@clossys/ghost",
+      "rung": "looped",
+      "next": null,
+      "missing": []
+    }
+  ]
+}

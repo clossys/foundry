@@ -46,6 +46,8 @@ import { fileURLToPath } from "node:url";
 import { generateLoopSection, loadStageActivities } from "./generate-loop-section.mjs";
 import { ENVELOPE_COPY_PATH, renderEnvelopeCopyFromRoot } from "./sync-envelope-copies.mjs";
 import { changelogRelPath } from "./lib/changelog-location.mjs";
+import { writeGenerated } from "./check-agents-definition.mjs";
+import { publishedName } from "./lib/package-renames.mjs";
 
 const scriptDir = dirname(fileURLToPath(import.meta.url));
 
@@ -142,6 +144,7 @@ export function buildScaffold({ role, shortName, roleDefinition, stageActivities
     "---",
     `name: clossys-${shortName}`,
     `description: ${role}, scaffolded (issue #1203). Fill in this role's real craft before shipping to a client.`,
+    "disable-model-invocation: true",
     "---",
     "",
     `# ${shortName}`,
@@ -250,6 +253,58 @@ export function buildScaffold({ role, shortName, roleDefinition, stageActivities
   };
 }
 
+/**
+ * CP1-AGENTLADDER: registers a scaffolded role everywhere check:agents-definition (the ladder's declared rung) joins
+ * a row to, so the package is declared on day one: its docs/contracts/agents.json row (class other: a chartered role),
+ * package evidence (implemented: the directory exists), lifecycle (active), the last first-wave-sequence wave (a new
+ * role is sequenced after the expression wave until its charter says otherwise) and a release-qualification policy
+ * entry naming the adapter the scaffold writes, then regenerates Controller's role-contract copy and every generated
+ * copy of agents.json. A source this root does not have is skipped, and an entry already there is kept. Returns the
+ * repository paths it wrote.
+ */
+export function registerAgent(root, { role, shortName }) {
+  const written = [];
+  const at = (path) => join(root, path);
+  const edit = (path, change) => {
+    if (!existsSync(at(path))) return;
+    const before = readFileSync(at(path), "utf8");
+    const after = change(before);
+    if (after !== before) { writeFileSync(at(path), after); written.push(path); }
+  };
+  const editJson = (path, change) => edit(path, (text) => { const doc = JSON.parse(text); return change(doc) === false ? text : `${JSON.stringify(doc, null, 2)}\n`; });
+  edit("docs/contracts/agents.json", (text) => {
+    if (JSON.parse(text).agents.some((row) => row.id === shortName)) return text;
+    const line = `    { "id": "${shortName}", "package": "${role}", "class": "other", "definitionOwner": "controller" },`;
+    const lines = text.split("\n");
+    const rows = lines.flatMap((item, index) => (/^ {4}\{ "id": "/.test(item) ? [index] : []));
+    const after = rows.find((index) => /"id": "([^"]+)"/.exec(lines[index])[1] > shortName);
+    if (after !== undefined) lines.splice(after, 0, line);
+    else { lines[rows.at(-1)] = `${lines[rows.at(-1)]},`; lines.splice(rows.at(-1) + 1, 0, line.replace(/,$/, "")); }
+    return lines.join("\n");
+  });
+  editJson("docs/contracts/package-evidence.json", (doc) => (doc.packages.some((entry) => entry.name === role) ? false : doc.packages.push({ name: role, state: "implemented" })));
+  editJson("docs/contracts/package-lifecycle.json", (doc) => (doc.packages.some((entry) => entry.name === role) ? false : doc.packages.push({ name: role, status: "active" })));
+  editJson("docs/contracts/first-wave-sequence.json", (doc) => (doc.waves.some((wave) => wave.packages.includes(shortName)) ? false : doc.waves.at(-1).packages.push(shortName)));
+  const key = publishedName(role);
+  edit("governance/release-qualification-policy.json", (text) => {
+    if (JSON.parse(text).packages[key]) return text;
+    const unsupported = (reason) => ({ status: "unsupported", reason });
+    const entry = {
+      packageKey: shortName,
+      recordStem: key.replace(/^@/, "").replace("/", "-"),
+      packageDir: `packages/${shortName}`,
+      adapterPath: `governance/release-qualification-adapters/${shortName}/current-direct.json`,
+      fixturePath: `governance/release-qualification-fixtures/${shortName}/current-direct`,
+      archetypes: { "current-direct": { status: "required" }, "prior-minor": unsupported("A scaffolded role has no prior-minor consumer line."), "oldest-supported": unsupported("A scaffolded role has no oldest supported migration line."), "control-plane": unsupported("A scaffolded role declares no provider or repository adapter.") },
+      dimensions: Object.fromEntries(["position", "completion", "duplicate", "cadence", "closeWindow"].map((name) => [name, unsupported("A scaffolded role makes no such claim until its capability content is authored.")]).concat([["rollback", { status: "required" }]])),
+    };
+    const body = JSON.stringify(entry, null, 2).split("\n").map((item, index) => (index === 0 ? item : `    ${item}`)).join("\n");
+    return text.replace(/\n {4}\}\n {2}\}\n\}\n?$/, `\n    },\n    ${JSON.stringify(key)}: ${body}\n  }\n}\n`);
+  });
+  if (existsSync(at("docs/contracts/agents.json"))) written.push(...writeGenerated(root));
+  return written;
+}
+
 function writeFiles(baseDir, files) {
   for (const [relativePath, content] of files) {
     const target = join(baseDir, relativePath);
@@ -305,7 +360,9 @@ function main(argv) {
   writeFiles(packageDir, packageFiles);
   writeFiles(root, repoFilesToWrite);
 
-  console.log(`scaffold-package: wrote packages/${shortName}/ (${packageFiles.size} file(s)) and ${repoFilesToWrite.size} repository file(s) for ${role}`);
+  const registered = registerAgent(root, { role, shortName });
+
+  console.log(`scaffold-package: wrote packages/${shortName}/ (${packageFiles.size} file(s)) and ${repoFilesToWrite.size} repository file(s) for ${role}, and registered it in ${registered.length} file(s)`);
   return 0;
 }
 

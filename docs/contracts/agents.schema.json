@@ -4,7 +4,7 @@
   "title": "Foundry agent definitions",
   "description": "The one definition of every agent: one row per package under packages/, the named agent lists code reads, and the chain handoffs. scripts/check-agents-definition.mjs reads this schema, joins every other declaration of an agent to the rows and writes the generated copies packages read.",
   "type": "object",
-  "required": ["schemaVersion", "agents", "lists", "handoffs"],
+  "required": ["schemaVersion", "agents", "ladder", "lists", "handoffs"],
   "additionalProperties": false,
   "properties": {
     "$schema": { "type": "string" },
@@ -14,14 +14,49 @@
       "type": "array",
       "items": {
         "type": "object",
-        "required": ["id", "package", "class", "definitionOwner", "rung"],
+        "required": ["id", "package", "class", "definitionOwner"],
         "additionalProperties": false,
         "properties": {
           "id": { "type": "string", "pattern": "^[a-z][a-z0-9-]*$", "description": "The package directory under packages/." },
           "package": { "type": "string", "pattern": "^@[a-z0-9][a-z0-9._-]*/[a-z0-9][a-z0-9._-]*$", "description": "The workspace package name in packages/<id>/package.json." },
           "class": { "enum": ["content", "factory", "tooling", "other"], "description": "How the code treats the agent: content agents own slots and loops, factory agents plan, build and review Foundry's own work, tooling ships deterministic mechanics and is not a role, other is every other role." },
-          "definitionOwner": { "const": "controller", "description": "The agent that owns this definition." },
-          "rung": { "type": "null", "description": "The readiness rung. Null until the readiness ladder computes it." }
+          "definitionOwner": { "const": "controller", "description": "The agent that owns this definition." }
+        }
+      }
+    },
+    "ladder": {
+      "type": "object",
+      "required": ["description", "rungs", "needs"],
+      "additionalProperties": false,
+      "description": "The readiness ladder: its rungs in order, each with the one root check step that decides it, and the rung each named list needs. A rung is computed into docs/contracts/agents.rungs.json, never declared on a row.",
+      "properties": {
+        "description": { "type": "string" },
+        "rungs": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "required": ["id", "check", "means"],
+            "additionalProperties": false,
+            "properties": {
+              "id": { "type": "string", "pattern": "^[a-z][a-z0-9-]*$" },
+              "check": { "type": "string", "pattern": "^check:[a-z0-9:-]+$", "description": "The root package.json script that decides the rung; root `check` runs it." },
+              "means": { "type": "string" }
+            }
+          }
+        },
+        "needs": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["list", "rung", "description"],
+            "additionalProperties": false,
+            "properties": {
+              "list": { "type": "string", "pattern": "^[a-z][a-z0-9-]*$" },
+              "rung": { "type": "string", "pattern": "^[a-z][a-z0-9-]*$" },
+              "description": { "type": "string" }
+            }
+          }
         }
       }
     },

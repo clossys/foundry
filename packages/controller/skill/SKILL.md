@@ -77,7 +77,10 @@ it. A slot shown as `sample` (still on the package default), `unresolved`, `fail
 The rules in the repository's rule registry whose `owner_agent` is `controller`: the agent standards,
 starting with the one agent definition (`docs/contracts/agents.json`, checked by
 `check:agents-definition`) and its named lists, which code reads instead of writing agent ids out
-(`check:agent-lists`). `check:rules` fails when this list and the registry differ.
+(`check:agent-lists`), and the readiness ladder: each agent's rung (declared, conforming, qualified,
+packed, looped) is computed by `clossys agents check` into `docs/contracts/agents.rungs.json`, and each
+rung's check runs in root check (`check:agent-ladder`, `check:agent-rung:<rung>`, `check:agent-rungs`).
+`check:rules` fails when this list and the registry differ.
 
 <!-- owned-rules:start: the rules in the repository's rule registry whose owner_agent is this package; check:rules fails on drift -->
 - R-ASSEMBLE-ONLY
@@ -87,6 +90,8 @@ starting with the one agent definition (`docs/contracts/agents.json`, checked by
 - R-SINGLE-READER
 - R-AGENTS-DEFINITION
 - R-AGENT-LISTS
+- R-AGENT-LADDER
+- R-AGENTS-CHECK
 <!-- owned-rules:end -->
 
 ## When this package is installed

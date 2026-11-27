@@ -1,0 +1,60 @@
+{
+  "schemaVersion": 2,
+  "agents": [
+    {
+      "id": "ghost",
+      "package": "@clossys/ghost",
+      "class": "other",
+      "definitionOwner": "controller"
+    }
+  ],
+  "ladder": {
+    "description": "The one readiness ladder, owned by Controller. An agent's rung is computed, never declared: `clossys agents check` runs each rung's check in order and writes the highest rung whose check, and every check below it, passes to docs/contracts/agents.rungs.json (generated). Each check runs in root `check` for every agent the generated file places at or above its rung.",
+    "rungs": [
+      {
+        "id": "declared",
+        "check": "check:agents-definition",
+        "means": "The agent's row and every other declaration of it (role contract, evidence, lifecycle, wave, release qualification, renames, package.json, skill name, lists, generated copies) agree."
+      },
+      {
+        "id": "conforming",
+        "check": "check:agent-rung:conforming",
+        "means": "The conformance gate, run with --enforce, reports no gap and no finding for the agent's package."
+      },
+      {
+        "id": "qualified",
+        "check": "check:agent-rung:qualified",
+        "means": "A retained release-qualification record exists for the package's current version, under its published name."
+      },
+      {
+        "id": "packed",
+        "check": "check:agent-rung:packed",
+        "means": "The package ships its skill and every command (bin) it declares, and check:bin-reachability and check:install-docs pass for it."
+      },
+      {
+        "id": "looped",
+        "check": "check:agent-rung:looped",
+        "means": "The agent's check:agents entries pass, and clossys init adopts its loops (it is in the content list and ships loops/)."
+      }
+    ],
+    "needs": [
+      {
+        "list": "install",
+        "rung": "packed",
+        "description": "Every agent in the install list (clossys init, the pack script and Advisor's front door read it) needs rung packed or higher; `clossys agents check` exits 1 while one is below it and reports the computed set next to the list."
+      }
+    ]
+  },
+  "lists": {
+    "install": {
+      "description": "The agents a consumer installs.",
+      "members": [
+        "ghost"
+      ]
+    }
+  },
+  "handoffs": {
+    "description": "No chain.",
+    "pairs": []
+  }
+}

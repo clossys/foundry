@@ -28,7 +28,7 @@
 // Usage: node scripts/check-agents-definition.mjs [--root DIR] [--json] [--write]
 // Exit 0 when every source agrees, 1 on any finding, 2 on a usage error or an unreadable source.
 import { existsSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
-import { join, resolve } from "node:path";
+import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { PACKAGE_RENAMES, workspaceName } from "./lib/package-renames.mjs";
 
@@ -78,6 +78,22 @@ export function renderGenerated(agents, flavour) {
     `export const AGENT_HANDOFFS = Object.freeze([\n${pairs.join("\n")}\n]${flavour === "ts" ? " as const" : ""});`,
     "",
   ].join("\n");
+}
+
+/** Writes Controller's copy of the role contract and every generated copy whose folder exists; returns the paths. */
+export function writeGenerated(root) {
+  const written = [];
+  if (existsSync(join(root, ROLE_CONTRACT_PATH)) && existsSync(dirname(join(root, CONTROLLER_COPY_PATH)))) {
+    writeFileSync(join(root, CONTROLLER_COPY_PATH), readFileSync(join(root, ROLE_CONTRACT_PATH)));
+    written.push(CONTROLLER_COPY_PATH);
+  }
+  const agents = JSON.parse(readFileSync(join(root, AGENTS_PATH), "utf8"));
+  for (const copy of GENERATED) {
+    if (!existsSync(dirname(join(root, copy.path)))) continue;
+    writeFileSync(join(root, copy.path), renderGenerated(agents, copy.flavour));
+    written.push(copy.path);
+  }
+  return written;
 }
 
 function skillName(root, dir) {
@@ -242,11 +258,7 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
   let sources;
   try {
     args = parseArgs(process.argv.slice(2));
-    if (args.write) {
-      writeFileSync(join(args.root, CONTROLLER_COPY_PATH), readFileSync(join(args.root, ROLE_CONTRACT_PATH)));
-      const agents = JSON.parse(readFileSync(join(args.root, AGENTS_PATH), "utf8"));
-      for (const copy of GENERATED) writeFileSync(join(args.root, copy.path), renderGenerated(agents, copy.flavour));
-    }
+    if (args.write) writeGenerated(args.root);
     sources = readSources(args.root);
   } catch (error) {
     console.error(`check-agents-definition: ${error instanceof Error ? error.message : String(error)}`);

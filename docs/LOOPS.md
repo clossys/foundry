@@ -129,5 +129,6 @@ node scripts/check-role-loop-archetypes.mjs \
 
 The verdict is a design decision only. It never inserts a candidate into
 `package-evidence.json`, advances lifecycle maturity, or claims evidence.
-After a `create` decision, `controller`'s `planNewPackage` may plan a no-write
-starter; it is not part of qualification and does not create the package.
+After a `create` decision, `node scripts/scaffold-package.mjs <role>` (the one
+scaffolder) writes the package and registers it in every contract, so it holds
+rungs declared and conforming on day one; qualification stays a separate step.

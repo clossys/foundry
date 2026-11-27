@@ -11,6 +11,7 @@ import type { Step } from "../pipeline/define.js";
 import { PACKAGE_ROOT } from "../pipeline/options.js";
 import { STEPS } from "../pipeline/steps/index.js";
 import { statusReport, SLOT_STATES, type SlotState } from "../read/status.js";
+import { installedRungsLine } from "../agent-readiness.js";
 import { CliUsageError } from "./args.js";
 import type { CliResult } from "./main.js";
 import { discoverRoot } from "./root.js";
@@ -49,6 +50,7 @@ export async function runStatusCli(argv: readonly string[], cwd: string, steps: 
   });
   const lines = Object.entries(view.agents).map(([id, row]) =>
     `${id.padEnd(9)} ${String(row.slots).padStart(4)} slot(s)  ${stateCounts(row.byState, plannerPins[id as keyof typeof plannerPins] ?? 0)}`);
+  lines.push(installedRungsLine(workspace));
   lines.push(`queue ${view.queue.length} open, ledger ${view.ledger.length} run(s), releases ${view.releases.length}; state ${(view.stateSha256 ?? "").slice(0, 12)}`);
   return { exitCode: 0, root: workspace, output: view, message: lines.join("\n") };
 }

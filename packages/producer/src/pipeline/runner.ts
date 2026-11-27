@@ -156,6 +156,8 @@ async function run(argv: readonly string[], cwd: string, steps: readonly Step[],
     if (head === "status") return await (await import("../cli/status.js")).runStatusCli(argv.slice(1), cwd, steps);
     // The conformance report (foundry-build-0048) reads only; report-only, no gate runs it.
     if (head === "conform") return await (await import("../cli/conform.js")).runConformCli(argv.slice(1), cwd);
+    // The readiness ladder (CP1-AGENTLADDER, Controller's): every agent's rung, computed from the rung checks; root check runs it.
+    if (head === "agents") return await (await import("../cli/agents.js")).runAgentsCli(argv.slice(1), cwd);
     if (head === "slot") return await (await import("../cli/slot.js")).runSlotCli(argv.slice(1), cwd);
     // A recipe's own mechanical tools by recipe id (CONTAM-U3 D5): its agent's stage check, or its declared generator.
     if (head === "recipe") return await (await import("../cli/recipe.js")).runRecipeCli(argv.slice(1), cwd);

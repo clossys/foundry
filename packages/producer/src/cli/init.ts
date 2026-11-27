@@ -23,6 +23,7 @@ import { adminPlan, adminUnder } from "./admin-plan.js";
 import { runStep } from "../pipeline/runner.js";
 import { adoptIa } from "./owner.js";
 import { placeSkills } from "./init-skills.js";
+import { installNeedLine } from "../agent-readiness.js";
 import { seatStarter, type StarterSeat, starterLines } from "./init-starters.js";
 import { adoptInitLoops } from "./init-loops.js";
 import { INIT_OUTPUTS_USAGE, runInitOutputsCli } from "./init-outputs.js";
@@ -114,7 +115,7 @@ async function initWorkspace(workspace: string, at: string | undefined, cwd: str
   const pointerSaid = pointer.outcome === "added" ? `added the views pointer to ${pointer.file}` : `${pointer.file} already has the views pointer`;
   // The installed packages' agent skills, copied where Claude and Codex discover them (init-skills.ts), then checked.
   const skills = placeSkills(workspace);
-  const said = [`placed ${skills.roles.length} agent skill${skills.roles.length === 1 ? "" : "s"} (${skills.roles.join(", ") || "none installed"}); ${skills.written.length} file${skills.written.length === 1 ? "" : "s"} written${skills.claude === "added" ? "; CLAUDE.md imports @AGENTS.md" : ""}`, pointerSaid].join("\n");
+  const said = [`placed ${skills.roles.length} agent skill${skills.roles.length === 1 ? "" : "s"} (${skills.roles.join(", ") || "none installed"}); ${skills.written.length} file${skills.written.length === 1 ? "" : "s"} written${skills.claude === "added" ? "; CLAUDE.md imports @AGENTS.md" : ""}`, installNeedLine(), pointerSaid].join("\n");
   if (skills.issues.length) return { exitCode: 1, root: workspace, output: { ...pointer, skills }, message: (refused === "init refused" ? [said, ...skills.issues.map(issue => `${refused}: ${issue}`)] : [...skills.issues.map(issue => `${refused}: ${issue}`), said]).join("\n") };
   // The slot model follows no symbolic link (records/slots.ts), so the seat runs on the workspace's real path (a tmp
   // or home folder reached through a link still seats).

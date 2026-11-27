@@ -1,0 +1,27 @@
+{
+  "$comment": "A world whose rungs file held ghost at looped; ghost's declared check now fails, so its rung falls to none and agents check exits 1.",
+  "schemaVersion": 1,
+  "ladder": [
+    "declared",
+    "conforming",
+    "qualified",
+    "packed",
+    "looped"
+  ],
+  "needs": {
+    "install": {
+      "need": "packed",
+      "listed": 1,
+      "atOrAbove": 1
+    }
+  },
+  "agents": [
+    {
+      "id": "ghost",
+      "package": "@clossys/ghost",
+      "rung": "looped",
+      "next": null,
+      "missing": []
+    }
+  ]
+}

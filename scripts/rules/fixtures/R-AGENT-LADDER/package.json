@@ -1,0 +1,7 @@
+{
+  "name": "fixture",
+  "private": true,
+  "scripts": {
+    "check": "node scripts/run-check-steps.mjs check:agents-definition"
+  }
+}

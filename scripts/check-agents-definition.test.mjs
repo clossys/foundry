@@ -21,7 +21,7 @@ test("a package with no agents.json row fails the definition check", () => {
 
 test("a row with no package fails the definition check", () => {
   const sources = fresh();
-  sources.agents.agents.push({ id: "ghost", package: "@clossys/ghost", class: "other", definitionOwner: "controller", rung: null });
+  sources.agents.agents.push({ id: "ghost", package: "@clossys/ghost", class: "other", definitionOwner: "controller" });
   assert.ok(named(evaluate(sources)).includes("row-without-package ghost"));
 });
 

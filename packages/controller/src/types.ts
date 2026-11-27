@@ -125,68 +125,6 @@ export interface GovernanceReport {
   readonly ok: boolean;
 }
 
-/**
- * Repository-owned details needed to turn a starter plan into a complete
- * package plan. Governance deliberately does not supply these values: package
- * conventions differ between workspaces.
- */
-export interface NewPackagePlanProfile {
-  /**
-   * Package manifest fields in addition to the plan's name, version, and
-   * description. A complete profile must include ownership, repository,
-   * tooling, and publication metadata where applicable.
-   */
-  readonly manifest: Readonly<Record<string, unknown>>;
-  /** Complete file contents selected by the owning repository. */
-  readonly files: {
-    readonly tsconfig: string;
-    readonly testConfig: PackageScaffoldFile;
-    readonly sourceIndex: string;
-    readonly sourceTest: string;
-    readonly readme: string;
-    readonly licenseText: string;
-  };
-  /** A real release date and the first changelog entry selected by the owner. */
-  readonly changelog: {
-    readonly date: string;
-    readonly initialEntry: string;
-  };
-}
-
-/** Input to the no-write package starter planner. */
-export interface NewPackagePlanInput {
-  readonly name: string;
-  readonly description: string;
-  /** Package version to place in the planned manifest. Defaults to `0.1.0`. */
-  readonly version?: string;
-  /** Relative directory to place the package in. Defaults to `packages/<unscoped-name>`. */
-  readonly directory?: string;
-  /**
-   * Optional repository-owned profile. Without one, the result is explicitly
-   * a private starter plan, not a publishable scaffold.
-   */
-  readonly profile?: NewPackagePlanProfile;
-}
-
-/** One UTF-8 file a caller may choose to write after reviewing it. */
-export interface PackageScaffoldFile {
-  readonly path: string;
-  readonly content: string;
-}
-
-/** Whether the plan is an intentionally incomplete starter or profile-complete. */
-export type NewPackagePlanReadiness = "starter" | "profiled";
-
-/** The deterministic output of `planNewPackage`; no files have been written. */
-export interface NewPackagePlan {
-  readonly directory: string;
-  readonly files: readonly PackageScaffoldFile[];
-  /** A starter plan must not be represented as ready for publication. */
-  readonly readiness: NewPackagePlanReadiness;
-  /** Explicit owner actions still needed before a starter can be released. */
-  readonly requiredActions: readonly string[];
-}
-
 /** Options for package preflight. `scope` is forwarded to both composed checks. */
 export interface GovernedPreflightOptions {
   readonly scope?: string;
