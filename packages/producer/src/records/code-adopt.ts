@@ -26,11 +26,13 @@
  * nothing: the slot rule, then the item is the stock item exactly (registry lineage, rung L1 with its seed, every
  * file byte-exact to the normalized reference). R03.2 flags any submit by code:adopt that fails the same rule.
  *
- * Token fallbacks (D5-2D, remainder 2 option b): a consumer adoption writes every bare token read with the value the
- * consumer's pinned `themes.*` slots declare (read/theme-pins.ts pinnedThemeReader), never a package value; a name the
- * pins do not declare refuses the adoption (UndeclaredTokenFallbackError). The reference is normalized through the
- * same reader, so the comparison stays byte-exact, and the item records the reader's source and each written file's
- * sha256 (meta.refVerbatim.reader, outputSha256).
+ * Token fallbacks (D5-2D, remainder 2 option b; CP1-TOKENFALL): a consumer adoption writes every bare token read with
+ * the value the consumer's pinned `themes.*` slots declare (read/theme-pins.ts pinnedThemeReader). A name no pin
+ * declares takes Foundry's declared value only when the token catalog marks it brand-optional, and the written file
+ * ends with a comment line naming each such value; a brand-required name, or any other undeclared name, refuses the
+ * adoption (UndeclaredTokenFallbackError). The reference is normalized through the same reader, so the comparison
+ * stays byte-exact, and the item records the reader's source and each written file's sha256 (meta.refVerbatim.reader,
+ * outputSha256).
  */
 import { createHash } from "node:crypto";
 import { existsSync, readFileSync } from "node:fs";
@@ -206,7 +208,8 @@ export function stockFilesOf(root: string, slotId: string): StockFiles | { reado
   if (!row) return { none: `no ${STOCK_REGISTRIES.join(" or ")} stock item ships ${at}'s contract fixture ${file}` };
   const ref = refIdOf(row);
   const consumer = join(root, "clossys");
-  // Every fallback the written file carries is the consumer's pinned value; an undeclared name throws (refused).
+  // Every fallback the written file carries is the consumer's pinned value, or Foundry's declared value for a
+  // brand-optional id no pin emits (marked in the file); any other undeclared name throws (refused).
   const reader = pinnedThemeReader(consumer);
   const files = row.files.filter(each => each.path.endsWith(".tsx")).map(each => ({
     path: each.path, type: row.type, content: normalizedSeedFile(consumer, ref, each.path, { manifest, referencesDir: referencesDirOf(root), reader }),

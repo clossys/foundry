@@ -52,9 +52,9 @@ const json = (path) => JSON.parse(readFileSync(path, "utf8"));
 let fallbackReaderModule;
 const fallbackReaders = () => (fallbackReaderModule ??= createRequire(import.meta.url)("../dist/importers/declared-fallback-reader.js"));
 
-/** A consumer's pinned `themes.*` values as a declared-fallback reader (`pinnedThemeFallbackReader`); a name they do not declare is refused. */
-export function pinnedThemeFallbackReader(values, source) {
-  return fallbackReaders().pinnedThemeFallbackReader(values, source);
+/** A consumer's pinned `themes.*` values as a declared-fallback reader (`pinnedThemeFallbackReader`); a name they do not declare is refused, unless `options.foundryBrandOptional` and the id is brand-optional (then Foundry's declared value). */
+export function pinnedThemeFallbackReader(values, source, options) {
+  return fallbackReaders().pinnedThemeFallbackReader(values, source, options);
 }
 
 /** Whether `error` is the reader's refusal of a name with no declared value (`UndeclaredTokenFallbackError`). */
