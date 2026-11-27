@@ -43,7 +43,7 @@ function world(extra: Record<string, string> = {}) {
   commit(repo, "base", {
     ".gitignore": "node_modules\n",
     "README.md": "# fixture\n",
-    "package.json": JSON.stringify({ name: "fx-root", private: true, type: "module", workspaces: ["packages/*"], scripts: { "check:tool": "node scripts/check-tool.mjs" } }, null, 2),
+    "package.json": JSON.stringify({ name: "fx-root", private: true, type: "module", workspaces: ["packages/*"], scripts: { "check:tool": "node scripts/check-tool.mjs", "check:doc": "node scripts/check-doc.mjs" } }, null, 2),
     "packages/demo/package.json": JSON.stringify({ name: "@fx/demo", private: true, type: "module", scripts: { typecheck: "node typecheck.mjs", test: "vitest run" }, devDependencies: { vitest: "*" } }, null, 2),
     "packages/demo/typecheck.mjs": "import { readdirSync, readFileSync } from \"node:fs\";\nfor (const file of readdirSync(\"src\")) if (readFileSync(`src/${file}`, \"utf8\").includes(\"TYPE_ERROR\")) { console.error(`src/${file}: TYPE_ERROR`); process.exit(2); }\n",
     "packages/demo/skill/SKILL.md": "---\nname: clossys-demo\n---\n# demo\n",
@@ -53,6 +53,9 @@ function world(extra: Record<string, string> = {}) {
     "scripts/tool.test.mjs": "import { test } from \"node:test\";\nimport assert from \"node:assert/strict\";\nimport { twice } from \"./tool.mjs\";\ntest(\"twice\", () => assert.equal(twice(2), 4));\n",
     "scripts/check-tool.mjs": "import { readFileSync } from \"node:fs\";\nconst doc = JSON.parse(readFileSync(\"docs/contracts/tool.json\", \"utf8\"));\nprocess.exit(doc.ok === true ? 0 : 1);\n",
     "docs/contracts/tool.json": "{ \"ok\": true }\n",
+    // A root check with its own gate test: the fast step runs the test, not the whole check.
+    "scripts/check-doc.mjs": "import { readFileSync } from \"node:fs\";\nexport const ok = () => JSON.parse(readFileSync(\"docs/contracts/tool.json\", \"utf8\")).ok === true;\nif (process.argv[1]?.endsWith(\"check-doc.mjs\")) process.exit(ok() ? 0 : 1);\n",
+    "scripts/check-doc.test.mjs": "import { test } from \"node:test\";\nimport assert from \"node:assert/strict\";\nimport { ok } from \"./check-doc.mjs\";\ntest(\"ok\", () => assert.equal(ok(), true));\n",
     ...extra,
   });
   git(repo, "checkout", "--quiet", "-b", "work");
@@ -158,9 +161,9 @@ describe("clossys check --fast", () => {
     const record = await runFast({ repo, base: "main" });
     expect(record.packages).toEqual([]);
     expect(ran(record, "typecheck")).toEqual([]);
-    // The sibling test of the changed script, the root check that reads the changed contract, and the npm script the
-    // manifest change added.
-    expect(ran(record, "related").map(command => command.run).sort()).toEqual(["node --test scripts/tool.test.mjs", "node scripts/check-tool.mjs", "node scripts/check-tool.mjs --strict"]);
+    // The sibling test of the changed script, the root checks that read the changed contract (check:doc through its own
+    // gate test), and the npm script the manifest change added.
+    expect(ran(record, "related").map(command => command.run).sort()).toEqual(["node --test scripts/check-doc.test.mjs", "node --test scripts/tool.test.mjs", "node scripts/check-tool.mjs", "node scripts/check-tool.mjs --strict"]);
     expect(record.verdict).toBe("FAST PASS");
   });
 

@@ -3,10 +3,12 @@
  *
  * The changed files are `git diff --name-only <base>...HEAD`. Steps, in order, stopping on the first red:
  *   1. typecheck: `npm run typecheck` in each touched workspace package that declares one;
- *   2. related: the test files that reach a changed file, per touched package (vitest, one process per package, so
- *      vitest's worker pool shards the files across cores and the package's globalSetup build runs once), direct
- *      importers first; changed files outside any workspace package run their own node tests (the sibling and every
- *      root test that imports or names them) and the root check scripts that read them, each its own process;
+ *   2. related: per changed file, its nearest tests in its own package (the test files that import it directly, or,
+ *      when none does, those at the first import depth where any does; a changed test file is its own), run first,
+ *      then the tests that name a changed data file and the root `check:*` scripts that read a changed root file (a
+ *      check with a sibling gate test runs through that test; the whole-repository check stays in root `check`). A
+ *      package's vitest files run in one process per package and tier, so vitest's worker pool shards them across
+ *      cores and the package's globalSetup build runs once; node tests and root checks each run as their own process;
  *   3. alone: every file that failed in step 2 runs again by itself, once. A file that passes alone is load noise. A file
  *      that fails alone is run alone again at the merge-base, in a temporary detached tree: red there too is base-red
  *      and does not fail the step; anything else (passes at base, absent at base, or base could not run) is red.
@@ -196,7 +198,11 @@ export function selectUnits(tree: string, changes: readonly Change[], baseScript
         queue.push(from);
       }
     }
-    for (const [candidate, distance] of depth) if (distance > 0 && isTest(candidate)) want(candidate, distance === 1 ? 1 : 2);
+    // The nearest tests only: the tests that import the file directly, or, when none does, the tests at the first
+    // depth where any does. The full transitive set is the mechanical review's (clossys review), not this gate's.
+    const reached = [...depth].filter(([candidate, distance]) => distance > 0 && isTest(candidate));
+    const nearest = Math.min(...reached.map(([, distance]) => distance));
+    for (const [candidate, distance] of reached) if (distance === nearest) want(candidate, 1);
     // The `.test` sibling of a changed file, and every test of its scope that names the file (a fixture, a JSON
     // contract or a doc read by path), are direct.
     const sibling = file.replace(/\.(?:ts|tsx|mts|cts|mjs|cjs|js)$/, match => `.test${match}`);
@@ -211,16 +217,11 @@ export function selectUnits(tree: string, changes: readonly Change[], baseScript
     const mine = names.filter(item => item.pkg === pkg && item.file !== candidate);
     if (!mine.length || !(isVitest(pkg, candidate) || isNodeTest(pkg, candidate))) continue;
     const text = readText(join(tree, candidate)) ?? "";
-    if (mine.some(item => text.includes(item.name))) want(candidate, 1);
-  }
-  const units: Unit[] = [];
-  for (const [file, tier] of tierOf) {
-    const pkg = packageOf(workspaces, file);
-    if (isVitest(pkg, file)) units.push({ id: file, kind: "vitest", pkg, file, cwd: pkg, tier });
-    else units.push({ id: file, kind: "node", pkg, file, cwd: pkg, args: ["--test", pkg === "." ? file : file.slice(pkg.length + 1)], tier });
+    if (mine.some(item => text.includes(item.name))) want(candidate, 2);
   }
   // Root check scripts that read a changed root file: a plain `node scripts/<x>.mjs [args]` npm script whose script,
   // or a module it imports, is the change or names it.
+  const units: Unit[] = [];
   const rootChanged = changed.filter(file => packageOf(workspaces, file) === "." && file !== "package.json").map(file => ({ file, name: basenameOf(file), named: names.some(item => item.file === file) }));
   const scripts = (JSON.parse(readText(join(tree, "package.json")) ?? "{}") as { scripts?: Record<string, string> }).scripts ?? {};
   // A changed root manifest runs the npm scripts whose own entry it adds or changes.
@@ -230,13 +231,23 @@ export function selectUnits(tree: string, changes: readonly Change[], baseScript
     for (const [target, froms] of graph.importers) for (const from of froms) { let set = imports.get(from); if (!set) imports.set(from, set = new Set()); set.add(target); }
     const closure = (start: string) => { const seen = new Set([start]); const queue = [start]; for (let i = 0; i < queue.length; i++) for (const next of imports.get(queue[i]!) ?? []) if (!seen.has(next) && !next.endsWith("/*")) { seen.add(next); queue.push(next); } return seen; };
     for (const [name, command] of Object.entries(scripts).sort(([a], [b]) => a.localeCompare(b))) {
-      if (name.startsWith("//")) continue;
+      if (!name.startsWith("check:")) continue;
       const plain = plainNodeScript(command);
       if (!plain || !/^(?:scripts|\.github\/scripts)\//.test(plain[0]) || TEST_FILE.test(plain[0]) || !existsSync(join(tree, plain[0]))) continue;
       const reach = closure(plain[0]);
       const reads = entryChanged.has(name) || rootChanged.some(item => reach.has(item.file) || (item.named && [...reach].some(file => (readText(join(tree, file)) ?? "").includes(item.name))));
-      if (reads) units.push({ id: `npm run ${name}`, kind: "node", pkg: ".", file: plain[0], cwd: ".", args: [plain[0], ...plain[1]], tier: 1 });
+      if (!reads) continue;
+      // A check with its own gate test runs through that test here (seconds); the check itself, a whole-repository
+      // run that can take minutes, stays in the root `check`. A check with no test runs as it is wired.
+      const test = plain[0].replace(/\.(mjs|cjs|js)$/, ".test.$1");
+      if (existsSync(join(tree, test))) want(test, 2);
+      else units.push({ id: `npm run ${name}`, kind: "node", pkg: ".", file: plain[0], cwd: ".", args: [plain[0], ...plain[1]], tier: 2 });
     }
+  }
+  for (const [file, tier] of tierOf) {
+    const pkg = packageOf(workspaces, file);
+    if (isVitest(pkg, file)) units.push({ id: file, kind: "vitest", pkg, file, cwd: pkg, tier });
+    else units.push({ id: file, kind: "node", pkg, file, cwd: pkg, args: ["--test", pkg === "." ? file : file.slice(pkg.length + 1)], tier });
   }
   units.sort((a, b) => a.tier - b.tier || a.id.localeCompare(b.id));
   return { units, packages };
