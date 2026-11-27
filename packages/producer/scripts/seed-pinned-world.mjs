@@ -1149,6 +1149,9 @@ export async function seed({ from, out, only, keep = false, resume } = {}) {
     if (!only) await placement(w);
     if (!only) await interview(w);
     if (!only) await reuseRequests(w);
+    // A slot retire moves its folder under _retired/ after its events logged it, so the index still names the old
+    // paths as on disk; the index is derived, so the seeder ends by re-running the verb that rebuilds it.
+    await w.run("index", "index", "--rebuild");
     // Only the repository this run made goes; a resumed root's own .git stays.
     if (ownGit) rmSync(join(root, ".git"), { recursive: true, force: true });
     if (out) {

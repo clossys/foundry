@@ -4012,7 +4012,7 @@
     "clossys/agents/designer/components.link/ledger.json": {
       "seq": 173,
       "logged": "29857f7298903b27f94e4ac7650cb37417c03658c469328c95197c74bf796767",
-      "disk": "29857f7298903b27f94e4ac7650cb37417c03658c469328c95197c74bf796767"
+      "disk": null
     },
     "clossys/agents/designer/components.logo/ledger.json": {
       "seq": 2711,
@@ -4032,12 +4032,12 @@
     "clossys/agents/designer/components.media-player/ledger.json": {
       "seq": 337,
       "logged": "289f112c2a00fe36e335c045d811bc8b1c0ad8ef71bdb782571ada15bf0916b4",
-      "disk": "289f112c2a00fe36e335c045d811bc8b1c0ad8ef71bdb782571ada15bf0916b4"
+      "disk": null
     },
     "clossys/agents/designer/components.media-player/slot.json": {
       "seq": 97,
       "logged": "25a174e1d42d21c41a27f1284cddb44499a191dfbddd9f8dfeeefa6d0bf3a337",
-      "disk": "25a174e1d42d21c41a27f1284cddb44499a191dfbddd9f8dfeeefa6d0bf3a337"
+      "disk": null
     },
     "clossys/agents/designer/components.menu/ledger.json": {
       "seq": 2669,
@@ -4237,12 +4237,12 @@
     "clossys/agents/designer/components.status-mark/ledger.json": {
       "seq": 416,
       "logged": "174bc9d0ee542f2f6cbd0d02b4ab704750a34bf67c61aadbe90bd634ec50aecf",
-      "disk": "174bc9d0ee542f2f6cbd0d02b4ab704750a34bf67c61aadbe90bd634ec50aecf"
+      "disk": null
     },
     "clossys/agents/designer/components.status-mark/slot.json": {
       "seq": 94,
       "logged": "9816c77911cfb8c893f49cf27ef60bf117e0ba35aee93c23a3471859a8ef2cc0",
-      "disk": "9816c77911cfb8c893f49cf27ef60bf117e0ba35aee93c23a3471859a8ef2cc0"
+      "disk": null
     },
     "clossys/agents/designer/components.studio.specimen-document/ledger.json": {
       "seq": 2784,
@@ -6707,12 +6707,12 @@
     "clossys/agents/producer/seat.writer.approve/ledger.json": {
       "seq": 22,
       "logged": "cc987ea38b318bd8b56ad728a19eaa12ec34c3a619915e2a0291747dc416260d",
-      "disk": "cc987ea38b318bd8b56ad728a19eaa12ec34c3a619915e2a0291747dc416260d"
+      "disk": null
     },
     "clossys/agents/producer/seat.writer.approve/slot.json": {
       "seq": 22,
       "logged": "bcfbf3b2e75eeaeaa385fb05a6b884b0a503c6322246fca086e44bbd314ddfcc",
-      "disk": "bcfbf3b2e75eeaeaa385fb05a6b884b0a503c6322246fca086e44bbd314ddfcc"
+      "disk": null
     },
     "clossys/agents/producer/seat.writer.candidates/ledger.json": {
       "seq": 2948,
@@ -7487,7 +7487,7 @@
     "clossys/agents/writer/components.media-player.copy/ledger.json": {
       "seq": 260,
       "logged": "06cabdaaa264f30b4618eff35a1774ac347039db29afe10f3b37188f94f53fcb",
-      "disk": "06cabdaaa264f30b4618eff35a1774ac347039db29afe10f3b37188f94f53fcb"
+      "disk": null
     },
     "clossys/agents/writer/components.sheet.copy/ledger.json": {
       "seq": 2806,
