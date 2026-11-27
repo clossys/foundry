@@ -10,6 +10,7 @@
         "quote": "every page = frame + sections; Publisher never writes or designs",
         "date": "2026-10-30"
       },
+      "owner_agent": "controller",
       "status": "enforced",
       "checks": [
         "packages/producer#check:assemble-only",
@@ -49,6 +50,7 @@
         "quote": "all views use Designer's shadcn components only",
         "date": "2026-10-31"
       },
+      "owner_agent": "producer",
       "status": "enforced",
       "checks": [
         "packages/producer#test",
@@ -92,6 +94,7 @@
         "quote": "stock shadcn unmodified, tokens to shadcn vars",
         "date": "2026-10-30"
       },
+      "owner_agent": "designer",
       "status": "enforced",
       "checks": [
         "packages/designer#check:ref-verbatim"
@@ -144,6 +147,7 @@
         "quote": "DS exclusively shadcn plus trusted free registries",
         "date": "2026-10-30"
       },
+      "owner_agent": "designer",
       "status": "enforced",
       "checks": [
         "packages/designer#check:provenance"
@@ -182,6 +186,7 @@
         "quote": "visual to Designer, copy to Writer, assembly only to Publisher",
         "date": "2026-10-31"
       },
+      "owner_agent": "controller",
       "status": "enforced",
       "checks": [
         "packages/producer#check:copy-source",
@@ -270,6 +275,7 @@
         "quote": "consumer owns nav and routing data per publication",
         "date": "2026-10-28"
       },
+      "owner_agent": "producer",
       "status": "enforced",
       "checks": [
         "packages/producer#check:studio-map"
@@ -302,6 +308,7 @@
         "quote": "agents/<agent>/<slot-id>/ flat; grouping only in ia.json data",
         "date": "2026-11-02"
       },
+      "owner_agent": "controller",
       "status": "enforced",
       "note": "check:flat-slots runs from root check and fails when a legacy store is kept, read or shipped: clossys/{library,cells,tree.json} or an agent folder holding library, cells or tree.json; an agent folder entry other than ia.json and slot folders, or a slot folder nesting a directory other than candidates/; a code file naming a legacy store path or joining cells, tree.json or library onto a root; a package manifest or the pipeline graph declaring one. clossys/library was retired (git rm) after Designer ref-verbatim --pinned gave identical output with and without it. Red on the real tree until the Director, Designer library-cli, Publisher content-map and Writer cells stores move to flat slot folders (engine gap). The fixture keeps clossys/library, a grouping folder and a tree.json reader.",
       "related": [
@@ -333,6 +340,7 @@
         "quote": "every L3 is a slot, candidates are files, one pinned",
         "date": "2026-10-31"
       },
+      "owner_agent": "producer",
       "status": "enforced",
       "related": [
         "packages/designer#check:slot-contracts"
@@ -364,6 +372,7 @@
         "quote": "Studio previews the consumer workspace in the consumer brand; never greyscale",
         "date": "2026-10-29"
       },
+      "owner_agent": "producer",
       "status": "enforced",
       "related": [
         "check:studio#producer check-theme-parity (live)",
@@ -396,6 +405,7 @@
         "quote": "read-only Studio; the card shows active state and links to the L3 route",
         "date": "2026-10-31"
       },
+      "owner_agent": "producer",
       "status": "enforced",
       "checks": [
         "packages/producer#check:studio-template"
@@ -421,6 +431,7 @@
         "quote": "Studio previews what cells produce, not file text",
         "date": "2026-10-29"
       },
+      "owner_agent": "producer",
       "status": "enforced",
       "related": [
         "check:studio#producer publisher-preview (live)",
@@ -453,6 +464,7 @@
         "quote": "all layers link uses and used-by; DOM provenance",
         "date": "2026-10-26"
       },
+      "owner_agent": "producer",
       "status": "enforced",
       "related": [
         "check:studio#designer check (usage-graph)",
@@ -486,6 +498,7 @@
         "quote": "clossys verbs = brief, check, compile only",
         "date": "2026-10-29"
       },
+      "owner_agent": "producer",
       "status": "enforced",
       "note": "check:cli-verbs runs every read-only clossys verb (direct, design and write --brief and --check, publish, decisions, options --classes --check) twice on the real store from root check through check:studio: each exits 0 with byte-identical output, and clossys check exits 0 only (a finding, exit 1, is a red verb) and repeats byte for byte. The fixture is a consumer store holding only a Director IA.",
       "checks": [
@@ -512,6 +525,7 @@
         "quote": "rules must become code, not prose",
         "date": "2026-11-03"
       },
+      "owner_agent": "reviewer",
       "status": "enforced",
       "checks": [
         ".#check:orphan-checks",
@@ -543,6 +557,7 @@
         "quote": "no temp solutions; delete shims, never extend",
         "date": "2026-10-23"
       },
+      "owner_agent": "developer",
       "status": "enforced",
       "related": [
         "check:studio#producer scripts/preview-studio-config.test.mjs",
@@ -570,6 +585,7 @@
         "quote": "shadcn item, else a composition of pinned parts, else mark unneeded",
         "date": "2026-11-03"
       },
+      "owner_agent": "producer",
       "status": "enforced",
       "note": "Every Director, Designer and Writer slot is pinned or marked not-needed (records/slots rejectedSlots), checked by check:slot-state from root check through check:studio. The fixture is a Director slot holding one candidate and no pin.",
       "checks": [
@@ -591,6 +607,7 @@
         "quote": "the rendering itself is just the same deterministic plumbing that works everytime without llm token spend",
         "date": "2026-11-03"
       },
+      "owner_agent": "producer",
       "status": "enforced",
       "checks": [
         ".#check:compile-pure"
@@ -612,6 +629,7 @@
         "quote": "process driven by code and identifiers so that we decide which candidate goes in which slot",
         "date": "2026-11-03"
       },
+      "owner_agent": "producer",
       "status": "enforced",
       "checks": [
         ".#check:decisions"
@@ -636,6 +654,7 @@
         "quote": "ok clean up and harden",
         "date": "2026-11-03"
       },
+      "owner_agent": "controller",
       "status": "enforced",
       "checks": [
         ".#check:git-cms"
@@ -675,6 +694,7 @@
         "quote": "add some variety to the candidate generation so end user have a choice",
         "date": "2026-11-03"
       },
+      "owner_agent": "producer",
       "status": "enforced",
       "checks": [
         ".#check:slot-options"
@@ -700,6 +720,7 @@
         "quote": "anything that is deterministic need to be process driven by code and identifiers",
         "date": "2026-11-03"
       },
+      "owner_agent": "producer",
       "status": "enforced",
       "checks": [
         ".#check:pipeline"
@@ -763,6 +784,7 @@
         "quote": "anything that is deterministic need to be process driven by code and identifiers",
         "date": "2026-11-03"
       },
+      "owner_agent": "producer",
       "status": "enforced",
       "checks": [
         ".#check:pipeline-canvas"
@@ -847,6 +869,7 @@
         "quote": "make sure all pages/routes are built via publisher itself officially",
         "date": "2026-11-04"
       },
+      "owner_agent": "producer",
       "status": "enforced",
       "checks": [
         "packages/producer#check:routes-published",
@@ -946,6 +969,7 @@
         "quote": "i want a super tight/connect system, so that we have all the plumbing/wiring locked",
         "date": "2026-11-03"
       },
+      "owner_agent": "controller",
       "status": "enforced",
       "checks": [
         ".#check:single-reader"
@@ -971,6 +995,7 @@
         "quote": "get us a world class producer, no more talking, just do it, completely",
         "date": "2026-11-20"
       },
+      "owner_agent": "producer",
       "status": "enforced",
       "checks": [
         ".#check:engine-side-door"
@@ -995,6 +1020,7 @@
         "quote": "why are we working in such ineffective inefficient ways to just burn tokens for vibes? what else need to be mechanical that isn't already in code?",
         "date": "2026-11-20"
       },
+      "owner_agent": "reviewer",
       "status": "enforced",
       "checks": [
         ".#check:review-doc"
@@ -1016,6 +1042,7 @@
         "quote": "i want a super tight/connect system, so that we have all the plumbing/wiring locked",
         "date": "2026-11-03"
       },
+      "owner_agent": "producer",
       "status": "enforced",
       "checks": [
         ".#check:pin-propagation"
@@ -1040,6 +1067,7 @@
         "quote": "i want a super tight/connect system, so that we have all the plumbing/wiring locked",
         "date": "2026-11-03"
       },
+      "owner_agent": "producer",
       "status": "enforced",
       "checks": [
         ".#check:every-candidate-previewable"
@@ -1064,6 +1092,7 @@
         "quote": "producer owns processes, no fakes",
         "date": "2026-11-20"
       },
+      "owner_agent": "producer",
       "status": "enforced",
       "checks": [
         "packages/producer#check:e2e"

@@ -36,17 +36,18 @@ function repository(rules, exemptions = [{ check: ".#check:rules", reason: "the 
     "scripts/rules/fixtures/bad/bad.txt": "violation\n",
     "scripts/rules/fixtures/clean/ok.txt": "fine\n",
     "scripts/rules/registry.json": { schema: "foundry.rule-registry/1", rules, exemptions },
+    "packages/home/package.json": { name: "home", private: true },
   });
 }
 
 test("shape: ids, owner words, status and the note an unenforced rule needs", () => {
   const found = shapeFindings({ rules: [
-    { id: "bad id", owner_words: words, status: "enforced", checks: [".#check:a"], fixture: "f" },
-    { id: "R-NO-DATE", owner_words: { quote: "q", date: "Nov 3" }, status: "unenforced", note: "missing" },
-    { id: "R-NO-NOTE", owner_words: words, status: "unenforced" },
-    { id: "R-NO-FIXTURE", owner_words: words, status: "enforced", checks: [".#check:a"] },
-    { id: "R-NO-WIRE", owner_words: words, status: "pending-wire", note: "no branch named", pending_wire: { check: "check:x" } },
-    { id: "R-BAD-RUN", owner_words: words, status: "unenforced", note: "n", fixture_runs: [{ check: ".#check:a", cwd: ".", run: "x", expect: "(" }] },
+    { id: "bad id", owner_words: words, owner_agent: "home", status: "enforced", checks: [".#check:a"], fixture: "f" },
+    { id: "R-NO-DATE", owner_words: { quote: "q", date: "Nov 3" }, owner_agent: "home", status: "unenforced", note: "missing" },
+    { id: "R-NO-NOTE", owner_words: words, owner_agent: "home", status: "unenforced" },
+    { id: "R-NO-FIXTURE", owner_words: words, owner_agent: "home", status: "enforced", checks: [".#check:a"] },
+    { id: "R-NO-WIRE", owner_words: words, owner_agent: "home", status: "pending-wire", note: "no branch named", pending_wire: { check: "check:x" } },
+    { id: "R-BAD-RUN", owner_words: words, owner_agent: "home", status: "unenforced", note: "n", fixture_runs: [{ check: ".#check:a", cwd: ".", run: "x", expect: "(" }] },
   ] }).map(finding => finding.id);
   assert.deepEqual(found, ["bad id", "R-NO-DATE", "R-NO-NOTE", "R-NO-FIXTURE", "R-NO-WIRE", "R-BAD-RUN"]);
   assert.deepEqual(shapeFindings({}).map(finding => finding.rule), ["shape"]);
@@ -54,15 +55,15 @@ test("shape: ids, owner words, status and the note an unenforced rule needs", ()
 
 test("an enforced rule whose check fails on its fixture holds; unenforced, passing, unwired and unrelated rules fail", async () => {
   const root = repository([
-    { id: "R-HOLDS", owner_words: words, status: "enforced", checks: [".#check:a"], fixture: "scripts/rules/fixtures/bad", fixture_runs: [run(".#check:a", "check-a.mjs")] },
-    { id: "R-PASSES", owner_words: words, status: "enforced", checks: [".#check:a"], fixture: "scripts/rules/fixtures/clean", fixture_runs: [run(".#check:a", "check-a.mjs")] },
-    { id: "R-UNWIRED", owner_words: words, status: "enforced", checks: [".#check:b"], fixture: "scripts/rules/fixtures/bad", fixture_runs: [run(".#check:b", "check-b.mjs")] },
-    { id: "R-UNRELATED", owner_words: words, status: "enforced", checks: [".#check:a"], fixture: "scripts/rules/fixtures/bad", fixture_runs: [run(".#check:a", "check-b.mjs")] },
-    { id: "R-SILENT", owner_words: words, status: "enforced", checks: [".#check:a"], fixture: "scripts/rules/fixtures/bad", fixture_runs: [run(".#check:a", "check-a.mjs", { expect: "^a different finding" })] },
-    { id: "R-OPEN", owner_words: words, status: "unenforced", note: "a check that fails on its fixture does not lift unenforced", checks: [".#check:a"], fixture: "scripts/rules/fixtures/bad", fixture_runs: [run(".#check:a", "check-a.mjs")] },
-    { id: "R-UNKNOWN", owner_words: words, status: "unenforced", note: "names a missing script", related: [".#check:missing"] },
-    { id: "R-PENDING", owner_words: words, status: "pending-wire", note: "built elsewhere", pending_wire: { check: "check:later", branch: "claude/later" } },
-    { id: "R-LANDED", owner_words: words, status: "pending-wire", note: "landed, not wired", pending_wire: { check: "check:b", branch: "claude/b" } },
+    { id: "R-HOLDS", owner_words: words, owner_agent: "home", status: "enforced", checks: [".#check:a"], fixture: "scripts/rules/fixtures/bad", fixture_runs: [run(".#check:a", "check-a.mjs")] },
+    { id: "R-PASSES", owner_words: words, owner_agent: "home", status: "enforced", checks: [".#check:a"], fixture: "scripts/rules/fixtures/clean", fixture_runs: [run(".#check:a", "check-a.mjs")] },
+    { id: "R-UNWIRED", owner_words: words, owner_agent: "home", status: "enforced", checks: [".#check:b"], fixture: "scripts/rules/fixtures/bad", fixture_runs: [run(".#check:b", "check-b.mjs")] },
+    { id: "R-UNRELATED", owner_words: words, owner_agent: "home", status: "enforced", checks: [".#check:a"], fixture: "scripts/rules/fixtures/bad", fixture_runs: [run(".#check:a", "check-b.mjs")] },
+    { id: "R-SILENT", owner_words: words, owner_agent: "home", status: "enforced", checks: [".#check:a"], fixture: "scripts/rules/fixtures/bad", fixture_runs: [run(".#check:a", "check-a.mjs", { expect: "^a different finding" })] },
+    { id: "R-OPEN", owner_words: words, owner_agent: "home", status: "unenforced", note: "a check that fails on its fixture does not lift unenforced", checks: [".#check:a"], fixture: "scripts/rules/fixtures/bad", fixture_runs: [run(".#check:a", "check-a.mjs")] },
+    { id: "R-UNKNOWN", owner_words: words, owner_agent: "home", status: "unenforced", note: "names a missing script", related: [".#check:missing"] },
+    { id: "R-PENDING", owner_words: words, owner_agent: "home", status: "pending-wire", note: "built elsewhere", pending_wire: { check: "check:later", branch: "claude/later" } },
+    { id: "R-LANDED", owner_words: words, owner_agent: "home", status: "pending-wire", note: "landed, not wired", pending_wire: { check: "check:b", branch: "claude/b" } },
   ]);
   const result = await ruleFindings(root);
   assert.deepEqual(kinds(result), ["fixture-not-detected R-SILENT", "fixture-passed R-PASSES", "fixture-unrelated R-UNRELATED", "unenforced R-OPEN", "unenforced R-UNKNOWN", "unknown-check R-UNKNOWN", "unreachable R-UNWIRED", "unwired R-LANDED", "unwired R-PENDING"]);
@@ -73,8 +74,8 @@ test("an enforced rule whose check fails on its fixture holds; unenforced, passi
 
 test("a check after check:rules in an && chain is unreachable while check:rules has findings; the aggregate reaches it (gate F6)", async () => {
   const rows = [
-    { id: "R-HOLDS", owner_words: words, status: "enforced", checks: [".#check:a"], fixture: "scripts/rules/fixtures/bad", fixture_runs: [run(".#check:a", "check-a.mjs")] },
-    { id: "R-OPEN", owner_words: words, status: "unenforced", note: "an open rule: check:rules exits 1" },
+    { id: "R-HOLDS", owner_words: words, owner_agent: "home", status: "enforced", checks: [".#check:a"], fixture: "scripts/rules/fixtures/bad", fixture_runs: [run(".#check:a", "check-a.mjs")] },
+    { id: "R-OPEN", owner_words: words, owner_agent: "home", status: "unenforced", note: "an open rule: check:rules exits 1" },
   ];
   const root = repository(rows);
   const manifest = (check, at = root) => writeFileSync(join(at, "package.json"), JSON.stringify({ name: "fixture", private: true, scripts: { check, "check:a": "node scripts/check-a.mjs --root .", "check:rules": "node -e 0" } }));
@@ -91,7 +92,7 @@ test("a check after check:rules in an && chain is unreachable while check:rules 
 });
 
 test("a meta-check no rule lists is unmapped unless exempt with a reason; stale and empty exemptions fail", async () => {
-  const held = [{ id: "R-HOLDS", owner_words: words, status: "enforced", checks: [".#check:a"], fixture: "scripts/rules/fixtures/bad", fixture_runs: [run(".#check:a", "check-a.mjs")] }];
+  const held = [{ id: "R-HOLDS", owner_words: words, owner_agent: "home", status: "enforced", checks: [".#check:a"], fixture: "scripts/rules/fixtures/bad", fixture_runs: [run(".#check:a", "check-a.mjs")] }];
   assert.deepEqual(kinds(await ruleFindings(repository(held, []))), ["unmapped .#check:rules"]);
   assert.deepEqual(kinds(await ruleFindings(repository(held))), []);
   assert.deepEqual(kinds(await ruleFindings(repository(held, [{ check: ".#check:rules", reason: "" }, { check: ".#check:gone", reason: "a reason that names nothing governed" }]))),
@@ -100,11 +101,11 @@ test("a meta-check no rule lists is unmapped unless exempt with a reason; stale 
 
 test("G1: a fixture run expecting exit 0 is a shape finding and does not count as enforcement", async () => {
   assert.deepEqual(shapeFindings({ rules: [
-    { id: "R-ZERO", owner_words: words, status: "enforced", checks: [".#check:a"], fixture: "f", fixture_runs: [run(".#check:a", "check-a.mjs", { expect_exit: 0 })] },
-    { id: "R-TWO", owner_words: words, status: "enforced", checks: [".#check:a"], fixture: "f", fixture_runs: [run(".#check:a", "check-a.mjs", { expect_exit: 2 })] },
+    { id: "R-ZERO", owner_words: words, owner_agent: "home", status: "enforced", checks: [".#check:a"], fixture: "f", fixture_runs: [run(".#check:a", "check-a.mjs", { expect_exit: 0 })] },
+    { id: "R-TWO", owner_words: words, owner_agent: "home", status: "enforced", checks: [".#check:a"], fixture: "f", fixture_runs: [run(".#check:a", "check-a.mjs", { expect_exit: 2 })] },
   ] }).map(finding => `${finding.rule} ${finding.id}`), ["shape R-ZERO"]);
   const root = repository([
-    { id: "R-ZERO", owner_words: words, status: "enforced", checks: [".#check:a"], fixture: "scripts/rules/fixtures/clean", fixture_runs: [run(".#check:a", "check-a.mjs", { expect: "^clean", expect_exit: 0 })] },
+    { id: "R-ZERO", owner_words: words, owner_agent: "home", status: "enforced", checks: [".#check:a"], fixture: "scripts/rules/fixtures/clean", fixture_runs: [run(".#check:a", "check-a.mjs", { expect: "^clean", expect_exit: 0 })] },
   ]);
   const result = await ruleFindings(root);
   assert.deepEqual(kinds(result), ["shape R-ZERO"]);
@@ -113,7 +114,7 @@ test("G1: a fixture run expecting exit 0 is a shape finding and does not count a
 
 test("G2: a fixture run of another check that only shares an imported helper is unrelated", async () => {
   const root = repository([
-    { id: "R-SHARED", owner_words: words, status: "enforced", checks: [".#check:a"], fixture: "scripts/rules/fixtures/bad", fixture_runs: [run(".#check:a", "check-b.mjs")] },
+    { id: "R-SHARED", owner_words: words, owner_agent: "home", status: "enforced", checks: [".#check:a"], fixture: "scripts/rules/fixtures/bad", fixture_runs: [run(".#check:a", "check-b.mjs")] },
   ]);
   writeFileSync(join(root, "scripts/lib.mjs"), "export const shared = true;\n");
   for (const name of ["check-a.mjs", "check-b.mjs"]) writeFileSync(join(root, "scripts", name), `import "./lib.mjs";\n${probe}`);
@@ -138,7 +139,7 @@ test("G3: removing a floored rule row, an enforcing check, a fixture run or a ro
     assert.deepEqual(floorFindings(real, { ...manifest, scripts }).map(finding => `${finding.rule} ${finding.id}`), [`unknown-check .#${name}`]);
   }
   // The meta-check applies the floor itself: a fixture repository below a floor fails.
-  const root = repository([{ id: "R-HOLDS", owner_words: words, status: "enforced", checks: [".#check:a"], fixture: "scripts/rules/fixtures/bad", fixture_runs: [run(".#check:a", "check-a.mjs")] }]);
+  const root = repository([{ id: "R-HOLDS", owner_words: words, owner_agent: "home", status: "enforced", checks: [".#check:a"], fixture: "scripts/rules/fixtures/bad", fixture_runs: [run(".#check:a", "check-a.mjs")] }]);
   const floor = { rules: { "R-HOLDS": { ".#check:a": 2 }, "R-GONE": {} }, scripts: ["check", "test", "check:rules"] };
   assert.deepEqual(kinds(await ruleFindings(root, { floor })), ["fixture-missing R-HOLDS", "shape R-GONE", "unknown-check .#test"]);
   assert.equal(DEFAULT_FLOOR.rules, RULE_FLOOR);
@@ -148,14 +149,14 @@ test("G3: removing a floored rule row, an enforcing check, a fixture run or a ro
   assert.equal(floorApplies({ rules: [] }, manifest), true);
   assert.equal(floorApplies({ rules: [{ id: "R-GIT-CMS" }] }, { name: "renamed" }), true);
   assert.equal(floorApplies({ rules: [{ id: "R-HOLDS" }] }, { name: "fixture" }), false);
-  const own = repository([{ id: "R-GIT-CMS", owner_words: words, status: "unenforced", note: "a floored rule in another tree" }]);
+  const own = repository([{ id: "R-GIT-CMS", owner_words: words, owner_agent: "home", status: "unenforced", note: "a floored rule in another tree" }]);
   assert.ok(kinds(await checkRules.ruleFindings(own)).includes("shape R-ONE-BRAND"), "the default floor applies once a floored rule is listed");
 });
 
 test("each fixture run's temp folder is removed after the run: check-rules-* folders do not grow", async () => {
   const root = repository([
-    { id: "R-HOLDS", owner_words: words, status: "enforced", checks: [".#check:a"], fixture: "scripts/rules/fixtures/bad", fixture_runs: [run(".#check:a", "check-a.mjs"), run(".#check:a", "check-a.mjs")] },
-    { id: "R-PASSES", owner_words: words, status: "enforced", checks: [".#check:a"], fixture: "scripts/rules/fixtures/clean", fixture_runs: [run(".#check:a", "check-a.mjs")] },
+    { id: "R-HOLDS", owner_words: words, owner_agent: "home", status: "enforced", checks: [".#check:a"], fixture: "scripts/rules/fixtures/bad", fixture_runs: [run(".#check:a", "check-a.mjs"), run(".#check:a", "check-a.mjs")] },
+    { id: "R-PASSES", owner_words: words, owner_agent: "home", status: "enforced", checks: [".#check:a"], fixture: "scripts/rules/fixtures/clean", fixture_runs: [run(".#check:a", "check-a.mjs")] },
   ]);
   const folders = () => readdirSync(tmpdir()).filter(name => name.startsWith("check-rules-")).length;
   try {
@@ -164,4 +165,55 @@ test("each fixture run's temp folder is removed after the run: check-rules-* fol
     assert.deepEqual(kinds(result), ["fixture-passed R-PASSES"]);
     assert.equal(folders(), before, "a fixture run left its check-rules-* temp folder behind");
   } finally { rmSync(root, { recursive: true, force: true }); }
+});
+
+const held = (extra = {}) => ({ id: "R-HOLDS", owner_words: words, owner_agent: "home", status: "enforced", checks: [".#check:a"], fixture: "scripts/rules/fixtures/bad", fixture_runs: [run(".#check:a", "check-a.mjs")], ...extra });
+
+test("a rule with no owner agent fails the registry check", async () => {
+  const { owner_agent: _none, ...ownerless } = held();
+  assert.deepEqual(shapeFindings({ rules: [ownerless, held({ id: "R-BLANK", owner_agent: "" }), held({ id: "R-PATH", owner_agent: "../home" })] }).map(finding => `${finding.rule} ${finding.id}`),
+    ["shape R-HOLDS", "shape R-BLANK", "shape R-PATH"]);
+  assert.deepEqual(kinds(await ruleFindings(repository([ownerless]))), ["shape R-HOLDS"]);
+  assert.deepEqual(kinds(await ruleFindings(repository([held()]))), []);
+});
+
+test("an owner agent that is neither a package nor a factory home fails the registry check", async () => {
+  assert.deepEqual(kinds(await ruleFindings(repository([held({ owner_agent: "ghost" })]))), ["unknown-owner R-HOLDS"]);
+  const root = repository([held()]);
+  assert.deepEqual(checkRules.ownerFindings({ rules: [held(), held({ id: "R-GHOST", owner_agent: "ghost" })] }, root), [
+    { rule: "unknown-owner", id: "R-GHOST", message: "owner_agent ghost is neither a package (packages/ghost/package.json does not exist) nor a factory home" },
+  ]);
+  // A directory without a manifest is not a package, and a factory/ folder is not a declared home.
+  mkdirSync(join(root, "packages/ghost"), { recursive: true });
+  mkdirSync(join(root, "factory/ghost"), { recursive: true });
+  writeFileSync(join(root, "factory/ghost/SKILL.md"), "# ghost\n");
+  assert.deepEqual(checkRules.ownerFindings({ rules: [held({ owner_agent: "ghost" })] }, root, ["keeper"]).map(finding => finding.rule), ["unknown-owner", "owner-list"]);
+  // A declared factory home is a valid owner without a package.
+  assert.deepEqual(checkRules.ownerFindings({ rules: [held({ owner_agent: "ghost" })] }, root, ["ghost"]).map(finding => finding.rule), ["owner-list"]);
+});
+
+test("each home's skill lists exactly the rules it owns", () => {
+  const { FACTORY_HOMES, DEFAULT_FLOOR, OWNED_RULES_START, OWNED_RULES_END, ownerFindings, ownedRulesListed } = checkRules;
+  // This repository: every rule's owner is a package or a factory home, and each home's skill lists exactly the rules it owns.
+  const here = dirname(fileURLToPath(import.meta.url));
+  const repo = resolve(here, "..");
+  const real = JSON.parse(readFileSync(join(here, "rules/registry.json"), "utf8"));
+  assert.deepEqual(FACTORY_HOMES, ["planner", "developer", "reviewer"]);
+  assert.equal(DEFAULT_FLOOR.homes, FACTORY_HOMES);
+  assert.deepEqual(ownerFindings(real, repo, FACTORY_HOMES), []);
+  for (const home of FACTORY_HOMES) {
+    const listed = ownedRulesListed(readFileSync(join(repo, "factory", home, "SKILL.md"), "utf8"));
+    assert.deepEqual(listed, real.rules.filter(row => row.owner_agent === home).map(row => row.id), `${home}'s skill lists exactly the rules it owns`);
+  }
+  // A fixture home: a missing block, a dropped rule, an extra rule and reordered rules each fail.
+  const rows = [held({ id: "R-ONE" }), held({ id: "R-TWO" }), held({ id: "R-ELSE", owner_agent: "other" })];
+  const skill = lines => `---\nname: clossys-home\n---\n# home\n\n${[OWNED_RULES_START, ...lines, OWNED_RULES_END].join("\n")}\n`;
+  const check = text => {
+    const root = tree({ "packages/other/package.json": { name: "other" }, ...(text === undefined ? {} : { "factory/home/SKILL.md": text }) });
+    return ownerFindings({ rules: rows }, root, ["home"]).map(finding => `${finding.rule} ${finding.id}`);
+  };
+  assert.deepEqual(check(skill(["- R-ONE", "- R-TWO"])), []);
+  for (const text of [undefined, "# home\n", skill(["- R-ONE"]), skill(["- R-ONE", "- R-TWO", "- R-ELSE"]), skill(["- R-TWO", "- R-ONE"]), skill(["- R-ONE", "- R-TWO", "R-THREE"])]) {
+    assert.deepEqual(check(text), ["owner-list factory/home/SKILL.md"]);
+  }
 });
