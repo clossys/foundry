@@ -32,7 +32,8 @@ import { firstComponentSource } from "@clossys/publisher/build";
 import { hasSlotModel, readCandidate, readIa, readPin, readSlot, slotCandidateIssues, viewPlacedAt } from "../records/slots.js";
 import { slotPositions, validateCandidate } from "../records/slot-model/index.js";
 import { libraryRecordSource } from "../specimen/library-source.js";
-import { readWriter } from "./site-source.js";
+import { readWriter, writerKeyedCopy } from "./site-source.js";
+import { writerKeyFold } from "../records/writer-copy.js";
 import { specimenRoots } from "./publish.js";
 import { defaultInstallOut, INSTALL_MARKER } from "@clossys/publisher/build";
 
@@ -449,14 +450,10 @@ export function pageModule(page: BoundPage, substrate: string, options: { readon
   ].join("\n");
 }
 
-/** Writer copy by key: compiled records, aliases to them, and a record's context when no alias names it. */
+/** Writer copy by key (site-source.ts `writerKeyedCopy`): each pinned row under its registered key, aliases to them, and a row's context when no alias names it. */
 export async function writerCopy(root: string): Promise<Record<string, string>> {
   const writer = await readWriter(root);
-  const copy: Record<string, string> = {};
-  for (const record of writer.records) copy[record.id] = record.text;
-  for (const [alias, id] of Object.entries(writer.aliases)) if (Object.hasOwn(copy, id)) copy[alias] = copy[id]!;
-  for (const record of writer.records) if (typeof record.context === "string" && record.context && !Object.hasOwn(copy, record.context)) copy[record.context] = record.text;
-  return copy;
+  return writerKeyedCopy(writer, writer.locale);
 }
 
 /** The fields of a clossys.page/1 candidate install reads. `copy` maps copy slot to `<writer slot>#<key>`; `bindings` does per section instance key. */
@@ -471,13 +468,15 @@ export interface NativePageCandidate {
 
 /**
  * A Writer key ref (`<writer slot>#<key>`) to the Writer copy key it binds: the key itself (a
- * native Writer row), else the compiled `<writer cell>.<key>` id a legacy Writer store holds.
+ * native Writer row), else the compiled `<writer cell>.<key>` id, its key in either form (camelCase or the
+ * stored kebab case).
  * Without `writer` copy, the bare key.
  */
 function writerKeyOf(ref: string, writer?: Readonly<Record<string, string>>): string {
   const hash = ref.indexOf("#"), cell = ref.slice(0, hash), key = ref.slice(hash + 1);
   if (!writer || Object.hasOwn(writer, key)) return key;
-  return [ref, `${cell}.${key}`].find(id => Object.hasOwn(writer, id)) ?? key;
+  // `<cell>#siteName` and `<cell>#site-name` both bind the stored `<cell>.site-name` (records/writer-copy.ts writerKeyFold).
+  return [ref, `${cell}.${key}`, `${cell}.${writerKeyFold(key)}`].find(id => Object.hasOwn(writer, id)) ?? key;
 }
 
 /** A page candidate's copy as install bindings: copy slot to Writer key, page-wide and per section instance. */

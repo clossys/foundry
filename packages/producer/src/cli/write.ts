@@ -7,8 +7,8 @@ import { directorLineRef, directorRef, pinnedStrategyModel, readPinnedDirector }
 import { resolveCitation, sourceCitations } from "../records/citations.js";
 import { candidateDocument, readPinned, type PinnedCandidate } from "../records/pinned.js";
 import { candidateReason, directorTraceProblem } from "../records/director-trace.js";
-import { hasSlotModel, listSlots, readIa } from "../records/slots.js";
-import { SLOT_AGENTS, type SlotAgent } from "../records/slot-model/index.js";
+import { hasSlotModel, listSlots, readIa, readSlotRecordText } from "../records/slots.js";
+import { SLOT_AGENTS, slotDir, type SlotAgent } from "../records/slot-model/index.js";
 import type { CliArgs } from "./args.js";
 import type { CliResult } from "./main.js";
 import { emitProjection } from "./projection.js";
@@ -117,6 +117,17 @@ async function pinnedRows(candidates: readonly PinnedCandidate[], findings: Find
 
 const isCopy = (slot: string, row: WriterSlotBodyRecord) => !slot.startsWith("lexicon.") && typeof row.record.text === "string";
 
+/** The slot ids a Writer slot's slot.json declares as `writer/<slot>` inputs (`refs` rel input). */
+function writerInputs(consumer: string, id: string): ReadonlySet<string> {
+  const text = readSlotRecordText(slotDir(consumer, "writer", id), "slot.json");
+  const refs = text === undefined ? undefined : (JSON.parse(text) as { refs?: unknown }).refs;
+  if (!Array.isArray(refs)) return new Set();
+  return new Set(refs.flatMap(ref => {
+    const { to, rel } = (typeof ref === "object" && ref !== null ? ref : {}) as { to?: unknown; rel?: unknown };
+    return rel === "input" && typeof to === "string" && to.startsWith("writer/") ? [to.slice("writer/".length)] : [];
+  }));
+}
+
 /**
  * Deterministic Writer verb over the slot model: `--brief` assembles the pinned Director inputs,
  * `--check` runs the Writer's derivation, locale and won't-claim checks over the pinned Writer
@@ -157,8 +168,14 @@ export async function runWrite(args: CliArgs, root: string): Promise<CliResult> 
     const pinnedDirector = new Map(director.cells.map(cell => [cell.id, cell.version]));
     for (const id of INPUTS) if (!pinnedDirector.has(id)) findings.push({ rule: "director-input-missing", slot: id, message: `No pinned Director input: ${id}` });
     const limits: string[] = [];
+    // A `writer/<slot>` input (a copy slot's lexicon rules) is the Writer's own: it resolves through the Writer pins.
+    const pinnedWriter = new Set(writer.pinned.map(candidate => candidate.id));
     for (const { candidate } of rows) {
-      for (const input of candidate.doc.inputs) if (!pinnedDirector.has(input)) findings.push({ rule: "director-input-unpinned", slot: candidate.id, message: `Declared input director:${input} has no pinned candidate` });
+      const fromWriter = writerInputs(consumer, candidate.id);
+      for (const input of candidate.doc.inputs) {
+        if (fromWriter.has(input)) { if (!pinnedWriter.has(input)) findings.push({ rule: "writer-input-unpinned", slot: candidate.id, message: `Declared input writer:${input} has no pinned candidate` }); }
+        else if (!pinnedDirector.has(input)) findings.push({ rule: "director-input-unpinned", slot: candidate.id, message: `Declared input director:${input} has no pinned candidate` });
+      }
       for (const ref of sourceCitations(candidateDocument(candidate).fields, "director")) {
         if (ref.versioned) findings.push({ rule: "director-link-versioned", slot: candidate.id, message: `Director link names a version, not a slot id: ${ref.ref} (clossys migrate citations-to-slots)` });
         else if (!pinnedDirector.has(ref.slot) || !resolveCitation(consumer, ref.ref)) findings.push({ rule: "director-link-dangling", slot: candidate.id, message: `Director link resolves to no pinned Director slot: ${ref.ref}` });

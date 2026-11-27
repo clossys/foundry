@@ -1,5 +1,5 @@
 import { execFileSync, spawnSync } from "node:child_process";
-import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, realpathSync, rmSync, statSync, writeFileSync } from "node:fs";
+import { cpSync, existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, realpathSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -7,7 +7,8 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { sha256Hex } from "../records/hash.js";
 import { jsonBytes, slotPositions, validatePin, type IaDoc } from "../records/slot-model/index.js";
 import { checkSlotModel } from "../records/slot-check.js";
-import { registerGuardRunner } from "../records/slot-write.js";
+import { registerGuardRunner, writeCandidate } from "../records/slot-write.js";
+import { writeTargetPin } from "../records/pin-map.js";
 import { runCli } from "./main.js";
 
 // One format (foundry-build-0048 U13): clossys pin writes clossys.slot/2 and clossys.pin/2 only. On this minimal
@@ -194,5 +195,42 @@ describe("a pin/1 confirmation's ref (the record rule, read in an unconverted st
     expect(validatePin(forged).map(issue => issue.message)).toEqual([expect.stringContaining("must cite the ledger comment")]);
     writeFileSync(join(slotDir, "pin.json"), jsonBytes(forged));
     expect(checkSlotModel(join(workspace, "clossys")).filter(issue => issue.code === "pin-invalid").map(issue => issue.message)).toEqual([expect.stringContaining("must cite the ledger comment")]);
+  });
+});
+
+describe("a Writer pin that would record a key another pinned slot holds (CP1-COPYKEY)", () => {
+  const FIXTURE = fileURLToPath(new URL("../../test-fixtures/consumer/", import.meta.url));
+  const HEADER = "frames.site-header.copy";
+  const FOOTER = "frames.site-footer.copy";
+  const row = (id: string, text: string) => `### ${id}\n<!-- {"id":${JSON.stringify(id)},"bindings":[]} -->\n${text}\n`;
+  /** Every file under `dir` with its bytes, sorted: the tree a refused pin must leave as it was. */
+  const snapshot = (dir: string): string[] => readdirSync(dir, { recursive: true, withFileTypes: true })
+    .filter(entry => entry.isFile()).map(entry => join(entry.parentPath, entry.name))
+    .map(path => `${path}\t${sha256Hex(readFileSync(path))}`).sort();
+
+  it("pin refuses a duplicate global id and writes nothing", async () => {
+    const root = realpathSync(mkdtempSync(join(tmpdir(), "clossys-pin-copykey-")));
+    try {
+      cpSync(FIXTURE, root, { recursive: true });
+      const clossys = join(root, "clossys");
+      const header = readFileSync(join(clossys, "agents/writer", HEADER, "candidates/copy-v1.md"), "utf8");
+      const split = header.indexOf("## en");
+      // The footer holds the authored global id `site.brand.name`, which no contract declares, pinned through the record writers.
+      const footer = writeCandidate(clossys, "writer", FOOTER, "copy", `${header.slice(0, split).replaceAll(HEADER, FOOTER)}## en\n\n${row("navigation.label", "Footer navigation")}\n${row("site.brand.name", "Clossys")}`);
+      writeTargetPin(root, { agent: "writer", slotId: FOOTER, record: "copy", candidate: footer.name, decidedBy: "planner", basis: "planner", at: "2026-11-26T00:00:00Z", createdBy: { actor: "code", cli: "clossys pin", version: "0.1.0" } });
+      // A new header candidate repeats it: its contract keys stay its own, the global id would be recorded twice.
+      const next = writeCandidate(clossys, "writer", HEADER, "copy", `${header.slice(0, split).replace(`${HEADER}/copy-v1.md`, `${HEADER}/copy-v2.md`)}${header.slice(split).trimEnd()}\n\n${row("site.brand.name", "Clossys")}`);
+      const before = snapshot(clossys);
+      const result = await runCli(["pin", `writer/${HEADER}#copy`, next.name, "--by", "planner", "--at", "2026-11-26T00:00:00Z", "--root", root], root);
+      expect(result.exitCode).toBe(1);
+      expect(result.message).toContain(`pin refused: writer/${HEADER}#copy ${next.name} would record a Writer key another pinned slot holds`);
+      expect(result.message).toContain(`site.brand.name: ${FOOTER} already records this key`);
+      expect(result.message).toContain(`rename the row in ${next.name}, or drop it and cite ${FOOTER}#site.brand.name`);
+      // The contract key both slots hold (`navigation.label`) is no clash: each slot's own key.
+      expect(result.message).not.toContain("navigation.label");
+      expect(snapshot(clossys)).toEqual(before);
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
   });
 });
