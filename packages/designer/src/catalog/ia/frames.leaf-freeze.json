@@ -17,5 +17,14 @@
     "frames.sheet",
     "frames.command"
   ],
-  "amendments": []
+  "amendments": [
+    {
+      "id": "cp1-video1-amendment-2026-11-26",
+      "remove": [],
+      "add": [
+        "frames.video"
+      ],
+      "why": "owner words 2026-11-26: \"Ok include video, make sure all content are created natively with publisher agent/pkg and follow the same level of rigor/process systematically\" (CP1-VIDEO1): frames.video joins Frames > Shells as an addition; no leaf is removed or renamed"
+    }
+  ]
 }
