@@ -1,10 +1,10 @@
 {
   "schema": "clossys.index/1",
-  "events": 2998,
-  "head": "476e6b637e0d032659b50692bf1aae199e72a04e8596be65301b5ffc079772dd",
+  "events": 3017,
+  "head": "05b2e915385b738b2fefd60766c7144d9e610b9ec4638900a67c2d37d78a3605",
   "subjects": {
     "designer": {
-      "seq": 2539,
+      "seq": 2998,
       "kind": "agent.ia",
       "actor": "planner",
       "at": "2026-11-19T00:00:00.000Z"
@@ -580,9 +580,9 @@
       "at": "2026-11-19T00:00:00.000Z"
     },
     "designer/components.studio.specimen-document": {
-      "seq": 2847,
+      "seq": 3009,
       "kind": "slot.slot",
-      "actor": "producer",
+      "actor": "planner",
       "at": "2026-11-19T00:00:00.000Z"
     },
     "designer/components.switch": {
@@ -652,9 +652,9 @@
       "at": "2026-11-19T00:00:00.000Z"
     },
     "designer/frames.app-header": {
-      "seq": 2840,
+      "seq": 3002,
       "kind": "slot.slot",
-      "actor": "producer",
+      "actor": "planner",
       "at": "2026-11-19T00:00:00.000Z"
     },
     "designer/frames.app-shell": {
@@ -664,9 +664,9 @@
       "at": "2026-11-19T00:00:00.000Z"
     },
     "designer/frames.app-sidebar": {
-      "seq": 2841,
+      "seq": 3003,
       "kind": "slot.slot",
-      "actor": "producer",
+      "actor": "planner",
       "at": "2026-11-19T00:00:00.000Z"
     },
     "designer/frames.auth-shell": {
@@ -676,9 +676,9 @@
       "at": "2026-11-19T00:00:00.000Z"
     },
     "designer/frames.command": {
-      "seq": 2844,
+      "seq": 3006,
       "kind": "slot.slot",
-      "actor": "producer",
+      "actor": "planner",
       "at": "2026-11-19T00:00:00.000Z"
     },
     "designer/frames.deck": {
@@ -688,27 +688,27 @@
       "at": "2026-11-19T00:00:00.000Z"
     },
     "designer/frames.inspector": {
-      "seq": 2842,
+      "seq": 3004,
       "kind": "slot.slot",
-      "actor": "producer",
+      "actor": "planner",
       "at": "2026-11-19T00:00:00.000Z"
     },
     "designer/frames.sheet": {
-      "seq": 2843,
+      "seq": 3005,
       "kind": "slot.slot",
-      "actor": "producer",
+      "actor": "planner",
       "at": "2026-11-19T00:00:00.000Z"
     },
     "designer/frames.site-footer": {
-      "seq": 2839,
+      "seq": 3001,
       "kind": "slot.slot",
-      "actor": "producer",
+      "actor": "planner",
       "at": "2026-11-19T00:00:00.000Z"
     },
     "designer/frames.site-header": {
-      "seq": 2838,
+      "seq": 3000,
       "kind": "slot.slot",
-      "actor": "producer",
+      "actor": "planner",
       "at": "2026-11-19T00:00:00.000Z"
     },
     "designer/frames.site-shell": {
@@ -717,34 +717,40 @@
       "actor": "producer",
       "at": "2026-11-19T00:00:00.000Z"
     },
+    "designer/frames.video": {
+      "seq": 3016,
+      "kind": "slot.slot",
+      "actor": "planner",
+      "at": "2026-11-19T00:00:00.000Z"
+    },
     "designer/loop.cascade": {
-      "seq": 2559,
-      "kind": "slot.pin",
-      "actor": "planner:package-default",
+      "seq": 3014,
+      "kind": "slot.slot",
+      "actor": "planner",
       "at": "2026-11-19T00:00:00.000Z"
     },
     "designer/loop.choose": {
-      "seq": 2557,
-      "kind": "slot.pin",
-      "actor": "planner:package-default",
+      "seq": 3013,
+      "kind": "slot.slot",
+      "actor": "planner",
       "at": "2026-11-19T00:00:00.000Z"
     },
     "designer/loop.create": {
-      "seq": 2555,
-      "kind": "slot.pin",
-      "actor": "planner:package-default",
+      "seq": 3012,
+      "kind": "slot.slot",
+      "actor": "planner",
       "at": "2026-11-19T00:00:00.000Z"
     },
     "designer/loop.scope": {
-      "seq": 2551,
-      "kind": "slot.pin",
-      "actor": "planner:package-default",
+      "seq": 3010,
+      "kind": "slot.slot",
+      "actor": "planner",
       "at": "2026-11-19T00:00:00.000Z"
     },
     "designer/loop.slot": {
-      "seq": 2553,
-      "kind": "slot.pin",
-      "actor": "planner:package-default",
+      "seq": 3011,
+      "kind": "slot.slot",
+      "actor": "planner",
       "at": "2026-11-19T00:00:00.000Z"
     },
     "designer/sections.access-matrix": {
@@ -940,15 +946,15 @@
       "at": "2026-11-19T00:00:00.000Z"
     },
     "designer/sections.producer.system-empty": {
-      "seq": 2846,
+      "seq": 3008,
       "kind": "slot.slot",
-      "actor": "producer",
+      "actor": "planner",
       "at": "2026-11-19T00:00:00.000Z"
     },
     "designer/sections.producer.team-strip": {
-      "seq": 2845,
+      "seq": 3007,
       "kind": "slot.slot",
-      "actor": "producer",
+      "actor": "planner",
       "at": "2026-11-19T00:00:00.000Z"
     },
     "designer/sections.question-packet": {
@@ -4270,14 +4276,14 @@
       "disk": null
     },
     "clossys/agents/designer/components.studio.specimen-document/ledger.json": {
-      "seq": 2847,
-      "logged": "c75572bed3e3094e603e98ab0707856d5a873a6d46b13862d0dfa1f1ae39f379",
-      "disk": "c75572bed3e3094e603e98ab0707856d5a873a6d46b13862d0dfa1f1ae39f379"
+      "seq": 3009,
+      "logged": "54bec617afd033aff9507f5ea8cbeda6c41b8578f5bb76883e03bc7cfb75598a",
+      "disk": "54bec617afd033aff9507f5ea8cbeda6c41b8578f5bb76883e03bc7cfb75598a"
     },
     "clossys/agents/designer/components.studio.specimen-document/slot.json": {
-      "seq": 2847,
-      "logged": "d664b14e8276eed7470fb6b79a428d6bec5fd8e35ac7f6630811c621e0a66644",
-      "disk": "d664b14e8276eed7470fb6b79a428d6bec5fd8e35ac7f6630811c621e0a66644"
+      "seq": 3009,
+      "logged": "3b37613050ffb9a63d77b4bff92f8c7cfe3760e31c8d260305dada8a1fef176e",
+      "disk": "3b37613050ffb9a63d77b4bff92f8c7cfe3760e31c8d260305dada8a1fef176e"
     },
     "clossys/agents/designer/components.switch/ledger.json": {
       "seq": 2740,
@@ -4395,14 +4401,14 @@
       "disk": "b6e1d42ae08748f49da586264d54de9b3882190dd6077bf865d51df7745fb69c"
     },
     "clossys/agents/designer/frames.app-header/ledger.json": {
-      "seq": 2840,
-      "logged": "9f173f0c949eb7f3a917bff030fc938a8f366501dd2ba8d33204d97aa5519e0b",
-      "disk": "9f173f0c949eb7f3a917bff030fc938a8f366501dd2ba8d33204d97aa5519e0b"
+      "seq": 3002,
+      "logged": "fbbe79074ad62bf477622959fa3dc081ca587d3434362b2c77e2b374827bde1a",
+      "disk": "fbbe79074ad62bf477622959fa3dc081ca587d3434362b2c77e2b374827bde1a"
     },
     "clossys/agents/designer/frames.app-header/slot.json": {
-      "seq": 2840,
-      "logged": "daa6554ee341edb75cf35c0c8b433f647dd89f2e48698704bef205168d274b05",
-      "disk": "daa6554ee341edb75cf35c0c8b433f647dd89f2e48698704bef205168d274b05"
+      "seq": 3002,
+      "logged": "ae3fbef2625599cef971f51290dc9f799437daea60100fcc6af6f4e9c8c8a851",
+      "disk": "ae3fbef2625599cef971f51290dc9f799437daea60100fcc6af6f4e9c8c8a851"
     },
     "clossys/agents/designer/frames.app-shell/ledger.json": {
       "seq": 2835,
@@ -4415,14 +4421,14 @@
       "disk": "9b29ce5cd6e6137caca4d9ac332aa81d01363449b608f453a52ec71bcf9d8cd8"
     },
     "clossys/agents/designer/frames.app-sidebar/ledger.json": {
-      "seq": 2841,
-      "logged": "bbe8329aff893d80b8e1a3e050b9b54f645c848da1ad51a2ef081b74ce7fa20b",
-      "disk": "bbe8329aff893d80b8e1a3e050b9b54f645c848da1ad51a2ef081b74ce7fa20b"
+      "seq": 3003,
+      "logged": "2a3c12b7a4e4573bf35c5618fb45dd425c5b5be3bb00360ccc9e630ddf2ad549",
+      "disk": "2a3c12b7a4e4573bf35c5618fb45dd425c5b5be3bb00360ccc9e630ddf2ad549"
     },
     "clossys/agents/designer/frames.app-sidebar/slot.json": {
-      "seq": 2841,
-      "logged": "02706d57025d6a94e1b8bf3ff532ecf643380b632906a9345c2bc971185354b9",
-      "disk": "02706d57025d6a94e1b8bf3ff532ecf643380b632906a9345c2bc971185354b9"
+      "seq": 3003,
+      "logged": "e15557f5dcd9bf3888c5932c3a3d7d57286d48e9507bf76bbfcec441d305f531",
+      "disk": "e15557f5dcd9bf3888c5932c3a3d7d57286d48e9507bf76bbfcec441d305f531"
     },
     "clossys/agents/designer/frames.auth-shell/ledger.json": {
       "seq": 2836,
@@ -4435,14 +4441,14 @@
       "disk": "7b29d0eed85d41e87900c276456dc70b5833c6bf8c642a1849550ee8304c701b"
     },
     "clossys/agents/designer/frames.command/ledger.json": {
-      "seq": 2844,
-      "logged": "a27f282824b8efa3982e4159aae9334a1977d41698b8f25aa6d9707debd5e152",
-      "disk": "a27f282824b8efa3982e4159aae9334a1977d41698b8f25aa6d9707debd5e152"
+      "seq": 3006,
+      "logged": "72057f37a6413e73307fa43e4201ba8fb55c622aecfe1746b25f35ffaf638704",
+      "disk": "72057f37a6413e73307fa43e4201ba8fb55c622aecfe1746b25f35ffaf638704"
     },
     "clossys/agents/designer/frames.command/slot.json": {
-      "seq": 2844,
-      "logged": "1bcbfe55950f3e2e27962998ddd9d759f15970e5779ee9d6213fe8e05db88c5d",
-      "disk": "1bcbfe55950f3e2e27962998ddd9d759f15970e5779ee9d6213fe8e05db88c5d"
+      "seq": 3006,
+      "logged": "ef87bf9a513ea6fc9b8c2fc4d0a7138978826cf023aaea725337de0a5015dd80",
+      "disk": "ef87bf9a513ea6fc9b8c2fc4d0a7138978826cf023aaea725337de0a5015dd80"
     },
     "clossys/agents/designer/frames.deck/ledger.json": {
       "seq": 2837,
@@ -4455,29 +4461,29 @@
       "disk": "b477727736af8827cedef4946378af878fb197363552c8153fb8a5d52f338fb9"
     },
     "clossys/agents/designer/frames.inspector/ledger.json": {
-      "seq": 2842,
-      "logged": "02c811873ab4435a1183354db397449dc653d9bfc8115b5112d84bde71685313",
-      "disk": "02c811873ab4435a1183354db397449dc653d9bfc8115b5112d84bde71685313"
+      "seq": 3004,
+      "logged": "85dce2597e52072cfbb614319c1b4b95a9fcd3d5151c5a1072ae302108b74e4f",
+      "disk": "85dce2597e52072cfbb614319c1b4b95a9fcd3d5151c5a1072ae302108b74e4f"
     },
     "clossys/agents/designer/frames.inspector/slot.json": {
-      "seq": 2842,
-      "logged": "0ed192f8777ab0a1fda51b584a64d90f427d482d81c312972d54eb76dfccbff2",
-      "disk": "0ed192f8777ab0a1fda51b584a64d90f427d482d81c312972d54eb76dfccbff2"
+      "seq": 3004,
+      "logged": "3cd3d62cff7663a5bf411a4f375c9c17a11967f34c9afcb3c4f1a84e56b87c64",
+      "disk": "3cd3d62cff7663a5bf411a4f375c9c17a11967f34c9afcb3c4f1a84e56b87c64"
     },
     "clossys/agents/designer/frames.sheet/ledger.json": {
-      "seq": 2843,
-      "logged": "6c408de785ce2b970203a922f2e6cf8681c5da22181c8380ef2ef26d366990f4",
-      "disk": "6c408de785ce2b970203a922f2e6cf8681c5da22181c8380ef2ef26d366990f4"
+      "seq": 3005,
+      "logged": "4a7083a837dad83e539f0d9b189cf9917cd4709cf1abf4b2f1c58a9f9ed8c597",
+      "disk": "4a7083a837dad83e539f0d9b189cf9917cd4709cf1abf4b2f1c58a9f9ed8c597"
     },
     "clossys/agents/designer/frames.sheet/slot.json": {
-      "seq": 2843,
-      "logged": "2f515b0c9d4dd384ae24a803453a68dc089ce10fdc357b7de752ecc97342ebee",
-      "disk": "2f515b0c9d4dd384ae24a803453a68dc089ce10fdc357b7de752ecc97342ebee"
+      "seq": 3005,
+      "logged": "ea48c5ea55e1a4702c88849ee0d3b74f010d38dd7ae6e919454d79b8d039c400",
+      "disk": "ea48c5ea55e1a4702c88849ee0d3b74f010d38dd7ae6e919454d79b8d039c400"
     },
     "clossys/agents/designer/frames.site-footer/ledger.json": {
-      "seq": 2839,
-      "logged": "75c3198447f219e4eaf3823f280d5bccb38abab13785481d1379357a1475bca1",
-      "disk": "75c3198447f219e4eaf3823f280d5bccb38abab13785481d1379357a1475bca1"
+      "seq": 3001,
+      "logged": "25c3f036459e594ca0f1fe45641543ae9e3041027df28e6c60c0756a98354941",
+      "disk": "25c3f036459e594ca0f1fe45641543ae9e3041027df28e6c60c0756a98354941"
     },
     "clossys/agents/designer/frames.site-footer/pin.json": {
       "seq": 1175,
@@ -4485,14 +4491,14 @@
       "disk": "b798995448de72d88114110dc977af3649eea0e19077eee2414510985cd31f63"
     },
     "clossys/agents/designer/frames.site-footer/slot.json": {
-      "seq": 2839,
-      "logged": "39867de32eaf8f8a08d35216b39e20547f82cfca4928c4c68b2bea137f51b5f6",
-      "disk": "39867de32eaf8f8a08d35216b39e20547f82cfca4928c4c68b2bea137f51b5f6"
+      "seq": 3001,
+      "logged": "1b76c75bddcb54db0fbd439d74211e354957a44790020aab459c5e1f870766c7",
+      "disk": "1b76c75bddcb54db0fbd439d74211e354957a44790020aab459c5e1f870766c7"
     },
     "clossys/agents/designer/frames.site-header/ledger.json": {
-      "seq": 2838,
-      "logged": "81a21ab39106be6d4c3ff50fc6c852898c7f547510dce8e87e97a7c67b4d59bf",
-      "disk": "81a21ab39106be6d4c3ff50fc6c852898c7f547510dce8e87e97a7c67b4d59bf"
+      "seq": 3000,
+      "logged": "0a9607165c1a3bde8a9b988e25cbb042ef3c3380021e5d63b878faf048b9f931",
+      "disk": "0a9607165c1a3bde8a9b988e25cbb042ef3c3380021e5d63b878faf048b9f931"
     },
     "clossys/agents/designer/frames.site-header/pin.json": {
       "seq": 1195,
@@ -4500,9 +4506,9 @@
       "disk": "142dca98d255e3abd312441c39e9ebca3412f215cfa3be4f95ed3aaabcea807b"
     },
     "clossys/agents/designer/frames.site-header/slot.json": {
-      "seq": 2838,
-      "logged": "f01b2c35faa1ecc65b7f238c5179bc4027faf759987932916dd35f8c64d71954",
-      "disk": "f01b2c35faa1ecc65b7f238c5179bc4027faf759987932916dd35f8c64d71954"
+      "seq": 3000,
+      "logged": "7823326b74124b95435fbc22da17cd3e870eba2b41ed71dd73aa9c9b9c4fde77",
+      "disk": "7823326b74124b95435fbc22da17cd3e870eba2b41ed71dd73aa9c9b9c4fde77"
     },
     "clossys/agents/designer/frames.site-shell/ledger.json": {
       "seq": 2834,
@@ -4519,20 +4525,30 @@
       "logged": "b990828ff55f0073d1d197b13deb56eac984d819e35b03bb7a4c55c754131996",
       "disk": "b990828ff55f0073d1d197b13deb56eac984d819e35b03bb7a4c55c754131996"
     },
+    "clossys/agents/designer/frames.video/ledger.json": {
+      "seq": 3016,
+      "logged": "0e88ae8bcbc6e3a8d55788e681e12e2e50564fa628c0402945d7ae563cc6a9f9",
+      "disk": "0e88ae8bcbc6e3a8d55788e681e12e2e50564fa628c0402945d7ae563cc6a9f9"
+    },
+    "clossys/agents/designer/frames.video/slot.json": {
+      "seq": 3016,
+      "logged": "0473cc6f27770418c6353873c16377b9bd7b6ecf91dd04db929b177d83c29d3f",
+      "disk": "0473cc6f27770418c6353873c16377b9bd7b6ecf91dd04db929b177d83c29d3f"
+    },
     "clossys/agents/designer/ia.json": {
-      "seq": 2539,
-      "logged": "eba775568a41c7cc7fa2542f850a9483598a28b3c08f051b8ddad4beafc95a03",
-      "disk": "eba775568a41c7cc7fa2542f850a9483598a28b3c08f051b8ddad4beafc95a03"
+      "seq": 2998,
+      "logged": "caf92ce8b30c154c1c65640bddc8e9a63fc661a1b92885fdf9ab376c7d3ca462",
+      "disk": "caf92ce8b30c154c1c65640bddc8e9a63fc661a1b92885fdf9ab376c7d3ca462"
     },
     "clossys/agents/designer/ledger.json": {
-      "seq": 2539,
-      "logged": "ea3d82ec59b3cdbe53aca43df5f8d0063e90c894c6439a6d3464f72fb3fc9848",
-      "disk": "ea3d82ec59b3cdbe53aca43df5f8d0063e90c894c6439a6d3464f72fb3fc9848"
+      "seq": 2998,
+      "logged": "042dc9bd6625651d065ec591b18cbefc26896a96b33f43a1dcc901563e1eee3b",
+      "disk": "042dc9bd6625651d065ec591b18cbefc26896a96b33f43a1dcc901563e1eee3b"
     },
     "clossys/agents/designer/loop.cascade/ledger.json": {
-      "seq": 2559,
-      "logged": "0b0c37c8f1e8952061b006638a4443393580b1339b3c1123540c5d8d047d1070",
-      "disk": "0b0c37c8f1e8952061b006638a4443393580b1339b3c1123540c5d8d047d1070"
+      "seq": 3014,
+      "logged": "3bcbb45ccc48dd98df871b9ff2cb41627eb3bd81bb668c7e66b8e32f0f64904a",
+      "disk": "3bcbb45ccc48dd98df871b9ff2cb41627eb3bd81bb668c7e66b8e32f0f64904a"
     },
     "clossys/agents/designer/loop.cascade/pin.json": {
       "seq": 2559,
@@ -4540,14 +4556,14 @@
       "disk": "84df9ec3be8cc318b271448e84aa322d4234dc52bc1f4f50d7fc00ed7a9f52e8"
     },
     "clossys/agents/designer/loop.cascade/slot.json": {
-      "seq": 2548,
-      "logged": "481836a1c3045159091bffa1629f0661826836f99f2e8654e4a9be66eb67db93",
-      "disk": "481836a1c3045159091bffa1629f0661826836f99f2e8654e4a9be66eb67db93"
+      "seq": 3014,
+      "logged": "ace01eaf9fcf0ff41cddc74a92d191878389880ec93d83195fd2369cafa3250f",
+      "disk": "ace01eaf9fcf0ff41cddc74a92d191878389880ec93d83195fd2369cafa3250f"
     },
     "clossys/agents/designer/loop.choose/ledger.json": {
-      "seq": 2557,
-      "logged": "12b49593c3bd5a32531dbf89dee19a23db3f48e179087de98819c87923dc7242",
-      "disk": "12b49593c3bd5a32531dbf89dee19a23db3f48e179087de98819c87923dc7242"
+      "seq": 3013,
+      "logged": "4710ef45ea04abf57371311dd065ede0a58f622c5466301a7489e61913fc40f3",
+      "disk": "4710ef45ea04abf57371311dd065ede0a58f622c5466301a7489e61913fc40f3"
     },
     "clossys/agents/designer/loop.choose/pin.json": {
       "seq": 2557,
@@ -4555,14 +4571,14 @@
       "disk": "a0dda3e6c96e2fa51b364605a73bdb3ec0abf8b0cfde508f041be4acf3931dc5"
     },
     "clossys/agents/designer/loop.choose/slot.json": {
-      "seq": 2546,
-      "logged": "97085438e520cdd9b1fbd18b33bce8074b70f6cbe584c0d4180fd478ca0cb995",
-      "disk": "97085438e520cdd9b1fbd18b33bce8074b70f6cbe584c0d4180fd478ca0cb995"
+      "seq": 3013,
+      "logged": "3795c6bf29b6e0a680ec5e6669c648f21865981df1f53e0881c76e5b6108e7f1",
+      "disk": "3795c6bf29b6e0a680ec5e6669c648f21865981df1f53e0881c76e5b6108e7f1"
     },
     "clossys/agents/designer/loop.create/ledger.json": {
-      "seq": 2555,
-      "logged": "a02f1dfed2f46ab2dd200aa55999e0969b9ca12f87e42dba813d738367e7aab7",
-      "disk": "a02f1dfed2f46ab2dd200aa55999e0969b9ca12f87e42dba813d738367e7aab7"
+      "seq": 3012,
+      "logged": "4a4ceda5ca5cdc6fd09e4fb992c659efac24d3f28d4873790c9116fd94aeb7bc",
+      "disk": "4a4ceda5ca5cdc6fd09e4fb992c659efac24d3f28d4873790c9116fd94aeb7bc"
     },
     "clossys/agents/designer/loop.create/pin.json": {
       "seq": 2555,
@@ -4570,14 +4586,14 @@
       "disk": "d34e6551fd809aa950e9c82420e66a6d49f49dcbd96e542a0e4a7e65609b15f2"
     },
     "clossys/agents/designer/loop.create/slot.json": {
-      "seq": 2544,
-      "logged": "0d9a17b29e7f7efecd77798ff6b22604dc039993526cfd3c2848c9db1b8e4b4b",
-      "disk": "0d9a17b29e7f7efecd77798ff6b22604dc039993526cfd3c2848c9db1b8e4b4b"
+      "seq": 3012,
+      "logged": "2ae64c6945e7750920f5a0822108acde45d5b0824e813365bcae990d4ccd26bf",
+      "disk": "2ae64c6945e7750920f5a0822108acde45d5b0824e813365bcae990d4ccd26bf"
     },
     "clossys/agents/designer/loop.scope/ledger.json": {
-      "seq": 2551,
-      "logged": "f4ba4482906d9c6f44a2fe53970f65332eaa28dd39010ee8c911ab0214f8d0f4",
-      "disk": "f4ba4482906d9c6f44a2fe53970f65332eaa28dd39010ee8c911ab0214f8d0f4"
+      "seq": 3010,
+      "logged": "e0bab4a01bc657805000700c3b53a96156d2fad5358ef311ba888b944c75db12",
+      "disk": "e0bab4a01bc657805000700c3b53a96156d2fad5358ef311ba888b944c75db12"
     },
     "clossys/agents/designer/loop.scope/pin.json": {
       "seq": 2551,
@@ -4585,14 +4601,14 @@
       "disk": "d2d4c3a82157e655bc77ea28cb3a49800caa401cc49c844fde3ce7a6ccd2d901"
     },
     "clossys/agents/designer/loop.scope/slot.json": {
-      "seq": 2540,
-      "logged": "1c9549ce3c837f936d5867334d1b9d1f616851f201ade3b3833583ce99006ff6",
-      "disk": "1c9549ce3c837f936d5867334d1b9d1f616851f201ade3b3833583ce99006ff6"
+      "seq": 3010,
+      "logged": "b1a9f0b143428c654cac09a26378dba613e52ac07c6fdeca9b0b6566b22bcb08",
+      "disk": "b1a9f0b143428c654cac09a26378dba613e52ac07c6fdeca9b0b6566b22bcb08"
     },
     "clossys/agents/designer/loop.slot/ledger.json": {
-      "seq": 2553,
-      "logged": "b21b6660eed38828966397f0995ed27738956e580d2405b46ec76e88759d4d7d",
-      "disk": "b21b6660eed38828966397f0995ed27738956e580d2405b46ec76e88759d4d7d"
+      "seq": 3011,
+      "logged": "013b021eb4d46cd85e8474a89c68649a94bc021370d0520b56c106f4c2bfa05e",
+      "disk": "013b021eb4d46cd85e8474a89c68649a94bc021370d0520b56c106f4c2bfa05e"
     },
     "clossys/agents/designer/loop.slot/pin.json": {
       "seq": 2553,
@@ -4600,9 +4616,9 @@
       "disk": "f502c4b146952f99220dc5f2a9ecf37986ca0bc7e81618d6a8cf5b8b0933d718"
     },
     "clossys/agents/designer/loop.slot/slot.json": {
-      "seq": 2542,
-      "logged": "c78a2a15006144e2f34614b614e40b07bc5470555946fd26f4d520a6b2c682ac",
-      "disk": "c78a2a15006144e2f34614b614e40b07bc5470555946fd26f4d520a6b2c682ac"
+      "seq": 3011,
+      "logged": "8a512a15db93b0b92bcb05846f17bc873da0cc27a8b9af86b7bd8ce95ac1cc86",
+      "disk": "8a512a15db93b0b92bcb05846f17bc873da0cc27a8b9af86b7bd8ce95ac1cc86"
     },
     "clossys/agents/designer/sections.access-matrix/ledger.json": {
       "seq": 2828,
@@ -4925,24 +4941,24 @@
       "disk": "6d98ef2dfc3cf08c7a8950406f611818fc96a77b4298bc6d8a5f92ff23f0e321"
     },
     "clossys/agents/designer/sections.producer.system-empty/ledger.json": {
-      "seq": 2846,
-      "logged": "c68913e07a03cd3f38ab488625306bb4fcbf6a1c213e496a047199cac003c448",
-      "disk": "c68913e07a03cd3f38ab488625306bb4fcbf6a1c213e496a047199cac003c448"
+      "seq": 3008,
+      "logged": "cb129074672346847c62b245173223b86e0583b05ffefd1c577ed30c809e70b6",
+      "disk": "cb129074672346847c62b245173223b86e0583b05ffefd1c577ed30c809e70b6"
     },
     "clossys/agents/designer/sections.producer.system-empty/slot.json": {
-      "seq": 2846,
-      "logged": "2623d614adb1b846accea331882bddeb253b45e294bfe5d671a9493d91151dc4",
-      "disk": "2623d614adb1b846accea331882bddeb253b45e294bfe5d671a9493d91151dc4"
+      "seq": 3008,
+      "logged": "49e393a21a9b99c5025a303988a38c303369b3aa9ee1f49ba7904ef6bb5e04e5",
+      "disk": "49e393a21a9b99c5025a303988a38c303369b3aa9ee1f49ba7904ef6bb5e04e5"
     },
     "clossys/agents/designer/sections.producer.team-strip/ledger.json": {
-      "seq": 2845,
-      "logged": "89bd1134e820186b2742510e01b27e6da8b568e2d4622d60d57f088f7ab275c5",
-      "disk": "89bd1134e820186b2742510e01b27e6da8b568e2d4622d60d57f088f7ab275c5"
+      "seq": 3007,
+      "logged": "f1eb8c848e3c0eb8fc7df19be144ca72db87076d2388388bac7e1b15c5401192",
+      "disk": "f1eb8c848e3c0eb8fc7df19be144ca72db87076d2388388bac7e1b15c5401192"
     },
     "clossys/agents/designer/sections.producer.team-strip/slot.json": {
-      "seq": 2845,
-      "logged": "73fdaa04ab71c6c2aa4e8976661452879618bbc7d3e34c9ff085c1571b11cc93",
-      "disk": "73fdaa04ab71c6c2aa4e8976661452879618bbc7d3e34c9ff085c1571b11cc93"
+      "seq": 3007,
+      "logged": "35e4d3d9cc7ebcdc1c0f5916d8c12200426d04016456e17a04cbb79a06987054",
+      "disk": "35e4d3d9cc7ebcdc1c0f5916d8c12200426d04016456e17a04cbb79a06987054"
     },
     "clossys/agents/designer/sections.question-packet/ledger.json": {
       "seq": 2821,

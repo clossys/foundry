@@ -1117,6 +1117,44 @@ async function reuseRequests(w) {
 }
 
 /**
+ * Package leaves the base predates, placed last as a consumer adopting a new package version does (CP1-VIDEO1,
+ * 3c542b21c and fd6da3890: the verbs that wrote frames.video into this fixture). Each is placed by `clossys ia` with
+ * the package contract seeded as `migrate contracts` seeds it (seededContract: the standard's requirements, which
+ * `ia` requires) under its package group, `clossys migrate contracts` then seeds its family, and
+ * `clossys ia --inputs` declares the inputs the `migrate inputs` plan reads for it (conform S6). The contract and the
+ * inputs come from the package and the plan, never from this file. A leaf placed already is skipped.
+ */
+export const NEW_PACKAGE_LEAVES = [
+  { ref: "designer/frames.video", catalog: "frames", under: "frames.frames/frames-shells", standard: "frame" },
+];
+
+async function newPackageLeaves(w) {
+  const { planInputsMigration } = await import("../dist/migrate/inputs.js");
+  const { seededContract } = await import("../dist/migrate/contracts.js");
+  const placed = [];
+  for (const { ref, catalog, under, standard } of NEW_PACKAGE_LEAVES) {
+    const [agent, id] = ref.split("/");
+    if (existsSync(join(w.consumer, "agents", agent, id, "slot.json"))) continue;
+    const entries = JSON.parse(readFileSync(join(PRODUCER, "..", agent, "src", "catalog", "slots", `${catalog}.json`), "utf8"));
+    const contract = (Array.isArray(entries) ? entries : entries.slots ?? []).find(entry => entry?.id === id)?.contract;
+    if (!contract) throw new Refused(ref, `the ${agent} package catalog ${catalog}.json declares no contract for ${id}`);
+    const standardDoc = readStandard(w.root, agent, standard).doc;
+    if (!standardDoc) throw new Refused(ref, `standard ${standard} does not read`);
+    await w.run(ref, "ia", ref, "--contract", w.file(`${id}.package-contract.json`, seededContract(agent, contract, standardDoc)), "--standard", standard, "--under", under, "--at", AT);
+    placed.push({ ref, agent, id, standard });
+  }
+  if (!placed.length) return;
+  await w.run("producer", "migrate", "contracts", "--at", AT);
+  const changes = planInputsMigration(w.consumer).changes;
+  for (const { ref, agent, id, standard } of placed) {
+    const inputs = changes.find(change => change.agent === agent && change.slot === id)?.added ?? [];
+    if (!inputs.length) throw new Refused(ref, "the migrate inputs plan reads no input for it (conform S6)");
+    const doc = readSlot(w.consumer, agent, id);
+    await w.run(ref, "ia", ref, "--contract", w.file(`${id}.inputs-contract.json`, doc.contract), "--standard", standard, "--inputs", inputs.join(","), "--at", AT);
+  }
+}
+
+/**
  * Seeds the unpinned base of `from` in a temporary root and returns the pinned tree there (`keep`) or copies it to
  * `out` (which must not hold a tree already) and removes it. The root holds the seeder's mark; `out` never does.
  * `resume` continues a kept root in place, skipping the slots it pinned already (a development aid; the committed
@@ -1158,6 +1196,7 @@ export async function seed({ from, out, only, keep = false, resume } = {}) {
     if (!only) await placement(w);
     if (!only) await interview(w);
     if (!only) await reuseRequests(w);
+    if (!only) await newPackageLeaves(w);
     // A slot retire moves its folder under _retired/ after its events logged it, so the index still names the old
     // paths as on disk; the index is derived, so the seeder ends by re-running the verb that rebuilds it.
     await w.run("index", "index", "--rebuild");
