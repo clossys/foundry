@@ -19,6 +19,7 @@ import { closeSync, existsSync, linkSync, mkdirSync, mkdtempSync, openSync, read
 import { createHash } from "node:crypto";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
+import { isDeepStrictEqual } from "node:util";
 import { loadSchema, validateValue } from "../pipeline/schema.js";
 import { queueEntryChangeIssues } from "../queue/append-only.js";
 import { findQueueEntry, readQueueEntry } from "../queue/entry.js";
@@ -1151,9 +1152,10 @@ export function appendRaise(consumer: string, id: string, raise: MergedRaise, op
     const before = readRequest(consumer, id);
     if (before.status !== "open") throw new RequestError(`${workQueue(before.kind as WorkKind)}#${id} is ${before.status}: a raise merges only into an open entry`);
     if (before.events.some(event => event.op === "raised" && event.detail === raise.detail)) return { request: before, appended: false };
-    const after = withMergedRaise(before, raise);
-    const drift = queueEntryChangeIssues(before, after);
+    const merged = withMergedRaise(before, raise);
+    const drift = queueEntryChangeIssues(before, merged);
     if (drift.length) throw new RequestError(`merging a raise into ${id} would rewrite it: ${drift.join("; ")}`);
+    const after = reasked(consumer, before, merged, raise.at);
     const issues = requestIssues(after, dirname(consumer));
     if (issues.length) throw new RequestError(`request ${id} would be invalid: ${issues.slice(0, 5).join("; ")}`);
     if (options.dry) return { request: after, appended: true };
@@ -1161,6 +1163,19 @@ export function appendRaise(consumer: string, id: string, raise: MergedRaise, op
     return { request: readRequest(consumer, id), appended: true };
   };
   return options.dry ? body() : withRequestLock(consumer, id, body);
+}
+
+/**
+ * The owner's options re-derived when a merged raise changes the proposal of an owner change (CP1-PLAN fix r3): the
+ * options follow the current proposal under ownerOptions' one rule (steps: approve and decline; none: handoff and
+ * decline), never the first filing's. A changed set is Producer's asked event, as on an agent's claim; else `merged`.
+ */
+function reasked(consumer: string, before: SlotRequest, merged: SlotRequest, at: string): SlotRequest {
+  const proposed = currentProposed(merged);
+  if (before.kind !== "change" || before.assignee !== "owner" || (!currentProposed(before) && !proposed)) return merged;
+  const options = ownerOptions(consumer, { kind: "change", target: merged.target, ...(merged.want !== undefined ? { want: merged.want } : {}), ...(proposed ? { proposed } : {}) });
+  if (isDeepStrictEqual(options, before.options)) return merged;
+  return withEvent({ ...merged, options }, "asked", at, "producer", `the proposal changed: the owner answers ${options.map(option => option.id).join(", ")}`).request;
 }
 
 /** What a slot raise checks before it writes (raiseRequest): the target, the requester, its issuing edge and its cite. */

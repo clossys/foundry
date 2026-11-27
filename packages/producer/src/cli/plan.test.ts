@@ -257,6 +257,29 @@ describe("clossys plan (CP1-PLAN)", () => {
     expect(bytes(other.root)).toEqual(held);
   });
 
+  it("re-plan from 0 steps to N steps offers approve", async () => {
+    // The Director releases a row the menu cannot serve first: the plan has 0 lines, so the owner hands it off or declines.
+    const { root, consumer } = await world({ publisher: false, scope: "docs (quickstart): launch guide so founders set up exports alone" });
+    const entryOf = (id: string) => JSON.parse(readFileSync(join(consumer, "agents/producer/queue.change/entries", `${id}.json`), "utf8")) as SlotRequest;
+    const filed = await runCli(["plan", "--at", AT, "--root", root], root);
+    expect(filed.exitCode, filed.message).toBe(0);
+    const id = (filed.output as { request: string }).request;
+    expect(currentProposed(entryOf(id))).toBeUndefined();
+    expect(entryOf(id).options!.map(option => option.id)).toEqual(["handoff", "decline"]);
+    // A re-pin with servable rows, then a re-plan: the options follow the refreshed steps (approve and decline, no handoff).
+    pinRelease(consumer, "release-v2.md", "site (home, contact): launch site that shows founders the claim export");
+    const updated = await runCli(["plan", "--at", "2026-11-26T10:10:00Z", "--root", root], root);
+    expect(updated.exitCode, updated.message).toBe(0);
+    expect(updated.message).toMatch(new RegExp(`^plan: updated ${id} `));
+    expect(currentProposed(entryOf(id))!.steps).toHaveLength(3);
+    expect(entryOf(id).options!.map(option => [option.id, option.then.verb])).toEqual([["approve", "approve"], ["decline", "close"]]);
+    expect(entryOf(id).events.at(-1)).toMatchObject({ op: "asked", by: "producer" });
+    const approved = await runCli(["request", id, "--answer", "approve", "--via", "cli", "--quote", "approve the launch content map", "--at", "2026-11-26T10:30:00Z", "--root", root], root);
+    expect(approved.exitCode, approved.message).toBe(0);
+    expect(entryOf(id)).toMatchObject({ status: "closed", outcome: "changed" });
+    for (const slot of ["page.home", "page.contact", "publication.site"]) expect(existsSync(join(consumer, "agents/publisher", slot, "slot.json")), slot).toBe(true);
+  });
+
   it("refuses with no fallback: no pinned release, or a release contract with no brief.release-scope", async () => {
     const bare = await world({ requirement: false });
     expect(() => contentPlan(bare.root)).toThrow(PlanError);
