@@ -1633,10 +1633,12 @@
       "allowedReads": {
         "themes": [
           "themes.background",
+          "themes.card",
           "themes.foreground",
           "themes.border",
           "themes.radius",
           "themes.muted",
+          "themes.sidebar",
           "themes.muted-foreground",
           "themes.primary",
           "themes.ring",

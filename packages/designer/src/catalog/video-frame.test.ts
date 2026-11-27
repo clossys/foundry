@@ -43,7 +43,8 @@ describe("frames.video registration", () => {
     expect(contract.statePorts).toEqual([{ id: "playing", type: "boolean" }, { id: "scene", type: "number" }]);
     expect(contract.rendering).toBe("client");
     // Stock first (source ladder L1): the controls compose the live shadcn@aria button and slider, never the retired media player.
-    expect(contract.composes).toEqual(["components.button", "components.slider"]);
+    // The Designer runtime VideoFrame also lays out its stage and controls landmarks with the semantic-content leaf (measured).
+    expect(contract.composes).toEqual(["components.button", "components.semantic-content", "components.slider"]);
     expect(retiredFrameReferences([slot!], DESIGNER_RETIRED)).toEqual([]);
     for (const leaf of contract.composes ?? []) expect(componentIa.retired, leaf).not.toContain(leaf);
     expect(contract.copy.fields.map(field => [field.key, field.role, field.required])).toEqual([
@@ -115,7 +116,8 @@ describe("frames.video package default", () => {
     // A package default of designer/frames.video: a stock-first registry block on the stock button and slider, no new dependency.
     expect(file.clossys).toMatchObject({ schema: "clossys.candidate/1", id: "designer/frames.video/package:stage-v1.json", slot: "designer/frames.video", source: { kind: "package-default" } });
     expect(file.content).toMatchObject({ type: "registry:block", export: "VideoFrame", variants: { aspect: ["16:9"], start: ["paused"] }, dependencies: [], registryDependencies: ["button", "slider", "utils"] });
-    expect(contract.composes).toEqual(file.content.registryDependencies.filter(name => name !== "utils").map(name => `components.${name}`));
+    // Every registry dependency is a declared compose; the one other compose is the runtime's semantic-content landmarks.
+    expect(contract.composes!.filter(leaf => leaf !== "components.semantic-content")).toEqual(file.content.registryDependencies.filter(name => name !== "utils").map(name => `components.${name}`));
     expect([...source().matchAll(/from "(@\/[^"]+)"/g)].map(match => match[1])).toEqual(["@/lib/utils", "@/components/ui/button", "@/components/ui/slider"]);
     // Words come from Writer through the copy prop: no literal JSX text, and every copy key the default reads is declared.
     expect(literalCopyFindings(file)).toEqual([]);
