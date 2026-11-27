@@ -27,6 +27,7 @@ import { expandPublication } from "./expand-tabs.js";
 import { INSTALL_MARKER, installOutRoot } from "@clossys/publisher/build";
 import { isBindGenerated, isLocaleHostFile, NEXT_BIND_DIR, NEXT_BIND_PAGES, planNextBind, type NextBindOptions } from "./install-next-bind.js";
 import { planPublicationOutputs } from "./install-outputs.js";
+import { isDeckPublication, planDeck, stageSlideRoutes } from "./install-next-slides.js";
 
 export const NEXT_INSTALL_REPORT = "install-report.json";
 export const NEXT_INSTALL_KIND = "next";
@@ -103,16 +104,22 @@ export async function publishNext(options: PublishNextOptions): Promise<PublishN
   const app = resolve(options.app);
   const pinned = await readPinnedPublication(join(root, "clossys"), options.publication);
   if (!pinned.routePack) throw new Error(`publish --install --next: publication ${options.publication} has no route pack`);
-  const { map, leafTemplates } = expandPublication(join(root, "clossys"), pinned.map, pinned.routePack.routes as readonly Record<string, unknown>[]);
+  const expanded = expandPublication(join(root, "clossys"), pinned.map, pinned.routePack.routes as readonly Record<string, unknown>[]);
+  const { leafTemplates } = expanded;
   if ((options.bind === undefined) === (options.assembly === undefined)) throw new Error("publish --install --next: name the consumer's --assembly, or --bind to have Publisher generate it (not both)");
   const site = dirname(app);
   const locales = pinned.outputs?.locales;
-  const bound = options.bind ? await planNextBind({ root, site, map, check: options.check === true, bind: options.bind, leafTemplates, ...(locales ? { locales } : {}) }) : undefined;
+  // A slide deck installs one page per slide at /<deck route>/<n> (install-next-slides.ts); its map is the deck's web projection.
+  const deck = isDeckPublication(expanded.map) ? await planDeck(root, expanded.map, locales) : undefined;
+  if (deck?.findings.some(isBlocking)) return { app, files: [], findings: deck.findings };
+  const map = deck ? deck.map : expanded.map;
+  const bound = options.bind ? await planNextBind({ root, site, map, check: options.check === true, bind: options.bind, leafTemplates, ...(locales ? { locales } : {}), ...(deck ? { recordOf: deck.recordOf } : {}) }) : undefined;
   const assembly = bound ? bound.assembly : options.assembly!;
   const states = bound ? bound.states : options.states;
   const outputs = pinned.outputs ? await planPublicationOutputs(root, map, pinned.outputs) : undefined;
   const routes = planNextRoutes({ map, leafTemplates, assembly, live: options.live === true, ...(states !== undefined ? { states } : {}), ...(locales ? { locales } : {}), ...(outputs?.jsonLd !== undefined ? { jsonLd: outputs.jsonLd } : {}), ...(outputs?.jsonLdByLocale !== undefined ? { localeJsonLd: outputs.jsonLdByLocale } : {}), ...(bound?.routeParams ? { routeParams: bound.routeParams } : {}) });
-  const plan = { ...routes, files: [...routes.files, ...(outputs?.files ?? [])] };
+  const pageRoutes = deck ? stageSlideRoutes(routes.files, assembly, deck.slides) : routes.files;
+  const plan = { ...routes, files: [...pageRoutes, ...(outputs?.files ?? [])] };
   const findings: InstallFinding[] = [...(bound?.findings ?? []), ...plan.findings, ...(outputs?.findings ?? [])];
   // An output never shares a file with a page route, and a route handler never shares a segment with a page.
   // Compared as served: a route group folder (`(en)`) is no path segment, and case folds (a case-insensitive file system).
