@@ -1,7 +1,7 @@
 {
   "schema": "clossys.index/1",
-  "events": 2959,
-  "head": "8e60e7109754b2e8926e199d47029c3b819d56275c7558198a4379841bb15fe4",
+  "events": 2960,
+  "head": "c1ba74975351b2ae2b391fb87576b09ada3ee25dbd80c6e0d071e20ff7e4230e",
   "subjects": {
     "designer": {
       "seq": 2476,
@@ -1552,10 +1552,10 @@
       "at": "2026-11-19T00:00:00.000Z"
     },
     "director/execution.roadmap.release": {
-      "seq": 2561,
+      "seq": 2959,
       "kind": "slot.slot",
-      "actor": "producer",
-      "at": "2026-11-19T00:00:00.000Z"
+      "actor": "planner",
+      "at": "2026-11-27T09:39:33.150Z"
     },
     "director/focus.category.definition": {
       "seq": 2530,
@@ -6050,14 +6050,14 @@
       "disk": "6d0cb9a94e22cfad138a5a5535bf77c186423a7187744588d3f2e232fc5bbee8"
     },
     "clossys/agents/director/execution.roadmap.release/ledger.json": {
-      "seq": 2561,
-      "logged": "b63d1540dfd116a07a7b763daae867ba2663e2e3c6f053bbf1f088232bb1ac83",
-      "disk": "b63d1540dfd116a07a7b763daae867ba2663e2e3c6f053bbf1f088232bb1ac83"
+      "seq": 2959,
+      "logged": "4adf0ee24851d81b6485f845c519743ac5196892578adccb63780daadd9f5368",
+      "disk": "4adf0ee24851d81b6485f845c519743ac5196892578adccb63780daadd9f5368"
     },
     "clossys/agents/director/execution.roadmap.release/slot.json": {
-      "seq": 2561,
-      "logged": "f93d3806573d7e2b2674466c2835f0af5e8600f9ce638733cc6c4897a0453f41",
-      "disk": "f93d3806573d7e2b2674466c2835f0af5e8600f9ce638733cc6c4897a0453f41"
+      "seq": 2959,
+      "logged": "33cd7b452e7ce8e965fd16afeb77b2bc81e66a3334db7517fc95e36c38fe0df3",
+      "disk": "33cd7b452e7ce8e965fd16afeb77b2bc81e66a3334db7517fc95e36c38fe0df3"
     },
     "clossys/agents/director/focus.category.definition/ledger.json": {
       "seq": 2530,

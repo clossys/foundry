@@ -19,7 +19,19 @@
   "updatedAt": "2026-11-17T00:00:00Z",
   "refs": [
     {
+      "to": "director/context.customer.need",
+      "rel": "input"
+    },
+    {
       "to": "director/focus.lifecycle.acquisition",
+      "rel": "input"
+    },
+    {
+      "to": "director/focus.offer.included",
+      "rel": "input"
+    },
+    {
+      "to": "director/focus.reach.channel",
       "rel": "input"
     }
   ],
@@ -35,7 +47,19 @@
     ],
     "inputs": [
       {
+        "to": "director/context.customer.need",
+        "rel": "input"
+      },
+      {
         "to": "director/focus.lifecycle.acquisition",
+        "rel": "input"
+      },
+      {
+        "to": "director/focus.offer.included",
+        "rel": "input"
+      },
+      {
+        "to": "director/focus.reach.channel",
         "rel": "input"
       }
     ],
@@ -49,26 +73,47 @@
         "hint": "a short name"
       },
       {
+        "key": "Stage",
+        "hint": "launch, mvp, growth or mature"
+      },
+      {
         "key": "Target date",
         "hint": "ISO date"
       },
       {
         "key": "Scope",
-        "hint": "publications and pages"
+        "hint": "kind (pages): use case naming the stage, one row per publication, rows split by semicolons"
       },
       {
         "key": "Not in scope",
         "hint": "what waits for a later release"
       }
     ],
-    "fixture": {
-      "headings": [
-        "Direction",
-        "Because",
-        "Watch"
-      ]
-    },
     "requirements": [
+      {
+        "check": "brief.release-scope",
+        "params": {
+          "kinds": [
+            "site",
+            "docs",
+            "slides",
+            "video",
+            "image set"
+          ],
+          "stages": [
+            "launch",
+            "mvp",
+            "growth",
+            "mature"
+          ],
+          "capStages": [
+            "launch",
+            "mvp"
+          ],
+          "pageCap": 8,
+          "need": "context.customer.need"
+        }
+      },
       {
         "check": "brief.sections"
       },
@@ -90,7 +135,14 @@
       {
         "check": "brief.direction-values"
       }
-    ]
+    ],
+    "fixture": {
+      "headings": [
+        "Direction",
+        "Because",
+        "Watch"
+      ]
+    }
   },
   "tighten": [],
   "family": {
