@@ -22,7 +22,7 @@ import { buildCandidateHeader, candidatePath, serializeCandidate, slotDir, write
 import { writeTargetPin } from "../records/pin-map.js";
 import { cliActor } from "../records/pin.js";
 import { readPipelineSeats } from "../records/slot-model/pipeline-seats.js";
-import { agentCreatesText, stockFilesOf } from "../records/code-adopt.js";
+import { agentCreatesText, stockImportFilesOf } from "../records/code-adopt.js";
 import { adoptDependencyPreview } from "../records/adopt-dependencies.js";
 import { requirementsVerdictSync } from "../constitution/certify/requirements.js";
 
@@ -172,7 +172,7 @@ describe("CP1-HELP the CP1-PKGS review notes", () => {
 
   it("PKGS-b a crafted stock slot's dependency plan reads its files without the theme reader", () => {
     const root = fixture();
-    const found = stockFilesOf(root, "frames.app-header", { themeReader: false });
+    const found = stockImportFilesOf(root, "frames.app-header");
     if ("none" in found) throw new Error(found.none);
     expect(found.reader).toBeUndefined();
     expect(found.files.length).toBeGreaterThan(0);
