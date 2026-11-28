@@ -354,25 +354,23 @@ class Runner {
   }
 
   /**
-   * The related step, tier by tier: the vitest packages one after another (each process's pool uses the cores; two
-   * vitest processes of one package would race on its globalSetup build), and beside them the node units in a pool.
+   * The related step: the vitest processes one after another, tier 1 then tier 2 (each process's pool uses the cores;
+   * two vitest processes of one package would race on its globalSetup build), and beside them every node unit in one
+   * pool, tier 1 first. Past the deadline nothing new starts and the running process is stopped.
    */
   async related(units: readonly Unit[], deadline: number): Promise<UnitResult[]> {
-    const results: UnitResult[] = [];
     const late = (unit: Unit): UnitResult => ({ unit, status: "unrun", ms: 0, messages: [] });
-    for (const tier of [1, 2] as const) {
-      const mine = units.filter(unit => unit.tier === tier);
-      const vitest = async () => {
-        const out: UnitResult[] = [];
-        for (const [pkg, list] of byPackage(mine)) out.push(...(Date.now() >= deadline ? list.map(late) : await this.vitest("related", this.repo, pkg, list, false, deadline)));
-        return out;
-      };
-      const node = mine.filter(item => item.kind === "node");
-      const width = Math.max(1, Math.floor(this.width / 2));
-      const [ran, nodes] = await Promise.all([vitest(), pool(node, width, async unit => Date.now() >= deadline ? late(unit) : this.node("related", this.repo, unit, deadline))]);
-      results.push(...ran, ...nodes);
-    }
-    return results;
+    const vitest = async () => {
+      const out: UnitResult[] = [];
+      for (const tier of [1, 2] as const) for (const [pkg, list] of byPackage(units.filter(unit => unit.tier === tier))) {
+        out.push(...(Date.now() >= deadline ? list.map(late) : await this.vitest("related", this.repo, pkg, list, false, deadline)));
+      }
+      return out;
+    };
+    const node = units.filter(item => item.kind === "node");
+    const width = units.some(item => item.kind === "vitest") ? Math.max(1, Math.floor(this.width / 2)) : this.width;
+    const [ran, nodes] = await Promise.all([vitest(), pool(node, width, async unit => Date.now() >= deadline ? late(unit) : this.node("related", this.repo, unit, deadline))]);
+    return [...ran, ...nodes];
   }
 
   /**
