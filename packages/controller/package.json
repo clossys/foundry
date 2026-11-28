@@ -34,6 +34,10 @@
     },
     "./contracts/repository-package-adoption-contract.json": "./contracts/repository-package-adoption-contract.json",
     "./contracts/repository-package-adoption.fixture.json": "./contracts/repository-package-adoption.fixture.json",
+    "./loop": {
+      "types": "./dist/loop/index.d.ts",
+      "import": "./dist/loop/index.js"
+    },
     "./review": {
       "types": "./dist/review/index.d.ts",
       "import": "./dist/review/index.js"
