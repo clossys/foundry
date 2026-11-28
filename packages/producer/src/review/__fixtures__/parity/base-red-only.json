@@ -1,0 +1,213 @@
+{
+  "id": "base-red-only",
+  "branch": "claude/r2f-0048-cp1-help",
+  "head": "c8bed8adaf15e2695137f5e9baa948daa883e486",
+  "base": "2065d5ef8ad21cafddb0f7be6c56fd3b379a5cfe",
+  "mergeBase": "2065d5ef8ad21cafddb0f7be6c56fd3b379a5cfe",
+  "recorded": {
+    "verdict": "PASS",
+    "newRed": [],
+    "baseRed": null,
+    "baseRedNonEmpty": true,
+    "commandReds": []
+  },
+  "observed": {
+    "ran": 34,
+    "missing": [],
+    "commands": [],
+    "red": [
+      {
+        "file": "packages/producer/src/check/ref-verbatim-default.test.ts",
+        "head": [
+          "packages/producer/src/check/ref-verbatim-default.test.ts :: default check enforces the actual reference gate without --suites or --strict"
+        ],
+        "base": [
+          "packages/producer/src/check/ref-verbatim-default.test.ts :: default check enforces the actual reference gate without --suites or --strict"
+        ],
+        "unchanged": true
+      },
+      {
+        "file": "packages/producer/src/cli/guard.e2e.test.ts",
+        "head": [
+          "packages/producer/src/cli/guard.e2e.test.ts :: write guards on a fixture consumer > pin under the real guard refuses a candidate whose reason cites an unpinned Director slot (R20.2) and restores every file"
+        ],
+        "base": [
+          "packages/producer/src/cli/guard.e2e.test.ts :: write guards on a fixture consumer > pin under the real guard refuses a candidate whose reason cites an unpinned Director slot (R20.2) and restores every file"
+        ],
+        "unchanged": true
+      },
+      {
+        "file": "packages/producer/src/cli/inline-gates.e2e.test.ts",
+        "head": [
+          "packages/producer/src/cli/inline-gates.e2e.test.ts :: submit: refused at the write with the rule id and a one-line fix > holds an adopt to the ref-verbatim gate: refused with its fix while no vendored reference backs it"
+        ],
+        "base": [
+          "packages/producer/src/cli/inline-gates.e2e.test.ts :: submit: refused at the write with the rule id and a one-line fix > holds an adopt to the ref-verbatim gate: refused with its fix while no vendored reference backs it"
+        ],
+        "unchanged": true
+      },
+      {
+        "file": "packages/producer/src/conform/conform.test.ts",
+        "head": [
+          "packages/producer/src/conform/conform.test.ts :: dogfood probes > upstream-pinned on a model read from disk: the slot/2 reader's refusal of the Director pin makes Designer's CASCADE probe red (U37)"
+        ],
+        "base": [
+          "packages/producer/src/conform/conform.test.ts :: dogfood probes > upstream-pinned on a model read from disk: the slot/2 reader's refusal of the Director pin makes Designer's CASCADE probe red (U37)"
+        ],
+        "unchanged": true
+      },
+      {
+        "file": "packages/producer/src/constitution/choose-gate.test.ts",
+        "head": [
+          "packages/producer/src/constitution/choose-gate.test.ts :: R05.2 CHOOSE: an owner confirmation never launders a hand-written pick (the confirm verb's guard) > refuses to confirm an agent pick written by hand (no ledger event), and the slot stays a check failure",
+          "packages/producer/src/constitution/choose-gate.test.ts :: R05.2 CHOOSE: clossys check finds a pin written by hand (Publisher's dogfood finding, the U38 binding) > finds a pin.json written by hand into a slot that never had a pin event",
+          "packages/producer/src/constitution/choose-gate.test.ts :: R05.2 CHOOSE: clossys check finds a pin written by hand (Publisher's dogfood finding, the U38 binding) > passes a pin written by clossys pin, and fails one written by hand or edited after its ledger event",
+          "packages/producer/src/constitution/choose-gate.test.ts :: R05.2 CHOOSE: clossys pin on a Director brief (Director's dogfood finding) > refuses a brief placed by hand and a submitted brief that fails its contract and standard; no pin is written"
+        ],
+        "base": [
+          "packages/producer/src/constitution/choose-gate.test.ts :: R05.2 CHOOSE: an owner confirmation never launders a hand-written pick (the confirm verb's guard) > refuses to confirm an agent pick written by hand (no ledger event), and the slot stays a check failure",
+          "packages/producer/src/constitution/choose-gate.test.ts :: R05.2 CHOOSE: clossys check finds a pin written by hand (Publisher's dogfood finding, the U38 binding) > finds a pin.json written by hand into a slot that never had a pin event",
+          "packages/producer/src/constitution/choose-gate.test.ts :: R05.2 CHOOSE: clossys check finds a pin written by hand (Publisher's dogfood finding, the U38 binding) > passes a pin written by clossys pin, and fails one written by hand or edited after its ledger event",
+          "packages/producer/src/constitution/choose-gate.test.ts :: R05.2 CHOOSE: clossys pin on a Director brief (Director's dogfood finding) > refuses a brief placed by hand and a submitted brief that fails its contract and standard; no pin is written"
+        ],
+        "unchanged": true
+      },
+      {
+        "file": "packages/producer/src/constitution/guard-session.test.ts",
+        "head": [
+          "packages/producer/src/constitution/guard-session.test.ts :: guard rows with the session equal a fresh guard's > clossys pin: the guard reuses the CHOOSE gate's read, passing and refusing as a fresh guard does"
+        ],
+        "base": [
+          "packages/producer/src/constitution/guard-session.test.ts :: guard rows with the session equal a fresh guard's > clossys pin: the guard reuses the CHOOSE gate's read, passing and refusing as a fresh guard does"
+        ],
+        "unchanged": true
+      },
+      {
+        "file": "packages/producer/src/loop/repin-cascade.test.ts",
+        "head": [
+          "packages/producer/src/loop/repin-cascade.test.ts :: a legacy pin fails closed (U8) > a legacy pin given the real certifier's passing verdict on the pinSet now, written as loop.cascade writes one (reverdictOf, a clossys.reverdict/1), passes slots.stale",
+          "packages/producer/src/loop/repin-cascade.test.ts :: a legacy pin fails closed (U8) > a pin/2 that clossys migrate recut wrote from a pin/1 (no recorded pinSet or verdict) fails slots.stale until the owner's CHOOSE gate re-verdicts it",
+          "packages/producer/src/loop/repin-cascade.test.ts :: loop.cascade's accept step: code accepts a clean cascade, the owner reads only failures (DET-STEPS, was U26) > a clean repin is accepted by code: impact is settled, no agent packet, a settle record and a run.settle engine event",
+          "packages/producer/src/loop/repin-cascade.test.ts :: loop.cascade: a repin re-verdicts its dependants (R07.5) > a section repinned to another medium breaks the page: a kind fix to its owner, needs-refresh, release refused; a web repin restores it",
+          "packages/producer/src/loop/repin-cascade.test.ts :: the pin gate and the pin are one critical section (U6) > a pin refuses while another write holds the slot lock, and pins once it is free"
+        ],
+        "base": [
+          "packages/producer/src/loop/repin-cascade.test.ts :: a legacy pin fails closed (U8) > a legacy pin given the real certifier's passing verdict on the pinSet now, written as loop.cascade writes one (reverdictOf, a clossys.reverdict/1), passes slots.stale",
+          "packages/producer/src/loop/repin-cascade.test.ts :: a legacy pin fails closed (U8) > a pin/2 that clossys migrate recut wrote from a pin/1 (no recorded pinSet or verdict) fails slots.stale until the owner's CHOOSE gate re-verdicts it",
+          "packages/producer/src/loop/repin-cascade.test.ts :: loop.cascade's accept step: code accepts a clean cascade, the owner reads only failures (DET-STEPS, was U26) > a clean repin is accepted by code: impact is settled, no agent packet, a settle record and a run.settle engine event",
+          "packages/producer/src/loop/repin-cascade.test.ts :: loop.cascade: a repin re-verdicts its dependants (R07.5) > a section repinned to another medium breaks the page: a kind fix to its owner, needs-refresh, release refused; a web repin restores it",
+          "packages/producer/src/loop/repin-cascade.test.ts :: the pin gate and the pin are one critical section (U6) > a pin refuses while another write holds the slot lock, and pins once it is free"
+        ],
+        "unchanged": true
+      },
+      {
+        "file": "packages/producer/src/pipeline/interview.test.ts",
+        "head": [
+          "packages/producer/src/pipeline/interview.test.ts :: Director content questions (next --owner --agent director) > an unclear request on an agent-held cell recommends the Director's re-draft, not owner evidence",
+          "packages/producer/src/pipeline/interview.test.ts :: Director content questions (next --owner --agent director) > asks the archetype first, then each owner-held core cell as Pick <cell> with candidate pin options, recommended first",
+          "packages/producer/src/pipeline/interview.test.ts :: Director content questions (next --owner --agent director) > folds a request for an asked cell into its content question; agent picks are one confirm question",
+          "packages/producer/src/pipeline/interview.test.ts :: Director content questions (next --owner --agent director) > the confirm option's argv keeps each agent pick basis agent and records the owner's confirmation"
+        ],
+        "base": [
+          "packages/producer/src/pipeline/interview.test.ts :: Director content questions (next --owner --agent director) > an unclear request on an agent-held cell recommends the Director's re-draft, not owner evidence",
+          "packages/producer/src/pipeline/interview.test.ts :: Director content questions (next --owner --agent director) > asks the archetype first, then each owner-held core cell as Pick <cell> with candidate pin options, recommended first",
+          "packages/producer/src/pipeline/interview.test.ts :: Director content questions (next --owner --agent director) > folds a request for an asked cell into its content question; agent picks are one confirm question",
+          "packages/producer/src/pipeline/interview.test.ts :: Director content questions (next --owner --agent director) > the confirm option's argv keeps each agent pick basis agent and records the owner's confirmation"
+        ],
+        "unchanged": true
+      },
+      {
+        "file": "packages/producer/src/pipeline/owner-wiring.test.ts",
+        "head": [
+          "packages/producer/src/pipeline/owner-wiring.test.ts :: owner.wiring (clossys pipeline check) > fails a dead argv: an option that only prints a brief records nothing",
+          "packages/producer/src/pipeline/owner-wiring.test.ts :: owner.wiring (clossys pipeline check) > fails an answer that records a Writer key a second pinned slot already owns",
+          "packages/producer/src/pipeline/owner-wiring.test.ts :: owner.wiring (clossys pipeline check) > fails an answer the gaps do not see: it re-records a slot no gap is about",
+          "packages/producer/src/pipeline/owner-wiring.test.ts :: owner.wiring (clossys pipeline check) > fails an argv that exits non-zero",
+          "packages/producer/src/pipeline/owner-wiring.test.ts :: owner.wiring (clossys pipeline check) > runs each option where the slot model can read it: no symbolic link above the scratch copy",
+          "packages/producer/src/pipeline/owner-wiring.test.ts :: owner.wiring (clossys pipeline check) > runs the writer's policy question on a scratch copy: every option exits 0, changes its records and the gaps"
+        ],
+        "base": [
+          "packages/producer/src/pipeline/owner-wiring.test.ts :: owner.wiring (clossys pipeline check) > fails a dead argv: an option that only prints a brief records nothing",
+          "packages/producer/src/pipeline/owner-wiring.test.ts :: owner.wiring (clossys pipeline check) > fails an answer that records a Writer key a second pinned slot already owns",
+          "packages/producer/src/pipeline/owner-wiring.test.ts :: owner.wiring (clossys pipeline check) > fails an answer the gaps do not see: it re-records a slot no gap is about",
+          "packages/producer/src/pipeline/owner-wiring.test.ts :: owner.wiring (clossys pipeline check) > fails an argv that exits non-zero",
+          "packages/producer/src/pipeline/owner-wiring.test.ts :: owner.wiring (clossys pipeline check) > runs each option where the slot model can read it: no symbolic link above the scratch copy",
+          "packages/producer/src/pipeline/owner-wiring.test.ts :: owner.wiring (clossys pipeline check) > runs the writer's policy question on a scratch copy: every option exits 0, changes its records and the gaps"
+        ],
+        "unchanged": true
+      },
+      {
+        "file": "packages/producer/src/pipeline/writer-wording.test.ts",
+        "head": [
+          "packages/producer/src/pipeline/writer-wording.test.ts :: Writer wording findings reach the Writer's owner questions (R2F-W1) > a narrative (JSON block) record reads its title and block text: a redraft that differs is offered",
+          "packages/producer/src/pipeline/writer-wording.test.ts :: Writer wording findings reach the Writer's owner questions (R2F-W1) > a wording finding on pinned copy is one Writer MC packet: the rewrite (recommended), keep as is, own words",
+          "packages/producer/src/pipeline/writer-wording.test.ts :: Writer wording findings reach the Writer's owner questions (R2F-W1) > with no rewrite drafted yet, the Writer drafts first and nothing is asked"
+        ],
+        "base": [
+          "packages/producer/src/pipeline/writer-wording.test.ts :: Writer wording findings reach the Writer's owner questions (R2F-W1) > a narrative (JSON block) record reads its title and block text: a redraft that differs is offered",
+          "packages/producer/src/pipeline/writer-wording.test.ts :: Writer wording findings reach the Writer's owner questions (R2F-W1) > a wording finding on pinned copy is one Writer MC packet: the rewrite (recommended), keep as is, own words",
+          "packages/producer/src/pipeline/writer-wording.test.ts :: Writer wording findings reach the Writer's owner questions (R2F-W1) > with no rewrite drafted yet, the Writer drafts first and nothing is asked"
+        ],
+        "unchanged": true
+      },
+      {
+        "file": "packages/producer/src/server/record-memo.test.ts",
+        "head": [
+          "packages/producer/src/server/record-memo.test.ts :: the record memo > answers byte-identically to the unmemoised reader",
+          "packages/producer/src/server/record-memo.test.ts :: the record memo > reads no slot file on a repeated request while nothing changed",
+          "packages/producer/src/server/record-memo.test.ts :: the record memo > sees a live-save on the next request: a new pinned theme candidate, an edited record, a removed pin"
+        ],
+        "base": [
+          "packages/producer/src/server/record-memo.test.ts :: the record memo > answers byte-identically to the unmemoised reader",
+          "packages/producer/src/server/record-memo.test.ts :: the record memo > reads no slot file on a repeated request while nothing changed",
+          "packages/producer/src/server/record-memo.test.ts :: the record memo > sees a live-save on the next request: a new pinned theme candidate, an edited record, a removed pin"
+        ],
+        "unchanged": true
+      },
+      {
+        "file": "packages/writer/src/admin-studio.test.ts",
+        "head": [
+          "packages/writer/src/admin-studio.test.ts :: packs complete admin copy and resolves every Designer route-label reference through public exports"
+        ],
+        "base": [
+          "packages/writer/src/admin-studio.test.ts"
+        ],
+        "unchanged": true
+      }
+    ]
+  },
+  "observedNewRed": [],
+  "observedBaseRed": [
+    "packages/producer/src/check/ref-verbatim-default.test.ts :: default check enforces the actual reference gate without --suites or --strict",
+    "packages/producer/src/cli/guard.e2e.test.ts :: write guards on a fixture consumer > pin under the real guard refuses a candidate whose reason cites an unpinned Director slot (R20.2) and restores every file",
+    "packages/producer/src/cli/inline-gates.e2e.test.ts :: submit: refused at the write with the rule id and a one-line fix > holds an adopt to the ref-verbatim gate: refused with its fix while no vendored reference backs it",
+    "packages/producer/src/conform/conform.test.ts :: dogfood probes > upstream-pinned on a model read from disk: the slot/2 reader's refusal of the Director pin makes Designer's CASCADE probe red (U37)",
+    "packages/producer/src/constitution/choose-gate.test.ts :: R05.2 CHOOSE: an owner confirmation never launders a hand-written pick (the confirm verb's guard) > refuses to confirm an agent pick written by hand (no ledger event), and the slot stays a check failure",
+    "packages/producer/src/constitution/choose-gate.test.ts :: R05.2 CHOOSE: clossys check finds a pin written by hand (Publisher's dogfood finding, the U38 binding) > finds a pin.json written by hand into a slot that never had a pin event",
+    "packages/producer/src/constitution/choose-gate.test.ts :: R05.2 CHOOSE: clossys check finds a pin written by hand (Publisher's dogfood finding, the U38 binding) > passes a pin written by clossys pin, and fails one written by hand or edited after its ledger event",
+    "packages/producer/src/constitution/choose-gate.test.ts :: R05.2 CHOOSE: clossys pin on a Director brief (Director's dogfood finding) > refuses a brief placed by hand and a submitted brief that fails its contract and standard; no pin is written",
+    "packages/producer/src/constitution/guard-session.test.ts :: guard rows with the session equal a fresh guard's > clossys pin: the guard reuses the CHOOSE gate's read, passing and refusing as a fresh guard does",
+    "packages/producer/src/loop/repin-cascade.test.ts :: a legacy pin fails closed (U8) > a legacy pin given the real certifier's passing verdict on the pinSet now, written as loop.cascade writes one (reverdictOf, a clossys.reverdict/1), passes slots.stale",
+    "packages/producer/src/loop/repin-cascade.test.ts :: a legacy pin fails closed (U8) > a pin/2 that clossys migrate recut wrote from a pin/1 (no recorded pinSet or verdict) fails slots.stale until the owner's CHOOSE gate re-verdicts it",
+    "packages/producer/src/loop/repin-cascade.test.ts :: loop.cascade: a repin re-verdicts its dependants (R07.5) > a section repinned to another medium breaks the page: a kind fix to its owner, needs-refresh, release refused; a web repin restores it",
+    "packages/producer/src/loop/repin-cascade.test.ts :: loop.cascade's accept step: code accepts a clean cascade, the owner reads only failures (DET-STEPS, was U26) > a clean repin is accepted by code: impact is settled, no agent packet, a settle record and a run.settle engine event",
+    "packages/producer/src/loop/repin-cascade.test.ts :: the pin gate and the pin are one critical section (U6) > a pin refuses while another write holds the slot lock, and pins once it is free",
+    "packages/producer/src/pipeline/interview.test.ts :: Director content questions (next --owner --agent director) > an unclear request on an agent-held cell recommends the Director's re-draft, not owner evidence",
+    "packages/producer/src/pipeline/interview.test.ts :: Director content questions (next --owner --agent director) > asks the archetype first, then each owner-held core cell as Pick <cell> with candidate pin options, recommended first",
+    "packages/producer/src/pipeline/interview.test.ts :: Director content questions (next --owner --agent director) > folds a request for an asked cell into its content question; agent picks are one confirm question",
+    "packages/producer/src/pipeline/interview.test.ts :: Director content questions (next --owner --agent director) > the confirm option's argv keeps each agent pick basis agent and records the owner's confirmation",
+    "packages/producer/src/pipeline/owner-wiring.test.ts :: owner.wiring (clossys pipeline check) > fails a dead argv: an option that only prints a brief records nothing",
+    "packages/producer/src/pipeline/owner-wiring.test.ts :: owner.wiring (clossys pipeline check) > fails an answer that records a Writer key a second pinned slot already owns",
+    "packages/producer/src/pipeline/owner-wiring.test.ts :: owner.wiring (clossys pipeline check) > fails an answer the gaps do not see: it re-records a slot no gap is about",
+    "packages/producer/src/pipeline/owner-wiring.test.ts :: owner.wiring (clossys pipeline check) > fails an argv that exits non-zero",
+    "packages/producer/src/pipeline/owner-wiring.test.ts :: owner.wiring (clossys pipeline check) > runs each option where the slot model can read it: no symbolic link above the scratch copy",
+    "packages/producer/src/pipeline/owner-wiring.test.ts :: owner.wiring (clossys pipeline check) > runs the writer's policy question on a scratch copy: every option exits 0, changes its records and the gaps",
+    "packages/producer/src/pipeline/writer-wording.test.ts :: Writer wording findings reach the Writer's owner questions (R2F-W1) > a narrative (JSON block) record reads its title and block text: a redraft that differs is offered",
+    "packages/producer/src/pipeline/writer-wording.test.ts :: Writer wording findings reach the Writer's owner questions (R2F-W1) > a wording finding on pinned copy is one Writer MC packet: the rewrite (recommended), keep as is, own words",
+    "packages/producer/src/pipeline/writer-wording.test.ts :: Writer wording findings reach the Writer's owner questions (R2F-W1) > with no rewrite drafted yet, the Writer drafts first and nothing is asked",
+    "packages/producer/src/server/record-memo.test.ts :: the record memo > answers byte-identically to the unmemoised reader",
+    "packages/producer/src/server/record-memo.test.ts :: the record memo > reads no slot file on a repeated request while nothing changed",
+    "packages/producer/src/server/record-memo.test.ts :: the record memo > sees a live-save on the next request: a new pinned theme candidate, an edited record, a removed pin",
+    "packages/writer/src/admin-studio.test.ts :: packs complete admin copy and resolves every Designer route-label reference through public exports"
+  ]
+}

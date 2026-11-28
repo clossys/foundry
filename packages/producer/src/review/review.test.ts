@@ -6,7 +6,7 @@ import type { ReviewConfig } from "./config.js";
 import { jsonOf } from "./config.js";
 import { scratch } from "./exec.js";
 import { readReceipt, receiptDir, takeReceipt } from "./receipt.js";
-import { formatReview, ReviewArgumentError, runReview, type ReviewOptions } from "./review.js";
+import { failingTests, formatReview, ReviewArgumentError, runReview, splitRed, type ReviewOptions } from "./review.js";
 
 const roots: string[] = [];
 afterAll(() => { for (const root of roots) rmSync(root, { recursive: true, force: true }); });
@@ -99,11 +99,12 @@ describe("clossys review", () => {
     expect(formatReview(report).split("\n").at(-1)).toBe(`MECHANICAL: PASS ${head} ${report.tree}`);
   }, 60_000);
 
-  it("passes the same commit as base and head with no findings and no steps run", () => {
+  it("fails the same commit as base and head: no steps run, so nothing was checked", () => {
     const [repo, , head] = fixture(GUARDED);
     const report = review(repo, head, head);
-    expect(report.verdict).toBe("PASS");
-    expect(report.findings).toEqual([]);
+    expect(report.verdict).toBe("FAIL");
+    expect(fails(report)).toEqual(["review.no-commands"]);
+    expect(report.ran).toEqual({ commands: 0, missing: [] });
     expect(report.changed.files).toEqual([]);
   }, 30_000);
 
@@ -388,5 +389,91 @@ describe("clossys review: fail branches", () => {
     const never = review(repo2, base2, head2);
     expect(fails(never)).toEqual(["fixture.generator-missing"]);
     expect(finding(never, "fixture.generator-missing")!.detail).not.toMatch(/merge base has it/);
+  }, 60_000);
+});
+
+describe("clossys review: fail closed", () => {
+  const bare: ReviewConfig = { ...CONFIG, counts: [], fixtures: [] };
+
+  it("review fails when zero commands ran", () => {
+    // A docs-only diff with nothing configured to run: every step skips, so no command runs at all.
+    const [repo, base, head] = fixture({ "notes.md": "x\n" });
+    const report = review(repo, base, head, { config: bare });
+    expect(report.steps.every(item => item.status !== "fail")).toBe(true);
+    expect(report.ran.commands).toBe(0);
+    expect(fails(report)).toEqual(["review.no-commands"]);
+    expect(report.verdict).toBe("FAIL");
+    expect(report.line).toBe(`MECHANICAL: FAIL ${head} ${report.tree}`);
+    expect(formatReview(report).split("\n").at(-1)).toBe(report.line);
+    // The same diff with one probe configured runs a command, and passes.
+    const probed = review(repo, base, head);
+    expect(probed.ran.commands).toBeGreaterThan(0);
+    expect(probed.verdict).toBe("PASS");
+  }, 30_000);
+
+  it("review fails on a missing install", () => {
+    const [repo, base, head] = fixture({ "notes.md": "x\n" });
+    const missing = review(repo, base, head, { config: { ...CONFIG, install: ["clossys-no-such-installer"] } });
+    expect(missing.ran.missing).toEqual(["clossys-no-such-installer"]);
+    expect(fails(missing)).toEqual(["install", "run.missing"]);
+    expect(missing.verdict).toBe("FAIL");
+    // A packet cannot make a 127 a pass by expecting it: the receipt agrees with the re-run, and it is still FAIL.
+    const [repo2, base2, head2] = fixture({ "src/data.txt": "world\n", "fixture/data.txt": "WORLD\n" }, { "gone.mjs": "process.exit(127);\n" });
+    const packet = packetOf("## Validation\n\n- `node gone.mjs` exits 127.\n");
+    const receipt = takeReceipt(packet, repo2);
+    expect(receipt.commands.map(entry => [entry.exit, entry.expect])).toEqual([[127, 127]]);
+    expect(receipt.verdict).toBe("FAIL");
+    expect(receipt.line).toBe(`RECEIPT: FAIL ${head2}`);
+    const report = review(repo2, base2, head2, { packet });
+    expect(fails(report)).toEqual(["run.missing"]);
+    expect(report.verdict).toBe("FAIL");
+  }, 60_000);
+
+  it("a base-red test is not reported as new red", () => {
+    // math.test.mjs is already red at the base; the head keeps it red and adds a new red test.
+    const red = (name: string, body: string) => `import { test } from "node:test";\nimport assert from "node:assert/strict";\nimport { isAdult } from "./math.mjs";\ntest(${JSON.stringify(name)}, () => { ${body} });\n`;
+    const already = red("isAdult", "assert.equal(isAdult(17), true);");
+    const [repo, base, head] = fixture(
+      { "src/math.mjs": `${BASE["src/math.mjs"]}export const unused = 1;\n`, "src/zz.test.mjs": red("zz", "assert.equal(isAdult(1), true);") },
+      { "src/math.test.mjs": already },
+    );
+    const report = review(repo, base, head);
+    expect(report.baseRed).toEqual(["src/math.test.mjs"]);
+    expect(report.newRed).toEqual(["src/zz.test.mjs"]);
+    expect(fails(report)).toEqual(["tests"]);
+    expect(finding(report, "tests")!.subject).toBe("src/zz.test.mjs");
+    expect(report.findings.find(item => item.id === "tests.base-red")).toMatchObject({ level: "note", subject: "src/math.test.mjs", detail: "also fails run alone at the merge base" });
+    // Only the base-red test red: the verdict is PASS.
+    const [repo2, base2, head2] = fixture({ "src/math.mjs": `${BASE["src/math.mjs"]}export const unused = 1;\n` }, { "src/math.test.mjs": already });
+    const only = review(repo2, base2, head2);
+    expect(only.baseRed).toEqual(["src/math.test.mjs"]);
+    expect(only.newRed).toEqual([]);
+    expect(fails(only)).toEqual([]);
+    expect(only.verdict).toBe("PASS");
+  }, 90_000);
+
+  it("lends base-red from a file that fails to load at base only when the test file is unchanged", () => {
+    const file = "p/a.test.ts", id = `${file} :: group > one`;
+    expect(splitRed([{ file, head: [id], base: [file], unchanged: true }]).baseRed.map(item => item.id)).toEqual([id]);
+    expect(splitRed([{ file, head: [id], base: [file], unchanged: false }]).newRed.map(item => item.id)).toEqual([id]);
+    expect(splitRed([{ file, head: [id], base: [`${file} :: group > two`], unchanged: true }]).newRed.map(item => item.id)).toEqual([id]);
+    expect(splitRed([{ file, head: [id], base: null, unchanged: false }]).newRed.map(item => item.id)).toEqual([id]);
+    expect(splitRed([{ file, head: [id], base: [], unchanged: true }]).newRed.map(item => item.id)).toEqual([id]);
+  });
+
+  it("names vitest failures by test, and holds a --fast record to the head and merge base", () => {
+    const output = "\u001b[31m FAIL \u001b[39m src/a.test.ts > group > keeps one\n FAIL  src/a.test.ts > group > keeps two 12ms\n FAIL  src/other.test.ts > x\n";
+    expect(failingTests("packages/p/src/a.test.ts", "packages/p", output)).toEqual(["packages/p/src/a.test.ts :: group > keeps one", "packages/p/src/a.test.ts :: group > keeps two"]);
+    expect(failingTests("packages/p/src/a.test.ts", "packages/p", "Error: cannot load\n")).toEqual(["packages/p/src/a.test.ts"]);
+    const [repo, base, head] = fixture({ "src/math.mjs": "export function isAdult(age) {\n  return age > 18;\n}\n" });
+    const dir = scratch("review-fast-");
+    roots.push(dir);
+    const record = (at: string, over: string) => { const file = join(dir, `${at.slice(0, 7)}-${over.slice(0, 7)}.json`); writeFileSync(file, JSON.stringify({ schema: "clossys.fast-check/1", head: at, base: over, baseRed: [{ id: "src/math.test.mjs", messages: [] }] })); return file; };
+    const listed = review(repo, base, head, { fast: record(head, base) });
+    expect(listed.baseRed).toEqual(["src/math.test.mjs"]);
+    expect(listed.findings.find(item => item.id === "tests.base-red")!.detail).toMatch(/--fast record/);
+    const stale = review(repo, base, head, { fast: record(base, base) });
+    expect(fails(stale)).toEqual(["fast.record", "tests"]);
+    expect(stale.newRed).toEqual(["src/math.test.mjs"]);
   }, 60_000);
 });

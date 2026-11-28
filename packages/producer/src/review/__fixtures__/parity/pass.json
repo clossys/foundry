@@ -1,0 +1,159 @@
+{
+  "id": "pass",
+  "branch": "claude/r2f-0048-cp1-frontdoor",
+  "head": "998fff8e839403dd5f8e87c6b6bfe77f74fbf8db",
+  "base": "c1589043af288c17e9c59bad813d10d75deaa1cb",
+  "mergeBase": "c1589043af288c17e9c59bad813d10d75deaa1cb",
+  "recorded": {
+    "verdict": "PASS",
+    "newRed": [],
+    "baseRed": null,
+    "commandReds": []
+  },
+  "observed": {
+    "ran": 24,
+    "missing": [],
+    "commands": [],
+    "red": [
+      {
+        "file": "packages/producer/src/check/ref-verbatim-default.test.ts",
+        "head": [
+          "packages/producer/src/check/ref-verbatim-default.test.ts :: default check enforces the actual reference gate without --suites or --strict"
+        ],
+        "base": [
+          "packages/producer/src/check/ref-verbatim-default.test.ts :: default check enforces the actual reference gate without --suites or --strict"
+        ],
+        "unchanged": true
+      },
+      {
+        "file": "packages/producer/src/conform/conform.test.ts",
+        "head": [
+          "packages/producer/src/conform/conform.test.ts :: dogfood probes > upstream-pinned on a model read from disk: the slot/2 reader's refusal of the Director pin makes Designer's CASCADE probe red (U37)"
+        ],
+        "base": [
+          "packages/producer/src/conform/conform.test.ts :: dogfood probes > upstream-pinned on a model read from disk: the slot/2 reader's refusal of the Director pin makes Designer's CASCADE probe red (U37)"
+        ],
+        "unchanged": true
+      },
+      {
+        "file": "packages/producer/src/constitution/pin-gate.test.ts",
+        "head": [
+          "packages/producer/src/constitution/pin-gate.test.ts :: loop.create's exit, candidates.certified (computed by clossys run, never taken from a step's exit) > fails while the slot holds fewer certified tones than its family owes, naming why, and passes once all three are",
+          "packages/producer/src/constitution/pin-gate.test.ts :: the CHOOSE gate: clossys pin on a slot/2 slot > judges every candidate without writing: the gate itself is read-only",
+          "packages/producer/src/constitution/pin-gate.test.ts :: the CHOOSE gate: clossys pin on a slot/2 slot > pins a submitted, certified candidate with the skill's owner form and cites the ranked scorecard",
+          "packages/producer/src/constitution/pin-gate.test.ts :: the CHOOSE gate: clossys pin on a slot/2 slot > refuses a candidate placed by hand (no submit record) and one edited after its submit",
+          "packages/producer/src/constitution/pin-gate.test.ts :: the CHOOSE gate: clossys pin on a slot/2 slot > refuses a malformed clossys.candidate/1 header, naming the header",
+          "packages/producer/src/constitution/pin-gate.test.ts :: the CHOOSE gate: clossys pin on a slot/2 slot > refuses a second source beside the clossys header's (front matter source), naming the header",
+          "packages/producer/src/constitution/pin-gate.test.ts :: the CHOOSE gate: clossys pin on a slot/2 slot > refuses a submitted candidate with no passing verdict, naming the reason"
+        ],
+        "base": [
+          "packages/producer/src/constitution/pin-gate.test.ts :: loop.create's exit, candidates.certified (computed by clossys run, never taken from a step's exit) > fails while the slot holds fewer certified tones than its family owes, naming why, and passes once all three are",
+          "packages/producer/src/constitution/pin-gate.test.ts :: the CHOOSE gate: clossys pin on a slot/2 slot > judges every candidate without writing: the gate itself is read-only",
+          "packages/producer/src/constitution/pin-gate.test.ts :: the CHOOSE gate: clossys pin on a slot/2 slot > pins a submitted, certified candidate with the skill's owner form and cites the ranked scorecard",
+          "packages/producer/src/constitution/pin-gate.test.ts :: the CHOOSE gate: clossys pin on a slot/2 slot > refuses a candidate placed by hand (no submit record) and one edited after its submit",
+          "packages/producer/src/constitution/pin-gate.test.ts :: the CHOOSE gate: clossys pin on a slot/2 slot > refuses a malformed clossys.candidate/1 header, naming the header",
+          "packages/producer/src/constitution/pin-gate.test.ts :: the CHOOSE gate: clossys pin on a slot/2 slot > refuses a second source beside the clossys header's (front matter source), naming the header",
+          "packages/producer/src/constitution/pin-gate.test.ts :: the CHOOSE gate: clossys pin on a slot/2 slot > refuses a submitted candidate with no passing verdict, naming the reason"
+        ],
+        "unchanged": true
+      },
+      {
+        "file": "packages/producer/src/loop/flows.test.ts",
+        "head": [
+          "packages/producer/src/loop/flows.test.ts :: loop.create through the operator CLI with the real certify step (no stub; foundry-build-0048 U3 fix r1) > gives a bad candidate a different verdict: certify exits 1 with the certifier's reason and the run never reaches done",
+          "packages/producer/src/loop/flows.test.ts :: loop.create through the operator CLI with the real certify step (no stub; foundry-build-0048 U3 fix r1) > reaches the exit once three certified tones are submitted: certify is `clossys options --check`, and --wrote hashes the submitted file",
+          "packages/producer/src/loop/flows.test.ts :: loop.slot and loop.scope through the operator CLI (no stub; foundry-build-0048 U5) > creates a leaf: overlap check, the assignee decides, the owner signs, ia places it and the requester is linked and notified",
+          "packages/producer/src/loop/flows.test.ts :: loop.slot and loop.scope through the operator CLI (no stub; foundry-build-0048 U5) > creates over a listed overlap only with a reason: ia records the overlap ids and the reason, and the owner signs the new leaf",
+          "packages/producer/src/loop/flows.test.ts :: loop.slot and loop.scope through the operator CLI (no stub; foundry-build-0048 U5) > files a cited need in code before the standard loop.scope agent steps; the agent's raise of it writes nothing (--agent designer)",
+          "packages/producer/src/loop/flows.test.ts :: loop.slot and loop.scope through the operator CLI (no stub; foundry-build-0048 U5) > files a cited need in code before the standard loop.scope agent steps; the agent's raise of it writes nothing (no --agent)",
+          "packages/producer/src/loop/flows.test.ts :: loop.slot and loop.scope through the operator CLI (no stub; foundry-build-0048 U5) > files a slot request for a slot input naming no slot (SCOPE demand): requests.filed is red until it is filed",
+          "packages/producer/src/loop/flows.test.ts :: loop.slot and loop.scope through the operator CLI (no stub; foundry-build-0048 U5) > refuses a standard loop.scope step that reports a request under another agent's name (--agent designer)",
+          "packages/producer/src/loop/flows.test.ts :: loop.slot and loop.scope through the operator CLI (no stub; foundry-build-0048 U5) > refuses a standard loop.scope step that reports a request under another agent's name (no --agent)",
+          "packages/producer/src/loop/flows.test.ts :: loop.slot and loop.scope through the operator CLI (no stub; foundry-build-0048 U5) > refuses an overlapping proposal (equal or subset inputs in one L2 and kind family); a reuse links with no owner sign"
+        ],
+        "base": [
+          "packages/producer/src/loop/flows.test.ts :: loop.create through the operator CLI with the real certify step (no stub; foundry-build-0048 U3 fix r1) > gives a bad candidate a different verdict: certify exits 1 with the certifier's reason and the run never reaches done",
+          "packages/producer/src/loop/flows.test.ts :: loop.create through the operator CLI with the real certify step (no stub; foundry-build-0048 U3 fix r1) > reaches the exit once three certified tones are submitted: certify is `clossys options --check`, and --wrote hashes the submitted file",
+          "packages/producer/src/loop/flows.test.ts :: loop.slot and loop.scope through the operator CLI (no stub; foundry-build-0048 U5) > creates a leaf: overlap check, the assignee decides, the owner signs, ia places it and the requester is linked and notified",
+          "packages/producer/src/loop/flows.test.ts :: loop.slot and loop.scope through the operator CLI (no stub; foundry-build-0048 U5) > creates over a listed overlap only with a reason: ia records the overlap ids and the reason, and the owner signs the new leaf",
+          "packages/producer/src/loop/flows.test.ts :: loop.slot and loop.scope through the operator CLI (no stub; foundry-build-0048 U5) > files a cited need in code before the standard loop.scope agent steps; the agent's raise of it writes nothing (--agent designer)",
+          "packages/producer/src/loop/flows.test.ts :: loop.slot and loop.scope through the operator CLI (no stub; foundry-build-0048 U5) > files a cited need in code before the standard loop.scope agent steps; the agent's raise of it writes nothing (no --agent)",
+          "packages/producer/src/loop/flows.test.ts :: loop.slot and loop.scope through the operator CLI (no stub; foundry-build-0048 U5) > files a slot request for a slot input naming no slot (SCOPE demand): requests.filed is red until it is filed",
+          "packages/producer/src/loop/flows.test.ts :: loop.slot and loop.scope through the operator CLI (no stub; foundry-build-0048 U5) > refuses a standard loop.scope step that reports a request under another agent's name (--agent designer)",
+          "packages/producer/src/loop/flows.test.ts :: loop.slot and loop.scope through the operator CLI (no stub; foundry-build-0048 U5) > refuses a standard loop.scope step that reports a request under another agent's name (no --agent)",
+          "packages/producer/src/loop/flows.test.ts :: loop.slot and loop.scope through the operator CLI (no stub; foundry-build-0048 U5) > refuses an overlapping proposal (equal or subset inputs in one L2 and kind family); a reuse links with no owner sign"
+        ],
+        "unchanged": true
+      },
+      {
+        "file": "packages/producer/src/migrate/requests.test.ts",
+        "head": [
+          "packages/producer/src/migrate/requests.test.ts :: clossys migrate requests > maps status faithfully: a built need closes changed through the close gates; approved, a closed slot and a done record the owner answers are findings, never open work"
+        ],
+        "base": [
+          "packages/producer/src/migrate/requests.test.ts :: clossys migrate requests > maps status faithfully: a built need closes changed through the close gates; approved, a closed slot and a done record the owner answers are findings, never open work"
+        ],
+        "unchanged": true
+      },
+      {
+        "file": "packages/producer/src/pipeline/chain.test.ts",
+        "head": [
+          "packages/producer/src/pipeline/chain.test.ts :: clossys next > opens the ia step on a fresh workspace and places a Foundry IA through clossys ia --adopt, the Director first"
+        ],
+        "base": [
+          "packages/producer/src/pipeline/chain.test.ts :: clossys next > opens the ia step on a fresh workspace and places a Foundry IA through clossys ia --adopt, the Director first"
+        ],
+        "unchanged": true
+      },
+      {
+        "file": "packages/producer/src/read/status-absent-only.test.ts",
+        "head": [
+          "packages/producer/src/read/status-absent-only.test.ts :: status file readers > throws a pinned candidate it cannot read",
+          "packages/producer/src/read/status-absent-only.test.ts :: status file readers > throws a producer folder it cannot list"
+        ],
+        "base": [
+          "packages/producer/src/read/status-absent-only.test.ts :: status file readers > throws a pinned candidate it cannot read",
+          "packages/producer/src/read/status-absent-only.test.ts :: status file readers > throws a producer folder it cannot list"
+        ],
+        "unchanged": true
+      },
+      {
+        "file": "packages/producer/src/records/schema.test.ts",
+        "head": [
+          "packages/producer/src/records/schema.test.ts :: types match schemas > clossys.queue-entry/2: the type's keys equal the schema's properties"
+        ],
+        "base": [
+          "packages/producer/src/records/schema.test.ts :: types match schemas > clossys.queue-entry/2: the type's keys equal the schema's properties"
+        ],
+        "unchanged": true
+      }
+    ]
+  },
+  "observedNewRed": [],
+  "observedBaseRed": [
+    "packages/producer/src/check/ref-verbatim-default.test.ts :: default check enforces the actual reference gate without --suites or --strict",
+    "packages/producer/src/conform/conform.test.ts :: dogfood probes > upstream-pinned on a model read from disk: the slot/2 reader's refusal of the Director pin makes Designer's CASCADE probe red (U37)",
+    "packages/producer/src/constitution/pin-gate.test.ts :: loop.create's exit, candidates.certified (computed by clossys run, never taken from a step's exit) > fails while the slot holds fewer certified tones than its family owes, naming why, and passes once all three are",
+    "packages/producer/src/constitution/pin-gate.test.ts :: the CHOOSE gate: clossys pin on a slot/2 slot > judges every candidate without writing: the gate itself is read-only",
+    "packages/producer/src/constitution/pin-gate.test.ts :: the CHOOSE gate: clossys pin on a slot/2 slot > pins a submitted, certified candidate with the skill's owner form and cites the ranked scorecard",
+    "packages/producer/src/constitution/pin-gate.test.ts :: the CHOOSE gate: clossys pin on a slot/2 slot > refuses a candidate placed by hand (no submit record) and one edited after its submit",
+    "packages/producer/src/constitution/pin-gate.test.ts :: the CHOOSE gate: clossys pin on a slot/2 slot > refuses a malformed clossys.candidate/1 header, naming the header",
+    "packages/producer/src/constitution/pin-gate.test.ts :: the CHOOSE gate: clossys pin on a slot/2 slot > refuses a second source beside the clossys header's (front matter source), naming the header",
+    "packages/producer/src/constitution/pin-gate.test.ts :: the CHOOSE gate: clossys pin on a slot/2 slot > refuses a submitted candidate with no passing verdict, naming the reason",
+    "packages/producer/src/loop/flows.test.ts :: loop.create through the operator CLI with the real certify step (no stub; foundry-build-0048 U3 fix r1) > gives a bad candidate a different verdict: certify exits 1 with the certifier's reason and the run never reaches done",
+    "packages/producer/src/loop/flows.test.ts :: loop.create through the operator CLI with the real certify step (no stub; foundry-build-0048 U3 fix r1) > reaches the exit once three certified tones are submitted: certify is `clossys options --check`, and --wrote hashes the submitted file",
+    "packages/producer/src/loop/flows.test.ts :: loop.slot and loop.scope through the operator CLI (no stub; foundry-build-0048 U5) > creates a leaf: overlap check, the assignee decides, the owner signs, ia places it and the requester is linked and notified",
+    "packages/producer/src/loop/flows.test.ts :: loop.slot and loop.scope through the operator CLI (no stub; foundry-build-0048 U5) > creates over a listed overlap only with a reason: ia records the overlap ids and the reason, and the owner signs the new leaf",
+    "packages/producer/src/loop/flows.test.ts :: loop.slot and loop.scope through the operator CLI (no stub; foundry-build-0048 U5) > files a cited need in code before the standard loop.scope agent steps; the agent's raise of it writes nothing (--agent designer)",
+    "packages/producer/src/loop/flows.test.ts :: loop.slot and loop.scope through the operator CLI (no stub; foundry-build-0048 U5) > files a cited need in code before the standard loop.scope agent steps; the agent's raise of it writes nothing (no --agent)",
+    "packages/producer/src/loop/flows.test.ts :: loop.slot and loop.scope through the operator CLI (no stub; foundry-build-0048 U5) > files a slot request for a slot input naming no slot (SCOPE demand): requests.filed is red until it is filed",
+    "packages/producer/src/loop/flows.test.ts :: loop.slot and loop.scope through the operator CLI (no stub; foundry-build-0048 U5) > refuses a standard loop.scope step that reports a request under another agent's name (--agent designer)",
+    "packages/producer/src/loop/flows.test.ts :: loop.slot and loop.scope through the operator CLI (no stub; foundry-build-0048 U5) > refuses a standard loop.scope step that reports a request under another agent's name (no --agent)",
+    "packages/producer/src/loop/flows.test.ts :: loop.slot and loop.scope through the operator CLI (no stub; foundry-build-0048 U5) > refuses an overlapping proposal (equal or subset inputs in one L2 and kind family); a reuse links with no owner sign",
+    "packages/producer/src/migrate/requests.test.ts :: clossys migrate requests > maps status faithfully: a built need closes changed through the close gates; approved, a closed slot and a done record the owner answers are findings, never open work",
+    "packages/producer/src/pipeline/chain.test.ts :: clossys next > opens the ia step on a fresh workspace and places a Foundry IA through clossys ia --adopt, the Director first",
+    "packages/producer/src/read/status-absent-only.test.ts :: status file readers > throws a pinned candidate it cannot read",
+    "packages/producer/src/read/status-absent-only.test.ts :: status file readers > throws a producer folder it cannot list",
+    "packages/producer/src/records/schema.test.ts :: types match schemas > clossys.queue-entry/2: the type's keys equal the schema's properties"
+  ]
+}

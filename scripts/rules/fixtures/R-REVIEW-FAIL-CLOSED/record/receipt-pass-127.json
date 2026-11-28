@@ -1,0 +1,9 @@
+{
+  "schema": "clossys.receipt/1",
+  "head": "1111111111111111111111111111111111111111",
+  "dirty": false,
+  "commands": [{ "id": "c1", "run": "npm run typecheck -w @demo/pkg", "expect": 127, "exit": 127, "ms": 3, "tailSha256": "0000000000000000000000000000000000000000000000000000000000000000" }],
+  "skipped": [],
+  "verdict": "PASS",
+  "line": "RECEIPT: PASS 1111111111111111111111111111111111111111"
+}

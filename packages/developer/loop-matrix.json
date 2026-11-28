@@ -1,0 +1,36 @@
+{
+  "schemaVersion": 1,
+  "role": "@clossys/developer",
+  "cells": [
+    {
+      "capability": "confirm-scaffold-conformance",
+      "stage": "sense",
+      "applicable": false,
+      "reason": "scaffolded starting point (issue #1203) -- this capability's real stage content is authored in Stage C, not invented by the scaffold"
+    },
+    {
+      "capability": "confirm-scaffold-conformance",
+      "stage": "judge",
+      "applicable": false,
+      "reason": "scaffolded starting point (issue #1203) -- this capability's real stage content is authored in Stage C, not invented by the scaffold"
+    },
+    {
+      "capability": "confirm-scaffold-conformance",
+      "stage": "act",
+      "applicable": false,
+      "reason": "scaffolded starting point (issue #1203) -- this capability's real stage content is authored in Stage C, not invented by the scaffold"
+    },
+    {
+      "capability": "confirm-scaffold-conformance",
+      "stage": "verify",
+      "applicable": false,
+      "reason": "scaffolded starting point (issue #1203) -- this capability's real stage content is authored in Stage C, not invented by the scaffold"
+    },
+    {
+      "capability": "confirm-scaffold-conformance",
+      "stage": "learn",
+      "applicable": false,
+      "reason": "scaffolded starting point (issue #1203) -- this capability's real stage content is authored in Stage C, not invented by the scaffold"
+    }
+  ]
+}

@@ -1,0 +1,8 @@
+{
+  "schema": "clossys.run-queue/1",
+  "seq": 2,
+  "entries": [
+    { "id": "run-1", "seq": 1, "unit": "UNIT-A", "head": "1111111111111111111111111111111111111111", "kind": "review", "activeExecutor": false, "criticalPath": 0, "heavy": true, "state": "running", "enqueuedAt": "2026-11-28T00:00:00.000Z" },
+    { "id": "run-2", "seq": 2, "unit": "UNIT-A", "head": "3333333333333333333333333333333333333333", "kind": "review", "activeExecutor": false, "criticalPath": 0, "heavy": true, "state": "queued", "enqueuedAt": "2026-11-28T00:01:00.000Z" }
+  ]
+}

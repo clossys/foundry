@@ -1,0 +1,6 @@
+{
+  "rules": [
+    { "id": "R-FIXTURE-OWNED", "owner_agent": "developer" },
+    { "id": "R-FIXTURE-OTHER", "owner_agent": "producer" }
+  ]
+}
