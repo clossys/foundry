@@ -81,7 +81,7 @@
     "build": "tsc -p tsconfig.json",
     "prepublishOnly": "node ../../scripts/check-name-collision.mjs . && npm run build",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "test": "vitest run"
+    "test": "vitest run && npm run --prefix ../.. check:fast-before-review"
   },
   "publishConfig": {
     "registry": "https://registry.npmjs.org",

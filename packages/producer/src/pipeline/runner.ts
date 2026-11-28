@@ -163,6 +163,8 @@ async function run(argv: readonly string[], cwd: string, steps: readonly Step[],
     if (head === "index") return await (await import("../cli/index-verb.js")).runIndexCli(argv.slice(1), cwd);
     // The mechanical review and the executor's receipt (docs/review.md (not shipped)): every re-runnable review step, from code.
     if (head === "review") return await (await import("../cli/review.js")).runReviewCli(argv.slice(1), cwd);
+    // Reviewer's quick gate over a diff (check/fast.ts): its own parser; `check --help` documents it in USAGE.
+    if (head === "check" && argv.includes("--fast") && !argv.includes("--help")) return await (await import("../cli/fast.js")).runFastCli(argv, cwd);
     if (head === "receipt") return await (await import("../cli/review.js")).runReceiptCli(argv.slice(1), cwd);
     // The Planner's unit launch (CP1-PLANNERRUN): env and tier by rule, then the launch and its record in the loop state.
     if (head === "unit") return await (await import("../cli/unit.js")).runUnitCli(argv.slice(1), cwd);

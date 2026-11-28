@@ -1160,6 +1160,46 @@
         }
       ],
       "note": "clossys unit tier applies the tier table in packages/planner/skill/SKILL.md as data: a gate-class term or Gate: YES is high; one behaviour, at most three files and a named failing test is low; otherwise mid. That tier is the floor; clossys unit check refuses a packet whose Tier: is below it. The fixture is a gate-class packet that says low."
+    },
+    {
+      "id": "R-FAST-BEFORE-REVIEW",
+      "owner_words": {
+        "quote": "why we are catching so many issues so late ... deterministic runs need to be quick, and we need to sequence our testing progressively",
+        "date": "2026-11-27"
+      },
+      "owner_agent": "reviewer",
+      "status": "enforced",
+      "checks": [
+        ".#check:fast-before-review"
+      ],
+      "related": [
+        ".#check:gates"
+      ],
+      "fixture": "scripts/rules/fixtures/R-FAST-BEFORE-REVIEW",
+      "fixture_runs": [
+        {
+          "check": ".#check:fast-before-review",
+          "cwd": ".",
+          "fixture": "scripts/rules/fixtures/R-FAST-BEFORE-REVIEW/skill",
+          "run": "node scripts/check-fast-before-review.mjs --root {fixture}",
+          "expect": "^missing-rule\\s+packages/reviewer/skill/SKILL\\.md"
+        },
+        {
+          "check": ".#check:fast-before-review",
+          "cwd": ".",
+          "fixture": "scripts/rules/fixtures/R-FAST-BEFORE-REVIEW/record",
+          "run": "node scripts/check-fast-before-review.mjs --root {fixture} --record {fixture}/fast-fail.json --head 1111111111111111111111111111111111111111",
+          "expect": "^not-fast-pass\\s"
+        },
+        {
+          "check": ".#check:fast-before-review",
+          "cwd": ".",
+          "fixture": "scripts/rules/fixtures/R-FAST-BEFORE-REVIEW/record",
+          "run": "node scripts/check-fast-before-review.mjs --root {fixture} --record {fixture}/fast-pass-earlier.json --head 1111111111111111111111111111111111111111",
+          "expect": "^wrong-head\\s"
+        }
+      ],
+      "note": "Every executor runs clossys check --fast (packages/producer/src/check/fast.ts) before DONE, and review starts only on a FAST PASS record at the exact head. check:fast-before-review fails when the Reviewer skill no longer states that rule, and, given --record and --head, when the record is not a FAST PASS that ran a command at exactly that head. The fixtures are a skill without the rule, a FAST FAIL record, and a FAST PASS record at an earlier head."
     }
   ],
   "exemptions": [
