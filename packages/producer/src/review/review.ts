@@ -254,6 +254,46 @@ export function failingTests(file: string, pkg: string, output: string): string[
   return names.size ? [...names].sort() : [file];
 }
 
+/** One red test file: its failing tests at head, and with the file run alone at the merge base (null: no such file there). */
+export interface RedObservation { readonly file: string; readonly head: readonly string[]; readonly base: readonly string[] | null }
+
+/**
+ * New red and base-red, from what ran: a failing test at head is base-red when the same id (`file :: name`, or the
+ * file) also failed at the merge base, or when a --fast record at this head lists it base-red; every other is new red.
+ * A file that fails at base for another reason (a different test, or failing to load) lends its head failures nothing.
+ */
+export function splitRed(observed: readonly RedObservation[], listed?: Set<string>): { newRed: { id: string; file: string }[]; baseRed: { id: string; file: string; by: "base" | "fast" }[] } {
+  const newRed: { id: string; file: string }[] = [], baseRed: { id: string; file: string; by: "base" | "fast" }[] = [];
+  for (const item of observed) for (const id of item.head) {
+    if (listed && listedBaseRed(listed, id)) baseRed.push({ id, file: item.file, by: "fast" });
+    else if (item.base?.includes(id)) baseRed.push({ id, file: item.file, by: "base" });
+    else newRed.push({ id, file: item.file });
+  }
+  return { newRed: newRed.sort((a, b) => a.id.localeCompare(b.id)), baseRed: baseRed.sort((a, b) => a.id.localeCompare(b.id)) };
+}
+
+/** What a mechanical run observed, as a parity record keeps it: the commands with their exits, and each red test file. */
+export interface MechanicalObservation {
+  /** Commands run in all (tests included). */
+  readonly ran: number;
+  readonly missing?: readonly string[];
+  /** Packet commands with the exit each was expected to give and gave. */
+  readonly commands: readonly { readonly run: string; readonly expect: number; readonly exit: number }[];
+  readonly red: readonly RedObservation[];
+}
+
+/**
+ * The verdict and lists the review's own rules give an observation: FAIL on any new red test, any packet command not
+ * at its expected exit (or exiting 127), or nothing run at all (FAIL_CLOSED); base-red tests are reported only.
+ */
+export function mechanicalVerdict(observation: MechanicalObservation): { verdict: "PASS" | "FAIL"; newRed: string[]; baseRed: string[]; commandReds: string[] } {
+  const split = splitRed(observation.red);
+  const commandReds = observation.commands.filter(command => command.exit !== command.expect || command.exit === 127).map(command => `\`${command.run}\` exit ${command.exit} expected ${command.expect}`);
+  const closed = failClosed({ commands: observation.ran, missing: [...(observation.missing ?? []), ...observation.commands.filter(command => command.exit === 127).map(command => command.run)] });
+  const verdict = split.newRed.length || commandReds.length || closed.length ? "FAIL" : "PASS";
+  return { verdict, newRed: split.newRed.map(item => item.id), baseRed: split.baseRed.map(item => item.id), commandReds };
+}
+
 /** Runs one test file alone at the merge base: its failing tests, or null when the merge base has no such file. */
 type BaseRun = (file: string) => Set<string> | null;
 
@@ -289,7 +329,7 @@ function baseRunner(repo: string, mergeBase: string, at: string, trees: Worktree
  * the --fast record lists it base-red: then it is base-red, a note. Returns the red files and both lists.
  */
 function tests(at: string, files: readonly string[], uncovered: readonly string[], step: StepFn, fail: FailFn, findings: Finding[], baseRun: BaseRun, fastBaseRed: Set<string> | undefined, timeoutMs: number): { red: Set<string>; newRed: string[]; baseRed: string[] } {
-  const red = new Set<string>(), newRed: string[] = [], baseRed: string[] = [];
+  const red = new Set<string>(), observed: RedObservation[] = [], results = new Map<string, RunResult>();
   let ms = 0;
   for (const file of files) {
     const pkg = packageOf(at, file), command = testCommand(at, pkg, file);
@@ -297,18 +337,16 @@ function tests(at: string, files: readonly string[], uncovered: readonly string[
     ms += result.ms;
     if (!result.exit) continue;
     red.add(file);
-    for (const id of failingTests(file, pkg, result.output)) {
-      const listed = fastBaseRed !== undefined && listedBaseRed(fastBaseRed, id);
-      const atBase = listed ? null : baseRun(file);
-      if (listed || atBase?.has(id)) {
-        baseRed.push(id);
-        findings.push({ id: "tests.base-red", level: "note", subject: id, detail: listed ? "listed base-red by the --fast record at this head" : "also fails run alone at the merge base" });
-      } else {
-        newRed.push(id);
-        fail("tests", id, failed(result, 1));
-      }
-    }
+    results.set(file, result);
+    const head = failingTests(file, pkg, result.output);
+    // The merge base runs only when a failing test is not already listed base-red by the --fast record.
+    const base = fastBaseRed && head.every(id => listedBaseRed(fastBaseRed, id)) ? [] : baseRun(file);
+    observed.push({ file, head, base: base === null ? null : [...base] });
   }
+  const split = splitRed(observed, fastBaseRed);
+  for (const item of split.baseRed) findings.push({ id: "tests.base-red", level: "note", subject: item.id, detail: item.by === "fast" ? "listed base-red by the --fast record at this head" : "also fails run alone at the merge base" });
+  for (const item of split.newRed) fail("tests", item.id, failed(results.get(item.file)!, 1));
+  const newRed = split.newRed.map(item => item.id), baseRed = split.baseRed.map(item => item.id);
   for (const source of uncovered) fail("test.uncovered", source, "changed, and no test file reaches it through the import graph");
   const status = newRed.length || uncovered.length ? "fail" : files.length ? "pass" : "skip";
   step("tests", status, `${files.length - red.size}/${files.length} file(s) green, ${newRed.length} new red, ${baseRed.length} base-red, ${uncovered.length} changed source(s) uncovered`, ms);

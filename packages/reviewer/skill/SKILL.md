@@ -22,6 +22,22 @@ Every executor runs `clossys check --fast` before DONE; review starts only on a 
 - Before judging, check the record against the head under review: `node scripts/check-fast-before-review.mjs --record <fast.json> --head <sha>` exits 1 on anything but a FAST PASS at that exact commit.
 - A test listed under `slow:` takes over 2s alone. It does not fail the run; `--file-requests` files one request per slow test to the agent that owns it. No timeout is raised.
 
+## Mechanical review fails closed
+
+A mechanical review that ran no command, met a missing install (exit 127) or printed no verdict is FAIL, never PASS; a red test that also fails alone at the merge base is base-red, not new red.
+
+- `clossys review <base> <head> --record <review.json>` ends `MECHANICAL: PASS|FAIL <head> <tree>` and writes the JSON record: `ran` (commands run, those that exited 127), `newRed` and `baseRed` (`file :: test name` for vitest), and the findings. `--fast <fast.json>` lends the base-red list of a `clossys check --fast` record taken at the same head over the same merge base.
+- `clossys receipt --packet <unit.md>` ends `RECEIPT: PASS|FAIL <head>`; a packet with no command, or any command exiting 127, is FAIL.
+- `clossys review --mutation <patch> --expect-fail <regex>` applies the patch, runs, reverses it and is FAIL unless a run failed for the stated reason and the tree is byte-identical afterwards.
+- Before trusting a record, `node scripts/check-review-fail-closed.mjs --record <file>` exits 1 on a PASS that ran nothing, met a 127, or has no verdict line.
+
+## One run queue
+
+Every mechanical run waits in the one run queue, installs for active executors first and then by critical path; a wait never gives up, and a newer head cancels the runs of its unit at the older head.
+
+- The queue (`packages/producer/src/review/queue.ts`) admits a run only when a heavy slot is free and no run ahead of it waits for one; installs for active executors, then reviews, then re-runs, the longer critical path first.
+- `node scripts/check-review-fail-closed.mjs --queue <queue.json> --capacity <slots>` exits 1 on live runs of one unit at two heads, more running than the slots, or a run in a give-up state.
+
 ## Run the feedback loop
 
 Invoke with `/clossys-reviewer loop` (Claude Code) or `@clossys-reviewer loop` (Cursor). One invocation runs one iteration and stops at the approval gate inside judge, as Foundry's loop contract defines.
@@ -65,6 +81,8 @@ when this list and the registry differ.
 - R-CHECKS-WIRED
 - R-REVIEW-MECHANICAL
 - R-FAST-BEFORE-REVIEW
+- R-REVIEW-FAIL-CLOSED
+- R-REVIEW-RUN-QUEUE
 <!-- owned-rules:end -->
 
 ## When this package is installed

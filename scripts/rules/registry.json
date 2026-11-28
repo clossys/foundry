@@ -1150,6 +1150,93 @@
         }
       ],
       "note": "Every executor runs clossys check --fast (packages/producer/src/check/fast.ts) before DONE, and review starts only on a FAST PASS record at the exact head. check:fast-before-review fails when the Reviewer skill no longer states that rule, and, given --record and --head, when the record is not a FAST PASS that ran a command at exactly that head. The fixtures are a skill without the rule, a FAST FAIL record, and a FAST PASS record at an earlier head."
+    },
+    {
+      "id": "R-REVIEW-FAIL-CLOSED",
+      "owner_words": {
+        "quote": "dont wait for cp2 to migrate everything we already do to the new agents; let cp2 work on the new requests/requirements but any existing processes should migrate immediately",
+        "date": "2026-11-28"
+      },
+      "owner_agent": "reviewer",
+      "status": "enforced",
+      "checks": [
+        ".#check:review-fail-closed"
+      ],
+      "related": [
+        ".#check:gates"
+      ],
+      "fixture": "scripts/rules/fixtures/R-REVIEW-FAIL-CLOSED",
+      "fixture_runs": [
+        {
+          "check": ".#check:review-fail-closed",
+          "cwd": ".",
+          "fixture": "scripts/rules/fixtures/R-REVIEW-FAIL-CLOSED/skill",
+          "run": "node scripts/check-review-fail-closed.mjs --root {fixture}",
+          "expect": "^missing-rule\\s+packages/reviewer/skill/SKILL\\.md"
+        },
+        {
+          "check": ".#check:review-fail-closed",
+          "cwd": ".",
+          "fixture": "scripts/rules/fixtures/R-REVIEW-FAIL-CLOSED/record",
+          "run": "node scripts/check-review-fail-closed.mjs --root {fixture} --record {fixture}/review-pass-zero.json",
+          "expect": "^pass-on-nothing\\s"
+        },
+        {
+          "check": ".#check:review-fail-closed",
+          "cwd": ".",
+          "fixture": "scripts/rules/fixtures/R-REVIEW-FAIL-CLOSED/record",
+          "run": "node scripts/check-review-fail-closed.mjs --root {fixture} --record {fixture}/receipt-pass-127.json",
+          "expect": "^pass-on-missing\\s"
+        },
+        {
+          "check": ".#check:review-fail-closed",
+          "cwd": ".",
+          "fixture": "scripts/rules/fixtures/R-REVIEW-FAIL-CLOSED/record",
+          "run": "node scripts/check-review-fail-closed.mjs --root {fixture} --record {fixture}/review-no-verdict.json",
+          "expect": "^no-verdict\\s"
+        }
+      ],
+      "note": "clossys review, clossys receipt and clossys review --mutation (packages/producer/src/review) fail closed: zero commands run, any command exiting 127, or no verdict line is FAIL, never PASS, and a red test that also fails alone at the merge base is base-red, not new red. check:review-fail-closed fails when the Reviewer skill no longer states the rule, and, given --record, on a PASS record that ran nothing, met a 127, or has no verdict line agreeing with its verdict. The fixtures are a skill without the rule, a PASS review that ran no command, a PASS receipt with a 127, and a review record with no verdict."
+    },
+    {
+      "id": "R-REVIEW-RUN-QUEUE",
+      "owner_words": {
+        "quote": "dont wait for cp2 to migrate everything we already do to the new agents; let cp2 work on the new requests/requirements but any existing processes should migrate immediately",
+        "date": "2026-11-28"
+      },
+      "owner_agent": "reviewer",
+      "status": "enforced",
+      "checks": [
+        ".#check:review-fail-closed"
+      ],
+      "related": [
+        ".#check:gates"
+      ],
+      "fixture": "scripts/rules/fixtures/R-REVIEW-RUN-QUEUE",
+      "fixture_runs": [
+        {
+          "check": ".#check:review-fail-closed",
+          "cwd": ".",
+          "fixture": "scripts/rules/fixtures/R-REVIEW-RUN-QUEUE/skill",
+          "run": "node scripts/check-review-fail-closed.mjs --root {fixture}",
+          "expect": "^missing-rule\\s+packages/reviewer/skill/SKILL\\.md"
+        },
+        {
+          "check": ".#check:review-fail-closed",
+          "cwd": ".",
+          "fixture": "scripts/rules/fixtures/R-REVIEW-RUN-QUEUE/queue",
+          "run": "node scripts/check-review-fail-closed.mjs --root {fixture} --queue {fixture}/queue-superseded.json --capacity 3",
+          "expect": "^superseded-live\\s"
+        },
+        {
+          "check": ".#check:review-fail-closed",
+          "cwd": ".",
+          "fixture": "scripts/rules/fixtures/R-REVIEW-RUN-QUEUE/queue",
+          "run": "node scripts/check-review-fail-closed.mjs --root {fixture} --queue {fixture}/queue-gave-up.json --capacity 3",
+          "expect": "^gave-up\\s"
+        }
+      ],
+      "note": "Mechanical runs wait in one run queue (packages/producer/src/review/queue.ts): installs for active executors first, then reviews, then re-runs, the longer critical path first; a wait looks again until it is admitted or cancelled and never gives up; enqueuing a newer head cancels the unit's runs at the older head. check:review-fail-closed fails when the Reviewer skill no longer states the rule, and, given --queue and --capacity, on live runs of one unit at two heads, more heavy runs than slots, or a give-up state. The fixtures are a skill without the rule, a queue with a superseded head still live, and a queue with a run that gave up."
     }
   ],
   "exemptions": [
