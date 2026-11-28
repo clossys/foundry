@@ -85,7 +85,7 @@
       },
       {
         "id": "reports",
-        "does": "take the tool feedback back (clossys request --kind report --recheck): after a reinstall, re-run each open queue.report entry's recorded check and close the passing ones fixed; a report whose check still fails stays open",
+        "does": "take the tool feedback back (clossys request --kind report --recheck): after a reinstall, re-run each open queue.report entry's recorded check and list the passing ones, each to close fixed with its guard rule (--guard R-<id>); a report whose check still fails stays open",
         "decider": {
           "by": "code"
         },

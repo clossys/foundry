@@ -91,6 +91,7 @@ export const RULE_FLOOR = Object.freeze({
   "R-SINGLE-READER": { ".#check:single-reader": 1 },
   "R-PIN-PROPAGATION": { ".#check:pin-propagation": 1 },
   "R-EVERY-CANDIDATE-PREVIEWABLE": { ".#check:every-candidate-previewable": 1 },
+  "R-REPORT-GUARD": { ".#check:report-guards": 2 },
 });
 /** Root scripts that must exist: the two entries every reachability trace starts from, and the meta-checks. */
 export const ROOT_SCRIPT_FLOOR = Object.freeze(["check", "test", ...META_CHECKS]);

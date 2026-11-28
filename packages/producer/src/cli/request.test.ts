@@ -4,13 +4,13 @@
  * its recorded check, and named by every installed agent skill: the report rule, the "Your queue" first step, and
  * Producer as the front door for covered work. Runs on a tmp copy of the consumer fixture; nothing outside it is written.
  */
-import { cpSync, mkdtempSync, readFileSync, realpathSync, rmSync } from "node:fs";
+import { cpSync, mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { closeReport, evidenceOf, fileReport, readReport, recheckReports, type CheckRunner, type ReportEntry } from "../records/report.js";
-import { REPORT_RULE, reportIssues, reportRoute } from "../records/report-shape.js";
+import { closeReport, evidenceOf, fileReport, fileStepReport, listReports, readReport, recheckReports, type CheckRunner, type ReportEntry } from "../records/report.js";
+import { REPORT_RULE, reportIssues, reportRoute, reportSignature } from "../records/report-shape.js";
 import { runRequestCli } from "./request.js";
 
 // The check runs go through the in-process verb runner; at the workstation's shared load they exceed 5 s.
@@ -30,7 +30,20 @@ function world() {
   const root = realpathSync(mkdtempSync(join(tmpdir(), "request-report-")));
   roots.push(root);
   cpSync(FIXTURE, root, { recursive: true });
+  registry(root);
   return { root, consumer: join(root, "clossys") };
+}
+/** CP1-LOOP-LEARN: the root's rule registry a fixed close's guard names: R-ENGINE-GUARD has a fixture run, R-PROSE-ONLY none. */
+const GUARD = "R-ENGINE-GUARD";
+function registry(root: string) {
+  mkdirSync(join(root, "scripts", "rules"), { recursive: true });
+  writeFileSync(join(root, "scripts", "rules", "registry.json"), JSON.stringify({
+    schema: "foundry.rule-registry/1",
+    rules: [
+      { id: GUARD, status: "enforced", checks: [".#check:engine"], fixture: "scripts/rules/fixtures/R-ENGINE-GUARD", fixture_runs: [{ check: ".#check:engine", cwd: ".", run: "node check.mjs {fixture}", expect: "engine: fail" }] },
+      { id: "R-PROSE-ONLY", status: "unenforced", note: "no check yet" },
+    ],
+  }, null, 2));
 }
 const skill = (pkg: string) => readFileSync(join(PACKAGES, pkg, "skill", "SKILL.md"), "utf8");
 /** A SKILL.md's text after its front matter. */
@@ -124,25 +137,28 @@ describe("clossys request --kind report", () => {
     // A check that passes now is refused as evidence: a report's check is the failing one.
     await expect(evidenceOf(root, "clossys check --engine", stubCheck(0))).rejects.toThrow(/passes now \(exit 0\)/);
     // While the check still fails, a fixed close re-runs it, records rejected and the report stays open.
-    const refused = await runRequestCli([filed.id, "--close", "--outcome", "fixed", "--result", "foundry@0.1.0", "--by", "producer", "--at", LATER, "--root", root], root);
+    const refused = await runRequestCli([filed.id, "--close", "--outcome", "fixed", "--result", "foundry@0.1.0", "--guard", GUARD, "--by", "producer", "--at", LATER, "--root", root], root);
     expect(refused.exitCode).toBe(1);
     expect(refused.message).toMatch(/stays open: its check clossys check --engine still fails/);
     expect(readReport(consumer, filed.id)).toMatchObject({ status: "open" });
     expect(readReport(consumer, filed.id)!.events.at(-1)).toMatchObject({ op: "rejected", by: "producer" });
     // Fixed: the re-run passes, Producer's verified event lands right before the close.
     const passed = stubCheck(0);
-    const done = await closeReport(consumer, filed.id, { outcome: "fixed", result: "foundry@0.1.0", by: "producer", at: LATER }, passed);
+    const done = await closeReport(consumer, filed.id, { outcome: "fixed", result: "foundry@0.1.0", by: "producer", at: LATER, guard: GUARD }, passed);
     expect(passed.calls).toEqual([["check", "--engine"]]);
-    expect(done).toMatchObject({ status: "closed", outcome: "fixed", result: "foundry@0.1.0", notified: { to: "owner", at: LATER } });
+    expect(done).toMatchObject({ status: "closed", outcome: "fixed", result: "foundry@0.1.0", guard: GUARD, notified: { to: "owner", at: LATER } });
     expect(readReport(consumer, filed.id)!.events.slice(-2).map(event => event.op)).toEqual(["verified", "closed"]);
     expect(reportIssues(readReport(consumer, filed.id))).toEqual([]);
-    // The recheck (loop.audit's reports step) closes the open reports whose check now passes, and only those.
+    // The recheck (loop.audit's reports step) lists the open reports whose check now passes, and only those; CP1-LOOP-LEARN:
+    // it closes none, since a fixed close names its guard rule.
     const passing = fileReport(consumer, { about: "verb/run", what: "gap", why: "no verb", from: "owner", by: "owner", at: AT, source: "cli", evidence: { check: "clossys check --engine", exitCode: 1, output: "" } }).report;
     const unchecked = fileReport(consumer, { about: "verb/pick", what: "ask", why: "more options", from: "owner", by: "owner", at: AT, source: "cli" }).report;
     const ran = stubCheck(0);
     const rechecked = await recheckReports(consumer, LATER, ran);
-    expect(rechecked).toMatchObject({ closed: [passing.id], unchecked: [unchecked.id], open: [], invalid: [] });
+    expect(rechecked).toEqual({ passing: [passing.id], unchecked: [unchecked.id], open: [], invalid: [] });
     expect(ran.calls).toEqual([["check", "--engine"]]);
+    expect(readReport(consumer, passing.id)).toMatchObject({ status: "open" });
+    await closeReport(consumer, passing.id, { outcome: "fixed", result: "foundry@0.1.0", by: "producer", at: LATER, guard: GUARD }, stubCheck(0));
     expect(readReport(consumer, passing.id)!.events.slice(-2).map(event => event.op)).toEqual(["verified", "closed"]);
     // A close that never re-ran its check is refused by the store.
     const skipped = { ...readReport(consumer, passing.id)!, events: readReport(consumer, passing.id)!.events.filter(event => event.op !== "verified") };
@@ -151,6 +167,172 @@ describe("clossys request --kind report", () => {
     await expect(closeReport(consumer, unchecked.id, { outcome: "declined", result: `queue.report#${unchecked.id}`, by: "producer", at: LATER }, stubCheck(0))).rejects.toThrow(/cannot merge into itself/);
     const merged = await closeReport(consumer, unchecked.id, { outcome: "declined", result: `queue.report#${filed.id}`, by: "producer", at: LATER }, stubCheck(0));
     expect(merged).toMatchObject({ status: "closed", outcome: "declined", result: `queue.report#${filed.id}` });
+  });
+});
+
+describe("CP1-LOOP-LEARN: a fixed problem that comes back fails", () => {
+  const signed = (root: string, failure: string, ...more: string[]) =>
+    runRequestCli(["--kind", "report", "--about", "verb/pin", "--what", "bug", "--why", "pin refused with no next step", "--signature", failure, ...more, "--root", root], root);
+  const FAILURE = "pin: refused /tmp/run-4821/clossys/agents/designer/sections.hero/pin.json sha 3f9a2c1d0e at 2026-11-26T10:00:00Z after 3 tries";
+
+  it("signature strips paths, shas, times and numbers", () => {
+    const one = reportSignature(FAILURE);
+    expect(one).toBe("pin: refused <path> sha <sha> at <time> after <n> tries");
+    // The same cause on another run, machine and time signs the same.
+    expect(reportSignature("Pin:  refused C:\\work\\x\\pin.json sha 9b8e7d6c5f4a at 2026-12-01 08:15:59 after 12 tries")).toBe(one);
+    expect(reportSignature("loop.slot run 20261126T1000Z-ab12: step 4 failed in 12.5s (exit 2) at 10:04:59")).toBe("loop.slot run <time>-ab<n>: step <n> failed in <n>s (exit <n>) at <time>");
+    // A different cause signs differently; text with nothing but variable parts signs nothing.
+    expect(reportSignature("pin: the candidate is missing")).not.toBe(one);
+    expect(reportSignature("/a/b 12 2026-11-26 deadbeef01")).toBeUndefined();
+    expect(reportSignature("")).toBeUndefined();
+  });
+
+  it("a report matching a fixed-closed report with the same signature is REPEAT and exits 1", async () => {
+    const { root, consumer } = world();
+    const first = await signed(root, FAILURE, "--at", AT);
+    expect(first.exitCode, first.message).toBe(0);
+    const old = first.output as ReportEntry;
+    expect(old.evidence).toEqual({ signature: reportSignature(FAILURE) });
+    const closed = await runRequestCli([old.id, "--close", "--outcome", "fixed", "--result", "foundry@0.1.0", "--guard", GUARD, "--by", "producer", "--at", LATER, "--root", root], root);
+    expect(closed.exitCode, closed.message).toBe(0);
+    // The same failure on a later run, other paths, sha, time and count: a REPEAT, filed and linked, and the verb exits 1.
+    const again = await signed(root, "pin: refused /home/ci/clossys/agents/designer/sections.hero/pin.json sha 77aa00bb11 at 2026-11-27T09:00:00Z after 5 tries", "--at", "2026-11-27T09:00:00Z");
+    expect(again.exitCode, again.message).toBe(1);
+    expect(again.message).toContain(`REPEAT`);
+    expect(again.message).toContain(`queue.report#${old.id} was closed fixed with guard ${GUARD}`);
+    const repeat = again.output as ReportEntry & { repeat: boolean };
+    expect(repeat.id).not.toBe(old.id);
+    expect(repeat).toMatchObject({ status: "open", repeat: true, repeatOf: { report: old.id, guard: GUARD } });
+    const onDisk = readReport(consumer, repeat.id)!;
+    expect(onDisk.events.map(event => event.op)).toEqual(["raised", "routed", "repeat"]);
+    expect(onDisk.events.at(-1)).toMatchObject({ by: "producer", detail: expect.stringContaining(`queue.report#${old.id}`) });
+    expect(reportIssues(onDisk)).toEqual([]);
+    // --list --json shows repeat and the linked report and guard; an unrelated report is repeat: false.
+    const listed = await runRequestCli(["--list", "--kind", "report", "--json", "--at", LATER, "--root", root], root);
+    const rows = (listed.output as { requests: (ReportEntry & { repeat: boolean })[] }).requests;
+    expect(rows.find(row => row.id === repeat.id)).toMatchObject({ repeat: true, repeatOf: { report: old.id, guard: GUARD } });
+    expect(rows.find(row => row.id === old.id)).toMatchObject({ repeat: false });
+    // A second filing while the repeat is open dedupes onto it (nothing new, exit 0).
+    const third = await signed(root, FAILURE, "--at", "2026-11-28T09:00:00Z");
+    expect(third.exitCode, third.message).toBe(0);
+    expect((third.output as ReportEntry).id).toBe(repeat.id);
+    // A loop step's failure is signed too: the same step failure after a fixed close is a REPEAT.
+    const step = { loop: "loop.slot", step: "pin", cli: "clossys pin designer/sections.hero", why: "pin exited 2 after 3.1s", at: AT };
+    const stepped = fileStepReport(root, { ...step, runId: "20261126T1000Z-run1" });
+    expect(stepped).toMatchObject({ created: true });
+    expect(stepped.repeat).toBeUndefined();
+    const stepId = stepped.entry.slice("queue.report#".length);
+    await closeReport(consumer, stepId, { outcome: "fixed", result: "foundry@0.1.0", by: "producer", at: LATER, guard: GUARD }, stubCheck(0));
+    const back = fileStepReport(root, { ...step, runId: "20261127T0900Z-run2", why: "pin exited 2 after 7.9s", at: "2026-11-27T09:00:00Z" });
+    expect(back).toMatchObject({ created: true, repeat: { report: stepId, guard: GUARD } });
+    // An unsigned report is never a repeat: today's about-and-what key would flag every new bug of the verb.
+    const plain = await report(root);
+    const plainId = (plain.output as ReportEntry).id;
+    await closeReport(consumer, plainId, { outcome: "fixed", result: "foundry@0.1.0", by: "owner", at: LATER, guard: GUARD }, stubCheck(0));
+    const plainAgain = await runRequestCli(["--kind", "report", "--about", "verb/pin", "--what", "bug", "--why", "pin refused with no next step", "--at", "2026-11-27T09:00:00Z", "--root", root], root);
+    expect(plainAgain.exitCode, plainAgain.message).toBe(0);
+    expect((plainAgain.output as ReportEntry).repeatOf).toBeUndefined();
+  });
+
+  it("a different signature on the same topic is a new report, not REPEAT", async () => {
+    const { root } = world();
+    const first = (await signed(root, FAILURE, "--at", AT)).output as ReportEntry;
+    // While the first is open, a different failure of the same verb and what is its own report, not a dedupe onto it.
+    const other = await signed(root, "pin: the candidate file is missing", "--at", AT);
+    expect(other.exitCode, other.message).toBe(0);
+    expect((other.output as ReportEntry).id).not.toBe(first.id);
+    await runRequestCli([first.id, "--close", "--outcome", "fixed", "--result", "foundry@0.1.0", "--guard", GUARD, "--by", "producer", "--at", LATER, "--root", root], root);
+    // After the first closes fixed, a new failure of the same topic with another signature is a new report, not a REPEAT.
+    const fresh = await signed(root, "pin: the slot contract has no kind", "--at", "2026-11-27T09:00:00Z");
+    expect(fresh.exitCode, fresh.message).toBe(0);
+    expect(fresh.message).not.toContain("REPEAT");
+    const entry = fresh.output as ReportEntry;
+    expect(entry.repeatOf).toBeUndefined();
+    expect(entry.events.map(event => event.op)).toEqual(["raised", "routed"]);
+  });
+
+  it("fixed close without a guard is refused", async () => {
+    const { root, consumer } = world();
+    // With no recorded check, and with one: both need --guard.
+    const plain = (await report(root)).output as ReportEntry;
+    const checked = fileReport(consumer, { about: "verb/run", what: "gap", why: "no verb", from: "owner", by: "owner", at: AT, source: "cli", evidence: { check: "clossys check --engine", exitCode: 1, output: "engine: fail" } }).report;
+    for (const id of [plain.id, checked.id]) {
+      const refused = await runRequestCli([id, "--close", "--outcome", "fixed", "--result", "foundry@0.1.0", "--by", "owner", "--at", LATER, "--root", root], root);
+      expect(refused.exitCode).toBe(1);
+      expect(refused.message).toMatch(/a fixed close names its guard: --guard R-<id>/);
+      expect(readReport(consumer, id)).toMatchObject({ status: "open" });
+      const ran = stubCheck(0);
+      await expect(closeReport(consumer, id, { outcome: "fixed", result: "foundry@0.1.0", by: "producer", at: LATER }, ran)).rejects.toThrow(/a fixed close names its guard/);
+      expect(ran.calls).toEqual([]);
+    }
+    // The recheck never closes one fixed either: it lists the passing report and leaves it open.
+    expect(await recheckReports(consumer, LATER, stubCheck(0))).toMatchObject({ passing: [checked.id] });
+    expect(readReport(consumer, checked.id)).toMatchObject({ status: "open" });
+    // A guard goes with fixed only.
+    await expect(closeReport(consumer, plain.id, { outcome: "declined", result: "foundry@0.1.0", by: "owner", at: LATER, guard: GUARD }, stubCheck(0))).rejects.toThrow(/--guard goes with --outcome fixed/);
+  });
+
+  it("fixed close with an unknown or fixture-less guard is refused", async () => {
+    const { root, consumer } = world();
+    const filed = (await report(root)).output as ReportEntry;
+    const close = (guard: string) => runRequestCli([filed.id, "--close", "--outcome", "fixed", "--result", "foundry@0.1.0", "--guard", guard, "--by", "owner", "--at", LATER, "--root", root], root);
+    const unknown = await close("R-NOT-THERE");
+    expect(unknown.exitCode).toBe(1);
+    expect(unknown.message).toContain("--guard R-NOT-THERE: scripts/rules/registry.json has no rule R-NOT-THERE");
+    const bare = await close("R-PROSE-ONLY");
+    expect(bare.exitCode).toBe(1);
+    expect(bare.message).toContain("--guard R-PROSE-ONLY: rule R-PROSE-ONLY in scripts/rules/registry.json has no fixture_runs entry");
+    const shape = await close("engine-guard");
+    expect(shape.exitCode).toBe(1);
+    expect(shape.message).toContain("--guard must be a rule id R-<NAME>");
+    expect(readReport(consumer, filed.id)).toMatchObject({ status: "open" });
+    // With no registry in the root, no guard can be named.
+    rmSync(join(root, "scripts"), { recursive: true });
+    const none = await close(GUARD);
+    expect(none.exitCode).toBe(1);
+    expect(none.message).toContain(`--guard ${GUARD}: there is no scripts/rules/registry.json in this root`);
+    registry(root);
+    const ok = await close(GUARD);
+    expect(ok.exitCode, ok.message).toBe(0);
+    expect(readReport(consumer, filed.id)).toMatchObject({ status: "closed", outcome: "fixed", guard: GUARD });
+    expect(readReport(consumer, filed.id)!.events.at(-1)!.detail).toContain(`guard ${GUARD}`);
+  });
+
+  it("producer decline is refused unless it names a duplicate", async () => {
+    const { root, consumer } = world();
+    const kept = (await report(root)).output as ReportEntry;
+    const dup = fileReport(consumer, { about: "verb/run", what: "gap", why: "no verb", from: "owner", by: "owner", at: AT, source: "cli" }).report;
+    const refused = await runRequestCli([dup.id, "--close", "--outcome", "declined", "--result", "foundry@0.1.0", "--by", "producer", "--at", LATER, "--root", root], root);
+    expect(refused.exitCode).toBe(1);
+    expect(refused.message).toMatch(/Producer declines a report only as a duplicate: --result queue\.report#<the report it duplicates>/);
+    expect(readReport(consumer, dup.id)).toMatchObject({ status: "open" });
+    const merged = await runRequestCli([dup.id, "--close", "--outcome", "declined", "--result", `queue.report#${kept.id}`, "--by", "producer", "--at", LATER, "--root", root], root);
+    expect(merged.exitCode, merged.message).toBe(0);
+    expect(readReport(consumer, dup.id)).toMatchObject({ status: "closed", outcome: "declined", result: `queue.report#${kept.id}` });
+    // The owner still declines outright.
+    const owner = await runRequestCli([kept.id, "--close", "--outcome", "declined", "--result", "foundry@0.1.0", "--by", "owner", "--at", LATER, "--root", root], root);
+    expect(owner.exitCode, owner.message).toBe(0);
+  });
+
+  it("reports file, list and close in a root with no content slots", async () => {
+    // A bare root: clossys/clossys.config.ts and the rule registry, no agents, slots or content records.
+    const root = realpathSync(mkdtempSync(join(tmpdir(), "request-report-bare-")));
+    roots.push(root);
+    mkdirSync(join(root, "clossys"), { recursive: true });
+    writeFileSync(join(root, "clossys", "clossys.config.ts"), "export default {};\n");
+    registry(root);
+    const consumer = join(root, "clossys");
+    const filed = await signed(root, FAILURE, "--at", AT);
+    expect(filed.exitCode, filed.message).toBe(0);
+    const id = (filed.output as ReportEntry).id;
+    const listed = await runRequestCli(["--list", "--kind", "report", "--open", "--json", "--at", LATER, "--root", root], root);
+    expect(listed.exitCode, listed.message).toBe(0);
+    expect((listed.output as { requests: { id: string; repeat: boolean }[] }).requests).toEqual([expect.objectContaining({ id, repeat: false })]);
+    const closed = await runRequestCli([id, "--close", "--outcome", "fixed", "--result", "foundry@0.1.0", "--guard", GUARD, "--by", "producer", "--at", LATER, "--root", root], root);
+    expect(closed.exitCode, closed.message).toBe(0);
+    const again = await signed(root, FAILURE, "--at", "2026-11-27T09:00:00Z");
+    expect(again.exitCode, again.message).toBe(1);
+    expect(listReports(consumer).map(read => read.issues)).toEqual([[], []]);
   });
 });
 

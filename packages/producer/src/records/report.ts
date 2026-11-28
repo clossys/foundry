@@ -3,10 +3,13 @@
  * (`clossys/agents/producer/queue.report/entries/<id>.json`, shape in records/report-shape.ts). A consumer agent or the
  * owner files one when a clossys verb refuses with no next step or a step has no verb (`clossys request --kind report`);
  * a loop run files one when a step could not run (loop/runner.ts, the same fileReport). Producer owns every report: it
- * dedupes on about plus what, keeps the failing check's output as evidence, and tracks it to closure. loop.audit's
- * `reports` step takes reports back (`clossys request --kind report --recheck`): after a reinstall it re-runs each
- * open report's recorded check and closes the passing ones fixed. Writes go through the request store's writers
- * (records/request.ts createRequest, writeRequest) under its lock. Nothing here reaches the network.
+ * dedupes on about plus what (plus the evidence signature, CP1-LOOP-LEARN), keeps the failing check's output as
+ * evidence, and tracks it to closure. loop.audit's `reports` step takes reports back (`clossys request --kind report
+ * --recheck`): after a reinstall it re-runs each open report's recorded check and lists the passing ones. CP1-LOOP-LEARN:
+ * a fixed close names a guard rule of scripts/rules/registry.json with a fixture run; a signed report matching a
+ * fixed-closed one is filed as a REPEAT linking that report and its guard; Producer declines only a duplicate. Writes go
+ * through the request store's writers (records/request.ts createRequest, writeRequest) under its lock. Nothing here
+ * reaches the network.
  */
 import { createHash } from "node:crypto";
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
@@ -15,12 +18,12 @@ import { SLOT_REF } from "../loop/names.js";
 import { PRODUCER_ROOT } from "./ledger.js";
 import { addressed, canonical, createRequest, REQUEST_ID, REQUEST_SCHEMA, REQUEST_SEATS, RequestError, requestsDir, withRequestLock, writeRequest } from "./request.js";
 import {
-  FOUNDRY_RESULT, QUEUE_RESULT, REPORT_ABOUT, REPORT_CLOSERS, REPORT_KIND, REPORT_OUTCOMES, REPORT_QUEUE, REPORT_TARGET, REPORT_WHAT, reportIssues, reportRoute,
+  FOUNDRY_RESULT, QUEUE_RESULT, REPORT_ABOUT, REPORT_CLOSERS, REPORT_GUARD, REPORT_KIND, REPORT_OUTCOMES, REPORT_QUEUE, REPORT_TARGET, REPORT_WHAT, reportIssues, reportRoute, reportSignature,
   type ReportEntry, type ReportEvidence, type ReportOutcome, type ReportWhat,
 } from "./report-shape.js";
 import type { Actor, Ref, RequestEvent } from "./types.js";
 
-export { REPORT_QUEUE, REPORT_TARGET, type ReportEntry } from "./report-shape.js";
+export { REPORT_QUEUE, REPORT_TARGET, reportSignature, type ReportEntry } from "./report-shape.js";
 
 /** Runs a `clossys check ...` command's words in the consumer root; the CLI passes the in-process verb runner. */
 export type CheckRunner = (argv: readonly string[], root: string) => Promise<{ readonly exitCode: number; readonly message: string }>;
@@ -86,16 +89,51 @@ export interface FileReportInput {
   readonly createdBy?: Actor;
 }
 /**
- * Files a report, or returns the open one with the same about and what (Producer dedupes; nothing is written then).
- * Both the CLI and a loop run's failed step file through here.
+ * CP1-LOOP-LEARN: the dedupe key of two reports: about, what and the evidence signature. A report without a signature
+ * keeps the about-and-what key (it matches only another unsigned report).
  */
-export function fileReport(consumer: string, input: FileReportInput, options: { readonly dry?: boolean } = {}): { report: ReportEntry; created: boolean } {
+export const sameReportKey = (a: Pick<ReportEntry, "about" | "what" | "evidence">, b: Pick<ReportEntry, "about" | "what" | "evidence">): boolean =>
+  a.about === b.about && a.what === b.what && a.evidence?.signature === b.evidence?.signature;
+
+/**
+ * CP1-LOOP-LEARN: the fixed-closed report `draft` repeats: the latest closed fixed report with its key, when `draft` has a
+ * signature. An unsigned report never repeats (its key is about and what only, and would flag every new bug of a verb).
+ */
+export function fixedMatch(reports: readonly (ReportEntry | undefined)[], draft: Pick<ReportEntry, "about" | "what" | "evidence">): ReportEntry | undefined {
+  if (draft.evidence?.signature === undefined) return undefined;
+  return reports.filter((report): report is ReportEntry => report?.status === "closed" && report.outcome === "fixed" && sameReportKey(report, draft))
+    .sort((a, b) => (a.closedAt ?? "").localeCompare(b.closedAt ?? "") || a.id.localeCompare(b.id)).at(-1);
+}
+
+/** `draft` as a repeat of the fixed report `of`: repeatOf names it and its guard, and Producer's repeat event says so. */
+export function withRepeat(draft: ReportEntry, of: ReportEntry | undefined): ReportEntry {
+  if (!of) return draft;
+  const repeatOf = { report: of.id, ...(of.guard !== undefined ? { guard: of.guard } : {}) };
+  return withEvent({ ...draft, repeatOf }, "repeat", draft.createdAt, "producer",
+    `REPEAT: ${REPORT_QUEUE}#${of.id} closed fixed (${of.result ?? "no result"}) with ${of.guard !== undefined ? `guard ${of.guard}` : "no guard"}, and the same failure is back`);
+}
+
+export interface FiledReport {
+  readonly report: ReportEntry;
+  readonly created: boolean;
+  /** CP1-LOOP-LEARN: set when the filed report repeats a fixed-closed one (the CLI exits 1). */
+  readonly repeat?: { readonly report: string; readonly guard?: string };
+}
+/**
+ * Files a report, or returns the open one with the same key (about, what and signature; Producer dedupes and nothing is
+ * written then). A signed report that matches a fixed-closed report is filed as a REPEAT: it links that report and its
+ * guard (repeatOf and a repeat event). Both the CLI and a loop run's failed step file through here.
+ */
+export function fileReport(consumer: string, input: FileReportInput, options: { readonly dry?: boolean } = {}): FiledReport {
   const draft = reportDraft(input);
   return withRequestLock(consumer, `report-${input.about.replace(/\//g, "-")}-${input.what}`, () => {
-    const existing = listReports(consumer).map(read => read.report).find(report => report?.status === "open" && report.about === input.about && report.what === input.what);
+    const reports = listReports(consumer).map(read => read.report);
+    const existing = reports.find(report => report?.status === "open" && sameReportKey(report, draft));
     if (existing) return { report: existing, created: false };
-    if (options.dry) return { report: draft, created: true };
-    return { report: createRequest(consumer, draft), created: true };
+    const filed = withRepeat(draft, fixedMatch(reports, draft));
+    const repeat = filed.repeatOf ? { repeat: filed.repeatOf } : {};
+    if (options.dry) return { report: filed, created: true, ...repeat };
+    return { report: createRequest(consumer, filed), created: true, ...repeat };
   });
 }
 
@@ -129,7 +167,7 @@ export const agentReportDraft = (entry: ReportEntry, agent: string): ReportEntry
  * CP1-CHECKS fix round 1 (review-cp1checks-blindA P1-1): why a report an agent step of an agent loop wrote is not the
  * report the report writer itself files for that agent (`clossys request --kind report ... --by <agent>`, source cli).
  * Like agentRaiseIssues: the writer's own draft is rebuilt from the entry's about, what, why, from, createdAt (and its
- * evidence, as the verb kept it) with `by` the step's agent (reportDraft, the writer's refusals included) and must equal
+ * evidence, as the verb kept it, and the repeat the store makes it) with `by` the step's agent (reportDraft, the writer's refusals included) and must equal
  * the entry exactly: its id from its createdAt, or createRequest's -2..-9 suffix; its raised event by the agent via cli
  * and Producer's routed event; its route, raisedBy ref and code actor. No other open report may have the same about and
  * what (the writer dedupes on them and writes nothing then). A report raised by another seat, or a forged or rewritten
@@ -137,10 +175,12 @@ export const agentReportDraft = (entry: ReportEntry, agent: string): ReportEntry
  */
 export function agentReportIssues(consumer: string, entry: ReportEntry, agent: string): string[] {
   let draft: ReportEntry;
+  const others = listReports(consumer).map(read => read.report).filter(other => other !== undefined && other.id !== entry.id);
   try { draft = agentReportDraft(entry, agent); } catch (error) {
     if (error instanceof RequestError) return [error.message];
     throw error;
   }
+  draft = withRepeat(draft, fixedMatch(others, draft));
   const issues: string[] = [];
   // createRequest's own relabel on an id already taken: the draft's id or its -2..-9 suffix, with opened and events renamed.
   const suffix = entry.id.startsWith(draft.id) ? entry.id.slice(draft.id.length) : undefined;
@@ -151,7 +191,7 @@ export function agentReportIssues(consumer: string, entry: ReportEntry, agent: s
       .filter(key => canonical((expected as unknown as Record<string, unknown>)[key]) !== canonical((entry as unknown as Record<string, unknown>)[key]));
     if (keys.length) issues.push(`not the report clossys request files for ${agent} (${entry.id}): ${keys.join(", ")} differ${keys.length === 1 ? "s" : ""}`);
   }
-  const duplicate = listReports(consumer).map(read => read.report).find(other => other !== undefined && other.id !== entry.id && other.status === "open" && other.about === entry.about && other.what === entry.what);
+  const duplicate = others.find(other => other !== undefined && other.status === "open" && sameReportKey(other, entry));
   if (duplicate) issues.push(`${REPORT_QUEUE}#${duplicate.id} is already open for ${entry.about} ${entry.what}: the writer files no second one`);
   return issues;
 }
@@ -165,7 +205,10 @@ export async function evidenceOf(root: string, value: string, runCheck: CheckRun
     const argv = checkArgv(value);
     const ran = await runCheck(argv, root);
     if (ran.exitCode === 0) throw new RequestError(`--evidence ${value} passes now (exit 0): a report's check is the one that fails`);
-    return { check: value, exitCode: ran.exitCode, output: ran.message.slice(0, OUTPUT_MAX) };
+    // CP1-LOOP-LEARN: the check's failure text, signed (reportSignature), is what a repeat of the same cause matches.
+    const output = ran.message.slice(0, OUTPUT_MAX);
+    const signature = reportSignature(output);
+    return { check: value, exitCode: ran.exitCode, output, ...(signature !== undefined ? { signature } : {}) };
   }
   const file = resolve(root, value);
   const rel = relative(root, file);
@@ -181,17 +224,45 @@ function checkArgv(command: string): string[] {
   return argv;
 }
 
-export interface CloseReportInput { readonly outcome: string; readonly result: string; readonly by: string; readonly at: string }
+/** The rule registry a fixed close's guard is read from, relative to the root that holds `clossys/`. */
+export const GUARD_REGISTRY = "scripts/rules/registry.json";
+
 /**
- * Closes a report fixed or declined. A fixed close of a report that records a check re-runs it first: a pass writes
- * Producer's verified event and the close; a fail writes a rejected event and refuses, so the report stays open. A
- * declined duplicate names the report it merges into (`queue.report#<id>`).
+ * CP1-LOOP-LEARN: why `guard` cannot guard a fixed close in `root`, or undefined when it can: a guard is a rule of
+ * scripts/rules/registry.json with at least one fixture_runs entry (its check fails on the rule's violation fixture).
+ */
+export function guardIssue(root: string, guard: string): string | undefined {
+  if (!REPORT_GUARD.test(guard)) return `--guard must be a rule id R-<NAME> of ${GUARD_REGISTRY}, got ${guard}`;
+  const file = join(root, ...GUARD_REGISTRY.split("/"));
+  if (!existsSync(file)) return `--guard ${guard}: there is no ${GUARD_REGISTRY} in this root to name it`;
+  let rules: unknown;
+  try { rules = (JSON.parse(readFileSync(file, "utf8")) as { rules?: unknown }).rules; } catch { return `--guard ${guard}: ${GUARD_REGISTRY} is not JSON`; }
+  const rule = Array.isArray(rules) ? (rules as { id?: unknown; fixture_runs?: unknown }[]).find(row => row?.id === guard) : undefined;
+  if (!rule) return `--guard ${guard}: ${GUARD_REGISTRY} has no rule ${guard}`;
+  if (!Array.isArray(rule.fixture_runs) || rule.fixture_runs.length === 0) return `--guard ${guard}: rule ${guard} in ${GUARD_REGISTRY} has no fixture_runs entry, so no check is shown to fail on its violation`;
+  return undefined;
+}
+
+export interface CloseReportInput { readonly outcome: string; readonly result: string; readonly by: string; readonly at: string; readonly guard?: string }
+/**
+ * Closes a report fixed or declined. CP1-LOOP-LEARN: a fixed close names its guard (`--guard R-<id>`, guardIssue),
+ * whether or not the report records a check, and the closed report keeps it. A fixed close of a report that records a
+ * check re-runs it first: a pass writes Producer's verified event and the close; a fail writes a rejected event and
+ * refuses, so the report stays open. A declined duplicate names the report it merges into (`queue.report#<id>`);
+ * Producer declines only so (any other decline is the owner's).
  */
 export async function closeReport(consumer: string, id: string, input: CloseReportInput, runCheck: CheckRunner): Promise<ReportEntry> {
   if (!(REPORT_CLOSERS as readonly string[]).includes(input.by)) throw new RequestError(`a report closes with --by ${REPORT_CLOSERS.join(" or ")}, got ${input.by}`);
   if (!(REPORT_OUTCOMES as readonly string[]).includes(input.outcome)) throw new RequestError(`a report closes with --outcome ${REPORT_OUTCOMES.join(" or ")}, got ${input.outcome}`);
   if (input.outcome === "fixed" && !FOUNDRY_RESULT.test(input.result)) throw new RequestError(`a fixed report closes with --result foundry@<version or sha>, got ${input.result}`);
   if (input.outcome === "declined" && !FOUNDRY_RESULT.test(input.result) && !QUEUE_RESULT.test(input.result)) throw new RequestError(`a declined report closes with --result foundry@<version or sha> or the report it merges into (queue.report#<id>), got ${input.result}`);
+  if (input.outcome === "declined" && input.by === "producer" && !QUEUE_RESULT.test(input.result)) throw new RequestError(`Producer declines a report only as a duplicate: --result queue.report#<the report it duplicates>, got ${input.result}; any other decline is the owner's`);
+  if (input.outcome !== "fixed" && input.guard !== undefined) throw new RequestError(`--guard goes with --outcome fixed, got --outcome ${input.outcome}`);
+  if (input.outcome === "fixed") {
+    if (input.guard === undefined) throw new RequestError(`a fixed close names its guard: --guard R-<id>, a rule in ${GUARD_REGISTRY} with a fixture run, so the same failure cannot come back unseen`);
+    const issue = guardIssue(resolve(consumer, ".."), input.guard);
+    if (issue) throw new RequestError(issue);
+  }
   if (QUEUE_RESULT.test(input.result)) {
     const into = input.result.slice(`${REPORT_QUEUE}#`.length);
     if (into === id) throw new RequestError(`${REPORT_QUEUE}#${id} cannot merge into itself`);
@@ -214,8 +285,9 @@ export async function closeReport(consumer: string, id: string, input: CloseRepo
       }
       next = withEvent(next, "verified", input.at, "producer", `check passed: ${check} (exit 0)`);
     }
-    const closing = withEvent({ ...next, status: "closed", outcome: input.outcome as ReportOutcome, result: input.result, notified: { to: report.from, at: input.at }, closedAt: input.at },
-      "closed", input.at, input.by, `${input.outcome}: ${input.result}; notified ${report.from}`);
+    const guard = input.outcome === "fixed" ? { guard: input.guard! } : {};
+    const closing = withEvent({ ...next, status: "closed", outcome: input.outcome as ReportOutcome, result: input.result, ...guard, notified: { to: report.from, at: input.at }, closedAt: input.at },
+      "closed", input.at, input.by, `${input.outcome}: ${input.result}${input.outcome === "fixed" ? `; guard ${input.guard!}` : ""}; notified ${report.from}`);
     const closed: ReportEntry = { ...closing, closed: closing.events.at(-1)!.id };
     writeRequest(consumer, closed);
     return closed;
@@ -223,21 +295,20 @@ export async function closeReport(consumer: string, id: string, input: CloseRepo
 }
 
 /**
- * loop.audit's `reports` step: re-runs each open report's recorded check and closes the passing ones fixed by
- * Producer with `foundry@<installed version>`. A failing check, or a report with no check, stays open untouched.
+ * loop.audit's `reports` step: re-runs each open report's recorded check. CP1-LOOP-LEARN: a passing one is listed
+ * `passing`, not closed: a fixed close names its guard rule (closeReport), which only the closer can, so it closes with
+ * `clossys request <id> --close --outcome fixed --result foundry@<version> --guard R-<id>`. A failing check, or a report
+ * with no check, stays open untouched. Nothing is written.
  */
-export async function recheckReports(consumer: string, at: string, runCheck: CheckRunner): Promise<{ closed: string[]; open: string[]; unchecked: string[]; invalid: string[] }> {
-  const out = { closed: [] as string[], open: [] as string[], unchecked: [] as string[], invalid: [] as string[] };
-  const result = `foundry@${producerVersion()}`;
+export async function recheckReports(consumer: string, _at: string, runCheck: CheckRunner): Promise<{ passing: string[]; open: string[]; unchecked: string[]; invalid: string[] }> {
+  const out = { passing: [] as string[], open: [] as string[], unchecked: [] as string[], invalid: [] as string[] };
   for (const read of listReports(consumer)) {
     if (!read.report) { out.invalid.push(`${read.file}: ${read.issues.slice(0, 3).join("; ")}`); continue; }
     const report = read.report;
     if (report.status !== "open") continue;
     if (report.evidence?.check === undefined) { out.unchecked.push(report.id); continue; }
     const ran = await runCheck(checkArgv(report.evidence.check), resolve(consumer, ".."));
-    if (ran.exitCode !== 0) { out.open.push(report.id); continue; }
-    await closeReport(consumer, report.id, { outcome: "fixed", result, by: "producer", at }, () => Promise.resolve(ran));
-    out.closed.push(report.id);
+    (ran.exitCode !== 0 ? out.open : out.passing).push(report.id);
   }
   return out;
 }
@@ -247,10 +318,13 @@ export async function recheckReports(consumer: string, at: string, runCheck: Che
  * verb/run): the same fileReport the CLI files through, from `producer/<loop>`, by Producer. Returns the entry name,
  * and whether this call filed it (`created`) or an open report with the same about and what was reused unchanged.
  */
-export function fileStepReport(root: string, input: { readonly loop: string; readonly runId: string; readonly step: string; readonly cli: string; readonly why: string; readonly at: string }): { readonly entry: string; readonly created: boolean } {
+export function fileStepReport(root: string, input: { readonly loop: string; readonly runId: string; readonly step: string; readonly cli: string; readonly why: string; readonly at: string }): { readonly entry: string; readonly created: boolean; readonly repeat?: { readonly report: string; readonly guard?: string } } {
   const about = `verb/${/^clossys ([a-z][a-z0-9-]*)/.exec(input.cli)?.[1] ?? "run"}`;
+  // CP1-LOOP-LEARN: the step's failure text, signed, so a cause that returns after a fixed close is a REPEAT.
+  const signature = reportSignature(input.why);
   const filed = fileReport(join(root, "clossys"), {
     about, what: "bug", why: `${input.loop} run ${input.runId}: ${input.why}`, from: `producer/${input.loop}`, by: "producer", at: input.at, source: "check",
+    ...(signature !== undefined ? { evidence: { signature } } : {}),
   });
-  return { entry: `${REPORT_QUEUE}#${filed.report.id}`, created: filed.created };
+  return { entry: `${REPORT_QUEUE}#${filed.report.id}`, created: filed.created, ...(filed.repeat ? { repeat: filed.repeat } : {}) };
 }

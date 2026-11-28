@@ -1081,6 +1081,36 @@
         }
       ],
       "note": "A consumer built only from tarballs and public verbs renders its pinned page: clossys check --e2e packs the cohort, installs it into an empty directory, drives the shipped scenario with the installed bin and asserts the built HTML, whose files hold no absolute path of the consumer and build to the same digest from another directory. Causes: e2e.usage (the check could not start: a bad flag, or no cohort package beside this Producer); e2e.pack (npm pack of a cohort package failed, or --from lacks one of its tarballs); e2e.install (npm install of the tarballs into the empty directory failed); e2e.one-copy (the install holds other than one copy of a first-party package, or one not resolved from its tarball); e2e.bin (node_modules/.bin/clossys is missing or is not the installed @clossys/producer); e2e.scenario (the scenario is missing, malformed, or names a step or file it does not hold); e2e.step (a scenario verb exited other than the scenario expects); e2e.render (the latest build lacks a route's index.html, or the HTML lacks a pinned string or marker); e2e.repeat (a second build of the same pins named another digest); e2e.portable (a build file holds an absolute path of the consumer or of the machine (its home or temp folder), or the consumer moved to another directory built the same pins to another digest)."
+    },
+    {
+      "id": "R-REPORT-GUARD",
+      "owner_words": {
+        "quote": "dont let any issues repeat ... solve for with zero token, in programmatic approach",
+        "date": "2026-11-28"
+      },
+      "status": "enforced",
+      "checks": [
+        ".#check:report-guards"
+      ],
+      "related": [
+        "packages/producer#test"
+      ],
+      "fixture": "scripts/rules/fixtures/R-REPORT-GUARD",
+      "fixture_runs": [
+        {
+          "check": ".#check:report-guards",
+          "cwd": ".",
+          "run": "node scripts/check-report-guards.mjs --root {fixture}",
+          "expect": "^\\[unguarded-fixed\\] queue\\.report#20261122T1000Z-report-verb-next-gap closed fixed"
+        },
+        {
+          "check": ".#check:report-guards",
+          "cwd": ".",
+          "run": "node scripts/check-report-guards.mjs --root {fixture}",
+          "expect": "^\\[repeat-open\\] queue\\.report#20261127T0900Z-report-verb-pin-bug is a REPEAT"
+        }
+      ],
+      "note": "No fixed close without a guard; a repeat after a fixed close fails. clossys request refuses a fixed report close without --guard naming a rule here with a fixture run, and files a signed report matching a fixed-closed one as a REPEAT (exit 1); check:report-guards fails a store holding an unguarded fixed close or an open repeat. The fixture is a report store clossys request wrote, one close stripped of its guard (a close from before guards)."
     }
   ],
   "exemptions": [

@@ -1,0 +1,14 @@
+{
+  "schema": "foundry.rule-registry/1",
+  "about": "The violation fixture's own rule registry: the guard a fixed close names is read from <root>/scripts/rules/registry.json.",
+  "rules": [
+    {
+      "id": "R-PIN-GUARD",
+      "owner_words": { "quote": "pin never refuses without a next step", "date": "2026-11-28" },
+      "status": "enforced",
+      "checks": [".#check:pin-guard"],
+      "fixture": "scripts/rules/fixtures/R-PIN-GUARD",
+      "fixture_runs": [{ "check": ".#check:pin-guard", "cwd": ".", "run": "node scripts/check-pin-guard.mjs --root {fixture}", "expect": "pin-refused" }]
+    }
+  ]
+}

@@ -49,12 +49,22 @@ upstream and assigned to you; you dedupe it, keep the failing check's output as 
 closure. A loop run whose step could not run, or failed with no route on, files one too.
 
 - At the start of each run, list the open reports: `clossys request --list --kind report --open --json`.
-- Merge a duplicate into the report it repeats:
+  A report with `repeat: true` is a fixed problem that came back: `repeatOf` names the report closed
+  fixed and the guard rule that should have kept it fixed. Fix the cause and the guard together.
+- Sign a report with its failure text, `--signature "<the failure text>"` (a `clossys check` evidence
+  signs its own output). Paths, shas, times and numbers are removed, so the same cause on another run
+  signs the same; a report dedupes on about, what and signature.
+- No fixed close without a guard; a repeat after a fixed close fails. A fixed close names its guard,
+  a rule in `scripts/rules/registry.json` with at least one `fixture_runs` entry, whether or not the
+  report records a check. A signed report that matches a report closed fixed is filed as a REPEAT,
+  linked to that report and its guard, and `clossys request` exits 1.
+- Decline a report only as a duplicate, merging it into the report it repeats:
   `clossys request <id> --close --outcome declined --result queue.report#<id> --by producer`.
-- After a reinstall, re-run each report's recorded check and close the passing ones:
-  `clossys request --kind report --recheck` (`clossys run loop.audit` runs the same as its reports step).
-  A fixed close by hand re-runs the check too, and refuses while it still fails:
-  `clossys request <id> --close --outcome fixed --result foundry@<version-or-sha> --by producer`.
+  Any other decline is the owner's.
+- After a reinstall, re-run each report's recorded check: `clossys request --kind report --recheck`
+  (`clossys run loop.audit` runs the same as its reports step) lists the passing ones. Close each
+  fixed with its guard; the close re-runs the check too, and refuses while it still fails:
+  `clossys request <id> --close --outcome fixed --result foundry@<version-or-sha> --guard R-<id> --by producer`.
 - When the owner says "log this as feedback", file it as the owner's report, in their words:
   `clossys request --kind report --about <verb|skill|agent>/<name> --what bug|gap|ask --why "<the owner's words>" --from owner`.
 

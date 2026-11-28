@@ -237,7 +237,8 @@
               "closed",
               "asked",
               "answered",
-              "withdrawn"
+              "withdrawn",
+              "repeat"
             ]
           },
           "by": {
@@ -431,6 +432,11 @@
         },
         "output": {
           "type": "string"
+        },
+        "signature": {
+          "description": "CP1-LOOP-LEARN: the failure text normalized (paths, shas, times and numbers removed). A signed report dedupes on about, what and signature, and one matching a fixed-closed report is a repeat.",
+          "type": "string",
+          "minLength": 1
         }
       },
       "additionalProperties": false
@@ -476,6 +482,29 @@
       "description": "A closed entry: the ref that resolves to the result (a slot, pin, candidate or answered queue entry).",
       "type": "string",
       "minLength": 1
+    },
+    "guard": {
+      "description": "kind report, CP1-LOOP-LEARN: a fixed close's guard, the scripts/rules/registry.json rule (with a fixture run) that keeps the cause fixed.",
+      "type": "string",
+      "pattern": "^R-[A-Z0-9]+(-[A-Z0-9]+)*$"
+    },
+    "repeatOf": {
+      "description": "kind report, CP1-LOOP-LEARN: the fixed-closed report this one repeats (same about, what and signature), and the guard that close named.",
+      "type": "object",
+      "required": [
+        "report"
+      ],
+      "properties": {
+        "report": {
+          "type": "string",
+          "pattern": "^[0-9]{8}T[0-9]{4}Z-[a-z0-9][a-z0-9-]*$"
+        },
+        "guard": {
+          "type": "string",
+          "pattern": "^R-[A-Z0-9]+(-[A-Z0-9]+)*$"
+        }
+      },
+      "additionalProperties": false
     }
   },
   "additionalProperties": false,

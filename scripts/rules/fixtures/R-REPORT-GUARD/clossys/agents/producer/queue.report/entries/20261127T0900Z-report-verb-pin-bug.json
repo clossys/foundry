@@ -1,0 +1,57 @@
+{
+  "schema": "clossys.queue-entry/2",
+  "id": "20261127T0900Z-report-verb-pin-bug",
+  "kind": "report",
+  "from": "owner",
+  "assignee": "producer",
+  "target": "producer/loop.audit",
+  "status": "open",
+  "opened": "20261127T0900Z-report-verb-pin-bug#1",
+  "why": "pin refused with no next step again",
+  "source": "cli",
+  "route": {
+    "row": "upstream",
+    "table": "4dcb02d123887d366ddbfa0ee71af3b7a91929cc92c782dee40116111a582693",
+    "assignee": "producer"
+  },
+  "about": "verb/pin",
+  "what": "bug",
+  "evidence": {
+    "signature": "pin: refused <path> at <time>"
+  },
+  "createdBy": {
+    "actor": "code",
+    "cli": "clossys request",
+    "version": "0.1.0"
+  },
+  "createdAt": "2026-11-27T09:00:00Z",
+  "refs": [],
+  "events": [
+    {
+      "id": "20261127T0900Z-report-verb-pin-bug#1",
+      "at": "2026-11-27T09:00:00Z",
+      "op": "raised",
+      "by": "owner",
+      "via": "cli",
+      "detail": "pin refused with no next step again"
+    },
+    {
+      "id": "20261127T0900Z-report-verb-pin-bug#2",
+      "at": "2026-11-27T09:00:00Z",
+      "op": "routed",
+      "by": "producer",
+      "detail": "upstream -> producer: Producer owns every report and tracks it to closure"
+    },
+    {
+      "id": "20261127T0900Z-report-verb-pin-bug#3",
+      "at": "2026-11-27T09:00:00Z",
+      "op": "repeat",
+      "by": "producer",
+      "detail": "REPEAT: queue.report#20261120T1000Z-report-verb-pin-bug closed fixed (foundry@0.1.0) with guard R-PIN-GUARD, and the same failure is back"
+    }
+  ],
+  "repeatOf": {
+    "report": "20261120T1000Z-report-verb-pin-bug",
+    "guard": "R-PIN-GUARD"
+  }
+}

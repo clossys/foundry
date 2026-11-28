@@ -583,7 +583,7 @@ export interface ThemeProjection {
 }
 
 /** A kind slot entry (clossys.queue-entry/2, foundry-build-0048 U5): records/request.ts reads and writes it. */
-export type RequestOp = "raised" | "routed" | "checked" | "decided" | "placed" | "started" | "rejected" | "verified" | "closed" | "asked" | "answered" | "withdrawn";
+export type RequestOp = "raised" | "routed" | "checked" | "decided" | "placed" | "started" | "rejected" | "verified" | "closed" | "asked" | "answered" | "withdrawn" | "repeat";
 /** The work kinds of clossys.queue-entry/2 (foundry-build-0048 U7): a slot no agent holds, a change to a placed slot, a fix to a broken one. */
 export type RequestKind = "slot" | "change" | "fix";
 /** Where the router (queue/routing.ts routeEntry) sent an entry: written by the router only, re-derivable from the table. */
