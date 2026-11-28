@@ -23,8 +23,29 @@ export const TAIL_LINES = 40;
 /** Default per-command timeout when a caller names none: ten minutes. */
 export const COMMAND_TIMEOUT_MS = 600_000;
 
+/** One finished run as an observer sees it: the command as text and its exit code. */
+export interface RunEntry { readonly command: string; readonly argv0: string; readonly exit: number; readonly ms: number }
+
+let observer: ((entry: RunEntry) => void) | undefined;
+
+/**
+ * body() with every run() inside it reported to watch, in order. Runs are synchronous, so the observer is exactly the
+ * runs of body; the previous observer comes back afterwards (nesting reports to the innermost only).
+ */
+export function observeRuns<T>(watch: (entry: RunEntry) => void, body: () => T): T {
+  const previous = observer;
+  observer = watch;
+  try { return body(); } finally { observer = previous; }
+}
+
 /** Run argv (or a shell line when argv is a string) in cwd, blocking; a timeout or spawn error is exit 124 or 127. */
 export function run(command: readonly string[] | string, cwd: string, options: { env?: NodeJS.ProcessEnv; timeoutMs?: number; input?: string } = {}): RunResult {
+  const result = spawnRun(command, cwd, options);
+  observer?.({ command: typeof command === "string" ? command : command.join(" "), argv0: typeof command === "string" ? "sh" : command[0] ?? "", exit: result.exit, ms: result.ms });
+  return result;
+}
+
+function spawnRun(command: readonly string[] | string, cwd: string, options: { env?: NodeJS.ProcessEnv; timeoutMs?: number; input?: string }): RunResult {
   const start = Date.now();
   const [file, args] = typeof command === "string" ? ["/bin/sh", ["-c", command]] as const : [command[0]!, command.slice(1)] as const;
   const result = spawnSync(file, args, {

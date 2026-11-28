@@ -5,12 +5,12 @@
  * doc truth and the packet's scope, and re-runs nothing.
  */
 import { spawnSync } from "node:child_process";
-import { cpSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { cpSync, existsSync, mkdirSync, readFileSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { changedFiles, forbiddenFindings, headHunks, packageOf } from "./changes.js";
 import { FOUNDRY_CONFIG, type GeneratedFixture, type ReviewConfig } from "./config.js";
-import { addWorktree, exitText, git, run, scratch, type RunResult, type Worktree } from "./exec.js";
-import { buildSet, coveringTests, isSource, testCommand } from "./graph.js";
+import { addWorktree, exitText, git, observeRuns, run, scratch, type RunEntry, type RunResult, type Worktree } from "./exec.js";
+import { buildSet, coveringTests, isSource, listWorkspaces, testCommand } from "./graph.js";
 import { applyMutant, COMPILE_ERROR, fileMutants, MUTANT_CAP, selectMutants } from "./mutate.js";
 import { compareReceipt, parsePacket, readReceipt, receiptFileFor } from "./receipt.js";
 import type { Finding, MutantResult, ReviewReport, StepResult, StepStatus } from "./types.js";
@@ -25,7 +25,7 @@ export const REVIEW_STEPS: readonly { readonly step: string; readonly finding: s
   { step: "install", finding: "install", fails: "the install in the head tree (and the base tree, for the counts) exits non-zero" },
   { step: "build", finding: "build", fails: "a build of a changed package, a probe or fixture package, or a prerequisite exits non-zero; each package builds once, dependencies first" },
   { step: "types", finding: "types", fails: "the typecheck of a changed workspace package with a tsconfig.json exits non-zero" },
-  { step: "tests", finding: "tests / test.uncovered", fails: "a covering test file exits non-zero run on its own, or a changed source file has no covering test" },
+  { step: "tests", finding: "tests / tests.base-red (note) / test.uncovered", fails: "a covering test file exits non-zero run on its own and one of its failing tests (`file :: full name` for vitest, else the file) does not also fail run alone at the merge base (nor is listed base-red by a --fast record at this head), or a changed source file has no covering test" },
   { step: "counts", finding: "count.increase / count.probe", fails: "a probe finds more of a rule at head than at the merge base, or cannot run in either tree" },
   { step: "fixtures", finding: "fixture.*", fails: "a registered generator is not at the head; or, for a fixture whose inputs changed, the head generator fails or writes anything diff -r finds against the head's committed copy" },
   { step: "e2e", finding: "e2e", fails: "clossys check --e2e exits non-zero when the producer, designer, writer or publisher package changed" },
@@ -42,8 +42,33 @@ export interface ReviewOptions {
   readonly seed?: string;
   readonly cap?: number;
   readonly config?: ReviewConfig;
+  /** A `clossys check --fast --json` record at this head and merge base: its base-red tests need no base re-run. */
+  readonly fast?: string;
   readonly log?: (line: string) => void;
 }
+
+/** The rules the verdict applies on top of every step's findings: a review that checked nothing is never a PASS. */
+export const FAIL_CLOSED: readonly { readonly id: string; readonly fails: string }[] = [
+  { id: "review.no-commands", fails: "the review ran no command (git plumbing aside): nothing checked is never a PASS, an empty diff included" },
+  { id: "run.missing", fails: "any command exited 127 (a missing install, tool or file to run): never a PASS, whatever exit a packet expects" },
+];
+
+/** What the review ran, as the verdict counts it: every run except git plumbing; 127s by command, once each. */
+export function ranOf(entries: readonly RunEntry[]): { commands: number; missing: string[] } {
+  const counted = entries.filter(entry => entry.argv0 !== "git");
+  return { commands: counted.length, missing: [...new Set(counted.filter(entry => entry.exit === 127).map(entry => entry.command))] };
+}
+
+/** The fail-closed findings of what ran (FAIL_CLOSED). */
+export function failClosed(ran: { readonly commands: number; readonly missing: readonly string[] }): Finding[] {
+  const out: Finding[] = [];
+  if (ran.commands === 0) out.push({ id: "review.no-commands", level: "fail", subject: "review", detail: "no command ran: nothing was checked, so this is not a PASS" });
+  for (const command of ran.missing) out.push({ id: "run.missing", level: "fail", subject: command.slice(0, 200), detail: "exit 127: not installed or not found" });
+  return out;
+}
+
+/** The verdict of a findings list: FAIL on any fail-level finding. */
+export const verdictOf = (findings: readonly Finding[]): "PASS" | "FAIL" => findings.some(finding => finding.level === "fail") ? "FAIL" : "PASS";
 
 /** Arguments the review refuses before it runs anything (the CLI reports them as usage errors). */
 export class ReviewArgumentError extends Error {}
@@ -73,6 +98,9 @@ export function runReview(options: ReviewOptions): ReviewReport {
   const step = (name: string, status: StepStatus, detail: string, ms = 0) => { steps.push({ step: name, status, detail, ms }); log(`review: ${name} ${status}${detail ? ` (${detail})` : ""}`); };
   const fail = (id: string, subject: string, detail: string) => findings.push({ id, level: "fail", subject, detail });
 
+  const entries: RunEntry[] = [];
+  const red = { newRed: [] as string[], baseRed: [] as string[] };
+  const fastBaseRed = options.fast ? fastRecordBaseRed(options.fast, head, mergeBase, fail) : undefined;
   const forbidden = forbiddenFindings(repo, base, head, changes);
   findings.push(...forbidden);
   const trees: Worktree[] = [];
@@ -80,7 +108,7 @@ export function runReview(options: ReviewOptions): ReviewReport {
   /** The merge base's tree, made once on first use (leak scan, counts). */
   const baseAt = () => { if (!baseWorktree) { baseWorktree = addWorktree(repo, mergeBase, "base"); trees.push(baseWorktree); } return baseWorktree.dir; };
   let packages: string[] = [];
-  try {
+  observeRuns(entry => entries.push(entry), () => { try {
     if (!changes.length && !options.packet) {
       step("changed", "pass", "no changes");
       for (const name of REVIEW_STEPS.slice(1).map(item => item.step)) step(name, name === "forbidden" ? "pass" : "skip", name === "forbidden" ? "0 finding(s)" : "empty diff");
@@ -99,7 +127,10 @@ export function runReview(options: ReviewOptions): ReviewReport {
       const built = installed && build(at, [...packages, ...(counting ? config.probePackages : []), ...due.flatMap(item => item.needs)], step, fail, config.timeoutMs);
       types(at, packages, config, step, fail);
       const covering = coveringTests(at, changes, file => packageOf(at, file));
-      const red = tests(at, covering.all, covering.uncovered, step, fail, config.timeoutMs);
+      const baseRun = baseRunner(repo, mergeBase, at, trees, config.timeoutMs);
+      const tested = tests(at, covering.all, covering.uncovered, step, fail, findings, baseRun, fastBaseRed, config.timeoutMs);
+      red.newRed.push(...tested.newRed);
+      red.baseRed.push(...tested.baseRed);
       if (counting && built) countDeltas(repo, mergeBase, at, baseAt, config, counts, step, fail);
       else step("counts", "skip", counting ? "the head build failed" : "no probes or no changes");
       fixtures(repo, mergeBase, head, at, due, config, step, fail);
@@ -108,14 +139,38 @@ export function runReview(options: ReviewOptions): ReviewReport {
       else step("e2e", "skip", "no e2e package changed");
       if (options.packet) receipt(resolve(options.packet), options.receipt, head, at, config.timeoutMs, step, fail, findings);
       else step("receipt", "skip", "no --packet");
-      mutation(repo, mergeBase, head, at, files, covering.bySource, red, options.seed ?? "0", options.cap ?? MUTANT_CAP, config.timeoutMs, mutants, step, findings);
+      mutation(repo, mergeBase, head, at, files, covering.bySource, tested.red, options.seed ?? "0", options.cap ?? MUTANT_CAP, config.timeoutMs, mutants, step, findings);
     }
   } finally {
     for (const item of trees) item.remove();
-  }
-  const verdict = findings.some(finding => finding.level === "fail") ? "FAIL" : "PASS";
-  return { schema: REVIEW_SCHEMA, base, head, tree, changed: { files, packages }, steps, counts, mutants, findings, verdict };
+  } });
+  const ran = ranOf(entries);
+  findings.push(...failClosed(ran));
+  const verdict = verdictOf(findings);
+  return { schema: REVIEW_SCHEMA, base, head, tree, changed: { files, packages }, steps, counts, mutants, findings, ran, newRed: red.newRed.sort(), baseRed: red.baseRed.sort(), verdict, line: `MECHANICAL: ${verdict} ${head} ${tree}` };
 }
+
+/**
+ * The base-red tests of a `clossys check --fast --json` record (ids: the test file, and `file :: name` for each failing
+ * test it names), held to this head and merge base: any other record is a fast.record FAIL and lends nothing.
+ */
+function fastRecordBaseRed(file: string, head: string, mergeBase: string, fail: FailFn): Set<string> | undefined {
+  let record: { schema?: unknown; head?: unknown; base?: unknown; baseRed?: { id?: unknown; messages?: unknown }[] };
+  try { record = JSON.parse(readFileSync(file, "utf8")) as typeof record; }
+  catch (error) { fail("fast.record", file, `unreadable: ${(error as Error).message.split("\n")[0]}`); return undefined; }
+  if (record.schema !== "clossys.fast-check/1") { fail("fast.record", file, "not a clossys.fast-check/1 record"); return undefined; }
+  if (record.head !== head || record.base !== mergeBase) { fail("fast.record", file, `taken at ${String(record.head).slice(0, 12)} over ${String(record.base).slice(0, 12)}, reviewing ${head.slice(0, 12)} over the merge base ${mergeBase.slice(0, 12)}`); return undefined; }
+  const out = new Set<string>();
+  for (const item of Array.isArray(record.baseRed) ? record.baseRed : []) {
+    if (typeof item.id !== "string") continue;
+    out.add(item.id);
+    for (const message of Array.isArray(item.messages) ? item.messages : []) if (typeof message === "string") out.add(`${item.id} :: ${message}`);
+  }
+  return out;
+}
+
+/** Listed base-red by a fast record: the file itself, or a failing-test message that starts with the test's name. */
+const listedBaseRed = (listed: Set<string>, id: string) => listed.has(id) || [...listed].some(entry => entry.startsWith(`${id}: `));
 
 type StepFn = (name: string, status: StepStatus, detail: string, ms?: number) => void;
 type FailFn = (id: string, subject: string, detail: string) => void;
@@ -188,20 +243,76 @@ function types(at: string, packages: readonly string[], config: ReviewConfig, st
   step("types", checked.length ? (ok ? "pass" : "fail") : "skip", checked.join(", ") || "no changed package has a tsconfig.json", ms);
 }
 
-/** Each covering test file on its own, and a finding for each changed source no test covers; returns the red tests. */
-function tests(at: string, files: readonly string[], uncovered: readonly string[], step: StepFn, fail: FailFn, timeoutMs: number): Set<string> {
-  const red = new Set<string>();
+/** The failing tests of one test file's run: `file :: full name` per vitest FAIL line, else the file itself. */
+export function failingTests(file: string, pkg: string, output: string): string[] {
+  const rel = pkg === "." ? file : file.slice(pkg.length + 1);
+  const names = new Set<string>();
+  for (const raw of output.replace(/\u001b\[[0-9;?]*[A-Za-z]/g, "").split("\n")) {
+    const match = /^\s*FAIL\s+(\S+)\s+>\s+(.+?)\s*$/.exec(raw);
+    if (match && match[1] === rel) names.add(`${file} :: ${match[2]!.replace(/\s+\d+(?:\.\d+)?m?s$/, "")}`);
+  }
+  return names.size ? [...names].sort() : [file];
+}
+
+/** Runs one test file alone at the merge base: its failing tests, or null when the merge base has no such file. */
+type BaseRun = (file: string) => Set<string> | null;
+
+/** A lazily made merge-base tree with the head tree's installed dependencies linked in (never installed), as check --fast does. */
+function baseRunner(repo: string, mergeBase: string, at: string, trees: Worktree[], timeoutMs: number): BaseRun {
+  let dir: string | undefined;
+  const cache = new Map<string, Set<string> | null>();
+  return file => {
+    if (cache.has(file)) return cache.get(file)!;
+    if (!dir) {
+      const tree = addWorktree(repo, mergeBase, "base-red");
+      trees.push(tree);
+      dir = tree.dir;
+      for (const ws of [".", ...listWorkspaces(at).map(workspace => workspace.dir)]) {
+        const from = join(at, ws, "node_modules"), to = join(dir, ws, "node_modules");
+        if (existsSync(from) && !existsSync(to) && existsSync(join(dir, ws))) symlinkSync(from, to, "dir");
+      }
+    }
+    let out: Set<string> | null = null;
+    if (existsSync(join(dir, file))) {
+      const pkg = packageOf(dir, file), command = testCommand(dir, pkg, file);
+      const result = run(command.argv, command.cwd, { timeoutMs });
+      out = new Set(result.exit ? failingTests(file, pkg, result.output) : []);
+    }
+    cache.set(file, out);
+    return out;
+  };
+}
+
+/**
+ * Each covering test file on its own, and a finding for each changed source no test covers. A red file's failing
+ * tests are each new red (a tests FAIL) unless the same test also fails with the file run alone at the merge base, or
+ * the --fast record lists it base-red: then it is base-red, a note. Returns the red files and both lists.
+ */
+function tests(at: string, files: readonly string[], uncovered: readonly string[], step: StepFn, fail: FailFn, findings: Finding[], baseRun: BaseRun, fastBaseRed: Set<string> | undefined, timeoutMs: number): { red: Set<string>; newRed: string[]; baseRed: string[] } {
+  const red = new Set<string>(), newRed: string[] = [], baseRed: string[] = [];
   let ms = 0;
   for (const file of files) {
-    const command = testCommand(at, packageOf(at, file), file);
+    const pkg = packageOf(at, file), command = testCommand(at, pkg, file);
     const result = run(command.argv, command.cwd, { timeoutMs });
     ms += result.ms;
-    if (result.exit) { red.add(file); fail("tests", file, failed(result, 1)); }
+    if (!result.exit) continue;
+    red.add(file);
+    for (const id of failingTests(file, pkg, result.output)) {
+      const listed = fastBaseRed !== undefined && listedBaseRed(fastBaseRed, id);
+      const atBase = listed ? null : baseRun(file);
+      if (listed || atBase?.has(id)) {
+        baseRed.push(id);
+        findings.push({ id: "tests.base-red", level: "note", subject: id, detail: listed ? "listed base-red by the --fast record at this head" : "also fails run alone at the merge base" });
+      } else {
+        newRed.push(id);
+        fail("tests", id, failed(result, 1));
+      }
+    }
   }
   for (const source of uncovered) fail("test.uncovered", source, "changed, and no test file reaches it through the import graph");
-  const status = red.size || uncovered.length ? "fail" : files.length ? "pass" : "skip";
-  step("tests", status, `${files.length - red.size}/${files.length} file(s) green, ${uncovered.length} changed source(s) uncovered`, ms);
-  return red;
+  const status = newRed.length || uncovered.length ? "fail" : files.length ? "pass" : "skip";
+  step("tests", status, `${files.length - red.size}/${files.length} file(s) green, ${newRed.length} new red, ${baseRed.length} base-red, ${uncovered.length} changed source(s) uncovered`, ms);
+  return { red, newRed, baseRed };
 }
 
 function probe(config: ReviewConfig, at: string): Map<string, Record<string, number> | string> {
@@ -347,8 +458,12 @@ export function formatReview(report: ReviewReport): string {
   for (const [key, value] of Object.entries(report.counts)) if (value.base !== value.head) lines.push(`  ${key}: ${value.base ?? "?"} -> ${value.head ?? "?"}`);
   lines.push(`mutants: ${report.mutants.length}`);
   for (const mutant of report.mutants) lines.push(`  ${mutant.status.padEnd(9)} ${mutant.id}${mutant.by ? ` by ${mutant.by}` : ""}`);
+  lines.push(`ran: ${report.ran.commands} command(s), ${report.ran.missing.length} missing (exit 127)`);
+  lines.push(`red: ${report.newRed.length} new, ${report.baseRed.length} base-red`);
+  for (const id of report.newRed) lines.push(`  new red  ${id}`);
+  for (const id of report.baseRed) lines.push(`  base-red ${id}`);
   lines.push(`findings: ${report.findings.length}`);
   for (const finding of report.findings) lines.push(`  ${finding.level === "fail" ? "FAIL" : "note"} ${finding.id} ${finding.subject}: ${finding.detail.split("\n").join("\n      ")}`);
-  lines.push(`MECHANICAL: ${report.verdict} ${report.head} ${report.tree}`);
+  lines.push(report.line);
   return lines.join("\n");
 }
