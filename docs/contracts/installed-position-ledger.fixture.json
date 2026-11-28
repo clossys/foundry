@@ -19,7 +19,10 @@
     { "package": "@clossys/butler", "disposition": "not-applicable", "reason": "Synthetic schema fixture; no consumer decision.", "positionIds": [] },
     { "package": "@clossys/messenger", "disposition": "not-applicable", "reason": "Synthetic schema fixture; no consumer decision.", "positionIds": [] },
     { "package": "@clossys/giver", "disposition": "not-applicable", "reason": "Synthetic schema fixture; no consumer decision.", "positionIds": [] },
-    { "package": "@clossys/keeper", "disposition": "not-applicable", "reason": "Synthetic schema fixture; no consumer decision.", "positionIds": [] }
+    { "package": "@clossys/keeper", "disposition": "not-applicable", "reason": "Synthetic schema fixture; no consumer decision.", "positionIds": [] },
+    { "package": "@clossys/planner", "disposition": "not-applicable", "reason": "Synthetic schema fixture; no consumer decision.", "positionIds": [] },
+    { "package": "@clossys/developer", "disposition": "not-applicable", "reason": "Synthetic schema fixture; no consumer decision.", "positionIds": [] },
+    { "package": "@clossys/reviewer", "disposition": "not-applicable", "reason": "Synthetic schema fixture; no consumer decision.", "positionIds": [] }
   ],
   "positions": [
     {

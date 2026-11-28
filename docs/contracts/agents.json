@@ -11,6 +11,7 @@
     { "id": "controller", "package": "@clossys/controller", "class": "other", "definitionOwner": "controller", "rung": null },
     { "id": "customer", "package": "@clossys/customer", "class": "other", "definitionOwner": "controller", "rung": null },
     { "id": "designer", "package": "@clossys/designer", "class": "content", "definitionOwner": "controller", "rung": null },
+    { "id": "developer", "package": "@clossys/developer", "class": "factory", "definitionOwner": "controller", "rung": null },
     { "id": "director", "package": "@clossys/director", "class": "content", "definitionOwner": "controller", "rung": null },
     { "id": "giver", "package": "@clossys/giver", "class": "other", "definitionOwner": "controller", "rung": null },
     { "id": "influencer", "package": "@clossys/influencer", "class": "other", "definitionOwner": "controller", "rung": null },
@@ -21,8 +22,10 @@
     { "id": "locksmith", "package": "@clossys/locksmith", "class": "other", "definitionOwner": "controller", "rung": null },
     { "id": "messenger", "package": "@clossys/messenger", "class": "other", "definitionOwner": "controller", "rung": null },
     { "id": "observer", "package": "@clossys/observer", "class": "other", "definitionOwner": "controller", "rung": null },
+    { "id": "planner", "package": "@clossys/planner", "class": "factory", "definitionOwner": "controller", "rung": null },
     { "id": "producer", "package": "@clossys/producer", "class": "tooling", "definitionOwner": "controller", "rung": null },
     { "id": "publisher", "package": "@clossys/publisher", "class": "content", "definitionOwner": "controller", "rung": null },
+    { "id": "reviewer", "package": "@clossys/reviewer", "class": "factory", "definitionOwner": "controller", "rung": null },
     { "id": "starter", "package": "@clossys/starter", "class": "tooling", "definitionOwner": "controller", "rung": null },
     { "id": "writer", "package": "@clossys/writer", "class": "content", "definitionOwner": "controller", "rung": null }
   ],

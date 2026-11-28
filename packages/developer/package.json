@@ -1,0 +1,90 @@
+{
+  "name": "@clossys/developer",
+  "version": "0.1.0",
+  "private": false,
+  "license": "MIT",
+  "type": "module",
+  "bin": {
+    "developer-check": "dist/cli.js"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE",
+    "skill",
+    "intake-question-cards.json",
+    "fit-signal-declarations.json",
+    "loop-matrix.json",
+    "!dist/**/*.test.*"
+  ],
+  "sideEffects": false,
+  "foundry": {
+    "assessment": {
+      "bin": "developer-check",
+      "invocation": "single-json-input"
+    },
+    "intake": "intake-question-cards.json",
+    "outputs": [
+      "clossys/developer/status.json"
+    ],
+    "status": {
+      "bin": "developer-check",
+      "invocation": "single-json-input"
+    },
+    "fit": "fit-signal-declarations.json",
+    "solves": [],
+    "needs": [],
+    "feeds": [],
+    "capabilities": [
+      {
+        "id": "confirm-scaffold-conformance",
+        "subQuestion": "Does @clossys/developer's own scaffolded starting point already conform to the Stage A framework?",
+        "worldClass": "A newly scaffolded package reports zero gaps against every Stage A framework definition on day one (issue #1203).",
+        "inputs": [],
+        "outputs": [
+          "clossys/developer/status.json"
+        ],
+        "proofCase": null,
+        "maturity": "planned",
+        "v0": false,
+        "businessLifecycleStage": "build"
+      }
+    ]
+  },
+  "description": "The developer role, a factory agent for how Foundry itself is built: it designs the smallest change a unit needs, implements it inside the unit's scope, and records every named check with its exit code. Its stages are Design, Implement and Evidence; it ships its skill, the rules it owns, and a status probe (developer-check) that checks the skill lists exactly the rules it owns.",
+  "keywords": [
+    "developer",
+    "design",
+    "implement",
+    "evidence",
+    "factory"
+  ],
+  "author": "Clossys",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/clossys/foundry.git",
+    "directory": "packages/developer"
+  },
+  "bugs": {
+    "url": "https://github.com/clossys/foundry/issues"
+  },
+  "homepage": "https://github.com/clossys/foundry/tree/main/packages/developer#readme",
+  "devDependencies": {
+    "@types/node": "^26.6.3",
+    "typescript": "~6.0.0",
+    "vitest": "^5.0.1"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "prepublishOnly": "node ../../scripts/check-name-collision.mjs . && npm run build",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run"
+  },
+  "publishConfig": {
+    "registry": "https://registry.npmjs.org",
+    "access": "public"
+  }
+}

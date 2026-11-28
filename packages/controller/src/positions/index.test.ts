@@ -330,6 +330,71 @@ describe("installed positions", () => {
     });
   });
 
+  describe("factory roles are optional in installed positions", () => {
+    // The factory roles are exactly the `class: "factory"` rows of
+    // docs/contracts/agents.json, the one definition of every agent.
+    const factoryRoles = (): string[] => ((read(join(repoRoot, "docs/contracts/agents.json")) as { agents: Array<{ package: string; class: string }> }).agents)
+      .filter((row) => row.class === "factory").map((row) => row.package).sort();
+    const withoutFactoryDispositions = () => {
+      const ledger = fixture();
+      const factory = new Set(factoryRoles());
+      ledger.dispositions = (ledger.dispositions as Array<Record<string, unknown>>).filter((item) => !factory.has(String(item.package)));
+      return ledger;
+    };
+
+    it("ledger without factory dispositions passes silently", () => {
+      expect(factoryRoles().length).toBeGreaterThan(0);
+      const result = validateInstalledPositionLedger(withoutFactoryDispositions());
+      expect(result.ok).toBe(true);
+      expect(result.findings).toEqual([]);
+      expect(result.advisories).toEqual([]);
+      const complete = validateInstalledPositionLedger(fixture());
+      expect(result.openRoles).toBe(complete.openRoles);
+      expect(result.positions).toBe(complete.positions);
+    });
+
+    it("ledger naming a factory role is validated", () => {
+      const [factoryRole] = factoryRoles();
+      const named = (change: (disposition: Record<string, unknown>, ledger: Record<string, unknown>) => void) => {
+        const ledger = withoutFactoryDispositions();
+        const disposition: Record<string, unknown> = { package: factoryRole, disposition: "not-applicable", reason: "Synthetic schema fixture; no consumer decision.", positionIds: [] };
+        (ledger.dispositions as Array<Record<string, unknown>>).push(disposition);
+        change(disposition, ledger);
+        return validateInstalledPositionLedger(ledger);
+      };
+      expect(named(() => {}).ok).toBe(true);
+      expect(named((disposition) => { disposition.reason = ""; }).findings).toContainEqual(expect.objectContaining({ rule: "missing-disposition-reason" }));
+      expect(named((disposition) => { disposition.disposition = "open"; }).findings).toContainEqual(expect.objectContaining({ rule: "invalid-disposition-position-ids" }));
+      expect(named((disposition, ledger) => { (ledger.dispositions as unknown[]).push(structuredClone(disposition)); }).findings).toContainEqual(expect.objectContaining({ rule: "duplicate-role-disposition" }));
+      const position = (ledger: Record<string, unknown>) => {
+        const copy = structuredClone((ledger.positions as Array<Record<string, unknown>>)[0]!);
+        copy.id = "fixture-factory";
+        copy.package = factoryRole;
+        (ledger.positions as unknown[]).push(copy);
+        return copy;
+      };
+      const open = named((disposition, ledger) => { position(ledger); disposition.disposition = "open"; disposition.positionIds = ["fixture-factory"]; });
+      expect(open.ok).toBe(true);
+      expect(open.openRoles).toBe(validateInstalledPositionLedger(fixture()).openRoles + 1);
+      expect(named((disposition, ledger) => { position(ledger).setpoint = { value: [1, 2], evidenceRefs: ["fixture:setpoint"] }; disposition.disposition = "open"; disposition.positionIds = ["fixture-factory"]; }).ok).toBe(false);
+      const uncited = withoutFactoryDispositions();
+      position(uncited);
+      expect(validateInstalledPositionLedger(uncited).findings).toContainEqual(expect.objectContaining({ rule: "uncited-position", path: "fixture-factory" }));
+    });
+
+    it("makes exactly agents.json's factory rows optional, and every factory row has a role charter", () => {
+      const factory = factoryRoles();
+      const charteredRoles = Object.keys((readCanonicalRoleLoopContract() as { roles: Record<string, unknown> }).roles);
+      for (const role of factory) expect(charteredRoles).toContain(role);
+      for (const role of charteredRoles) {
+        const ledger = fixture();
+        ledger.dispositions = (ledger.dispositions as Array<Record<string, unknown>>).filter((item) => item.package !== role);
+        const missing = validateInstalledPositionLedger(ledger).findings.some((finding) => finding.rule === "missing-role-disposition" && finding.path === role);
+        expect({ role, required: missing }).toEqual({ role, required: !factory.includes(role) });
+      }
+    });
+  });
+
   it("keeps every installed-position contract vocabulary tied to the validator", () => {
     for (const collection of [POSITION_FIELDS, WORKER_COMPONENT_KINDS, POSITION_RECOMMENDATIONS, ROLE_DISPOSITIONS, SETPOINT_VALUE_SHAPES]) {
       expect(Object.isFrozen(collection)).toBe(true);

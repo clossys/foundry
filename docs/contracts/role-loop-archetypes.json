@@ -509,6 +509,66 @@
             "turning inferred beliefs into standing instructions"
           ]
         }
+      },
+      "@clossys/planner": {
+        "jobQuestion": "Is every owner ask recorded once and cut into a scoped unit that names the checks that prove it?",
+        "closeCondition": "Independent consumer evidence shows the position's owned metric meets its setpoint over the declared review cadence.",
+        "metric": {
+          "name": "planned ask rate",
+          "formula": "owner asks recorded once and cut into a scoped unit with named checks / all owner asks received",
+          "unit": "ratio",
+          "direction": "increase"
+        },
+        "primaryMode": "fulfill",
+        "secondaryModes": [],
+        "boundary": {
+          "owns": "Intake of owner asks, unit plans, and watching each unit to done for how Foundry itself is built.",
+          "excludes": [
+            "implementing a unit",
+            "clearing a change",
+            "judging a consumer's records"
+          ]
+        }
+      },
+      "@clossys/developer": {
+        "jobQuestion": "Does each unit land as the smallest change that its named checks prove?",
+        "closeCondition": "Independent consumer evidence shows the position's owned metric meets its setpoint over the declared review cadence.",
+        "metric": {
+          "name": "evidenced change rate",
+          "formula": "units landed with every named check recorded with its exit code / all units landed",
+          "unit": "ratio",
+          "direction": "increase"
+        },
+        "primaryMode": "fulfill",
+        "secondaryModes": [],
+        "boundary": {
+          "owns": "Design, implementation, and evidence for one scoped unit of how Foundry itself is built.",
+          "excludes": [
+            "cutting units",
+            "clearing its own change",
+            "judging a consumer's records"
+          ]
+        }
+      },
+      "@clossys/reviewer": {
+        "jobQuestion": "Is each change to Foundry cleared only on its checks and a reading of its exact head?",
+        "closeCondition": "Independent consumer evidence shows the position's owned metric meets its setpoint over the declared review cadence.",
+        "metric": {
+          "name": "cleared change hold rate",
+          "formula": "changes cleared at their exact head that need no later fix for a finding review should have caught / all changes cleared",
+          "unit": "ratio",
+          "direction": "increase"
+        },
+        "primaryMode": "assure",
+        "secondaryModes": [],
+        "boundary": {
+          "owns": "Mechanical checks, review judgement, and the production check for changes to how Foundry itself is built.",
+          "excludes": [
+            "implementing the change under review",
+            "cutting units",
+            "judging a consumer's records"
+          ]
+        }
       }
   }
 }
