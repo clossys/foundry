@@ -23,9 +23,9 @@ const committed = { themes, assets, components, sections, frames } as unknown as
 const LAYERS = ["themes", "assets", "components", "sections", "frames"] as const;
 
 describe("Designer slot contracts", () => {
-  it("has one record for each of the 252 canonical Designer slots (238 re-signed + 8 owner-signed specimen leaves + frames.deck, foundry-build-0032, + five admin record sections, foundry-build-0048), hand records first", () => {
+  it("has one record for each of the 253 canonical Designer slots (238 re-signed + 8 owner-signed specimen leaves + frames.deck, foundry-build-0032, + five admin record sections, foundry-build-0048, + frames.video, CP1-VIDEO1), hand records first", () => {
     for (const layer of LAYERS) expect(committed[layer].map(row => row.slot).sort(), layer).toEqual(catalog[layer].map(slot => slot.id).sort());
-    expect(LAYERS.map(layer => committed[layer].length)).toEqual([42, 49, 78, 71, 12]);
+    expect(LAYERS.map(layer => committed[layer].length)).toEqual([42, 49, 78, 71, 13]);
     expect(committed.sections.slice(0, 10).map(row => row.slot)).toEqual(["sections.band", "sections.section-header", "sections.hero", "sections.features", "sections.comparison", "sections.pricing", "sections.call-to-action", "sections.form", "sections.legal-prose", "sections.steps"]);
     expect(committed.frames.slice(0, 3).map(row => row.slot)).toEqual(["frames.site-header", "frames.site-footer", "frames.site-shell"]);
   });

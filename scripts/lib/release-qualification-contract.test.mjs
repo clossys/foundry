@@ -1,5 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import { readFileSync } from "node:fs";
+import { PACKAGE_RENAMES } from "./package-renames.mjs";
 import { selectPolicyPackage, validateReleaseQualificationContract, validateReleaseQualificationPolicy } from "./release-qualification-contract.mjs";
 const adapter = { schemaVersion: 1, package: "@example/x", archetype: "current-direct", bins: { check: 0 }, fixtures: ["a.json", "b.json", "c.json"], cases: [{ id: "green", bin: "check", fixtureArgs: ["a.json"], exitCode: 0, group: "g" }, { id: "red", bin: "check", fixtureArgs: ["b.json"], exitCode: 1, group: "g" }, { id: "unknown", bin: "check", fixtureArgs: ["c.json"], exitCode: 2, group: "g" }], dimensionEvidence: { rollback: "restoration", duplicate: "g" } };
 const entry = { packageKey: "x", recordStem: "example-x", packageDir: "packages/x", adapterPath: "governance/release-qualification-adapters/x/current-direct.json", fixturePath: "governance/release-qualification-fixtures/x/current-direct", archetypes: { "current-direct": { status: "required" }, "prior-minor": { status: "unsupported", reason: "none" }, "oldest-supported": { status: "unsupported", reason: "none" }, "control-plane": { status: "unsupported", reason: "none" } }, dimensions: { position: { status: "unsupported", reason: "none" }, completion: { status: "unsupported", reason: "none" }, rollback: { status: "required" }, duplicate: { status: "required" }, cadence: { status: "unsupported", reason: "none" }, closeWindow: { status: "unsupported", reason: "none" } } };
@@ -112,4 +114,26 @@ test("policy package bindings are unique while same leaf scoped packages remain 
   assert.equal(selectPolicyPackage(value.policy, "other-controller").name, "@other/controller");
   second.packageKey = "x";
   assert.ok(validateReleaseQualificationContract(value).some((item) => item.rule === "package-policy-unique"));
+});
+const bound = (packageKey, packageDir) => {
+  const value = structuredClone(policy);
+  value.packages = { [`@example/${packageKey}`]: { ...structuredClone(entry), packageKey, recordStem: `example-${packageKey}`, packageDir, adapterPath: `governance/release-qualification-adapters/${packageKey}/current-direct.json`, fixturePath: `governance/release-qualification-fixtures/${packageKey}/current-direct` } };
+  return validateReleaseQualificationPolicy(value).map((item) => item.rule);
+};
+test("a renamed package keeps its published key and binds the directory it lives in now", () => {
+  assert.ok(PACKAGE_RENAMES.length > 0);
+  for (const { directory, publishedDirectory } of PACKAGE_RENAMES) {
+    assert.deepEqual(bound(publishedDirectory, `packages/${directory}`), []);
+    // The published spelling is history; no workspace directory carries it.
+    assert.ok(bound(publishedDirectory, `packages/${publishedDirectory}`).includes("package-policy"));
+  }
+});
+test("an unrenamed key still needs packages/<key>", () => {
+  assert.deepEqual(bound("x", "packages/x"), []);
+  assert.ok(bound("x", "packages/y").includes("package-policy"));
+  for (const { directory } of PACKAGE_RENAMES) assert.ok(bound("x", `packages/${directory}`).includes("package-policy"));
+});
+test("the repository's qualification policy satisfies the contract", () => {
+  const repository = JSON.parse(readFileSync(new URL("../../governance/release-qualification-policy.json", import.meta.url), "utf8"));
+  assert.deepEqual(validateReleaseQualificationPolicy(repository), []);
 });

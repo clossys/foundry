@@ -61,7 +61,7 @@
       "frames.site-shell": "its references are its parts' references (header, footer, toast, skip link, nav); none ships a shell"
     }
   },
-  "fixtures": 90,
+  "fixtures": 91,
   "gaps": [
     {
       "slot": "components.chart-heatmap",

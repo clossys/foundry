@@ -13,7 +13,7 @@ import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { isAbsolute, join, relative, resolve, sep } from "node:path";
 import { SLOT_REF } from "../loop/names.js";
 import { PRODUCER_ROOT } from "./ledger.js";
-import { createRequest, REQUEST_ID, REQUEST_SCHEMA, REQUEST_SEATS, RequestError, requestsDir, withRequestLock, writeRequest } from "./request.js";
+import { addressed, canonical, createRequest, REQUEST_ID, REQUEST_SCHEMA, REQUEST_SEATS, RequestError, requestsDir, withRequestLock, writeRequest } from "./request.js";
 import {
   FOUNDRY_RESULT, QUEUE_RESULT, REPORT_ABOUT, REPORT_CLOSERS, REPORT_KIND, REPORT_OUTCOMES, REPORT_QUEUE, REPORT_TARGET, REPORT_WHAT, reportIssues, reportRoute,
   type ReportEntry, type ReportEvidence, type ReportOutcome, type ReportWhat,
@@ -90,30 +90,70 @@ export interface FileReportInput {
  * Both the CLI and a loop run's failed step file through here.
  */
 export function fileReport(consumer: string, input: FileReportInput, options: { readonly dry?: boolean } = {}): { report: ReportEntry; created: boolean } {
+  const draft = reportDraft(input);
+  return withRequestLock(consumer, `report-${input.about.replace(/\//g, "-")}-${input.what}`, () => {
+    const existing = listReports(consumer).map(read => read.report).find(report => report?.status === "open" && report.about === input.about && report.what === input.what);
+    if (existing) return { report: existing, created: false };
+    if (options.dry) return { report: draft, created: true };
+    return { report: createRequest(consumer, draft), created: true };
+  });
+}
+
+/** The report fileReport writes for `input` (its refusals first), before createRequest names its id: what the writer itself would write. */
+export function reportDraft(input: FileReportInput): ReportEntry {
   if (!REPORT_ABOUT.test(input.about)) throw new RequestError(`--about must be verb/<name>, skill/<name> or agent/<name>, got ${input.about}`);
   if (!(REPORT_WHAT as readonly string[]).includes(input.what)) throw new RequestError(`--what must be ${REPORT_WHAT.join(", ")}, got ${input.what}`);
   if (input.from !== "owner" && !SLOT_REF.test(input.from)) throw new RequestError(`--from must be owner or <agent>/<slot id>, got ${input.from}`);
   if (!(REQUEST_SEATS as readonly string[]).includes(input.by)) throw new RequestError(`--by must be one of ${REQUEST_SEATS.join(", ")}, got ${input.by}`);
   if (!input.why.trim()) throw new RequestError("--why says what went wrong");
-  return withRequestLock(consumer, `report-${input.about.replace(/\//g, "-")}-${input.what}`, () => {
-    const existing = listReports(consumer).map(read => read.report).find(report => report?.status === "open" && report.about === input.about && report.what === input.what);
-    if (existing) return { report: existing, created: false };
-    const id = `${stampOf(input.at)}-report-${input.about.replace(/\//g, "-")}-${input.what}`.slice(0, 80).replace(/-+$/, "");
-    const route = reportRoute();
-    const draft: ReportEntry = {
-      schema: REQUEST_SCHEMA, id, kind: REPORT_KIND, from: input.from, assignee: "producer", target: REPORT_TARGET, status: "open", opened: `${id}#1`,
-      why: input.why, source: input.source, route, about: input.about, what: input.what as ReportWhat,
-      ...(input.evidence ? { evidence: input.evidence } : {}),
-      createdBy: input.createdBy ?? { actor: "code", cli: input.source === "cli" ? "clossys request" : "clossys run", version: producerVersion() },
-      createdAt: input.at, refs: SLOT_REF.test(input.from) ? [{ to: input.from as Ref["to"], rel: "raisedBy" }] : [],
-      events: [
-        { id: `${id}#1`, at: input.at, op: "raised", by: input.by, via: "cli", detail: input.why },
-        { id: `${id}#2`, at: input.at, op: "routed", by: "producer", detail: `${route.row} -> ${route.assignee}: Producer owns every report and tracks it to closure` },
-      ],
-    };
-    if (options.dry) return { report: draft, created: true };
-    return { report: createRequest(consumer, draft), created: true };
-  });
+  const id = `${stampOf(input.at)}-report-${input.about.replace(/\//g, "-")}-${input.what}`.slice(0, 80).replace(/-+$/, "");
+  const route = reportRoute();
+  return {
+    schema: REQUEST_SCHEMA, id, kind: REPORT_KIND, from: input.from, assignee: "producer", target: REPORT_TARGET, status: "open", opened: `${id}#1`,
+    why: input.why, source: input.source, route, about: input.about, what: input.what as ReportWhat,
+    ...(input.evidence ? { evidence: input.evidence } : {}),
+    createdBy: input.createdBy ?? { actor: "code", cli: input.source === "cli" ? "clossys request" : "clossys run", version: producerVersion() },
+    createdAt: input.at, refs: SLOT_REF.test(input.from) ? [{ to: input.from as Ref["to"], rel: "raisedBy" }] : [],
+    events: [
+      { id: `${id}#1`, at: input.at, op: "raised", by: input.by, via: "cli", detail: input.why },
+      { id: `${id}#2`, at: input.at, op: "routed", by: "producer", detail: `${route.row} -> ${route.assignee}: Producer owns every report and tracks it to closure` },
+    ],
+  };
+}
+
+/** The report fileReport drafts for `entry`'s about, what, why, from, createdAt and evidence when `agent` files it (`clossys request --kind report --by <agent>`). */
+export const agentReportDraft = (entry: ReportEntry, agent: string): ReportEntry =>
+  reportDraft({ about: entry.about, what: entry.what, why: entry.why, from: entry.from, by: agent, at: entry.createdAt, source: "cli", ...(entry.evidence ? { evidence: entry.evidence } : {}) });
+
+/**
+ * CP1-CHECKS fix round 1 (review-cp1checks-blindA P1-1): why a report an agent step of an agent loop wrote is not the
+ * report the report writer itself files for that agent (`clossys request --kind report ... --by <agent>`, source cli).
+ * Like agentRaiseIssues: the writer's own draft is rebuilt from the entry's about, what, why, from, createdAt (and its
+ * evidence, as the verb kept it) with `by` the step's agent (reportDraft, the writer's refusals included) and must equal
+ * the entry exactly: its id from its createdAt, or createRequest's -2..-9 suffix; its raised event by the agent via cli
+ * and Producer's routed event; its route, raisedBy ref and code actor. No other open report may have the same about and
+ * what (the writer dedupes on them and writes nothing then). A report raised by another seat, or a forged or rewritten
+ * chain, is refused. Empty when the entry is exactly the writer's.
+ */
+export function agentReportIssues(consumer: string, entry: ReportEntry, agent: string): string[] {
+  let draft: ReportEntry;
+  try { draft = agentReportDraft(entry, agent); } catch (error) {
+    if (error instanceof RequestError) return [error.message];
+    throw error;
+  }
+  const issues: string[] = [];
+  // createRequest's own relabel on an id already taken: the draft's id or its -2..-9 suffix, with opened and events renamed.
+  const suffix = entry.id.startsWith(draft.id) ? entry.id.slice(draft.id.length) : undefined;
+  if (suffix === undefined || !/^(?:-[2-9])?$/.test(suffix)) issues.push(`id ${entry.id}: clossys request names it ${draft.id} (or its -2..-9 suffix) from its createdAt, about and what`);
+  else {
+    const expected = addressed(draft, entry.id);
+    const keys = [...new Set([...Object.keys(expected), ...Object.keys(entry)])].sort()
+      .filter(key => canonical((expected as unknown as Record<string, unknown>)[key]) !== canonical((entry as unknown as Record<string, unknown>)[key]));
+    if (keys.length) issues.push(`not the report clossys request files for ${agent} (${entry.id}): ${keys.join(", ")} differ${keys.length === 1 ? "s" : ""}`);
+  }
+  const duplicate = listReports(consumer).map(read => read.report).find(other => other !== undefined && other.id !== entry.id && other.status === "open" && other.about === entry.about && other.what === entry.what);
+  if (duplicate) issues.push(`${REPORT_QUEUE}#${duplicate.id} is already open for ${entry.about} ${entry.what}: the writer files no second one`);
+  return issues;
 }
 
 /**
@@ -204,12 +244,13 @@ export async function recheckReports(consumer: string, at: string, runCheck: Che
 
 /**
  * A loop run's step that could not run, or failed with no route on, files a report (about the step's verb, else
- * verb/run): the same fileReport the CLI files through, from `producer/<loop>`, by Producer. Returns the entry name.
+ * verb/run): the same fileReport the CLI files through, from `producer/<loop>`, by Producer. Returns the entry name,
+ * and whether this call filed it (`created`) or an open report with the same about and what was reused unchanged.
  */
-export function fileStepReport(root: string, input: { readonly loop: string; readonly runId: string; readonly step: string; readonly cli: string; readonly why: string; readonly at: string }): string {
+export function fileStepReport(root: string, input: { readonly loop: string; readonly runId: string; readonly step: string; readonly cli: string; readonly why: string; readonly at: string }): { readonly entry: string; readonly created: boolean } {
   const about = `verb/${/^clossys ([a-z][a-z0-9-]*)/.exec(input.cli)?.[1] ?? "run"}`;
   const filed = fileReport(join(root, "clossys"), {
     about, what: "bug", why: `${input.loop} run ${input.runId}: ${input.why}`, from: `producer/${input.loop}`, by: "producer", at: input.at, source: "check",
   });
-  return `${REPORT_QUEUE}#${filed.report.id}`;
+  return { entry: `${REPORT_QUEUE}#${filed.report.id}`, created: filed.created };
 }

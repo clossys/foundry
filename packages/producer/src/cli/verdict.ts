@@ -45,16 +45,31 @@ export const VERDICT_EXAMPLES = {
   create: { schema: "clossys.verdict/1", slot: "components.button", create: true, reason: "No seed can be adapted: the contract's members are missing and the stock item fails keyboard focus.", gaps: [{ id: "brief:members", class: "missing-behavior" }, { id: "polish", class: "a11y-failure" }] },
 } as const;
 
+/**
+ * The Writer's examples, for writer/frames.site-header.copy (standard string, mode craft: a gap names no class).
+ * verdict.test.ts proves each validates and holds for that fixture slot's standard and contract.
+ */
+export const WRITER_VERDICT_EXAMPLES = {
+  pick: { schema: "clossys.verdict/1", slot: "frames.site-header.copy", pick: "copy-v1.md", reason: "copy-v1 speaks in the pinned voice and every label is clear at a glance.", criteria: ["voice-fit", "clarity"] },
+  create: { schema: "clossys.verdict/1", slot: "frames.site-header.copy", create: true, reason: "No held candidate fills every contract field; craft the header labels.", gaps: [{ id: "copy.entries" }] },
+} as const;
+
 export const VERDICT_USAGE = "Usage: clossys verdict <agent>/<slot> --record <verdict.json> --model <id> --tier low|mid|high --by agent:<seat> [--at <iso>] [--root <dir>] [--json]\n"
   + "  Records the P1 verdict: {pick, reason, criteria} pins the picked candidate (basis agent); {create: true, reason, gaps}\n"
   + "  routes the slot to P2 (clossys next --stage). Ids must exist in the slot's standard or brief (brief:<key>); a create\n"
   + "  under an adopt-first standard names a gap whose class is in createGaps (R03.5). The verdict guard runs on the write.\n"
   + "  Every file has schema \"clossys.verdict/1\" and the slot id; add \"inputsHash\" when the latest clossys options packet names one.\n"
-  + "  One complete example file per rung (here for designer/components.button):\n"
+  + "  Rungs: Designer L1 and L2 = adopt (no verdict), L3 = adapt, L4 = create; the Writer's rungs are adopt, adapt and create.\n"
+  + "  An adapt or create (Designer L3 or L4, a Writer adapt or create) needs a create verdict first (P2).\n"
+  + "  Designer: one complete example file per rung (here for designer/components.button):\n"
   + "  rung adopt (a stock seed, submitted with clossys next --submit --rung adopt --seed <id>): no verdict is needed.\n"
   + `  pick (P1, a held candidate fits): ${JSON.stringify(VERDICT_EXAMPLES.pick)}\n`
   + `  rung adapt (P2, then clossys next --submit --rung adapt --seed <id>): ${JSON.stringify(VERDICT_EXAMPLES.adapt)}\n`
-  + `  rung create (P2, then clossys next --submit --rung create --reason <text>): ${JSON.stringify(VERDICT_EXAMPLES.create)}`;
+  + `  rung create (P2, then clossys next --submit --rung create --reason <text>): ${JSON.stringify(VERDICT_EXAMPLES.create)}\n`
+  + "  Writer: one complete example file each (here for writer/frames.site-header.copy, standard string, mode craft, so a gap\n"
+  + "  names no class; taste ids voice-fit, clarity, economy, task-fit; a gap may also be a requirement check like copy.entries):\n"
+  + `  pick (P1): ${JSON.stringify(WRITER_VERDICT_EXAMPLES.pick)}\n`
+  + `  create (P2, then clossys next --stage brief): ${JSON.stringify(WRITER_VERDICT_EXAMPLES.create)}`;
 
 const VALUED = ["--record", "--model", "--tier", "--by", "--at", "--root"] as const;
 interface Flags { positional: string[]; values: Map<string, string>; help: boolean; json: boolean }
@@ -133,11 +148,12 @@ export function verdictSchemaIssues(record: unknown, schema: JsonSchema = loadSc
 /** Why a schema-valid verdict does not hold for the slot, given its standard's ids and brief keys. */
 export function verdictIssues(record: Json, ids: { readonly taste: ReadonlySet<string>; readonly requirements: ReadonlySet<string>; readonly brief: ReadonlySet<string> }, standard: { readonly id: string; readonly mode?: string; readonly createGaps?: readonly string[] }): string[] {
   const issues: string[] = [];
+  const valid = `valid ids: taste ${[...ids.taste].sort().join(", ") || "(none)"}; requirements ${[...ids.requirements].sort().join(", ") || "(none)"}; brief ${[...ids.brief].sort().map(key => `brief:${key}`).join(", ") || "(none)"}`;
   if (record.create === true) {
     const gaps = record.gaps as { id: string; class?: string }[];
     for (const gap of gaps) {
       const known = gap.id.startsWith("brief:") ? ids.brief.has(gap.id.slice("brief:".length)) : ids.taste.has(gap.id) || ids.requirements.has(gap.id);
-      if (!known) issues.push(`gap ${gap.id} is not a taste criterion or requirement of standard ${standard.id}, nor brief:<key> of the slot contract`);
+      if (!known) issues.push(`gap ${gap.id} is not a taste criterion or requirement of standard ${standard.id}, nor brief:<key> of the slot contract (${valid})`);
     }
     if (standard.mode === "adopt-first") {
       const allowed = standard.createGaps?.length ? standard.createGaps : DEFAULT_CREATE_GAPS;
@@ -146,7 +162,7 @@ export function verdictIssues(record: Json, ids: { readonly taste: ReadonlySet<s
       if (!gaps.some(gap => gap.class !== undefined && allowed.includes(gap.class))) issues.push(`${standard.id} is adopt-first: a create needs a gap of class ${allowed.join(", ")} (R03.5)`);
     }
   } else {
-    for (const id of record.criteria as string[]) if (!ids.taste.has(id)) issues.push(`criterion ${id} is not a taste criterion of standard ${standard.id} (taste.md)`);
+    for (const id of record.criteria as string[]) if (!ids.taste.has(id)) issues.push(`criterion ${id} is not a taste criterion of standard ${standard.id} (taste.md; valid ids: ${[...ids.taste].sort().join(", ") || "(none)"})`);
     if (new Set(record.criteria as string[]).size !== (record.criteria as string[]).length) issues.push("criteria repeat an id");
   }
   return issues;

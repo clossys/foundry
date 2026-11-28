@@ -89,7 +89,7 @@
     "@clossys/strategist": {
       "packageKey": "strategist",
       "recordStem": "clossys-strategist",
-      "packageDir": "packages/strategist",
+      "packageDir": "packages/director",
       "adapterPath": "governance/release-qualification-adapters/strategist/current-direct.json",
       "fixturePath": "governance/release-qualification-fixtures/strategist/current-direct",
       "archetypes": {
