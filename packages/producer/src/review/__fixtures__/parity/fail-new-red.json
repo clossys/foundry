@@ -1,0 +1,338 @@
+{
+  "id": "fail-new-red",
+  "branch": "claude/r2f-0048-cp1-agentlist",
+  "head": "c0c32cdecd84ecfd68f30e5f7355688b407074bd",
+  "base": "c1589043af288c17e9c59bad813d10d75deaa1cb",
+  "mergeBase": "c1589043af288c17e9c59bad813d10d75deaa1cb",
+  "recorded": {
+    "verdict": "FAIL",
+    "newRed": [
+      "packages/producer/src/package-path.test.ts :: the contamination check's --skill id packages (CONTAM-U3 D5) > are exactly the packages packagePath maps"
+    ],
+    "baseRed": null,
+    "commandReds": [
+      "`node scripts/check-agent-lists.mjs` exit 1 expected 0"
+    ]
+  },
+  "observed": {
+    "ran": 99,
+    "missing": [],
+    "commands": [
+      {
+        "run": "node scripts/check-agent-lists.mjs",
+        "expect": 0,
+        "exit": 1
+      }
+    ],
+    "red": [
+      {
+        "file": "packages/producer/src/check/ref-verbatim-default.test.ts",
+        "head": [
+          "packages/producer/src/check/ref-verbatim-default.test.ts :: default check enforces the actual reference gate without --suites or --strict"
+        ],
+        "base": [
+          "packages/producer/src/check/ref-verbatim-default.test.ts :: default check enforces the actual reference gate without --suites or --strict"
+        ],
+        "unchanged": true
+      },
+      {
+        "file": "packages/producer/src/cli/ia-adopt-records.test.ts",
+        "head": [
+          "packages/producer/src/cli/ia-adopt-records.test.ts :: ia designer --adopt after init > re-routes the open requests init raised, so every route equals the table now"
+        ],
+        "base": [
+          "packages/producer/src/cli/ia-adopt-records.test.ts :: ia designer --adopt after init > re-routes the open requests init raised, so every route equals the table now"
+        ],
+        "unchanged": true
+      },
+      {
+        "file": "packages/producer/src/cli/inline-gates.e2e.test.ts",
+        "head": [
+          "packages/producer/src/cli/inline-gates.e2e.test.ts :: submit: refused at the write with the rule id and a one-line fix > holds an adopt to the ref-verbatim gate: refused with its fix while no vendored reference backs it"
+        ],
+        "base": [
+          "packages/producer/src/cli/inline-gates.e2e.test.ts :: submit: refused at the write with the rule id and a one-line fix > holds an adopt to the ref-verbatim gate: refused with its fix while no vendored reference backs it"
+        ],
+        "unchanged": true
+      },
+      {
+        "file": "packages/producer/src/cli/publication-slot2.e2e.test.ts",
+        "head": [
+          "packages/producer/src/cli/publication-slot2.e2e.test.ts :: a recut (clossys.slot/2) consumer store seats, pins, checks and compiles a publication > migrate recut --apply, ia, pin, check, compile"
+        ],
+        "base": [
+          "packages/producer/src/cli/publication-slot2.e2e.test.ts :: a recut (clossys.slot/2) consumer store seats, pins, checks and compiles a publication > migrate recut --apply, ia, pin, check, compile"
+        ],
+        "unchanged": true
+      },
+      {
+        "file": "packages/producer/src/constitution/choose-gate.test.ts",
+        "head": [
+          "packages/producer/src/constitution/choose-gate.test.ts :: R05.2 CHOOSE: an owner confirmation never launders a hand-written pick (the confirm verb's guard) > refuses to confirm an agent pick written by hand (no ledger event), and the slot stays a check failure",
+          "packages/producer/src/constitution/choose-gate.test.ts :: R05.2 CHOOSE: clossys check finds a pin written by hand (Publisher's dogfood finding, the U38 binding) > finds a pin.json written by hand into a slot that never had a pin event",
+          "packages/producer/src/constitution/choose-gate.test.ts :: R05.2 CHOOSE: clossys check finds a pin written by hand (Publisher's dogfood finding, the U38 binding) > passes a pin written by clossys pin, and fails one written by hand or edited after its ledger event",
+          "packages/producer/src/constitution/choose-gate.test.ts :: R05.2 CHOOSE: clossys pin on a Director brief (Director's dogfood finding) > refuses a brief placed by hand and a submitted brief that fails its contract and standard; no pin is written"
+        ],
+        "base": [
+          "packages/producer/src/constitution/choose-gate.test.ts :: R05.2 CHOOSE: an owner confirmation never launders a hand-written pick (the confirm verb's guard) > refuses to confirm an agent pick written by hand (no ledger event), and the slot stays a check failure",
+          "packages/producer/src/constitution/choose-gate.test.ts :: R05.2 CHOOSE: clossys check finds a pin written by hand (Publisher's dogfood finding, the U38 binding) > finds a pin.json written by hand into a slot that never had a pin event",
+          "packages/producer/src/constitution/choose-gate.test.ts :: R05.2 CHOOSE: clossys check finds a pin written by hand (Publisher's dogfood finding, the U38 binding) > passes a pin written by clossys pin, and fails one written by hand or edited after its ledger event",
+          "packages/producer/src/constitution/choose-gate.test.ts :: R05.2 CHOOSE: clossys pin on a Director brief (Director's dogfood finding) > refuses a brief placed by hand and a submitted brief that fails its contract and standard; no pin is written"
+        ],
+        "unchanged": true
+      },
+      {
+        "file": "packages/producer/src/engine/doc.test.ts",
+        "head": [
+          "packages/producer/src/engine/doc.test.ts :: docs/engine.md (engine/doc.ts) > is the generated text of the engine's constants"
+        ],
+        "base": [
+          "packages/producer/src/engine/doc.test.ts :: docs/engine.md (engine/doc.ts) > is the generated text of the engine's constants"
+        ],
+        "unchanged": true
+      },
+      {
+        "file": "packages/producer/src/migrate/copy-keys.test.ts",
+        "head": [
+          "packages/producer/src/migrate/copy-keys.test.ts :: clossys migrate copy-keys > is idempotent: a second run plans nothing and writes nothing",
+          "packages/producer/src/migrate/copy-keys.test.ts :: clossys migrate copy-keys > renames only catalog-declared ids, restores the migrated bytes, and carries a matching pin",
+          "packages/producer/src/migrate/copy-keys.test.ts :: clossys migrate copy-keys > reports a camelCase key the catalog does not declare and leaves a drifted pin alone",
+          "packages/producer/src/migrate/copy-keys.test.ts :: clossys migrate copy-keys > touches only ids: every record's text, locale and non-id meta are byte-identical"
+        ],
+        "base": [
+          "packages/producer/src/migrate/copy-keys.test.ts :: clossys migrate copy-keys > is idempotent: a second run plans nothing and writes nothing",
+          "packages/producer/src/migrate/copy-keys.test.ts :: clossys migrate copy-keys > renames only catalog-declared ids, restores the migrated bytes, and carries a matching pin",
+          "packages/producer/src/migrate/copy-keys.test.ts :: clossys migrate copy-keys > reports a camelCase key the catalog does not declare and leaves a drifted pin alone",
+          "packages/producer/src/migrate/copy-keys.test.ts :: clossys migrate copy-keys > touches only ids: every record's text, locale and non-id meta are byte-identical"
+        ],
+        "unchanged": true
+      },
+      {
+        "file": "packages/producer/src/migrate/inputs.test.ts",
+        "head": [
+          "packages/producer/src/migrate/inputs.test.ts :: clossys migrate inputs > restores undeclared inputs from the read graph, and a second run plans nothing"
+        ],
+        "base": [
+          "packages/producer/src/migrate/inputs.test.ts :: clossys migrate inputs > restores undeclared inputs from the read graph, and a second run plans nothing"
+        ],
+        "unchanged": true
+      },
+      {
+        "file": "packages/producer/src/migrate/recut-nested.test.ts",
+        "head": [
+          "packages/producer/src/migrate/recut-nested.test.ts :: migrate recut: nested slot folders > --apply on the nested layout writes the bytes --apply writes on the flat layout, removes the empty groups, and a second --apply changes nothing"
+        ],
+        "base": [
+          "packages/producer/src/migrate/recut-nested.test.ts :: migrate recut: nested slot folders > --apply on the nested layout writes the bytes --apply writes on the flat layout, removes the empty groups, and a second --apply changes nothing"
+        ],
+        "unchanged": true
+      },
+      {
+        "file": "packages/producer/src/package-path.test.ts",
+        "head": [
+          "packages/producer/src/package-path.test.ts :: the contamination check's --skill id packages (CONTAM-U3 D5) > are exactly the packages packagePath maps"
+        ],
+        "base": [],
+        "unchanged": true
+      },
+      {
+        "file": "packages/producer/src/pipeline/absent-only.test.ts",
+        "head": [
+          "packages/producer/src/pipeline/absent-only.test.ts :: chain > throws a slot.json presence check it cannot make instead of opening the slot",
+          "packages/producer/src/pipeline/absent-only.test.ts :: chain > throws when an output glob's folder cannot be listed (not an open item)",
+          "packages/producer/src/pipeline/absent-only.test.ts :: trace > an observed copy throws when its source cannot be hashed, rather than dropping the read",
+          "packages/producer/src/pipeline/absent-only.test.ts :: trace > currentSha throws an unreadable file and keeps null for an absent one",
+          "packages/producer/src/pipeline/absent-only.test.ts :: trace > gitHead throws an unreadable .git file and keeps null outside a checkout",
+          "packages/producer/src/pipeline/absent-only.test.ts :: trace > headOf throws an unreadable HEAD, commondir, loose ref or packed-refs",
+          "packages/producer/src/pipeline/absent-only.test.ts :: trace > readRuns throws a runs folder it cannot list and keeps none for an absent one",
+          "packages/producer/src/pipeline/absent-only.test.ts :: trace > readStore throws a store it cannot open and keeps no runs for an absent one"
+        ],
+        "base": [
+          "packages/producer/src/pipeline/absent-only.test.ts :: chain > throws a slot.json presence check it cannot make instead of opening the slot",
+          "packages/producer/src/pipeline/absent-only.test.ts :: chain > throws when an output glob's folder cannot be listed (not an open item)",
+          "packages/producer/src/pipeline/absent-only.test.ts :: trace > an observed copy throws when its source cannot be hashed, rather than dropping the read",
+          "packages/producer/src/pipeline/absent-only.test.ts :: trace > currentSha throws an unreadable file and keeps null for an absent one",
+          "packages/producer/src/pipeline/absent-only.test.ts :: trace > gitHead throws an unreadable .git file and keeps null outside a checkout",
+          "packages/producer/src/pipeline/absent-only.test.ts :: trace > headOf throws an unreadable HEAD, commondir, loose ref or packed-refs",
+          "packages/producer/src/pipeline/absent-only.test.ts :: trace > readRuns throws a runs folder it cannot list and keeps none for an absent one",
+          "packages/producer/src/pipeline/absent-only.test.ts :: trace > readStore throws a store it cannot open and keeps no runs for an absent one"
+        ],
+        "unchanged": true
+      },
+      {
+        "file": "packages/producer/src/pipeline/owner-wiring.test.ts",
+        "head": [
+          "packages/producer/src/pipeline/owner-wiring.test.ts :: owner.wiring (clossys pipeline check) > fails a dead argv: an option that only prints a brief records nothing",
+          "packages/producer/src/pipeline/owner-wiring.test.ts :: owner.wiring (clossys pipeline check) > fails an answer that records a Writer key a second pinned slot already owns",
+          "packages/producer/src/pipeline/owner-wiring.test.ts :: owner.wiring (clossys pipeline check) > fails an answer the gaps do not see: it re-records a slot no gap is about",
+          "packages/producer/src/pipeline/owner-wiring.test.ts :: owner.wiring (clossys pipeline check) > fails an argv that exits non-zero",
+          "packages/producer/src/pipeline/owner-wiring.test.ts :: owner.wiring (clossys pipeline check) > runs each option where the slot model can read it: no symbolic link above the scratch copy",
+          "packages/producer/src/pipeline/owner-wiring.test.ts :: owner.wiring (clossys pipeline check) > runs the writer's policy question on a scratch copy: every option exits 0, changes its records and the gaps"
+        ],
+        "base": [
+          "packages/producer/src/pipeline/owner-wiring.test.ts :: owner.wiring (clossys pipeline check) > fails a dead argv: an option that only prints a brief records nothing",
+          "packages/producer/src/pipeline/owner-wiring.test.ts :: owner.wiring (clossys pipeline check) > fails an answer that records a Writer key a second pinned slot already owns",
+          "packages/producer/src/pipeline/owner-wiring.test.ts :: owner.wiring (clossys pipeline check) > fails an answer the gaps do not see: it re-records a slot no gap is about",
+          "packages/producer/src/pipeline/owner-wiring.test.ts :: owner.wiring (clossys pipeline check) > fails an argv that exits non-zero",
+          "packages/producer/src/pipeline/owner-wiring.test.ts :: owner.wiring (clossys pipeline check) > runs each option where the slot model can read it: no symbolic link above the scratch copy",
+          "packages/producer/src/pipeline/owner-wiring.test.ts :: owner.wiring (clossys pipeline check) > runs the writer's policy question on a scratch copy: every option exits 0, changes its records and the gaps"
+        ],
+        "unchanged": true
+      },
+      {
+        "file": "packages/producer/src/pipeline/writer-wording.test.ts",
+        "head": [
+          "packages/producer/src/pipeline/writer-wording.test.ts :: Writer wording findings reach the Writer's owner questions (R2F-W1) > a narrative (JSON block) record reads its title and block text: a redraft that differs is offered",
+          "packages/producer/src/pipeline/writer-wording.test.ts :: Writer wording findings reach the Writer's owner questions (R2F-W1) > a wording finding on pinned copy is one Writer MC packet: the rewrite (recommended), keep as is, own words",
+          "packages/producer/src/pipeline/writer-wording.test.ts :: Writer wording findings reach the Writer's owner questions (R2F-W1) > with no rewrite drafted yet, the Writer drafts first and nothing is asked"
+        ],
+        "base": [
+          "packages/producer/src/pipeline/writer-wording.test.ts :: Writer wording findings reach the Writer's owner questions (R2F-W1) > a narrative (JSON block) record reads its title and block text: a redraft that differs is offered",
+          "packages/producer/src/pipeline/writer-wording.test.ts :: Writer wording findings reach the Writer's owner questions (R2F-W1) > a wording finding on pinned copy is one Writer MC packet: the rewrite (recommended), keep as is, own words",
+          "packages/producer/src/pipeline/writer-wording.test.ts :: Writer wording findings reach the Writer's owner questions (R2F-W1) > with no rewrite drafted yet, the Writer drafts first and nothing is asked"
+        ],
+        "unchanged": true
+      },
+      {
+        "file": "packages/producer/src/records/pinned-world.test.ts",
+        "head": [
+          "packages/producer/src/records/pinned-world.test.ts :: the pinned test world"
+        ],
+        "base": [
+          "packages/producer/src/records/pinned-world.test.ts :: the pinned test world"
+        ],
+        "unchanged": true
+      },
+      {
+        "file": "packages/producer/src/records/slot-model/ia-sync.test.ts",
+        "head": [
+          "packages/producer/src/records/slot-model/ia-sync.test.ts :: ia sync --check > finds no drift in a consumer generated from the package IA"
+        ],
+        "base": [
+          "packages/producer/src/records/slot-model/ia-sync.test.ts :: ia sync --check > finds no drift in a consumer generated from the package IA"
+        ],
+        "unchanged": true
+      },
+      {
+        "file": "scripts/accept-qualification-handoff.test.mjs",
+        "head": [
+          "scripts/accept-qualification-handoff.test.mjs"
+        ],
+        "base": [],
+        "unchanged": true
+      },
+      {
+        "file": "scripts/accept-unit.test.mjs",
+        "head": [
+          "scripts/accept-unit.test.mjs"
+        ],
+        "base": [
+          "scripts/accept-unit.test.mjs"
+        ],
+        "unchanged": true
+      },
+      {
+        "file": "scripts/cloud-candidate.test.mjs",
+        "head": [
+          "scripts/cloud-candidate.test.mjs"
+        ],
+        "base": [
+          "scripts/cloud-candidate.test.mjs"
+        ],
+        "unchanged": true
+      },
+      {
+        "file": "scripts/generate-qualification-record.test.mjs",
+        "head": [
+          "scripts/generate-qualification-record.test.mjs"
+        ],
+        "base": [],
+        "unchanged": true
+      },
+      {
+        "file": "scripts/lib/candidate-runner-acceptance.test.mjs",
+        "head": [
+          "scripts/lib/candidate-runner-acceptance.test.mjs"
+        ],
+        "base": [
+          "scripts/lib/candidate-runner-acceptance.test.mjs"
+        ],
+        "unchanged": true
+      },
+      {
+        "file": "scripts/pack-cohort.test.mjs",
+        "head": [
+          "scripts/pack-cohort.test.mjs"
+        ],
+        "base": [
+          "scripts/pack-cohort.test.mjs"
+        ],
+        "unchanged": true
+      },
+      {
+        "file": "scripts/run-candidate-qualification.test.mjs",
+        "head": [
+          "scripts/run-candidate-qualification.test.mjs"
+        ],
+        "base": [],
+        "unchanged": true
+      },
+      {
+        "file": "scripts/validate-candidate-publish.test.mjs",
+        "head": [
+          "scripts/validate-candidate-publish.test.mjs"
+        ],
+        "base": [],
+        "unchanged": true
+      }
+    ]
+  },
+  "observedNewRed": [
+    "packages/producer/src/package-path.test.ts :: the contamination check's --skill id packages (CONTAM-U3 D5) > are exactly the packages packagePath maps",
+    "scripts/accept-qualification-handoff.test.mjs",
+    "scripts/generate-qualification-record.test.mjs",
+    "scripts/run-candidate-qualification.test.mjs",
+    "scripts/validate-candidate-publish.test.mjs"
+  ],
+  "observedBaseRed": [
+    "packages/producer/src/check/ref-verbatim-default.test.ts :: default check enforces the actual reference gate without --suites or --strict",
+    "packages/producer/src/cli/ia-adopt-records.test.ts :: ia designer --adopt after init > re-routes the open requests init raised, so every route equals the table now",
+    "packages/producer/src/cli/inline-gates.e2e.test.ts :: submit: refused at the write with the rule id and a one-line fix > holds an adopt to the ref-verbatim gate: refused with its fix while no vendored reference backs it",
+    "packages/producer/src/cli/publication-slot2.e2e.test.ts :: a recut (clossys.slot/2) consumer store seats, pins, checks and compiles a publication > migrate recut --apply, ia, pin, check, compile",
+    "packages/producer/src/constitution/choose-gate.test.ts :: R05.2 CHOOSE: an owner confirmation never launders a hand-written pick (the confirm verb's guard) > refuses to confirm an agent pick written by hand (no ledger event), and the slot stays a check failure",
+    "packages/producer/src/constitution/choose-gate.test.ts :: R05.2 CHOOSE: clossys check finds a pin written by hand (Publisher's dogfood finding, the U38 binding) > finds a pin.json written by hand into a slot that never had a pin event",
+    "packages/producer/src/constitution/choose-gate.test.ts :: R05.2 CHOOSE: clossys check finds a pin written by hand (Publisher's dogfood finding, the U38 binding) > passes a pin written by clossys pin, and fails one written by hand or edited after its ledger event",
+    "packages/producer/src/constitution/choose-gate.test.ts :: R05.2 CHOOSE: clossys pin on a Director brief (Director's dogfood finding) > refuses a brief placed by hand and a submitted brief that fails its contract and standard; no pin is written",
+    "packages/producer/src/engine/doc.test.ts :: docs/engine.md (engine/doc.ts) > is the generated text of the engine's constants",
+    "packages/producer/src/migrate/copy-keys.test.ts :: clossys migrate copy-keys > is idempotent: a second run plans nothing and writes nothing",
+    "packages/producer/src/migrate/copy-keys.test.ts :: clossys migrate copy-keys > renames only catalog-declared ids, restores the migrated bytes, and carries a matching pin",
+    "packages/producer/src/migrate/copy-keys.test.ts :: clossys migrate copy-keys > reports a camelCase key the catalog does not declare and leaves a drifted pin alone",
+    "packages/producer/src/migrate/copy-keys.test.ts :: clossys migrate copy-keys > touches only ids: every record's text, locale and non-id meta are byte-identical",
+    "packages/producer/src/migrate/inputs.test.ts :: clossys migrate inputs > restores undeclared inputs from the read graph, and a second run plans nothing",
+    "packages/producer/src/migrate/recut-nested.test.ts :: migrate recut: nested slot folders > --apply on the nested layout writes the bytes --apply writes on the flat layout, removes the empty groups, and a second --apply changes nothing",
+    "packages/producer/src/pipeline/absent-only.test.ts :: chain > throws a slot.json presence check it cannot make instead of opening the slot",
+    "packages/producer/src/pipeline/absent-only.test.ts :: chain > throws when an output glob's folder cannot be listed (not an open item)",
+    "packages/producer/src/pipeline/absent-only.test.ts :: trace > an observed copy throws when its source cannot be hashed, rather than dropping the read",
+    "packages/producer/src/pipeline/absent-only.test.ts :: trace > currentSha throws an unreadable file and keeps null for an absent one",
+    "packages/producer/src/pipeline/absent-only.test.ts :: trace > gitHead throws an unreadable .git file and keeps null outside a checkout",
+    "packages/producer/src/pipeline/absent-only.test.ts :: trace > headOf throws an unreadable HEAD, commondir, loose ref or packed-refs",
+    "packages/producer/src/pipeline/absent-only.test.ts :: trace > readRuns throws a runs folder it cannot list and keeps none for an absent one",
+    "packages/producer/src/pipeline/absent-only.test.ts :: trace > readStore throws a store it cannot open and keeps no runs for an absent one",
+    "packages/producer/src/pipeline/owner-wiring.test.ts :: owner.wiring (clossys pipeline check) > fails a dead argv: an option that only prints a brief records nothing",
+    "packages/producer/src/pipeline/owner-wiring.test.ts :: owner.wiring (clossys pipeline check) > fails an answer that records a Writer key a second pinned slot already owns",
+    "packages/producer/src/pipeline/owner-wiring.test.ts :: owner.wiring (clossys pipeline check) > fails an answer the gaps do not see: it re-records a slot no gap is about",
+    "packages/producer/src/pipeline/owner-wiring.test.ts :: owner.wiring (clossys pipeline check) > fails an argv that exits non-zero",
+    "packages/producer/src/pipeline/owner-wiring.test.ts :: owner.wiring (clossys pipeline check) > runs each option where the slot model can read it: no symbolic link above the scratch copy",
+    "packages/producer/src/pipeline/owner-wiring.test.ts :: owner.wiring (clossys pipeline check) > runs the writer's policy question on a scratch copy: every option exits 0, changes its records and the gaps",
+    "packages/producer/src/pipeline/writer-wording.test.ts :: Writer wording findings reach the Writer's owner questions (R2F-W1) > a narrative (JSON block) record reads its title and block text: a redraft that differs is offered",
+    "packages/producer/src/pipeline/writer-wording.test.ts :: Writer wording findings reach the Writer's owner questions (R2F-W1) > a wording finding on pinned copy is one Writer MC packet: the rewrite (recommended), keep as is, own words",
+    "packages/producer/src/pipeline/writer-wording.test.ts :: Writer wording findings reach the Writer's owner questions (R2F-W1) > with no rewrite drafted yet, the Writer drafts first and nothing is asked",
+    "packages/producer/src/records/pinned-world.test.ts :: the pinned test world",
+    "packages/producer/src/records/slot-model/ia-sync.test.ts :: ia sync --check > finds no drift in a consumer generated from the package IA",
+    "scripts/accept-unit.test.mjs",
+    "scripts/cloud-candidate.test.mjs",
+    "scripts/lib/candidate-runner-acceptance.test.mjs",
+    "scripts/pack-cohort.test.mjs"
+  ],
+  "divergence": "The engine finds four further new reds the recorded related set never ran: root scripts tests reading governance/release-qualification-policy.json, which this head edits; each fails alone at head on the policy's own shape validation and passes alone at the merge base."
+}
