@@ -10,7 +10,7 @@ import { fileURLToPath } from "node:url";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { runCli } from "../cli/main.js";
 import { runFastCli } from "../cli/fast.js";
-import { formatFast, runFast, type FastRecord } from "./fast.js";
+import { formatFast, HEAP_RETRY_MB, runFast, type FastRecord } from "./fast.js";
 
 // Each test spawns git, npm, vitest and node processes; at shared load they take several seconds each.
 vi.setConfig({ testTimeout: 180_000 });
@@ -106,7 +106,8 @@ describe("clossys check --fast", () => {
     const record = await runFast({ repo, base: "main" });
     expect(record.verdict).toBe("FAST FAIL");
     expect(record.steps.map(step => `${step.step}:${step.status}`)).toEqual(["typecheck:fail", "related:skipped", "alone:skipped"]);
-    expect(record.commands.map(command => command.step)).toEqual(["typecheck"]);
+    // The red runs once at base (a non-test command is base-compared), and no test runs.
+    expect(record.commands.map(command => `${command.step}:${command.run}`)).toEqual(["typecheck:npm run --silent typecheck", "base:npm run --silent typecheck"]);
     expect(record.steps[0]!.line).toContain("packages/demo (exit 2: src/sum.ts: TYPE_ERROR)");
   });
 
@@ -192,5 +193,82 @@ describe("clossys check --fast", () => {
     expect(record.unrun.length).toBeGreaterThan(0);
     expect(record.steps.find(step => step.step === "related")!.status).toBe("incomplete");
     expect(record.line).toBe(`FAST INCOMPLETE ${git(repo, "rev-parse", "HEAD")}`);
+  });
+  // A test file that kills the vitest process running it (its parent in a fork, itself in a thread): exit 128 + 9,
+  // and no result row for the file.
+  const KILL = "process.kill(typeof process.send === \"function\" ? process.ppid : process.pid, \"SIGKILL\");";
+
+  it("a crash at head and base is FAST INCOMPLETE, not base-red", async () => {
+    const { repo } = world({
+      "packages/demo/src/crash.test.ts": `import { test } from "vitest";\nimport { sum } from "./sum.js";\ntest("crash", () => { sum(1, 1); ${KILL} });\n`,
+    });
+    commit(repo, "touch sum", { "packages/demo/src/sum.ts": `// crash\n${SUM}` });
+    const result = await runCli(["check", "--fast", "--base", "main"], repo);
+    const record = result.output as FastRecord;
+    expect(record.crash.map(item => [item.id, item.signature, item.exit])).toEqual([["packages/demo/src/crash.test.ts", "v8-abort", 137]]);
+    expect(record.crash[0]!.messages.join(" ")).toContain("at base: crash (v8-abort)");
+    expect(record.baseRed).toEqual([]);
+    expect(record.red).toEqual([]);
+    // Crashed at head in the related run, then alone in its own process at head and at base.
+    const crashed = record.aborts.filter(item => item.id === "packages/demo/src/crash.test.ts").map(item => `${item.step}:${item.signature}`);
+    expect(crashed).toEqual(expect.arrayContaining(["related:v8-abort", "alone:v8-abort", "base:v8-abort"]));
+    expect(record.verdict).toBe("FAST INCOMPLETE");
+    expect(record.steps.find(step => step.step === "alone")!.status).toBe("incomplete");
+    expect(result.message).toContain("crash: packages/demo/src/crash.test.ts (v8-abort, exit 137)");
+    expect(result.message.split("\n").at(-1)).toBe(`FAST INCOMPLETE ${git(repo, "rev-parse", "HEAD")}`);
+    expect(result.exitCode).toBe(1);
+  });
+
+  it("a file failing alone at head and at base is base-red after fallback", async () => {
+    const marker = join(realpathSync(mkdtempSync(join(tmpdir(), "fast-marker-"))), "crashed-once");
+    roots.push(dirname(marker));
+    const { repo } = world({
+      // Crashes its first run (the related step); every run after that, alone at head or at base, fails plainly.
+      "packages/demo/src/legacy.test.ts": `import { existsSync, writeFileSync } from "node:fs";\nimport { expect, test } from "vitest";\nimport { sum } from "./sum.js";\ntest("legacy", () => { if (!existsSync(${JSON.stringify(marker)})) { writeFileSync(${JSON.stringify(marker)}, "1"); ${KILL} } expect(sum(2, 2)).toBe(5); });\n`,
+    });
+    commit(repo, "touch sum", { "packages/demo/src/sum.ts": `// fallback\n${SUM}` });
+    const record = await runFast({ repo, base: "main" });
+    expect(record.aborts.filter(item => item.id === "packages/demo/src/legacy.test.ts").map(item => item.step)).toEqual(["related"]);
+    // The per-file fallback ran it alone at head and at base, one process each, and compared the two.
+    expect(record.commands.filter(command => /legacy\.test\.ts$/.test(command.run) && command.step !== "related").map(command => command.step).sort()).toEqual(["alone", "base"]);
+    expect(record.baseRed.map(item => item.id)).toEqual(["packages/demo/src/legacy.test.ts"]);
+    expect(record.red).toEqual([]);
+    expect(record.crash).toEqual([]);
+    expect(record.verdict).toBe("FAST PASS");
+  });
+
+  it("a check that fails identically at base is base-red", async () => {
+    // A root check (no gate test, so it runs as wired) that prints one finding per false key, red at base already, and
+    // a package typecheck red at base already.
+    const checkTool = "import { readFileSync } from \"node:fs\";\nconst doc = JSON.parse(readFileSync(\"docs/contracts/tool.json\", \"utf8\"));\nconst bad = Object.keys(doc).filter(key => doc[key] === false);\nfor (const key of bad) console.error(`tool.json: ${key} is false`);\nprocess.exit(bad.length ? 1 : 0);\n";
+    const { repo } = world({ "scripts/check-tool.mjs": checkTool, "docs/contracts/tool.json": "{ \"ok\": false }\n", "packages/demo/src/legacy.ts": "// TYPE_ERROR\nexport {};\n" });
+    commit(repo, "same reds", { "docs/contracts/tool.json": "{ \"ok\": false, \"v\": 2 }\n", "packages/demo/src/sum.ts": `// same\n${SUM}` });
+    const same = await runFast({ repo, base: "main" });
+    expect(same.commands.filter(command => command.step === "base").map(command => command.run).sort()).toEqual(["node --test scripts/check-doc.test.mjs", "node scripts/check-tool.mjs", "npm run --silent typecheck"]);
+    expect(same.baseRed.map(item => item.id).sort()).toEqual(["npm run check:tool", "scripts/check-doc.test.mjs", "typecheck packages/demo"]);
+    expect(same.red).toEqual([]);
+    expect(same.verdict).toBe("FAST PASS");
+    expect(formatFast(same)).toContain("base-red: npm run check:tool (the same exit and findings at base");
+    // A finding new at head is red, even though the check also exits 1 at base.
+    commit(repo, "new red", { "docs/contracts/tool.json": "{ \"ok\": false, \"also\": false }\n" });
+    const fresh = await runFast({ repo, base: "main" });
+    expect(fresh.red.map(item => item.id)).toEqual(["npm run check:tool"]);
+    expect(fresh.red[0]!.messages.join(" ")).toContain("new at head: tool.json: also is false");
+    expect(fresh.verdict).toBe("FAST FAIL");
+  });
+
+  it("a heap abort is v8-heap and runs once more alone at a higher heap limit", async () => {
+    const { repo } = world({
+      // Out of heap below the retry limit, as V8 reports it; passes at the retry's higher limit.
+      "packages/demo/src/heap.test.ts": `import { writeSync } from "node:fs";\nimport { getHeapStatistics } from "node:v8";\nimport { expect, test } from "vitest";\nimport { sum } from "./sum.js";\ntest("heap", () => { if (getHeapStatistics().heap_size_limit < ${Math.floor(HEAP_RETRY_MB * 0.9)} * 1048576) { writeSync(2, "FATAL ERROR: Reached heap limit Allocation failed - JavaScript heap out of memory\\n"); process.kill(process.pid, "SIGKILL"); } expect(sum(1, 1)).toBe(2); });\n`,
+    });
+    commit(repo, "touch sum", { "packages/demo/src/sum.ts": `// heap\n${SUM}` });
+    const record = await runFast({ repo, base: "main" });
+    const heap = record.aborts.filter(item => item.id === "packages/demo/src/heap.test.ts" && item.step !== "base");
+    expect(heap.map(item => `${item.step}:${item.signature}`)).toEqual(["related:v8-heap", "alone:v8-heap"]);
+    expect(heap.every(item => item.heapMb === undefined)).toBe(true);
+    expect(record.noise.map(item => item.id)).toContain("packages/demo/src/heap.test.ts");
+    expect(record.crash).toEqual([]);
+    expect(record.verdict).toBe("FAST PASS");
   });
 });

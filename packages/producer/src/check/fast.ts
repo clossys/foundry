@@ -12,6 +12,14 @@
  *   3. alone: every file that failed in step 2 runs again by itself, once. A file that passes alone is load noise. A file
  *      that fails alone is run alone again at the merge-base, in a temporary detached tree: red there too is base-red
  *      and does not fail the step; anything else (passes at base, absent at base, or base could not run) is red.
+ * Crashes (the crash rider): a test file with no result row after a signal exit (128 or above, or its vitest worker
+ * exiting on a signal) is a crash, never a fail or base-red. Crashed files run again alone, one process per file (the
+ * per-file fallback), at head and at base; a file that then fails alone is base-compared like any other, and a crash
+ * left after the fallback makes the verdict FAST INCOMPLETE. Every abort is recorded with its signature: v8-heap when
+ * the output says `JavaScript heap out of memory` (that file runs once more alone at a higher heap limit), else
+ * v8-abort. Non-test commands (each typecheck and each root check script run as wired) that exit non-zero at head run
+ * at base too: the same exit and no finding (normalized output line) new at head is base-red, anything else is red.
+ * No ruling file is ever needed to read a verdict.
  * Step 2 has a time budget (BUDGET_MS); past it the running process is stopped and the verdict is FAST INCOMPLETE,
  * never a pass, with the files left unrun. Base results are computed here every time, only for the files that fail
  * alone at head; there is no stored baseline of any kind. A run that executes no command is never a pass.
@@ -19,7 +27,8 @@
  */
 import { spawn } from "node:child_process";
 import { existsSync, readFileSync, symlinkSync } from "node:fs";
-import { availableParallelism } from "node:os";
+import { availableParallelism, constants as osConstants } from "node:os";
+import { getHeapStatistics } from "node:v8";
 import { createRequire } from "node:module";
 import { dirname, join, posix, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -43,6 +52,12 @@ export interface FastStep { readonly step: StepName; readonly status: "pass" | "
 export interface FastCommand { readonly step: StepName | "base"; readonly run: string; readonly cwd: string; readonly exit: number; readonly seconds: number; readonly stopped?: boolean }
 /** One test unit: a test file (vitest or node --test) or a root check script. */
 export interface FastTest { readonly id: string; readonly pkg: string; readonly messages: readonly string[] }
+/** How a process died: v8-heap (the output says the heap ran out), else v8-abort (any other signal exit). */
+export type AbortSignature = "v8-abort" | "v8-heap";
+/** A test file still crashing after the per-file fallback: the run is FAST INCOMPLETE. */
+export interface FastCrash extends FastTest { readonly signature: AbortSignature; readonly exit: number }
+/** Every crash seen, in any step and tree, including those a later run cleared. */
+export interface FastAbort { readonly id: string; readonly step: StepName | "base"; readonly signature: AbortSignature; readonly exit: number; readonly heapMb?: number }
 /** measured: "alone" (its alone re-run) or "related" (over SURE_SLOW times the threshold in the related run). */
 export interface SlowTest { readonly id: string; readonly pkg: string; readonly seconds: number; readonly measured: "alone" | "related"; readonly owner?: string }
 export interface FastRecord {
@@ -60,8 +75,11 @@ export interface FastRecord {
   readonly red: readonly FastTest[];
   /** Failed alone at head and alone at base: reported, never failing. */
   readonly baseRed: readonly FastTest[];
-  /** Failed in the related step and passed alone. */
+  /** Failed (or crashed) in the related step and passed alone. */
   readonly noise: readonly FastTest[];
+  /** Crashed alone after the per-file fallback: the verdict is FAST INCOMPLETE, never base-red. */
+  readonly crash: readonly FastCrash[];
+  readonly aborts: readonly FastAbort[];
   /** Selected but not run because the related step ran out of its budget. */
   readonly unrun: readonly string[];
   readonly slow: readonly SlowTest[];
@@ -276,10 +294,12 @@ function exec(argv: readonly string[], cwd: string, env: NodeJS.ProcessEnv = {},
     let hard: NodeJS.Timeout | undefined;
     const timer = deadline === undefined ? undefined : setTimeout(() => { stopped = true; kill("SIGTERM"); hard = setTimeout(() => kill("SIGKILL"), 5_000); }, Math.max(0, deadline - start));
     child.on("error", error => { output += String(error); });
-    child.on("close", code => {
+    child.on("close", (code, signal) => {
       if (timer) clearTimeout(timer);
       if (hard) clearTimeout(hard);
-      resolvePromise({ exit: stopped ? 124 : code ?? 128, output, ms: Date.now() - start, stopped });
+      // A signal exit is 128 plus the signal's number, as a shell reports it.
+      const exit = stopped ? 124 : code ?? 128 + (signal ? osConstants.signals[signal] ?? 0 : 0);
+      resolvePromise({ exit, output, ms: Date.now() - start, stopped });
     });
   });
 }
@@ -294,14 +314,52 @@ async function pool<T, R>(items: readonly T[], width: number, work: (item: T) =>
   return results;
 }
 
-const tail = (output: string, lines = 3) => output.replace(/\u001b\[[0-9;?]*[A-Za-z]/g, "").split("\n").map(line => line.trim()).filter(Boolean).slice(-lines);
+const plain = (output: string) => output.replace(/\u001b\[[0-9;?]*[A-Za-z]/g, "");
+const tail = (output: string, lines = 3) => plain(output).split("\n").map(line => line.trim()).filter(Boolean).slice(-lines);
+
+/** A heap-limit abort, as V8 prints it. */
+const HEAP = /JavaScript heap out of memory|Reached heap limit/;
+/** The heap limit (MB) a v8-heap file runs at once more: twice this process's, and at least 8 GB. */
+export const HEAP_RETRY_MB = Math.max(8192, 2 * Math.ceil(getHeapStatistics().heap_size_limit / 1048576));
+const heapEnv = (): NodeJS.ProcessEnv => ({ NODE_OPTIONS: [process.env.NODE_OPTIONS, `--max-old-space-size=${HEAP_RETRY_MB}`].filter(Boolean).join(" ") });
+const signatureOf = (output: string): AbortSignature => HEAP.test(output) ? "v8-heap" : "v8-abort";
+
+/**
+ * A command's findings: its distinct output lines, with the tree it ran in written as <root> and durations as <t>, so
+ * the same finding at head and at base compares equal.
+ */
+export function findingsOf(output: string, tree: string): string[] {
+  const lines = plain(output).split("\n").map(line => line.split(tree).join("<root>").replace(/\b\d+(?:\.\d+)?\s?(?:ms|s)\b/g, "<t>").trim()).filter(Boolean);
+  return [...new Set(lines)].sort();
+}
+
+/** A non-test command that failed at head against its run at base: base-red only on the same exit and no new finding. */
+export function compareCommand(head: { exit: number; findings: readonly string[] }, base: { exit: number; findings: readonly string[] } | undefined): { same: boolean; fresh: string[] } {
+  if (!base) return { same: false, fresh: [...head.findings] };
+  const fresh = head.findings.filter(finding => !base.findings.includes(finding));
+  return { same: base.exit === head.exit && !fresh.length, fresh };
+}
 
 const REPORTER = fileURLToPath(new URL("../../src/check/fast-reporter.mjs", import.meta.url));
 
-interface UnitResult { readonly unit: Unit; readonly status: "pass" | "fail" | "unrun"; readonly ms: number; readonly messages: readonly string[] }
+interface UnitResult {
+  readonly unit: Unit;
+  readonly status: "pass" | "fail" | "unrun" | "crash";
+  readonly ms: number;
+  readonly messages: readonly string[];
+  readonly signature?: AbortSignature;
+  /** The process exit (node units, and vitest crashes). */
+  readonly exit?: number;
+  /** node units that failed: their findings (findingsOf), for the base compare of non-test commands. */
+  readonly findings?: readonly string[];
+}
+
+/** A root check script run as wired (not a test file): a non-test command. */
+const isCommand = (unit: Unit) => unit.id.startsWith("npm run ");
 
 class Runner {
   readonly commands: FastCommand[] = [];
+  readonly aborts: FastAbort[] = [];
   private readonly width = Math.max(1, availableParallelism() - 1);
   constructor(private readonly repo: string, private readonly log?: (line: string) => void) {}
 
@@ -317,15 +375,21 @@ class Runner {
     return result;
   }
 
-  async typecheck(pkg: string): Promise<Exec> {
-    return this.command("typecheck", ["npm", "run", "--silent", "typecheck"], this.repo, pkg);
+  async typecheck(pkg: string, tree = this.repo, step: FastCommand["step"] = "typecheck"): Promise<Exec & { findings: string[] }> {
+    const result = await this.command(step, ["npm", "run", "--silent", "typecheck"], tree, pkg);
+    return { ...result, findings: result.exit === 0 ? [] : findingsOf(result.output, tree) };
+  }
+
+  private crashed(step: FastCommand["step"], result: UnitResult, env?: NodeJS.ProcessEnv): UnitResult {
+    if (result.status === "crash") this.aborts.push({ id: result.unit.id, step, signature: result.signature!, exit: result.exit!, ...(env ? { heapMb: HEAP_RETRY_MB } : {}) });
+    return result;
   }
 
   /**
    * One vitest process over files of one package in tree; alone runs one file at a time on one worker. The reporter
    * writes each file's line as the file ends, so a stopped run still has the results of every file that finished.
    */
-  async vitest(step: FastCommand["step"], tree: string, pkg: string, units: readonly Unit[], alone: boolean, deadline?: number): Promise<UnitResult[]> {
+  async vitest(step: FastCommand["step"], tree: string, pkg: string, units: readonly Unit[], alone: boolean, deadline?: number, env?: NodeJS.ProcessEnv): Promise<UnitResult[]> {
     let bin: string;
     try { bin = join(dirname(createRequire(join(tree, pkg, "package.json")).resolve("vitest/package.json")), "vitest.mjs"); }
     catch (error) { return units.map(unit => ({ unit, status: "fail" as const, ms: 0, messages: [`vitest does not resolve from ${pkg}: ${error instanceof Error ? error.message.split("\n")[0] : String(error)}`] })); }
@@ -335,7 +399,7 @@ class Runner {
     const done = new Map<string, UnitResult>();
     // A line a stop cut short names no file: that file has no result, so it counts as unrun (stopped) or failed.
     const parseErrors: string[] = [];
-    const result = await this.command(step, argv, tree, pkg, { CLOSSYS_FAST_RESULTS: out, CI: "1" }, deadline);
+    const result = await this.command(step, argv, tree, pkg, { ...env, CLOSSYS_FAST_RESULTS: out, CI: "1" }, deadline);
     for (const line of (readText(out) ?? "").split("\n").filter(Boolean)) {
       let row: { file: string; state: string; ms: number; messages: string[] };
       try { row = JSON.parse(line) as typeof row; } catch (error) { parseErrors.push(String(error)); continue; }
@@ -343,14 +407,51 @@ class Runner {
       if (!unit || done.has(unit.file) || row.state === "queued" || row.state === "pending") continue;
       done.set(unit.file, { unit, status: row.state === "failed" ? "fail" : "pass", ms: row.ms, messages: row.messages });
     }
-    return units.map(unit => done.get(unit.file) ?? (result.stopped ? { unit, status: "unrun" as const, ms: 0, messages: [] }
-      : { unit, status: "fail" as const, ms: 0, messages: [`vitest exited ${result.exit} with no result for this file`, ...parseErrors.slice(0, 1), ...tail(result.output)] }));
+    // A file with no row after a signal exit of vitest itself (128 or above), or whose worker vitest reports exiting on a
+    // signal, or in a run that ran out of heap, crashed: it is never a plain fail.
+    const workers = new Set([...plain(result.output).matchAll(/Worker exited unexpectedly with signal \w+[^\n]*?running test file (\S+)/g)].map(match => relative(tree, match[1]!)));
+    const heap = HEAP.test(result.output);
+    return units.map(unit => {
+      const row = done.get(unit.file);
+      if (row) return row;
+      if (result.stopped) return { unit, status: "unrun" as const, ms: 0, messages: [] };
+      if (result.exit >= 128 || workers.has(unit.file) || heap) {
+        const signature = signatureOf(result.output);
+        return this.crashed(step, { unit, status: "crash", ms: result.ms, signature, exit: result.exit, messages: [`crash (${signature}): vitest exited ${result.exit} with no result for this file`, ...tail(result.output)] }, env);
+      }
+      return { unit, status: "fail" as const, ms: 0, messages: [`vitest exited ${result.exit} with no result for this file`, ...parseErrors.slice(0, 1), ...tail(result.output)] };
+    });
   }
 
-  async node(step: FastCommand["step"], tree: string, unit: Unit, deadline?: number): Promise<UnitResult> {
-    const result = await this.command(step, [process.execPath, ...unit.args!], tree, unit.cwd, {}, deadline);
+  async node(step: FastCommand["step"], tree: string, unit: Unit, deadline?: number, env?: NodeJS.ProcessEnv): Promise<UnitResult> {
+    const result = await this.command(step, [process.execPath, ...unit.args!], tree, unit.cwd, env ?? {}, deadline);
     if (result.stopped) return { unit, status: "unrun", ms: result.ms, messages: [] };
-    return { unit, status: result.exit === 0 ? "pass" : "fail", ms: result.ms, messages: result.exit === 0 ? [] : [`exit ${result.exit}`, ...tail(result.output)] };
+    if (result.exit >= 128 || (result.exit !== 0 && HEAP.test(result.output))) {
+      const signature = signatureOf(result.output);
+      return this.crashed(step, { unit, status: "crash", ms: result.ms, signature, exit: result.exit, messages: [`crash (${signature}): exit ${result.exit}`, ...tail(result.output)] }, env);
+    }
+    if (result.exit === 0) return { unit, status: "pass", ms: result.ms, messages: [], exit: 0 };
+    return { unit, status: "fail", ms: result.ms, exit: result.exit, findings: findingsOf(result.output, tree), messages: [`exit ${result.exit}`, ...tail(result.output)] };
+  }
+
+  /** One unit in its own process; a v8-heap crash runs once more alone at HEAP_RETRY_MB. */
+  async single(step: FastCommand["step"], tree: string, unit: Unit): Promise<UnitResult> {
+    const once = async (env?: NodeJS.ProcessEnv) => unit.kind === "vitest" ? (await this.vitest(step, tree, unit.pkg, [unit], true, undefined, env))[0]! : this.node(step, tree, unit, undefined, env);
+    const first = await once();
+    return first.status === "crash" && first.signature === "v8-heap" ? once(heapEnv()) : first;
+  }
+
+  /**
+   * The alone step in one tree: batch (a package's failed vitest files in one single-worker process, each node unit in
+   * its own) and then the per-file fallback: every crashed file (crashed in the related step, or in the batch) alone, one
+   * process per file. Every file's last result is returned; each is base-compared by the caller.
+   */
+  async settle(step: FastCommand["step"], tree: string, batch: readonly Unit[], crashed: readonly Unit[]): Promise<UnitResult[]> {
+    const out = new Map<string, UnitResult>();
+    for (const result of batch.length ? await this.alone(step, tree, batch) : []) out.set(result.unit.id, result);
+    const fallback = [...crashed, ...[...out.values()].filter(result => result.status === "crash").map(result => result.unit)];
+    for (const unit of fallback) out.set(unit.id, await this.single(step, tree, unit));
+    return [...out.values()];
   }
 
   /**
@@ -439,7 +540,7 @@ export async function runFast(options: FastOptions): Promise<FastRecord> {
   const changes = changedFiles(repo, base, head);
   const runner = new Runner(repo, options.log);
   const steps: FastStep[] = [];
-  const red: FastTest[] = [], baseRed: FastTest[] = [], noise: FastTest[] = [], slow: SlowTest[] = [];
+  const red: FastTest[] = [], baseRed: FastTest[] = [], noise: FastTest[] = [], slow: SlowTest[] = [], crash: FastCrash[] = [];
   let unrun: string[] = [];
   const manifestChange = changes.find(change => change.path === "package.json");
   const baseManifest = manifestChange && manifestChange.status !== "A" ? git(repo, ["show", `${base}:package.json`]) : "{}";
@@ -447,7 +548,7 @@ export async function runFast(options: FastOptions): Promise<FastRecord> {
   const { units, packages } = changes.length ? selectUnits(repo, changes, baseScripts) : { units: [], packages: [] };
   const finish = (verdict: FastVerdict, reason?: string): FastRecord => ({
     schema: FAST_SCHEMA, owner_agent: FAST_OWNER, verdict, head, base, baseRef: ref, changed: changes.map(change => change.path), packages,
-    steps, commands: runner.commands, red, baseRed, noise, unrun, slow, budgetSeconds: seconds(budgetMs), slowSeconds: seconds(slowMs),
+    steps, commands: runner.commands, red, baseRed, noise, crash, aborts: runner.aborts, unrun, slow, budgetSeconds: seconds(budgetMs), slowSeconds: seconds(slowMs),
     ...(reason ? { reason } : {}), line: `${verdict} ${head}`,
   });
   /** A finished step: its line carries its wall time, so the record's line is the printed one. */
@@ -456,76 +557,114 @@ export async function runFast(options: FastOptions): Promise<FastRecord> {
   const skip = (...names: StepName[]) => { for (const step of names) steps.push({ step, status: "skipped", seconds: 0, line: `${step}: skipped` }); };
   if (!changes.length) { skip("typecheck", "related", "alone"); return finish("FAST FAIL", `empty diff ${ref}...HEAD: nothing to check`); }
 
-  // 1. typecheck every touched package that declares one; a red stops the run before any test.
-  started = Date.now();
-  const typed = packages.filter(dir => typeof listWorkspaces(repo).find(workspace => workspace.dir === dir)?.manifest.scripts?.typecheck === "string");
-  const checks = await pool(typed, Math.max(1, Math.floor(availableParallelism() / 2)), async dir => ({ dir, result: await runner.typecheck(dir) }));
-  const typeRed = checks.filter(check => check.result.exit !== 0);
-  if (typeRed.length) {
-    done("typecheck", "fail", `typecheck: FAIL ${typeRed.map(check => `${check.dir} (exit ${check.result.exit}: ${tail(check.result.output, 1)[0] ?? "no output"})`).join("; ")}`);
-    skip("related", "alone");
-    return finish("FAST FAIL", "typecheck");
-  }
-  done("typecheck", "pass", typed.length ? `typecheck: pass (${typed.length} package(s): ${list(typed)})` : "typecheck: no touched package declares a typecheck script");
-
-  // 2. related tests, within the budget.
-  started = Date.now();
-  const related = await runner.related(units, started + budgetMs);
-  unrun = related.filter(result => result.status === "unrun").map(result => result.unit.id);
-  const failed = related.filter(result => result.status === "fail");
-  const ran = related.length - unrun.length;
-  if (unrun.length) {
-    done("related", "incomplete", `related: INCOMPLETE after the ${seconds(budgetMs)}s budget: ${unrun.length} of ${related.length} test unit(s) left unrun (${list(unrun)})${failed.length ? `; ${failed.length} failed so far (${list(failed.map(result => result.unit.id))})` : ""}`);
-    skip("alone");
-    return finish("FAST INCOMPLETE", "related step budget");
-  }
-  done("related", failed.length ? "fail" : "pass", !related.length ? "related: no test reaches the changed files"
-    : failed.length ? `related: ${failed.length} of ${ran} test unit(s) failed, re-run alone: ${list(failed.map(result => result.unit.id))}`
-    : `related: pass (${ran} test unit(s))`);
-
-  // 3. alone: the failures (and the borderline slow candidates) once each by themselves at head, and beside that run
-  // (another tree, so no shared build) the same failures alone at the merge-base: only files that failed at head ever
-  // run at base, never a whole package. A failure is base-red only when it fails alone at head and alone at base.
-  started = Date.now();
-  const failedIds = new Set(failed.map(result => result.unit.id));
-  const passing = related.filter(result => result.status === "pass" && result.ms > slowMs);
-  // A file over SURE_SLOW times the threshold in the related run is slow alone too (a shared core inflates a file's own
-  // time by far less): it is listed from that measurement and not re-run. Borderline files are re-run alone.
-  for (const result of passing.filter(item => item.ms > SURE_SLOW * slowMs)) slow.push({ id: result.unit.id, pkg: result.unit.pkg, seconds: seconds(result.ms), measured: "related", ...ownerOf(repo, result.unit.pkg) });
-  const again = [...failed.map(result => result.unit), ...passing.filter(item => item.ms <= SURE_SLOW * slowMs).map(result => result.unit)];
-  const atBase = new Map<string, UnitResult>();
+  // One detached merge-base tree, made on first need (a red at head) and removed when the run ends.
   let tree: Worktree | undefined;
   let baseError: string | undefined;
-  const baseRun = async () => {
-    if (!failed.length) return;
-    try { tree = baseTree(repo, base); } catch (error) { baseError = error instanceof Error ? error.message.split("\n")[0]! : String(error); return; }
-    const present = failed.map(result => result.unit).filter(unit => existsSync(join(tree!.dir, unit.file)));
-    for (const result of present.length ? await runner.alone("base", tree.dir, present) : []) atBase.set(result.unit.id, result);
+  const baseDir = (): string | undefined => {
+    if (tree || baseError) return tree?.dir;
+    try { tree = baseTree(repo, base); } catch (error) { baseError = error instanceof Error ? error.message.split("\n")[0]! : String(error); }
+    return tree?.dir;
   };
-  let alone: UnitResult[];
   try {
-    [alone] = await Promise.all([again.length ? runner.alone("alone", repo, again) : Promise.resolve([]), baseRun()]);
+    // 1. typecheck every touched package that declares one. A red at head runs at base too: the same exit and the same
+    // findings there is base-red; any finding new at head stops the run before any test.
+    started = Date.now();
+    const typed = packages.filter(dir => typeof listWorkspaces(repo).find(workspace => workspace.dir === dir)?.manifest.scripts?.typecheck === "string");
+    const width = Math.max(1, Math.floor(availableParallelism() / 2));
+    const checks = await pool(typed, width, async dir => ({ dir, result: await runner.typecheck(dir) }));
+    const typeRed = checks.filter(check => check.result.exit !== 0);
+    const atBase = typeRed.length && baseDir() ? await pool(typeRed, width, async check => {
+      const manifest = readText(join(tree!.dir, check.dir, "package.json"));
+      return typeof (JSON.parse(manifest ?? "{}") as { scripts?: Record<string, unknown> }).scripts?.typecheck === "string" ? await runner.typecheck(check.dir, tree!.dir, "base") : undefined;
+    }) : [];
+    const typeNew: { dir: string; why: string; base: string }[] = [];
+    typeRed.forEach((check, index) => {
+      const there = atBase[index];
+      const { same, fresh } = compareCommand(check.result, there);
+      if (same) baseRed.push({ id: `typecheck ${check.dir}`, pkg: check.dir, messages: [`exit ${check.result.exit}, ${check.result.findings.length} finding(s), the same at base`] });
+      else typeNew.push({ dir: check.dir, why: `exit ${check.result.exit}: ${fresh[0] ?? tail(check.result.output, 1)[0] ?? "no output"}`, base: there ? `base exit ${there.exit}${there.exit === 0 ? "" : `, ${fresh.length} finding(s) new at head`}` : baseError ? `base could not run: ${baseError}` : "absent at base" });
+    });
+    if (typeNew.length) {
+      done("typecheck", "fail", `typecheck: FAIL ${typeNew.map(item => `${item.dir} (${item.why}) [${item.base}]`).join("; ")}`);
+      skip("related", "alone");
+      return finish("FAST FAIL", "typecheck");
+    }
+    const typeBase = baseRed.filter(item => item.id.startsWith("typecheck "));
+    done("typecheck", "pass", typed.length ? `typecheck: pass (${typed.length} package(s): ${list(typed)})${typeBase.length ? `, ${typeBase.length} base-red (${list(typeBase.map(item => item.pkg))})` : ""}` : "typecheck: no touched package declares a typecheck script");
+
+    // 2. related tests, within the budget.
+    started = Date.now();
+    const related = await runner.related(units, started + budgetMs);
+    unrun = related.filter(result => result.status === "unrun").map(result => result.unit.id);
+    const failed = related.filter(result => result.status === "fail");
+    const crashed = related.filter(result => result.status === "crash");
+    const ran = related.length - unrun.length;
+    const crashNote = crashed.length ? `${crashed.length} crashed (${list(crashed.map(result => `${result.unit.id} ${result.signature}`))})` : "";
+    if (unrun.length) {
+      done("related", "incomplete", `related: INCOMPLETE after the ${seconds(budgetMs)}s budget: ${unrun.length} of ${related.length} test unit(s) left unrun (${list(unrun)})${failed.length ? `; ${failed.length} failed so far (${list(failed.map(result => result.unit.id))})` : ""}${crashNote ? `; ${crashNote}` : ""}`);
+      skip("alone");
+      return finish("FAST INCOMPLETE", "related step budget");
+    }
+    const rerun = [...failed, ...crashed];
+    done("related", rerun.length ? "fail" : "pass", !related.length ? "related: no test reaches the changed files"
+      : rerun.length ? `related: ${failed.length} of ${ran} test unit(s) failed${crashNote ? `, ${crashNote}` : ""}, re-run alone: ${list(rerun.map(result => result.unit.id))}`
+      : `related: pass (${ran} test unit(s))`);
+
+    // 3. alone: the failures (and the borderline slow candidates) once each by themselves at head, crashed files one
+    // process per file, and beside that run (another tree, so no shared build) the same files the same way at the
+    // merge-base: only files that failed at head ever run at base, never a whole package. The base compare reads each
+    // file's last result on both sides, after the per-file fallback.
+    started = Date.now();
+    const passing = related.filter(result => result.status === "pass" && result.ms > slowMs);
+    // A file over SURE_SLOW times the threshold in the related run is slow alone too (a shared core inflates a file's own
+    // time by far less): it is listed from that measurement and not re-run. Borderline files are re-run alone.
+    for (const result of passing.filter(item => item.ms > SURE_SLOW * slowMs)) slow.push({ id: result.unit.id, pkg: result.unit.pkg, seconds: seconds(result.ms), measured: "related", ...ownerOf(repo, result.unit.pkg) });
+    const batch = [...failed.map(result => result.unit), ...passing.filter(item => item.ms <= SURE_SLOW * slowMs).map(result => result.unit)];
+    const fallback = crashed.map(result => result.unit);
+    const there = new Map<string, UnitResult>();
+    const baseRun = async () => {
+      if (!rerun.length || !baseDir()) return;
+      const present = (unit: Unit) => existsSync(join(tree!.dir, unit.file));
+      for (const result of await runner.settle("base", tree!.dir, failed.map(item => item.unit).filter(present), fallback.filter(present))) there.set(result.unit.id, result);
+    };
+    const [alone] = await Promise.all([runner.settle("alone", repo, batch, fallback), baseRun()]);
+    for (const result of alone) if (result.status === "pass" && result.ms > slowMs) slow.push({ id: result.unit.id, pkg: result.unit.pkg, seconds: seconds(result.ms), measured: "alone", ...ownerOf(repo, result.unit.pkg) });
+    const rerunIds = new Set(rerun.map(result => result.unit.id));
+    const atHead = new Map(alone.map(result => [result.unit.id, result]));
+    for (const first of rerun) {
+      const result = atHead.get(first.unit.id)!;
+      const entry = { id: result.unit.id, pkg: result.unit.pkg, messages: result.messages };
+      const atBaseResult = there.get(result.unit.id);
+      const baseNote = atBaseResult ? `at base: ${atBaseResult.status}${atBaseResult.signature ? ` (${atBaseResult.signature})` : ""}` : baseError ? `base could not run: ${baseError}` : "absent at base";
+      if (result.status === "pass") { noise.push({ ...entry, messages: first.messages }); continue; }
+      // A crash left after the fallback is unknown, never a fail and never base-red, whatever base did.
+      if (result.status === "crash") { crash.push({ ...entry, signature: result.signature!, exit: result.exit!, messages: [...entry.messages, baseNote] }); continue; }
+      if (isCommand(result.unit)) {
+        const base = atBaseResult?.status === "fail" ? { exit: atBaseResult.exit!, findings: atBaseResult.findings ?? [] } : undefined;
+        const { same, fresh } = compareCommand({ exit: result.exit!, findings: result.findings ?? [] }, base);
+        if (same) baseRed.push({ ...entry, messages: [`exit ${result.exit}, ${result.findings?.length ?? 0} finding(s), the same at base`] });
+        else red.push({ ...entry, messages: [...entry.messages, base ? `new at head: ${list(fresh, 3) || `exit ${result.exit} (base exit ${base.exit})`}` : baseNote] });
+        continue;
+      }
+      if (atBaseResult?.status === "fail") baseRed.push(entry);
+      else red.push({ ...entry, messages: [...entry.messages, atBaseResult?.status === "pass" ? "passes alone at base" : baseNote] });
+    }
+    const rerunCount = batch.length + fallback.length;
+    const baseRedHere = baseRed.filter(item => rerunIds.has(item.id));
+    const parts = [
+      `${rerunCount} re-run`, ...(red.length ? [`${red.length} red (${list(red.map(item => item.id))})`] : []),
+      ...(baseRedHere.length ? [`${baseRedHere.length} base-red (${list(baseRedHere.map(item => item.id))})`] : []),
+      ...(noise.length ? [`${noise.length} load noise (${list(noise.map(item => item.id))})`] : []),
+      ...(crash.length ? [`${crash.length} crash (${list(crash.map(item => `${item.id} ${item.signature}`))})`] : []),
+    ];
+    done("alone", red.length ? "fail" : crash.length ? "incomplete" : "pass", rerunCount ? `alone: ${parts.join(", ")}` : "alone: nothing to re-run");
+    if (red.length) return finish("FAST FAIL", "red");
+    if (crash.length) return finish("FAST INCOMPLETE", `crash: ${crash.length} test file(s) still crash alone (${list(crash.map(item => `${item.id} ${item.signature}`))}); a crash is never a pass or base-red`);
+    if (!runner.commands.length) return finish("FAST FAIL", "the diff changed files but no command ran: nothing checked is never a pass");
+    return finish("FAST PASS");
   } finally {
     tree?.remove();
   }
-  for (const result of alone) if (result.ms > slowMs) slow.push({ id: result.unit.id, pkg: result.unit.pkg, seconds: seconds(result.ms), measured: "alone", ...ownerOf(repo, result.unit.pkg) });
-  for (const result of alone) {
-    if (!failedIds.has(result.unit.id)) continue;
-    const entry = { id: result.unit.id, pkg: result.unit.pkg, messages: result.messages };
-    if (result.status === "pass") { noise.push({ ...entry, messages: failed.find(item => item.unit.id === result.unit.id)!.messages }); continue; }
-    const there = atBase.get(result.unit.id);
-    if (there?.status === "fail") baseRed.push(entry);
-    else red.push({ ...entry, messages: [...entry.messages, there ? "passes alone at base" : baseError ? `base could not run: ${baseError}` : "absent at base"] });
-  }
-  const parts = [
-    `${again.length} re-run`, ...(red.length ? [`${red.length} red (${list(red.map(item => item.id))})`] : []),
-    ...(baseRed.length ? [`${baseRed.length} base-red (${list(baseRed.map(item => item.id))})`] : []),
-    ...(noise.length ? [`${noise.length} load noise (${list(noise.map(item => item.id))})`] : []),
-  ];
-  done("alone", red.length ? "fail" : "pass", again.length ? `alone: ${parts.join(", ")}` : "alone: nothing to re-run");
-  if (red.length) return finish("FAST FAIL", "red");
-  if (!runner.commands.length) return finish("FAST FAIL", "the diff changed files but no command ran: nothing checked is never a pass");
-  return finish("FAST PASS");
 }
 
 /** The printed lines of a record: one per step, the red and base-red details, slow tests, requests, then the verdict. */
@@ -534,7 +673,8 @@ export function formatFast(record: FastRecord): string {
     `check --fast: ${record.changed.length} changed file(s) ${record.baseRef}...HEAD (base ${record.base.slice(0, 12)}), ${record.commands.length} command(s)`,
     ...record.steps.map(step => step.line),
     ...record.red.map(item => `red: ${item.id}: ${item.messages.join(" | ")}`),
-    ...record.baseRed.map(item => `base-red: ${item.id} (also fails alone at base ${record.base.slice(0, 12)})`),
+    ...record.baseRed.map(item => `base-red: ${item.id} (${/^(?:typecheck|npm run) /.test(item.id) ? "the same exit and findings" : "also fails alone"} at base ${record.base.slice(0, 12)})`),
+    ...record.crash.map(item => `crash: ${item.id} (${item.signature}, exit ${item.exit}): ${item.messages.join(" | ")}`),
     ...(record.slow.length ? ["slow:", ...record.slow.map(item => `  ${item.id} ${item.seconds}s ${item.measured === "alone" ? "alone" : `in the related run, over ${SURE_SLOW}x the ${record.slowSeconds}s budget (not re-run)`}${item.owner ? ` (owner ${item.owner})` : ""}`)] : []),
     ...(record.reason && record.verdict !== "FAST PASS" && !["red", "typecheck"].includes(record.reason) ? [`reason: ${record.reason}`] : []),
     ...(record.requests ?? []),
