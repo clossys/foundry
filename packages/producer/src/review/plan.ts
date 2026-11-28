@@ -46,7 +46,8 @@ export function globRegExp(glob: string): RegExp {
 }
 
 const matches = (globs: readonly string[], path: string) => globs.some(glob => globRegExp(glob).test(path));
-const COMMENT = /^\s*(\/\/|\/\*|\*|#|<!--)/;
+/** A comment line, or a package.json `"//..."` comment key. */
+const COMMENT = /^\s*(\/\/|\/\*|\*|#|<!--|"\/\/)/;
 
 /** Classifies a diff by the lexicon: gate or non-gate, and whether a check's pass/fail logic changed. */
 export function classify(files: readonly DiffFile[], lexicon: GateLexicon = GATE_LEXICON): Classification {

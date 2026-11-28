@@ -52,6 +52,7 @@ describe("the gate lexicon", () => {
     expect(GATE_NEW_LOGIC.passFail).toEqual({ changed: true, where: "scripts/check-demo.mjs: process.exitCode = findings.length > 1 ? 1 : 0;" });
     expect(classify([file("scripts/check-demo.test.mjs", ["  assert.equal(run.status, 1);"])]).passFail.changed).toBe(false);
     expect(classify([file("scripts/check-new.mjs", ["console.log(1);"], [], "A")]).passFail.changed).toBe(true);
+    expect(classify([file("package.json", ["    \"//check-demo\": \"the check fails on each finding\","])]).passFail.changed).toBe(false);
   });
 });
 
