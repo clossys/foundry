@@ -1,0 +1,52 @@
+{
+  "id": "carry-voided-own-path",
+  "provenance": "Reconstructed from the packet's description of the case; the planner's recorded case was not attached to this unit's launch prompt, so the recorded verdict here is the one the packet states for the case. Replace with the scrubbed recorded case when it is attached.",
+  "case": "carry",
+  "steps": [
+    {
+      "op": "commit",
+      "branch": "main",
+      "files": {
+        "package.json": "{\n  \"name\": \"fixture\",\n  \"private\": true\n}\n",
+        "shared.txt": "one\ntwo\nthree\nfour\nfive\nsix\nseven\neight\n",
+        "other.txt": "x\n"
+      },
+      "mark": "base"
+    },
+    {
+      "op": "branch",
+      "name": "unit",
+      "from": "main"
+    },
+    {
+      "op": "commit",
+      "branch": "unit",
+      "files": {
+        "shared.txt": "ONE\ntwo\nthree\nfour\nfive\nsix\nseven\neight\n"
+      },
+      "mark": "cleared"
+    },
+    {
+      "op": "commit",
+      "branch": "main",
+      "files": {
+        "shared.txt": "one\ntwo\nthree\nfour\nfive\nsix\nseven\nEIGHT\n"
+      }
+    },
+    {
+      "op": "merge",
+      "branch": "unit",
+      "from": "main",
+      "mark": "new"
+    }
+  ],
+  "carry": {
+    "cleared": "cleared",
+    "new": "new",
+    "onto": "main"
+  },
+  "recorded": {
+    "verdict": "VOID",
+    "reason": "^own-path blob change: shared\\.txt$"
+  }
+}

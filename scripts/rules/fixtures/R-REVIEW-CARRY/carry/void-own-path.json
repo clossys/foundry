@@ -1,0 +1,15 @@
+{
+  "schema": "clossys.review-carry/1",
+  "cleared": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "head": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+  "onto": "ffffffffffffffffffffffffffffffffffffffff",
+  "verdict": "VOID",
+  "reason": "own-path blob change: src/own.mjs",
+  "ownPaths": [
+    "src/own.mjs"
+  ],
+  "ownChanged": [
+    "src/own.mjs"
+  ],
+  "line": "VOID eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee: own-path blob change: src/own.mjs"
+}

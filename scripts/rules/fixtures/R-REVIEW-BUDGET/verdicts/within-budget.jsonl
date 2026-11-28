@@ -1,0 +1,3 @@
+{"schema": "clossys.review-verdict/1", "unit": "U", "role": "blind", "head": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "verdict": "NOT CLEAR", "reason": "the finding", "severity": "P1", "blind": true, "line": "NOT CLEAR aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa: the finding"}
+{"schema": "clossys.review-verdict/1", "unit": "U", "role": "closure-delta", "head": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb", "verdict": "CLEAR", "blind": false, "line": "CLEAR bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"}
+{"schema": "clossys.review-verdict/1", "unit": "U", "role": "second-blind", "head": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb", "verdict": "CLEAR", "blind": true, "line": "CLEAR bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"}

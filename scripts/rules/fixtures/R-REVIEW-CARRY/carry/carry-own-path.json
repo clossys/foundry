@@ -1,0 +1,15 @@
+{
+  "schema": "clossys.review-carry/1",
+  "cleared": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "head": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+  "onto": "ffffffffffffffffffffffffffffffffffffffff",
+  "verdict": "CARRY",
+  "reason": "default-branch carry of 1 path(s); no own path changed",
+  "ownPaths": [
+    "src/own.mjs"
+  ],
+  "ownChanged": [
+    "src/own.mjs"
+  ],
+  "line": "CARRY eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee: default-branch carry of 1 path(s); no own path changed"
+}

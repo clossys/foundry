@@ -1237,6 +1237,86 @@
         }
       ],
       "note": "Mechanical runs wait in one run queue (packages/producer/src/review/queue.ts): installs for active executors first, then reviews, then re-runs, the longer critical path first; a wait looks again until it is admitted or cancelled and never gives up; enqueuing a newer head cancels the unit's runs at the older head. check:review-fail-closed fails when the Reviewer skill no longer states the rule, and, given --queue and --capacity, on live runs of one unit at two heads, more heavy runs than slots, or a give-up state. The fixtures are a skill without the rule, a queue with a superseded head still live, and a queue with a run that gave up."
+    },
+    {
+      "id": "R-REVIEW-BUDGET",
+      "owner_words": {
+        "quote": "dont wait for cp2 to migrate everything we already do to the new agents; let cp2 work on the new requests/requirements but any existing processes should migrate immediately",
+        "date": "2026-11-28"
+      },
+      "owner_agent": "reviewer",
+      "status": "enforced",
+      "checks": [
+        ".#check:review-plan"
+      ],
+      "related": [
+        ".#check:gates"
+      ],
+      "fixture": "scripts/rules/fixtures/R-REVIEW-BUDGET",
+      "fixture_runs": [
+        {
+          "check": ".#check:review-plan",
+          "cwd": ".",
+          "fixture": "scripts/rules/fixtures/R-REVIEW-BUDGET/skill",
+          "run": "node scripts/check-review-plan.mjs --root {fixture}",
+          "expect": "^missing-rule\\s+packages/reviewer/skill/SKILL\\.md"
+        },
+        {
+          "check": ".#check:review-plan",
+          "cwd": ".",
+          "fixture": "scripts/rules/fixtures/R-REVIEW-BUDGET/verdicts",
+          "run": "node scripts/check-review-plan.mjs --root {fixture} --verdicts {fixture}/final-after-clear.jsonl",
+          "expect": "^final-pass\\s"
+        },
+        {
+          "check": ".#check:review-plan",
+          "cwd": ".",
+          "fixture": "scripts/rules/fixtures/R-REVIEW-BUDGET/verdicts",
+          "run": "node scripts/check-review-plan.mjs --root {fixture} --verdicts {fixture}/third-fix-round.jsonl",
+          "expect": "^third-fix-round\\s"
+        },
+        {
+          "check": ".#check:review-plan",
+          "cwd": ".",
+          "fixture": "scripts/rules/fixtures/R-REVIEW-BUDGET/verdicts",
+          "run": "node scripts/check-review-plan.mjs --root {fixture} --verdicts {fixture}/unattested-blind.jsonl",
+          "expect": "^unattested-blind\\s"
+        }
+      ],
+      "note": "The review budget (owner, 2026-11-25), applied by clossys review plan (packages/producer/src/review/plan.ts, from the gate lexicon in gate-lexicon.ts): mechanical first; a non-gate diff, including one whose only gate surface is a public contract, digest, export list or README, needs no judgement pass; a gate diff gets one blind pass, and a second only when it changes a check's pass/fail logic or the first blind finds a P0 or P1; no final after a CLEAR blind; one closure delta per fix round; at most 2 fix rounds. clossys review verdict records CLEAR <sha> or NOT CLEAR <sha>: <reason> with the role and the blind attestation. check:review-plan fails when the Reviewer skill no longer states the rule, and, given --verdicts, on a final pass, an unattested blind, a repeated blind or second-blind, or a verdict after a third NOT CLEAR. The fixtures are a skill without the rule, a final after a CLEAR blind, a third fix round, and an unattested blind."
+    },
+    {
+      "id": "R-REVIEW-CARRY",
+      "owner_words": {
+        "quote": "dont wait for cp2 to migrate everything we already do to the new agents; let cp2 work on the new requests/requirements but any existing processes should migrate immediately",
+        "date": "2026-11-28"
+      },
+      "owner_agent": "reviewer",
+      "status": "enforced",
+      "checks": [
+        ".#check:review-plan"
+      ],
+      "related": [
+        ".#check:gates"
+      ],
+      "fixture": "scripts/rules/fixtures/R-REVIEW-CARRY",
+      "fixture_runs": [
+        {
+          "check": ".#check:review-plan",
+          "cwd": ".",
+          "fixture": "scripts/rules/fixtures/R-REVIEW-CARRY/skill",
+          "run": "node scripts/check-review-plan.mjs --root {fixture}",
+          "expect": "^missing-rule\\s+packages/reviewer/skill/SKILL\\.md"
+        },
+        {
+          "check": ".#check:review-plan",
+          "cwd": ".",
+          "fixture": "scripts/rules/fixtures/R-REVIEW-CARRY/carry",
+          "run": "node scripts/check-review-plan.mjs --root {fixture} --carry {fixture}/carry-own-path.json",
+          "expect": "^carry-on-own-path\\s"
+        }
+      ],
+      "note": "The clearance carry-over rule, applied by clossys review carry (packages/producer/src/review/carry.ts): a clearance carries to a new head only when the new head contains it, every commit between them that the default branch lacks is a merge, no own path (changed from the merge base to the cleared head) has another blob at the new head, and every other changed path is the default branch's blob. check:review-plan fails when the Reviewer skill no longer states the rule, and, given --carry, on a CARRY record listing an own-path blob change. The fixtures are a skill without the rule and a CARRY record over an own-path change."
     }
   ],
   "exemptions": [

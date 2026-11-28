@@ -23,6 +23,9 @@ export const REVIEW_USAGE = "Usage: clossys review <base> <head> [--packet <unit
   + "  alone), reverses it and compares the tree byte for byte; it ends MUTATION: PASS|FAIL <head-sha> <patch-sha256>, PASS only\n"
   + "  when a command failed with output matching --expect-fail and the tree is restored. Exit 0 PASS, 1 FAIL.";
 
+/** The review plan, carry and verdict verbs (./review-plan.ts), listed in --help without loading that module. */
+export const PLAN_USAGE = "       clossys review plan|carry|verdict ... (the review budget and the clearance carry rule: clossys review plan --help)";
+
 export const RECEIPT_USAGE = "Usage: clossys receipt --packet <unit.md> [--out <dir>] [--root <repo>] [--json]\n"
   + "  Runs the packet's Validation commands in the checkout and writes commands.json, receipt.json and receipt.md\n"
   + "  (default <packet dir>/<packet name>.receipt/). Exit 1 when a command's exit code is not the one the packet expects.";
@@ -51,7 +54,9 @@ function options(argv: readonly string[], usage: string, flags: readonly string[
 const writeRecord = (file: string, record: unknown) => { mkdirSync(dirname(file), { recursive: true }); writeFileSync(file, `${JSON.stringify(record, null, 2)}\n`); };
 
 export async function runReviewCli(argv: readonly string[], cwd: string): Promise<CliResult> {
-  if (argv.includes("--help")) return { exitCode: 0, message: REVIEW_USAGE };
+  const verb = argv[0];
+  if (verb === "plan" || verb === "carry" || verb === "verdict") return (await import("./review-plan.js")).runReviewPlanCli(verb, argv.slice(1), cwd);
+  if (argv.includes("--help")) return { exitCode: 0, message: `${REVIEW_USAGE}\n${PLAN_USAGE}` };
   const { positional, set, given, many } = options(argv, REVIEW_USAGE, ["--json", "--check-doc", "--write-doc"], ["--packet", "--receipt", "--seed", "--root", "--fast", "--record", "--mutation", "--expect-fail"], ["--run"]);
   const root = given.has("--root") ? resolve(cwd, given.get("--root")!) : repoRoot(cwd);
   if (set.has("--check-doc") || set.has("--write-doc")) {

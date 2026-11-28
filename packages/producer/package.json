@@ -119,6 +119,7 @@
     "studio:compose": "node scripts/compose-studio.mjs"
   },
   "dependencies": {
+    "@clossys/controller": "^0.10.0",
     "@clossys/designer": "0.12.0",
     "@clossys/publisher": "0.13.0",
     "@clossys/director": "0.6.0",

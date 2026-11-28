@@ -1,0 +1,118 @@
+{
+  "id": "gate-pass-sequence",
+  "provenance": "Reconstructed from the packet's description of the case; the planner's recorded case was not attached to this unit's launch prompt, so the recorded verdict here is the one the packet states for the case. Replace with the scrubbed recorded case when it is attached.",
+  "case": "plan",
+  "steps": [
+    {
+      "op": "commit",
+      "branch": "main",
+      "files": {
+        "package.json": "{\n  \"name\": \"fixture\",\n  \"private\": true\n}\n",
+        "shared.txt": "one\ntwo\nthree\nfour\nfive\nsix\nseven\neight\n",
+        "other.txt": "x\n",
+        "scripts/check-demo.mjs": "const findings = [];\nprocess.exitCode = findings.length ? 1 : 0;\n"
+      },
+      "mark": "base"
+    },
+    {
+      "op": "branch",
+      "name": "unit",
+      "from": "main"
+    },
+    {
+      "op": "commit",
+      "branch": "unit",
+      "files": {
+        "scripts/check-demo.mjs": "const findings = [];\nif (process.argv.includes(\"--strict\")) findings.push(\"strict\");\nprocess.exitCode = findings.length ? 1 : 0;\n"
+      },
+      "mark": "h1"
+    },
+    {
+      "op": "commit",
+      "branch": "unit",
+      "files": {
+        "scripts/check-demo.mjs": "const findings = [];\nif (process.argv.includes(\"--strict\")) findings.push({ rule: \"strict\" });\nprocess.exitCode = findings.length ? 1 : 0;\n"
+      },
+      "mark": "h2"
+    }
+  ],
+  "plan": {
+    "unit": "unit",
+    "base": "base",
+    "onto": "main",
+    "sequence": [
+      {
+        "at": "h1",
+        "expect": {
+          "class": "gate",
+          "blinds": 2,
+          "next": "blind",
+          "status": "NEXT"
+        },
+        "then": {
+          "role": "blind",
+          "verdict": "NOT CLEAR",
+          "severity": "P1",
+          "reason": "the strict finding has no rule id"
+        }
+      },
+      {
+        "at": "h1",
+        "expect": {
+          "blinds": 2,
+          "next": "none",
+          "status": "WAITING"
+        }
+      },
+      {
+        "at": "h2",
+        "expect": {
+          "blinds": 2,
+          "next": "closure-delta",
+          "status": "NEXT",
+          "fixRounds": 1
+        },
+        "then": {
+          "role": "closure-delta",
+          "verdict": "CLEAR"
+        }
+      },
+      {
+        "at": "h2",
+        "expect": {
+          "blinds": 2,
+          "next": "second-blind",
+          "status": "NEXT"
+        },
+        "refuse": [
+          "final",
+          "blind"
+        ],
+        "then": {
+          "role": "second-blind",
+          "verdict": "CLEAR"
+        }
+      },
+      {
+        "at": "h2",
+        "expect": {
+          "blinds": 2,
+          "next": "none",
+          "status": "CLEARED"
+        },
+        "refuse": [
+          "final",
+          "closure-delta"
+        ]
+      }
+    ]
+  },
+  "recorded": {
+    "passes": [
+      "blind",
+      "closure-delta",
+      "second-blind"
+    ],
+    "final": "CLEARED"
+  }
+}

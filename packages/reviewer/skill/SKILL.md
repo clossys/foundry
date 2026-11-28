@@ -38,6 +38,22 @@ Every mechanical run waits in the one run queue, installs for active executors f
 - The queue (`packages/producer/src/review/queue.ts`) admits a run only when a heavy slot is free and no run ahead of it waits for one; installs for active executors, then reviews, then re-runs, the longer critical path first.
 - `node scripts/check-review-fail-closed.mjs --queue <queue.json> --capacity <slots>` exits 1 on live runs of one unit at two heads, more running than the slots, or a run in a give-up state.
 
+## The review budget
+
+Mechanical first; a gate diff gets one blind pass, and a second blind only when it changes a check's pass/fail logic or the first blind finds a P0 or P1; no final after a CLEAR blind; one closure delta per fix round; at most 2 fix rounds.
+
+- `clossys review plan <unit> --base <ref> --mechanical <review.json> --verdicts <log.jsonl> [--evidence <github.json>]` classifies the diff as gate or non-gate from the gate lexicon (`packages/producer/src/review/gate-lexicon.ts`) and the touched paths, and ends `NEXT: <pass> <head>` (mechanical, blind, second-blind or closure-delta), `CLEARED`, `WAITING` (a fix must be pushed) or `REFUSED`. A diff whose only gate surface is a public contract, digest, export list or README is non-gate, and needs no judgement pass after its mechanical PASS. `--ask <pass>` exits 1 unless that pass is the one the budget allows; a final never is. `--evidence` is a saved GitHub review snapshot, read through the controller's review evidence: it must be complete and at the exact head.
+- Record each verdict with `clossys review verdict <unit> --role blind|second-blind|closure-delta --head <sha> (--clear | --not-clear <reason> --severity P0..P3) --log <log.jsonl>`: it is `CLEAR <sha>` or `NOT CLEAR <sha>: <reason>`, with the role. A blind or second-blind verdict needs `--blind`, the attestation that no other review file was read for that unit.
+- `node scripts/check-review-plan.mjs --verdicts <log.jsonl>` exits 1 on a final pass, an unattested blind, a second blind or second-blind verdict, or a verdict after a unit's third NOT CLEAR.
+
+## Clearance carry-over
+
+A clearance carries to a new head only over a mechanical default-branch carry; any change to the blob of one of the unit's own paths voids it.
+
+- `clossys review carry <cleared> <new> [--onto <default branch>]` ends `CARRY <new>: <why>` (exit 0) or `VOID <new>: <why>` (exit 1). It voids when the new head does not contain the cleared head, when a commit between them that the default branch lacks is not a merge, when an own path (changed from the merge base to the cleared head) has another blob at the new head, or when any other changed path is not the default branch's blob.
+- `clossys review plan` applies the same rule when the head moved after a CLEAR; a VOID opens a fix round.
+- `node scripts/check-review-plan.mjs --carry <carry.json>` exits 1 on a CARRY record that lists an own-path blob change.
+
 ## Run the feedback loop
 
 Invoke with `/clossys-reviewer loop` (Claude Code) or `@clossys-reviewer loop` (Cursor). One invocation runs one iteration and stops at the approval gate inside judge, as Foundry's loop contract defines.
@@ -83,6 +99,8 @@ when this list and the registry differ.
 - R-FAST-BEFORE-REVIEW
 - R-REVIEW-FAIL-CLOSED
 - R-REVIEW-RUN-QUEUE
+- R-REVIEW-BUDGET
+- R-REVIEW-CARRY
 <!-- owned-rules:end -->
 
 ## When this package is installed

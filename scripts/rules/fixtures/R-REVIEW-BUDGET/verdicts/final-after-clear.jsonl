@@ -1,0 +1,2 @@
+{"schema": "clossys.review-verdict/1", "unit": "U", "role": "blind", "head": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "verdict": "CLEAR", "blind": true, "line": "CLEAR aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"}
+{"schema": "clossys.review-verdict/1", "unit": "U", "role": "final", "head": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "verdict": "CLEAR", "blind": true, "line": "CLEAR aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"}
