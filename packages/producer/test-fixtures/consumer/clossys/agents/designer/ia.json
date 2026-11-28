@@ -476,7 +476,8 @@
             "frames.site-shell",
             "frames.app-shell",
             "frames.auth-shell",
-            "frames.deck"
+            "frames.deck",
+            "frames.video"
           ]
         },
         {

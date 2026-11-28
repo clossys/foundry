@@ -22,7 +22,7 @@ import {
 import { LEDGER_FILE } from "./ledger.js";
 import { CRITIQUES_DIR, critiqueFileName, critiqueRecordIssues } from "./critique-record.js";
 import { isLoopAgent } from "../loop/agent-loops-ia.js";
-import { isModelDir, listModelDir, listSlots, modelExists, readModelBytes, readModelText, readiness, slotIndex, type Readiness } from "./slots.js";
+import { isModelDir, listModelDir, listSlots, modelExists, readModelBytes, readModelText, readiness, slotIndex, withSlotReadScope, type BlockReason, type Readiness } from "./slots.js";
 import { isConvertedStore, isPin1, oldFormatRefusal } from "./store-format.js";
 import { CURRENT_AGENT_KINDS, OLD_SLOT_FORMAT, candidateIssues, isOldSlot, placedAt, readSlotValue, slotReadIssues, type SlotRead } from "./slot-current.js";
 
@@ -108,7 +108,11 @@ export interface SlotModelCheckOptions {
   /** Judge the current format only: a clossys.slot/1 slot.json is one OLD_SLOT_FORMAT finding. */
   readonly current?: boolean;
 }
+/** The model check, in one slot read scope (CP1-CHECKS): each ancestor folder is lstat-walked once per check, not per read. */
 export function checkSlotModel(consumer: string, options: SlotModelCheckOptions = {}): SlotModelIssue[] {
+  return withSlotReadScope(() => judgeSlotModel(consumer, options));
+}
+function judgeSlotModel(consumer: string, options: SlotModelCheckOptions): SlotModelIssue[] {
   const issues: SlotModelIssue[] = [];
   // A store the store-format marker says is converted is judged in the current format only (U13): a slot/1
   // slot.json is the OLD_SLOT_FORMAT finding and a pin/1 pin.json a pin-invalid finding, whatever the caller asked.
@@ -195,18 +199,20 @@ export function checkSlotModel(consumer: string, options: SlotModelCheckOptions 
 export interface AgentCoverage { readonly agent: SlotAgent; readonly slots: number; readonly withCandidate: number; readonly pinned: number; readonly inputsUndeclared: number; readonly blocked: readonly { slot: string; readiness: Readiness }[] }
 export function slotCoverage(consumer: string): AgentCoverage[] {
   const index = slotIndex(consumer);
-  return SLOT_AGENTS.filter(agent => modelExists(iaPath(consumer, agent))).map(agent => {
+  // CP1-CHECKS: one pass over one tree judges each shared input once (same answer, not once per dependant).
+  const blockers = new Map<string, BlockReason | undefined>();
+  return withSlotReadScope(() => SLOT_AGENTS.filter(agent => modelExists(iaPath(consumer, agent))).map(agent => {
     const entries = listSlots(consumer, agent);
     const blocked: { slot: string; readiness: Readiness }[] = [];
     let undeclared = 0;
     for (const entry of entries) {
       if (!modelExists(join(entry.dir, SLOT_FILE))) continue;
-      const ready = readiness(consumer, agent, entry.id, index);
+      const ready = readiness(consumer, agent, entry.id, index, blockers);
       if (ready.blockedBy.some(row => row.reason === "inputs-undeclared")) undeclared++;
       if (!ready.ready) blocked.push({ slot: entry.id, readiness: ready });
     }
     return { agent, slots: entries.length, withCandidate: entries.filter(entry => entry.candidates.length).length, pinned: entries.filter(entry => entry.pin).length, inputsUndeclared: undeclared, blocked };
-  });
+  }));
 }
 
 export function formatCoverage(rows: readonly AgentCoverage[], withReadiness: boolean): string {

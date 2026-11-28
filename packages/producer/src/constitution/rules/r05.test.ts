@@ -29,7 +29,19 @@ describe("R05 module", () => {
   });
 
   it("reasonText leads with the codes so fit failures group by code", () => {
-    expect(reasonText([{ code: "no-standard", message: "a" }, { code: "no-fixture", message: "b" }, { code: "no-standard", message: "c" }])).toBe("[no-standard,no-fixture] a (+2 more)");
+    expect(reasonText([{ code: "no-standard", message: "a" }, { code: "no-fixture", message: "b" }, { code: "no-standard", message: "c" }])).toBe("[no-standard,no-fixture] a; b; c");
+  });
+
+  it("c3-8 reasonText lists every reason; the codes and the pass set do not change", () => {
+    const reasons = [{ code: "no-standard", message: "a" }, { code: "no-fixture", message: "b" }, { code: "no-standard", message: "c" }];
+    const text = reasonText(reasons);
+    expect(text).not.toMatch(/more\)/);
+    for (const reason of reasons) expect(text).toContain(reason.message);
+    expect(text.startsWith("[no-standard,no-fixture] ")).toBe(true);
+    expect(reasonText([])).toBe("[] uncertified");
+    // The pass set: the certified world still yields no row under any R05 check.
+    const ctx = certifiedWorld();
+    for (const [id, check] of Object.entries(R05_CHECKS)) expect(check(ctx), id).toEqual([]);
   });
 });
 

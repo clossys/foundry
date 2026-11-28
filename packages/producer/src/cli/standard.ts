@@ -144,7 +144,7 @@ export async function runStandardCli(argv: readonly string[], cwd: string): Prom
 
   const standard = readStandard(root, agent, id);
   const issues = standardIssues(standard, consumer);
-  if (issues.length) { undo(); return refuse(`${target} would not be a valid standard: ${issues.slice(0, 8).join("; ")}${issues.length > 8 ? ` (+${issues.length - 8} more)` : ""}`); }
+  if (issues.length) { undo(); return refuse(`${target} would not be a valid standard: ${issues.join("; ")}`); }
 
   // The ledger event records every file but the ledger: R16.3 compares the last event to the folder.
   const ledgerPath = join(dir, STANDARD_FILES.ledger);

@@ -1,0 +1,48 @@
+{
+  "clossys": {
+    "schema": "clossys.candidate/1",
+    "id": "designer/frames.video/package:stage-v1.json",
+    "agent": "designer",
+    "kind": "candidate",
+    "status": "submitted",
+    "slot": "designer/frames.video",
+    "createdBy": {
+      "actor": "package",
+      "package": "@clossys/designer"
+    },
+    "createdAt": "2026-11-26T00:00:00Z",
+    "refs": [],
+    "source": {
+      "kind": "package-default",
+      "ref": []
+    },
+    "rationale": []
+  },
+  "content": {
+    "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+    "name": "video",
+    "type": "registry:block",
+    "export": "VideoFrame",
+    "variants": {
+      "aspect": [
+        "16:9"
+      ],
+      "start": [
+        "paused"
+      ]
+    },
+    "dependencies": [],
+    "registryDependencies": [
+      "button",
+      "slider",
+      "utils"
+    ],
+    "files": [
+      {
+        "path": "registry/default/blocks/video.tsx",
+        "type": "registry:block",
+        "content": "\"use client\"\n\nimport * as React from \"react\"\n\nimport { cn } from \"@/lib/utils\"\nimport { Button } from \"@/components/ui/button\"\nimport { Slider } from \"@/components/ui/slider\"\n\ntype VideoFrameCopy = {\n  \"controls.label\": string\n  \"controls.play\": string\n  \"controls.pause\": string\n  \"controls.scrubber\": string\n}\n\nexport function VideoFrame({\n  scenes,\n  copy,\n  sceneSeconds = 6,\n  className,\n}: {\n  scenes: readonly React.ReactNode[]\n  copy: VideoFrameCopy\n  sceneSeconds?: number\n  className?: string\n}) {\n  const total = scenes.length\n  const last = Math.max(total - 1, 0)\n  // Starts paused (reduced motion): scenes advance only after the viewer presses play.\n  const [playing, setPlaying] = React.useState(false)\n  const [scene, setScene] = React.useState(0)\n\n  React.useEffect(() => {\n    if (!playing) return\n    if (scene >= last) {\n      setPlaying(false)\n      return\n    }\n    const timer = window.setTimeout(() => setScene(scene + 1), sceneSeconds * 1000)\n    return () => window.clearTimeout(timer)\n  }, [playing, scene, last, sceneSeconds])\n\n  return (\n    <div data-slot=\"video-frame\" data-aspect=\"16:9\" data-start=\"paused\" data-playing={playing} className={cn(\"mx-auto flex w-full flex-col overflow-hidden rounded-lg border border-border bg-background text-foreground\", className)}>\n      <main data-slot=\"video-stage\" className=\"aspect-video w-full overflow-hidden\">\n        {scenes[scene]}\n      </main>\n      <section data-slot=\"video-controls\" aria-label={copy[\"controls.label\"]} className=\"flex items-center gap-3 border-t border-border bg-muted px-3 py-2 text-muted-foreground\">\n        <Button variant=\"ghost\" size=\"sm\" isDisabled={total < 2} onPress={() => setPlaying(!playing)}>\n          {playing ? copy[\"controls.pause\"] : copy[\"controls.play\"]}\n        </Button>\n        <Slider aria-label={copy[\"controls.scrubber\"]} minValue={0} maxValue={last} step={1} value={scene} isDisabled={total < 2} onChange={(value: number | number[]) => setScene(Array.isArray(value) ? value[0] ?? 0 : value)} className=\"flex-1\" />\n        <span data-slot=\"video-scene-count\" className=\"text-sm tabular-nums\">\n          {Math.min(scene + 1, total)} / {total}\n        </span>\n      </section>\n    </div>\n  )\n}\n"
+      }
+    ]
+  }
+}

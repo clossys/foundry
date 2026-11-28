@@ -574,6 +574,12 @@ const frames = {
     min: 220, max: 420, defaultValue: 280,
     body: "Selected: Hero heading",
   },
+  /** The video frame plays three scene sections inside its 16:9 stage. */
+  video: {
+    label: "Playback controls", play: "Play", pause: "Pause", scrubber: "Scene",
+    scenes: ["Scene one: the launch plan", "Scene two: the spring pages", "Scene three: the review"],
+    sceneDuration: 4000,
+  },
   /** The sheet frame shows the same filters sheet the sheet Section does. */
   sheet: sections.sheet,
   command,

@@ -3,7 +3,7 @@
  * for Writer Prose and Copy slots, in the slot's `pin.json`. Each record follows the same rules as a pin
  * (pin.ts pinRecordIssues) against the map's `refs`. This module also reads a slot's `pin.json` in either shape.
  */
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { candidatePath, parseCandidateName, readCandidateFile, slotDir } from "./candidate.js";
 import { buildPin, pinIssues, pinMapIssues, pinPath, pinRecordIssues, pinRecordStatus, writePinDoc, type Pin1Doc } from "./pin.js";
@@ -18,6 +18,30 @@ export const usesPinMap = (agent: AgentId, kind: string | undefined): boolean =>
   agent === "writer" && kind !== undefined && (PIN_MAP_KINDS as readonly string[]).includes(kind);
 
 export { pinMapIssues } from "./pin.js";
+
+/**
+ * The record names a record slot knows, for a "pins per record: name one" refusal: the pin map keys, the stems of
+ * the consumer candidates/ files, the slot.json contract `records` keys, and any `extra` names the caller knows.
+ * A record is a candidate's stem: the slot leaf (what `next --submit` names by default, e.g. `meta`) or a contract
+ * records key named with `next --submit --name` (e.g. `site.meta`). Never throws on bad data.
+ */
+export function recordNamesHint(root: string, agent: AgentId, slotId: SlotId, extra: readonly string[] = []): string {
+  const names = new Set<string>(extra);
+  const pin = readPinFile(pinPath(root, agent, slotId));
+  if (pin.kind === "pin-map" && pin.doc.records && typeof pin.doc.records === "object") for (const key of Object.keys(pin.doc.records)) names.add(key);
+  const dir = join(slotDir(root, agent, slotId), "candidates");
+  try { for (const name of readdirSync(dir)) { const parts = parseCandidateName(name); if (parts) names.add(parts.name); } } catch { /* no candidates/ */ }
+  let contractKeys: string[] = [];
+  try {
+    const records = (JSON.parse(readFileSync(join(slotDir(root, agent, slotId), "slot.json"), "utf8")) as { contract?: { records?: unknown } }).contract?.records;
+    if (typeof records === "object" && records !== null && !Array.isArray(records)) contractKeys = Object.keys(records);
+  } catch { /* no slot.json */ }
+  for (const key of contractKeys) names.add(key);
+  const leaf = slotId.split(".").at(-1)!;
+  const listed = [...names].sort();
+  return `records: ${listed.length ? listed.join(", ") : "none yet"}; a record is its candidate's stem: the slot leaf ${leaf}`
+    + ` (next --submit's default name, ${leaf}-v<n>)${contractKeys.length ? ` or a contract records key (${contractKeys.join(", ")}) named with next --submit --name <key>` : ""}`;
+}
 
 export type PinFile =
   | { readonly kind: "none" }
@@ -115,7 +139,7 @@ export function writeTargetPin(root: string, input: TargetPinInput): Pin | PinMa
   const previous = readPinFile(file, { agent, slotId });
   if (previous.kind === "pin/1" || previous.kind === "invalid") throw new Error(`${agent}/${slotId}/pin.json: ${previous.issues.join("; ")}`);
   const recordSlot = previous.kind === "pin-map" || usesPinMap(agent, slot);
-  if (recordSlot && input.record === undefined) throw new Error(`${agent}/${slotId} pins per record: name one (${agent}/${slotId}#<record>)`);
+  if (recordSlot && input.record === undefined) throw new Error(`${agent}/${slotId} pins per record: name one (${agent}/${slotId}#<record>); ${recordNamesHint(root, agent, slotId)}`);
   if (!recordSlot && input.record !== undefined) throw new Error(`${agent}/${slotId} has a single pin; it takes no #${input.record}`);
   const parts = parseCandidateName(input.candidate);
   if (!parts) throw new Error(`${input.candidate} is not a candidate file name`);

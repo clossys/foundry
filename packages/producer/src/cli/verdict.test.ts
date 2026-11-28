@@ -16,7 +16,9 @@ import { STEPS } from "../pipeline/steps/index.js";
 import "./main.js";
 import { runCritiqueCli, runCritiquePacketCli } from "./critique.js";
 import { runNextSubmitCli } from "./next.js";
-import { runVerdictCli, VERDICT_EXAMPLES, VERDICT_USAGE, verdictIssues, verdictSchemaIssues } from "./verdict.js";
+import { runVerdictCli, VERDICT_EXAMPLES, VERDICT_USAGE, verdictIssues, verdictSchemaIssues, WRITER_VERDICT_EXAMPLES } from "./verdict.js";
+import { craftNames } from "./next.js";
+import { craftOrderIssue } from "../records/slot-write.js";
 
 const ID = "components.button";
 const AT = "2026-11-14T12:00:00.000Z";
@@ -158,6 +160,31 @@ describe("clossys verdict explains itself: an example per rung, and a refusal th
     }
   });
 
+  it("c2-9 the help shows a Writer example per rung (copy.entries), each valid for the Writer fixture slot, and an unknown criterion lists the valid ids", async () => {
+    const help = await runVerdictCli(["--help"], workspace);
+    expect(help.message).toContain("Writer");
+    const real = load(join(PACKAGES, "producer", "test-fixtures", "consumer", "clossys", "agents", "writer", "frames.site-header.copy", "slot.json")) as { id: string; standard: string; contract: Record<string, unknown> };
+    const std = readStandard(join(PACKAGES, ".."), "writer", real.standard);
+    expect(std.issues).toEqual([]);
+    const ids = {
+      taste: new Set(std.taste!.criteria.map(criterion => criterion.id)),
+      requirements: new Set((std.doc!.requirements ?? []).map(requirement => (requirement as { check: string }).check)),
+      brief: new Set(Object.keys(real.contract)),
+    };
+    const meta = { id: std.id, ...(std.doc!.mode ? { mode: std.doc!.mode } : {}), ...(std.doc!.createGaps ? { createGaps: std.doc!.createGaps } : {}) };
+    expect(WRITER_VERDICT_EXAMPLES.create.gaps).toEqual([{ id: "copy.entries" }]);
+    for (const [rung, example] of Object.entries(WRITER_VERDICT_EXAMPLES)) {
+      expect(help.message, rung).toContain(JSON.stringify(example));
+      expect(example.slot, rung).toBe(real.id);
+      expect(verdictSchemaIssues(example), rung).toEqual([]);
+      expect(verdictIssues(example as unknown as Record<string, unknown>, ids, meta), rung).toEqual([]);
+    }
+    const unknown = await raw({ ...VERDICT_EXAMPLES.pick, criteria: ["contrast"] });
+    expect(unknown.message).toContain("criterion contrast is not a taste criterion of standard component (taste.md; valid ids: composition, fidelity, polish)");
+    const gap = await raw({ ...VERDICT_EXAMPLES.create, gaps: [{ id: "brief:size", class: "missing-behavior" }] });
+    expect(gap.message).toMatch(/valid ids: taste composition, fidelity, polish; requirements .*; brief brief:variant/);
+  });
+
   it("names the failing field and its allowed values, never the bare oneOf message", async () => {
     const { schema: _schema, ...noSchema } = VERDICT_EXAMPLES.create;
     const missing = await raw(noSchema);
@@ -207,6 +234,53 @@ describe("a Producer seat slot through P1 and P2", () => {
     writeFileSync(join(workspace, "verdict.json"), JSON.stringify({ schema: "clossys.verdict/1", slot: SEAT_ID, ...doc }));
     return runVerdictCli([target, "--record", "verdict.json", "--model", "fixture-model", "--tier", "mid", "--by", "agent:producer.verdict", "--at", AT], workspace, NO_GUARD as never);
   };
+
+  const opened = async () => {
+    expect((await seatRecord({ create: true, reason: "fixture: no seat yet", gaps: [{ id: "seat.assigned" }, { id: "right-owner" }] })).exitCode).toBe(0);
+    return stage("brief", { goal: "a seat for owner decisions" });
+  };
+  const directions = ["agent", "owner", "split"].map((by, index) => ({ id: `d${index + 1}`, idea: by, axes: { holder: by, tier: `tier-${by}`, hand: `hand-${by}` } }));
+
+  it("c3-11 the brief lists the recipe axes, and the diverge refusal lists them too", async () => {
+    const brief = await opened();
+    expect(brief.exitCode, brief.message).toBe(0);
+    expect(brief.message).toContain("recipe axes: holder, tier, hand; diverge gives 3 to 4 directions, each a distinct value on every axis");
+    const twins = directions.map(direction => ({ ...direction, axes: { ...direction.axes, tier: "mid" } }));
+    const refused = await stage("diverge", twins);
+    expect(refused.exitCode).toBe(1);
+    expect(refused.message).toContain("share tier \"mid\"");
+    expect(refused.message).toContain("(the recipe's axes: holder, tier, hand)");
+    expect(craftOrderIssue(["brief"], "diverge", { directions: twins }, {})).toContain("(the directions' axes: hand, holder, tier)");
+  });
+
+  it("c3-12 the brief prints the candidate file the slot takes, and a critique of another name is refused by name", async () => {
+    expect(craftNames(workspace, "producer", SEAT_ID)).toEqual({ candidate: "decisions-v1.json", critique: "critiques/decisions-v1.json" });
+    const brief = await opened();
+    expect(brief.message).toContain("candidate file: decisions-v1.json; its critique: critiques/decisions-v1.json");
+    expect((await stage("diverge", directions)).exitCode).toBe(0);
+    expect((await stage("render")).exitCode).toBe(0);
+    const packet = await runCritiquePacketCli([target, "--standard", "seat", "--render", "renders/one.png"], workspace);
+    const manifest = (packet.output as { manifest: unknown[] }).manifest;
+    for (const candidate of ["decisions-v2.json", "seat-v1.json"]) {
+      writeFileSync(join(workspace, "critique.json"), JSON.stringify({ schema: "clossys.critique/1", slot: SEAT_ID, candidate, standard: "seat", scores: { "tier-fit": 4 }, packet: { manifest } }));
+      const critique = await runCritiqueCli([target, "--record", "critique.json", "--model", "fixture-critic", "--tier", "high", "--at", AT], workspace);
+      expect(critique.exitCode, candidate).toBe(1);
+      expect(critique.message, candidate).toContain(`candidate ${candidate.replace(/\.json$/, "")}`);
+      expect(critique.message, candidate).toContain("so its critique is critiques/decisions-v1.json");
+    }
+    expect(existsSync(join(seatDir, "critiques"))).toBe(false);
+  });
+
+  it("c3-10 the brief points to critique-packet, which prints every item's hash", async () => {
+    const brief = await opened();
+    expect(brief.message).toContain(`the critic's packet and every hash it carries: clossys critique-packet ${target} --standard <id> --render <path>...`);
+    const packet = await runCritiquePacketCli([target, "--standard", "seat", "--render", "renders/one.png"], workspace);
+    expect(packet.exitCode, packet.message).toBe(0);
+    const tasteSha = sha256Hex(readFileSync(join(workspace, "packages", "producer", "standards", "seat", "taste.md"), "utf8"));
+    expect(packet.message).toContain(`\n  taste packages/producer/standards/seat/taste.md ${tasteSha}`);
+    expect(packet.message).toMatch(/\n  render \S+ \S+ [0-9a-f]{64}/);
+    expect(packet.message).toMatch(/\n  contract \S+ [0-9a-f]{64}/);
+  });
 
   it("takes a create verdict, crafts brief, diverge and render under the seats skill, then is critiqued", async () => {
     expect((await stage("brief", { goal: "a seat for owner decisions" })).message).toMatch(/craft is P2/);

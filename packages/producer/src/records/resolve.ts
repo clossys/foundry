@@ -15,7 +15,7 @@ import { join } from "node:path";
 import { CANDIDATE_NAME, SLOT_ID, TARGET_AGENTS, candidatePath, isAgentId, packageDefaultDir, parseCandidateName, slotDir } from "./candidate.js";
 import { sha256Hex } from "./hash.js";
 import { pinPath } from "./pin.js";
-import { readPinFile, usesPinMap, type PinFile } from "./pin-map.js";
+import { readPinFile, recordNamesHint, usesPinMap, type PinFile } from "./pin-map.js";
 import { modelAlias } from "./slots.js";
 import type { AgentId, CandidateName, PinRecord, Sha256, SlotId } from "./types.js";
 
@@ -114,7 +114,7 @@ function fromPin(root: string, agent: AgentId, slotId: SlotId, record: string | 
     if (record !== undefined) return { issue: `${agent}/${slotId} has a single pin, not a pin map with record ${record}` };
     return { pin: pinFile.doc, status: pinFile.doc.status };
   }
-  if (record === undefined) return { issue: `${agent}/${slotId} pins per record: name one (#<record>)` };
+  if (record === undefined) return { issue: `${agent}/${slotId} pins per record: name one (#<record>); ${recordNamesHint(root, agent, slotId, slotRecords(root, agent, slotId))}` };
   const pin = pinFile.doc.records[record];
   if (!pin) return undefined;
   return { pin, status: pin.basis === "picked" || pin.confirmed ? "pinned" : "confirm" };

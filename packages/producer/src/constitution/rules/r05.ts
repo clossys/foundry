@@ -19,10 +19,10 @@ import type { Reason } from "../certify/types.js";
 import { focusedLiveSlots, row } from "../checks/shared.js";
 import type { Check, Row, RuleModule } from "../types.js";
 
-/** `[code,code] first message (+n more)`. */
+/** `[code,code] message; message; ...`: every reason, so a refusal never hides one behind a count. */
 export function reasonText(reasons: readonly Reason[]): string {
   const codes = [...new Set(reasons.map(item => item.code))];
-  return `[${codes.join(",")}] ${reasons[0]?.message ?? "uncertified"}${reasons.length > 1 ? ` (+${reasons.length - 1} more)` : ""}`;
+  return `[${codes.join(",")}] ${reasons.length ? reasons.map(item => item.message).join("; ") : "uncertified"}`;
 }
 
 /** R05.1: one row per uncertified candidate of a live slot. */

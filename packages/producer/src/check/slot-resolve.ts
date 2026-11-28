@@ -13,7 +13,7 @@ import { buildCheckOutputEnvelope, envelopeToExitCode } from "../generated/check
 import { sha256Hex } from "../records/hash.js";
 import { loadReferencesManifest } from "../records/validate.js";
 import { candidateHeaderOf, candidateView } from "../records/slot-current.js";
-import { assertModelTree, listSlots, readCandidate, readIa, readLedgerText, readSlot, readSlotRecordText } from "../records/slots.js";
+import { assertModelTree, listSlots, readCandidate, readIa, readLedgerText, readSlot, readSlotRecordText, withSlotReadScope } from "../records/slots.js";
 import { lastRecordState, ledgerEventsOf } from "../records/ledger.js";
 import { agentModule } from "../read/cells.js";
 import { checkSlotModel, formatCoverage, slotCoverage, writerRecords, type AgentCoverage } from "../records/slot-check.js";
@@ -221,9 +221,12 @@ export async function runSlotResolve(rootIn: string) {
   let referenceHash: string | undefined;
   let referenceSource = "not required (no registry sources)";
   try {
-    assertModelTree(root);
-    modelIssues = checkSlotModel(root, { current: true });
-    stores = modelStores(root, writer);
+    // CP1-CHECKS: one read scope for the synchronous model reads, so each ancestor folder is lstat-walked once.
+    withSlotReadScope(() => {
+      assertModelTree(root);
+      modelIssues = checkSlotModel(root, { current: true });
+      stores = modelStores(root, writer);
+    });
     if (stores.some(store => Object.values(store.candidates).flat().some(candidate => candidate.source?.kind === "registry"))) {
       referenceSource = "Foundry Designer references manifest";
       try {

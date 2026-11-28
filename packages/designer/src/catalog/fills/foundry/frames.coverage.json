@@ -236,6 +236,22 @@
         "footer-placement.flow",
         "footer-placement.overlay"
       ]
+    },
+    {
+      "missing": [],
+      "missingRequiredSlots": [],
+      "missingSlots": [],
+      "missingStatePorts": [],
+      "notes": [
+        "VideoFrame is a 16:9 main stage showing one scene section and a named controls region of the stock Button (play/pause) and Slider (scene scrubber) with the scene count. The 16:9 aspect is fixed and it always starts paused; playing and scene are host-ownable state.",
+        "Descriptor only; anatomy, source, accessibility, contrast, layout and rendered conformance are unmeasured."
+      ],
+      "slot": "frames.video",
+      "status": "candidate",
+      "supported": [
+        "aspect.16-9",
+        "start.paused"
+      ]
     }
   ],
   "source": "foundry"
