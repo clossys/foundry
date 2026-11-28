@@ -193,6 +193,20 @@ export async function buildPreview(prepared: PreparedPreview, options: PreviewBu
   return { findings, built };
 }
 
+/** The routes file a preview build leaves for `clossys check --render` (check/render-check.ts), beside its build. */
+export const RENDER_ROUTES_FILE = "render-routes.json";
+
+/** Writes `<dir>/render-routes.json`: the build's routes and which were built, so a render check can serve and capture them. */
+export function writeRenderRoutes(prepared: PreparedPreview, build: PreviewBuildResult): string {
+  const path = join(prepared.dir, RENDER_ROUTES_FILE);
+  const doc = {
+    schema: "clossys.render-routes/1", preview: { publication: prepared.publication, buildId: prepared.buildId },
+    routes: prepared.routes.map(route => ({ path: route.path, page: route.page, built: build.built.includes(route.page) })),
+  };
+  writeFileSync(path, `${JSON.stringify(doc, null, 2)}\n`);
+  return path;
+}
+
 /** The clossys.preview/1 view of a prepared build served at `url`. */
 export function previewView(prepared: PreparedPreview, url: string): PreviewView {
   return {

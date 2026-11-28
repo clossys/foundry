@@ -1,0 +1,20 @@
+{
+  "schema": "clossys.render-parity/1",
+  "recordedBy": "stand-in",
+  "note": "Stand-in authored with this unit, by hand from the markup (not produced by clossys check --render): the harness's three recorded audits named by the packet were not attached to this run. Replace capture.html and findings with the scrubbed recordings to prove parity against the harness.",
+  "route": "/",
+  "findings": [
+    {
+      "rule": "RENDER_OVERFLOW",
+      "slot": "designer/sections.feature-grid",
+      "agent": "designer",
+      "selector": "[data-slot=\"designer/sections.feature-grid\"] > div:nth-of-type(1)"
+    },
+    {
+      "rule": "RENDER_OVERFLOW",
+      "slot": "designer/sections.feature-grid",
+      "agent": "designer",
+      "selector": "[data-slot=\"designer/sections.feature-grid\"] > a"
+    }
+  ]
+}

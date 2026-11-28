@@ -38,6 +38,14 @@ Every mechanical run waits in the one run queue, installs for active executors f
 - The queue (`packages/producer/src/review/queue.ts`) admits a run only when a heavy slot is free and no run ahead of it waits for one; installs for active executors, then reviews, then re-runs, the longer critical path first.
 - `node scripts/check-review-fail-closed.mjs --queue <queue.json> --capacity <slots>` exits 1 on live runs of one unit at two heads, more running than the slots, or a run in a give-up state.
 
+## Rendered output is audited, not patched
+
+Visible defects are caught by the one rendered-output audit, `clossys check --render`, never patched page by page; it fails closed (no routes, zero captures, no browser or no build is FAIL), and every finding names its owning slot and agent and is filed as a request.
+
+- `clossys check --render [--routes <file>] [--json]` captures each route of a built site in Chromium (1280x800 and 375x812), saves each measured capture as HTML, and audits it: empty icons, glyphs that do not render as text, overflow past the viewport or out of a box, accessible names, Writer copy keys (`data-copy`) and `data-slot="<agent>/<slot>"` attribution. It ends `RENDER: PASS|FAIL <captured>/<asked> capture(s) <n> finding(s)`; it gates no merge.
+- `--file` files each owning slot's findings as one request through `clossys request`: kind fix (`--check check.render`) to a placed slot's agent, else kind report to the owning agent. Owner feedback about a page goes in as a gap in this audit first, never as a one-page fix.
+- Before trusting a record, `node scripts/check-render-audit.mjs --record <render.json>` exits 1 on a PASS that captured nothing, met something missing or holds findings, and on any finding without its slot and agent.
+
 ## Run the feedback loop
 
 Invoke with `/clossys-reviewer loop` (Claude Code) or `@clossys-reviewer loop` (Cursor). One invocation runs one iteration and stops at the approval gate inside judge, as Foundry's loop contract defines.
@@ -83,6 +91,7 @@ when this list and the registry differ.
 - R-FAST-BEFORE-REVIEW
 - R-REVIEW-FAIL-CLOSED
 - R-REVIEW-RUN-QUEUE
+- R-RENDER-AUDIT
 <!-- owned-rules:end -->
 
 ## When this package is installed

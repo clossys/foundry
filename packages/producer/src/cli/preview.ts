@@ -12,7 +12,7 @@ import { isBlocking, type PageHostSelection } from "@clossys/publisher/install";
 import { CliUsageError } from "./args.js";
 import type { CliResult } from "./main.js";
 import { discoverRoot } from "./root.js";
-import { buildPreview, preparePreview, previewPort, previewUrl, previewView, startPreviewServer, type PreviewBuildOptions } from "../preview/serve.js";
+import { buildPreview, preparePreview, previewPort, previewUrl, previewView, startPreviewServer, writeRenderRoutes, type PreviewBuildOptions } from "../preview/serve.js";
 
 export const PREVIEW_USAGE = "Usage: clossys preview <publication> [--with <agent>/<slot>/<candidate>]... [--port <n>] [--locale <locale>]...\n"
   + "  [--selection <module>[#export]] [--once] [--json] [--root <dir>]\n"
@@ -67,6 +67,8 @@ export async function runPreviewCli(argv: readonly string[], cwd: string, deps: 
 
   const prepared = await preparePreview({ root: workspace, publication, with: refs, locales });
   const build = await buildPreview(prepared, { cwd, ...(selection ? { selection } : {}), ...(deps.runner ? { runner: deps.runner } : {}), ...(deps.npm ? { npm: deps.npm } : {}), ...(deps.vite ? { vite: deps.vite } : {}) });
+  // The routes file `clossys check --render` captures by default (check/render-check.ts).
+  writeRenderRoutes(prepared, build);
   const blocking = build.findings.filter(isBlocking);
   const findingLines = build.findings.map(row => `  ${isBlocking(row) ? "" : "info "}${row.page} ${row.code}: ${row.detail}`);
   const summary = (url: string) => [

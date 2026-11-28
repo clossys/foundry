@@ -165,6 +165,8 @@ async function run(argv: readonly string[], cwd: string, steps: readonly Step[],
     if (head === "review") return await (await import("../cli/review.js")).runReviewCli(argv.slice(1), cwd);
     // Reviewer's quick gate over a diff (check/fast.ts): its own parser; `check --help` documents it in USAGE.
     if (head === "check" && argv.includes("--fast") && !argv.includes("--help")) return await (await import("../cli/fast.js")).runFastCli(argv, cwd);
+    // Reviewer's rendered-output audit (check/render-check.ts): its own parser; `check --help` documents it in USAGE.
+    if (head === "check" && argv.includes("--render") && !argv.includes("--help")) return await (await import("../cli/render-check.js")).runRenderCheckCli(argv, cwd);
     if (head === "receipt") return await (await import("../cli/review.js")).runReceiptCli(argv.slice(1), cwd);
     // An agent's own loops (foundry-build-0048 U9a): adopt, pin through the pin gate, and judge one against its standard.
     if (head === "loop") return await (await import("../cli/loop.js")).runLoopCli(argv.slice(1), cwd);

@@ -1237,6 +1237,46 @@
         }
       ],
       "note": "Mechanical runs wait in one run queue (packages/producer/src/review/queue.ts): installs for active executors first, then reviews, then re-runs, the longer critical path first; a wait looks again until it is admitted or cancelled and never gives up; enqueuing a newer head cancels the unit's runs at the older head. check:review-fail-closed fails when the Reviewer skill no longer states the rule, and, given --queue and --capacity, on live runs of one unit at two heads, more heavy runs than slots, or a give-up state. The fixtures are a skill without the rule, a queue with a superseded head still live, and a queue with a run that gave up."
+    },
+    {
+      "id": "R-RENDER-AUDIT",
+      "owner_words": {
+        "quote": "dont wait for cp2 to migrate everything we already do to the new agents; let cp2 work on the new requests/requirements but any existing processes should migrate immediately",
+        "date": "2026-11-28"
+      },
+      "owner_agent": "reviewer",
+      "status": "enforced",
+      "checks": [
+        ".#check:render-audit"
+      ],
+      "related": [
+        ".#check:gates"
+      ],
+      "fixture": "scripts/rules/fixtures/R-RENDER-AUDIT",
+      "fixture_runs": [
+        {
+          "check": ".#check:render-audit",
+          "cwd": ".",
+          "fixture": "scripts/rules/fixtures/R-RENDER-AUDIT/skill",
+          "run": "node scripts/check-render-audit.mjs --root {fixture}",
+          "expect": "^missing-rule\\s+packages/reviewer/skill/SKILL\\.md"
+        },
+        {
+          "check": ".#check:render-audit",
+          "cwd": ".",
+          "fixture": "scripts/rules/fixtures/R-RENDER-AUDIT/record",
+          "run": "node scripts/check-render-audit.mjs --root {fixture} --record {fixture}/render-pass-zero.json",
+          "expect": "^pass-on-nothing\\s"
+        },
+        {
+          "check": ".#check:render-audit",
+          "cwd": ".",
+          "fixture": "scripts/rules/fixtures/R-RENDER-AUDIT/record",
+          "run": "node scripts/check-render-audit.mjs --root {fixture} --record {fixture}/render-unattributed.json",
+          "expect": "^unattributed-finding\\s"
+        }
+      ],
+      "note": "Visible defects are caught by one generic rendered-output audit, clossys check --render (packages/producer/src/check/render-check.ts), never patched page by page (owner, 2026-11-13). It fails closed: no routes, zero captures, no browser or no build is FAIL with its reason. Every finding names its owning slot (nearest data-slot=\"<agent>/<slot>\") and agent, and --file files it through clossys request. check:render-audit fails when the Reviewer skill no longer states the rule, and, given --record, on a PASS that captured nothing, met something missing or holds findings, or on a finding without its slot and agent. The fixtures are a skill without the rule, a PASS record that captured nothing, and a record whose finding names no slot."
     }
   ],
   "exemptions": [

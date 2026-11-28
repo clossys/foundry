@@ -1,4 +1,5 @@
 import { FAST_USAGE } from "./fast-usage.js";
+import { RENDER_CHECK_USAGE } from "./render-check-usage.js";
 export const VERBS = ["direct", "design", "write", "publish", "produce", "check"] as const;
 export type Verb = typeof VERBS[number];
 
@@ -105,6 +106,7 @@ export const USAGE = "Usage: clossys <direct|design|write|publish|produce|check>
   + "End to end: clossys check --e2e [--from <tarball dir>] [--scenario <file>] [--keep] [--json] (consumer.e2e: packs the six first-party packages, installs the tarballs into an empty directory, drives the scenario Producer ships with the installed bin only and asserts the built HTML; a finding names its cause)\n"
   + "Engine: clossys check --engine [--root <dir>] [--json] (the event chain clossys/.state/events.jsonl verifies, clossys/.state/index.json agrees with a rebuild, every logged record holds its logged bytes and no root .clossys/ folder exists, the consumer layout keeping engine state only in clossys/.state/ (clossys migrate state --apply moves one); exits 1 on any finding); clossys index [--rebuild] [--root <dir>] (compare, or rewrite, the derived index); clossys check --side-door [--root <foundry checkout>] (engine.side-door: every engine state or slot-record write goes through the engine API)\n"
   + `${FAST_USAGE}\n`
+  + `${RENDER_CHECK_USAGE}\n`
   + "Record suites: clossys check --suites [--strict] [--root <dir>] (also run with --pages/--report when --root is a consumer root; exits 1 while any slot anywhere is unpinned: scope to one slot with clossys check --constitution --slot <agent>/<slot>)\n"
   + "Install: clossys publish --install --page <page id | page record.json> --selection <component selection module>[#export] [--out <dir>] [--records <consumer dir>]...\n"
   + "Site: clossys publish --install --site <route pack id> [--origin <deployment origin>] [--build] [--out <dir>] [--records <consumer dir>]... (one routed app: content-map paths, route-pack slots, one frame)\n"

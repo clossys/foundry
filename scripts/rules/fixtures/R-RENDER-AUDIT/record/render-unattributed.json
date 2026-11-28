@@ -1,0 +1,11 @@
+{
+  "schema": "clossys.render-check/1",
+  "owner_agent": "reviewer",
+  "verdict": "FAIL",
+  "reason": "findings",
+  "source": "site dist",
+  "ran": { "commands": 1, "missing": [] },
+  "routes": [{ "path": "/", "url": "http://127.0.0.1:4601/", "viewport": "1280x800", "captured": true, "findings": 1 }],
+  "findings": [{ "rule": "RENDER_EMPTY_ICON", "route": "/", "viewport": "1280x800", "selector": "body > main > button > svg", "message": "An icon renders empty." }],
+  "line": "RENDER: FAIL 1/1 capture(s) 1 finding(s)"
+}

@@ -1,0 +1,10 @@
+{
+  "schema": "clossys.render-check/1",
+  "owner_agent": "reviewer",
+  "verdict": "PASS",
+  "source": "site dist",
+  "ran": { "commands": 0, "missing": [] },
+  "routes": [],
+  "findings": [],
+  "line": "RENDER: PASS 0/0 capture(s) 0 finding(s)"
+}

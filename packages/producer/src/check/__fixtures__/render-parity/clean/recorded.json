@@ -1,0 +1,7 @@
+{
+  "schema": "clossys.render-parity/1",
+  "recordedBy": "stand-in",
+  "note": "Stand-in authored with this unit, by hand from the markup (not produced by clossys check --render): the harness's three recorded audits named by the packet were not attached to this run. Replace capture.html and findings with the scrubbed recordings to prove parity against the harness.",
+  "route": "/",
+  "findings": []
+}
