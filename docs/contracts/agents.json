@@ -11,6 +11,7 @@
     { "id": "controller", "package": "@clossys/controller", "class": "other", "definitionOwner": "controller" },
     { "id": "customer", "package": "@clossys/customer", "class": "other", "definitionOwner": "controller" },
     { "id": "designer", "package": "@clossys/designer", "class": "content", "definitionOwner": "controller" },
+    { "id": "developer", "package": "@clossys/developer", "class": "factory", "definitionOwner": "controller" },
     { "id": "director", "package": "@clossys/director", "class": "content", "definitionOwner": "controller" },
     { "id": "giver", "package": "@clossys/giver", "class": "other", "definitionOwner": "controller" },
     { "id": "influencer", "package": "@clossys/influencer", "class": "other", "definitionOwner": "controller" },
@@ -21,8 +22,10 @@
     { "id": "locksmith", "package": "@clossys/locksmith", "class": "other", "definitionOwner": "controller" },
     { "id": "messenger", "package": "@clossys/messenger", "class": "other", "definitionOwner": "controller" },
     { "id": "observer", "package": "@clossys/observer", "class": "other", "definitionOwner": "controller" },
+    { "id": "planner", "package": "@clossys/planner", "class": "factory", "definitionOwner": "controller" },
     { "id": "producer", "package": "@clossys/producer", "class": "tooling", "definitionOwner": "controller" },
     { "id": "publisher", "package": "@clossys/publisher", "class": "content", "definitionOwner": "controller" },
+    { "id": "reviewer", "package": "@clossys/reviewer", "class": "factory", "definitionOwner": "controller" },
     { "id": "starter", "package": "@clossys/starter", "class": "tooling", "definitionOwner": "controller" },
     { "id": "writer", "package": "@clossys/writer", "class": "content", "definitionOwner": "controller" }
   ],

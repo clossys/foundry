@@ -90,6 +90,18 @@
       "status": "active"
     },
     {
+      "name": "@clossys/planner",
+      "status": "active"
+    },
+    {
+      "name": "@clossys/developer",
+      "status": "active"
+    },
+    {
+      "name": "@clossys/reviewer",
+      "status": "active"
+    },
+    {
       "name": "@vespeneventures/advisor",
       "status": "published"
     },

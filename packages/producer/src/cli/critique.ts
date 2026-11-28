@@ -31,7 +31,11 @@ export const CRITIQUE_PACKET_USAGE = "Usage: clossys critique-packet <agent>/<sl
   + "  renders, anonymised and shuffled. Writes nothing; refuses a recipe, direction notes, a brief or anything of the maker.";
 export const CRITIQUE_USAGE = "Usage: clossys critique <agent>/<slot> --record <file> --model <id> --tier low|mid|high [--candidate <name>] [--at <iso>] [--root <dir>] [--json]\n"
   + "  Records the critic's critiques/<leaf>-v<n>.json and its craft:critique event; the record validates against\n"
-  + "  critique.schema.json and its packet manifest lists only the standard, the contract and the render (R16.2).";
+  + "  critique.schema.json and its packet manifest lists only the standard, the contract and the render (R16.2).\n"
+  + "  The packet manifest must hash: taste.md (packages/<agent>/standards/<id>/taste.md), up to 3 exemplars, the contract\n"
+  + "  (<slotDir>/slot.json#contract, the sha256 of the slot.json bytes) and each render. clossys critique-packet prints\n"
+  + "  them (role, ref, sha256), so the critic never opens package files. The record is named after the candidate the\n"
+  + "  open run submits (<stem>-v<n>, the next version); any other name is refused by name.";
 
 /** The most exemplars a packet carries (section 5b: the 3 nearest). */
 export const PACKET_EXEMPLARS = 3;
@@ -131,7 +135,8 @@ export async function runCritiquePacketCli(argv: readonly string[], cwd: string)
   const packet = { schema: "clossys.critique-packet/1", slot, standard, items, manifest, sha256: sha(JSON.stringify(manifest)) };
   return {
     exitCode: 0, root, output: packet,
-    message: `critique-packet: ${agent}/${slot} against ${standard}: ${items.filter(item => item.role === "render").map(item => item.label).join(", ")} with taste.md, ${Math.min(exemplars.length, PACKET_EXEMPLARS)} exemplar(s) and the contract (sha256 ${packet.sha256.slice(0, 12)})`,
+    message: `critique-packet: ${agent}/${slot} against ${standard}: ${items.filter(item => item.role === "render").map(item => item.label).join(", ")} with taste.md, ${Math.min(exemplars.length, PACKET_EXEMPLARS)} exemplar(s) and the contract (sha256 ${packet.sha256.slice(0, 12)})`
+      + items.map(item => `\n  ${item.role}${item.label ? ` ${item.label}` : ""} ${item.ref} ${item.sha256 ?? "(no sha256: not a local file)"}`).join(""),
   };
 }
 

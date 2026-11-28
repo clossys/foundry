@@ -24,7 +24,7 @@ import type { ShadcnRunner } from "@clossys/publisher/install";
 import { inputsOf } from "../engine/chain.js";
 import { commitEvent } from "../engine/log.js";
 import { npmRunner } from "../publish/install.js";
-import { CODE_ADOPT, codeAdoptSlotRefusal, isCraftedStockSlot, lockedPackages, stockDependencyPlan, type DependencyPlan } from "./code-adopt.js";
+import { CODE_ADOPT, agentCreatesText, codeAdoptSlotRefusal, isCraftedStockSlot, lockedPackages, stockDependencyPlan, type DependencyPlan } from "./code-adopt.js";
 import { readSlotEntry } from "./slots.js";
 import type { AgentId } from "./types.js";
 
@@ -102,12 +102,12 @@ export async function declareStockDependencies(root: string, slotId: string, opt
 }
 
 /** Why code adopts nothing into `<agent>/<slotId>` (not a byte-exact adopt slot, or a held candidate), or undefined. */
-export function adoptGate(root: string, agent: AgentId, slotId: string): { readonly why: string; readonly cites: readonly string[] } | undefined {
+export function adoptGate(root: string, agent: AgentId, slotId: string): { readonly why: string; readonly cites: readonly string[]; readonly held?: true } | undefined {
   const slotFile = `clossys/agents/${agent}/${slotId}/slot.json`;
   const notCode = codeAdoptSlotRefusal(root, agent, slotId);
   if (notCode !== undefined) return { why: `${notCode}; the agent creates`, cites: [slotFile] };
   const held = readSlotEntry(join(root, "clossys"), agent, slotId)?.candidates ?? [];
-  if (held.length) return { why: `${agent}/${slotId} holds ${held.join(", ")}; code adopts only into a slot with no candidate, so the agent creates`, cites: [slotFile, `clossys/agents/${agent}/${slotId}/ledger.json`] };
+  if (held.length) return { why: `${agent}/${slotId} holds ${held.join(", ")}; code adopts only into a slot with no candidate, so the agent creates`, cites: [slotFile, `clossys/agents/${agent}/${slotId}/ledger.json`], held: true };
   return undefined;
 }
 
@@ -125,7 +125,7 @@ export type DependencyPreview =
  */
 export function adoptDependencyPreview(root: string, agent: AgentId, slotId: string): DependencyPreview {
   const gate = adoptGate(root, agent, slotId);
-  if (gate !== undefined && !isCraftedStockSlot(agent, slotId)) return { skip: gate.why };
+  if (gate !== undefined && !isCraftedStockSlot(agent, slotId)) return { skip: gate.held ? `${gate.why}; next: ${agentCreatesText(`${agent}/${slotId}`)}, or retire the held candidates (clossys retire ${agent}/${slotId} <candidate> --by <who> --reason <code>) so code adopts` : gate.why };
   const found = stockDependencyPlan(root, slotId);
   if ("none" in found) return { skip: gate !== undefined ? gate.why : `${found.none}; the agent creates` };
   if ("refused" in found) return found;

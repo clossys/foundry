@@ -43,7 +43,11 @@ export const LOOP_RUN_USAGE = "Usage: clossys run loop.<fill|refine|create|choos
   + "  loop.fill with no --slot fills the next slot still on a package default, in chain order, until none is left or a run waits.\n"
   + "  loop.slot answers one open slot request (clossys request --list --open); loop.scope files every slotless need and gates the IA fan-out.\n"
   + "  An agent loop (scope, slot, create, choose, cascade) runs its agent's own pinned version when the consumer holds one: the\n"
-  + "  slot's agent, the request's owner, or loop.scope's --agent (no --agent: Producer's cross-agent loop.scope).";
+  + "  slot's agent, the request's owner, or loop.scope's --agent (no --agent: Producer's cross-agent loop.scope).\n"
+  + "  --step-exit: 0 the step did its work and the run moves on; 1 it ran and found a problem, so the step's failure rule\n"
+  + "  runs (a queue.fix or queue.clarify entry the run waits on, or the run stops when the step has none); 2 it could not\n"
+  + "  run at all (a missing tool, input or permission), so the run stops and its ledger entry ends stopped.\n"
+  + "  To close a blocked run you cannot finish: clossys run loop.<name> --resume --run <runId> --step-exit 2 --model <serving model>.";
 
 class LoopUsage extends Error {}
 

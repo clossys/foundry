@@ -363,7 +363,7 @@ export const requestActor = (request: SlotRequest): string => actorLine(request.
  * parallel raise never overwrites another's entry.
  */
 /** A draft under the id it is written as: the draft's own, or a `-2`..`-9` suffix of it when that one is taken. */
-const addressed = <T extends StoredEntry>(draft: T, id: string): T => ({ ...draft, id, opened: `${id}#1`, events: draft.events.map((event, index) => ({ ...event, id: `${id}#${index + 1}` })) });
+export const addressed = <T extends StoredEntry>(draft: T, id: string): T => ({ ...draft, id, opened: `${id}#1`, events: draft.events.map((event, index) => ({ ...event, id: `${id}#${index + 1}` })) });
 export function createRequest<T extends StoredEntry>(consumer: string, draft: T): T {
   refuseLegacyState(dirname(consumer));
   const dir = requestsDir(consumer, draft.kind);
@@ -1262,7 +1262,7 @@ const l2Of = (l1: string, l2: string) => l2.startsWith(`${l1}.`) ? l2.slice(l1.l
 interface OwnerSlot { readonly id: string; readonly kind: string; readonly l1: string; readonly l2: string; readonly inputs: readonly string[]; readonly requirements: ReadonlySet<string> }
 
 /** Canonical JSON (sorted keys), so two requirement entries compare by content. */
-const canonical = (value: unknown): string => Array.isArray(value) ? `[${value.map(canonical).join(",")}]`
+export const canonical = (value: unknown): string => Array.isArray(value) ? `[${value.map(canonical).join(",")}]`
   : value && typeof value === "object" ? `{${Object.keys(value).sort().map(key => `${JSON.stringify(key)}:${canonical((value as Record<string, unknown>)[key])}`).join(",")}}`
   : JSON.stringify(value);
 /** A contract's requirement set: each `requirements` entry by content (a clossys.slot-contract/1 names its checkSuite). */

@@ -32,10 +32,15 @@ export const RUN_USAGE = "Usage: clossys run [--from <step>] [--until <step>] [-
   + "  Walks every step in pipeline order: a plumb step whose last run is fresh is skipped, any other runs its command;\n"
   + "  the walk stops red at a failed plumb step and stops at the first decide step with open work (clossys next prints it).\n"
   + "  --dry: run nothing; list what would run.  --explain: the whole graph as a table (step, agent, kind, decider, chain, last run); it runs nothing.\n"
+  + "  --explain names each step's decider, not its seat's model, tier or prompt file: clossys slot producer/seat.<step> --full prints those.\n"
   + "  --capture: also run the on-demand capture step (before an owner preview or a landing); without it the chain skips capture.\n"
   + "  --studio: also run Foundry's own Studio build steps (repository scripts no package ships; a Foundry checkout only).\n"
   + "       clossys run loop.<fill|refine|create|choose|scope|slot|release|audit|cascade> [--slot <ref>] [--request <id>] [--from <entry>] [--publication <id>] [--resume] ...\n"
-  + "  Loop mode: runs a Producer loop version step by step, one ledger entry per run (clossys run loop.fill --help).";
+  + "  Loop mode: runs a Producer loop version step by step, one ledger entry per run (clossys run loop.fill --help).\n"
+  + "  An agent step waits for clossys run loop.<name> --resume --run <runId> --step-exit 0|1|2 --model <serving model>:\n"
+  + "  0 the step did its work and the run moves on; 1 it ran and found a problem, so the step's failure rule runs (a\n"
+  + "  queue.fix or queue.clarify entry the run waits on, or the run stops); 2 it could not run at all, so the run stops.\n"
+  + "  To close a blocked run you cannot finish: --resume --run <runId> --step-exit 2 --model <serving model>.";
 
 interface Flags { from?: string; until?: string; dry: boolean; explain: boolean; capture: boolean; studio: boolean; json: boolean; help: boolean; root?: string }
 function parse(argv: readonly string[]): Flags {

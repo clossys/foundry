@@ -808,14 +808,14 @@ function wordingQuestion(row: WordingRow): Built {
   const keep = confirmableBasis(row.pin.basis) && !row.pin.confirmed
     ? ["clossys", "pin", item, row.pin.candidate, "--confirm", "--by", QUEUE_ANSWER]
     : ["clossys", "pin", item, row.pin.candidate, "--basis", "picked", "--by", QUEUE_ANSWER];
-  const more = records.length > 1 ? ` (+${records.length - 1} more)` : "";
+  const more = records.length > 1 ? ` (also ${records.slice(1).join(", ")})` : "";
   const options = optionsFrom([
     { label: `Rewrite (Recommended): ${quoted(rewrite.texts[0]!.text)}${more} (${rewrite.candidate}).`, calls: [["clossys", "pin", item, rewrite.candidate, "--basis", "picked", "--by", QUEUE_ANSWER]] },
     { label: `Keep as is: ${quoted(first.current)}${more} (${row.pin.candidate}).`, calls: [keep] },
   ], {});
   return {
     id: `writer.wording:${item}`, agent: "writer", step: "pin.writer", header: "Wording", items: [item], reason: WORDING_REASON,
-    question: `${item} ${records[0]}: ${quoted(first.current)}. ${first.check}: ${first.message}${records.length > 1 ? ` Also ${listed(records.slice(1), 3)}.` : ""} Rewrite, keep as is, or say it in your own words? Asked on its own: ${WORDING_REASON}.`,
+    question: `${item} ${records[0]}: ${quoted(first.current)}. ${first.check}: ${first.message}${records.length > 1 ? ` Also ${records.slice(1).join(", ")}.` : ""} Rewrite, keep as is, or say it in your own words? Asked on its own: ${WORDING_REASON}.`,
     options, freeText: { id: "other", label: FREE_LABEL, verb: "clossys evidence", ...ownWords(item) }, after: [], requestedBy: [],
   };
 }

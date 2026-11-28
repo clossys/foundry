@@ -208,6 +208,18 @@
       }
     },
     {
+      "name": "@clossys/planner",
+      "state": "designed"
+    },
+    {
+      "name": "@clossys/developer",
+      "state": "designed"
+    },
+    {
+      "name": "@clossys/reviewer",
+      "state": "designed"
+    },
+    {
       "name": "@vespeneventures/advisor",
       "state": "published",
       "stagedBy": {

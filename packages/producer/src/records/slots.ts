@@ -829,8 +829,12 @@ export function pinBlocker(consumer: string, agent: SlotAgent, id: string): Bloc
   });
 }
 
-/** A slot is ready when it declares inputs and every input has an intact pin. */
-export function readiness(consumer: string, agent: SlotAgent, id: string, index = slotIndex(consumer)): Readiness {
+/**
+ * A slot is ready when it declares inputs and every input has an intact pin. `blockers` (optional) memoises each
+ * input's blocker for one pass over an unchanged tree (slotCoverage): the many slots that share an input read and
+ * validate its pin and candidates once, not once per dependant (CP1-CHECKS). The answer for each input is the same.
+ */
+export function readiness(consumer: string, agent: SlotAgent, id: string, index = slotIndex(consumer), blockers?: Map<string, BlockReason | undefined>): Readiness {
   return withSlotReadScope(() => {
     const doc = readSlot(consumer, agent, id);
     // Director slots are the roots of the chain: no inputs is their declared state (planner, 2026-10-31).
@@ -844,7 +848,9 @@ export function readiness(consumer: string, agent: SlotAgent, id: string, index 
       const entry = index.get(input);
       if (!entry) blockedBy.push({ slot: input, reason: "missing" });
       else {
-        const reason = inputBlocker(entry);
+        let reason: BlockReason | undefined;
+        if (blockers?.has(input)) reason = blockers.get(input);
+        else { reason = inputBlocker(entry); blockers?.set(input, reason); }
         if (reason) blockedBy.push({ slot: input, reason });
       }
     }

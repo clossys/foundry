@@ -22,9 +22,11 @@ import { runReleaseCli } from "../cli/release.js";
 import { releaseWorld, geographyBrief, stubBuilder, type ReleaseWorld } from "../release/__fixtures__/world.js";
 import { sha256Hex } from "../records/hash.js";
 import { writeSlot } from "../records/slot.js";
-import { writeCandidate } from "../records/slot-write.js";
+import { appendSlotDocEvent, writeCandidate } from "../records/slot-write.js";
+import { skillPath } from "../records/ledger.js";
 import type { AgentId, LedgerEntry, QueueEntry, Slot, SlotRequest } from "../records/types.js";
 import { decideRequest, exactReuseOf, readRequest, requestLockPath } from "../records/request.js";
+import { listReports } from "../records/report.js";
 import { readPackageLoop } from "./files.js";
 import { raiseEntry } from "./route.js";
 import { checkVerbFindings, cliHooks } from "./cli.js";
@@ -188,6 +190,12 @@ const ownerAnswer = (root: string, entry: string, answer: string, now: () => Dat
   answerQueueEntry(root, { entry, answer, by: "owner", via: "chat", quote: `owner said: ${answer}` }, now());
 
 const stepLine = (entry: LedgerEntry) => entry.steps.map(step => `${step.id}:${step.decider.by}${step.decider.by === "agent" ? `/${step.decider.model}` : ""}:${step.exit}`);
+
+/** Setup: log a hand-edited fixture slot.json through the slot-doc record writer, so the engine index stays the rebuild of the log. */
+function logSlotDoc(root: string, slot: string) {
+  const [agent, id] = slot.split("/") as [AgentId, string];
+  appendSlotDocEvent(join(root, "clossys"), agent, id, { by: "planner", at: "2026-11-17T09:00:00Z", verb: "ia", skill: skillPath("producer", "ia"), fields: { kind: "ia", note: "test setup: cite a need" } });
+}
 
 describe("F1 init (T1)", () => {
   // The prelude judges each check from the files (CONSISTENCY round 2), so the init world is one whose checks pass:
@@ -1094,6 +1102,8 @@ describe("loop.slot and loop.scope through the operator CLI (no stub; foundry-bu
     const doc = JSON.parse(readFileSync(file, "utf8"));
     doc.refs.push({ to: need, rel: "input" });
     writeFileSync(file, `${JSON.stringify(doc, null, 2)}\n`);
+    // A ref with no agent segment is a malformed slot doc the record writer refuses, so that edit stays unlogged.
+    if (need.includes("/")) logSlotDoc(w.root, REQUESTER);
   }
   const waitingRun = (message: string | undefined) => /run (\S+):/.exec(message ?? "")![1]!;
 
@@ -1246,6 +1256,7 @@ describe("loop.slot and loop.scope through the operator CLI (no stub; foundry-bu
     const doc = JSON.parse(readFileSync(file, "utf8"));
     doc.refs.push({ to: need, rel: "input" });
     writeFileSync(file, `${JSON.stringify(doc, null, 2)}\n`);
+    logSlotDoc(w.root, slot);
   }
   const DIRECTOR_SLOT = "director/context.customer.need";
   const DESIGNER_SLOT = "designer/assets.app-icon";
@@ -1618,5 +1629,44 @@ describe("GF2 fix round 1: subject-less runs route every failed step into a queu
     expect(second.state!.status).toBe("done");
     expect(second.state!.raised).toEqual([]);
     expect(ledgers().map(entry => entry.outcome)).toEqual([`raised ${first.state!.raised.join(", ")}`, "no new entry"]);
+  });
+});
+
+/**
+ * CP1-CHECKS (CP1-REPORT review N1, N2): a fill run whose check step could not run dead-ends (runner deadEnd) and files
+ * one step report through fileStepReport; a second run that dead-ends the same way reuses the open report, and its stop
+ * says the report is already open instead of "filed".
+ */
+describe("a dead-ended fill step files its step report (deadEnd -> fileStepReport)", () => {
+  const deadEndFill = (w: ReturnType<typeof world>, now: () => Date) =>
+    startRun(w.root, { loop: "loop.fill", slot: "designer/components.button" }, stub(w.root, { checkExits: [2] }), { now });
+  const reports = (w: ReturnType<typeof world>) => listReports(join(w.root, "clossys")).map(read => read.report!);
+
+  it("runner fill path files one step report", async () => {
+    const w = world(["designer/components.button"]);
+    const run = await deadEndFill(w, clock());
+    expect(run.exitCode).toBe(2);
+    const filed = reports(w);
+    expect(filed).toHaveLength(1);
+    expect(filed[0]).toMatchObject({ kind: "report", status: "open", about: "verb/check", what: "bug", from: "producer/loop.fill", assignee: "producer" });
+    expect(filed[0]!.why).toMatch(new RegExp(`^loop\\.fill run ${run.state!.runId}: step check could not run \\(exit 2\\)$`));
+    expect(w.ledger("loop.fill")[0]).toMatchObject({ status: "stopped", outcome: `step check could not run (exit 2); filed queue.report#${filed[0]!.id}` });
+  });
+
+  it("deadEnd says filed only when a report was filed", async () => {
+    const w = world(["designer/components.button"]);
+    const now = clock();
+    await deadEndFill(w, now);
+    const [report] = reports(w);
+    const bytes = readFileSync(join(w.root, "clossys", "agents", "producer", "queue.report", "entries", `${report!.id}.json`), "utf8");
+    const again = await deadEndFill(w, now);
+    expect(again.exitCode).toBe(2);
+    expect(reports(w)).toHaveLength(1);
+    expect(readFileSync(join(w.root, "clossys", "agents", "producer", "queue.report", "entries", `${report!.id}.json`), "utf8")).toBe(bytes);
+    const outcomes = w.ledger("loop.fill").map(entry => entry.outcome);
+    expect(outcomes).toEqual([
+      `step check could not run (exit 2); filed queue.report#${report!.id}`,
+      `step check could not run (exit 2); queue.report#${report!.id} is already open (unchanged)`,
+    ]);
   });
 });

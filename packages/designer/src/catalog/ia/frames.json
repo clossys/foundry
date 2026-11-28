@@ -13,6 +13,7 @@
             "frames.app-shell",
             "frames.auth-shell",
             "frames.deck",
+            "frames.video",
             "frames.document"
           ]
         },
@@ -56,6 +57,7 @@
     "frames.app-shell": "app",
     "frames.auth-shell": "app",
     "frames.deck": "deck",
+    "frames.video": "deck",
     "frames.document": "site",
     "frames.site-header": "site",
     "frames.site-footer": "site",

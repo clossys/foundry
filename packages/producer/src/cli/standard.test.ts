@@ -74,6 +74,22 @@ describe("clossys standard", () => {
     expect(existsSync(dirOf(root))).toBe(false);
   });
 
+  it("standard refusal lists every missing item", async () => {
+    // CP1-CHECKS (e): the refusal names every issue, never the first eight and a count.
+    const root = workspace();
+    const requirements = JSON.parse(readFileSync(join(FIXTURE, "requirements.json"), "utf8")) as { requirements: unknown[] };
+    const ids = Array.from({ length: 11 }, (_, n) => `text.not-registered-${n + 1}`);
+    for (const check of ids) requirements.requirements.push({ check, params: {} });
+    const file = join(root, "requirements.json");
+    put(file, JSON.stringify(requirements));
+    const args = [...parts]; args[1] = file;
+    const result = await runStandardCli(["writer/fixture-headline", "--by", "planner", ...args, ...AT], root);
+    expect(result.exitCode).toBe(1);
+    for (const id of ids) expect(result.message).toContain(`${id} is not registered`);
+    expect(result.message).not.toMatch(/\(\+\d+ more\)/);
+    expect(existsSync(dirOf(root))).toBe(false);
+  });
+
   it("appends an event per change and refuses seeds outside the Designer", async () => {
     const root = workspace();
     expect((await runStandardCli(["writer/fixture-headline", "--by", "planner", ...parts, ...AT], root)).exitCode).toBe(0);

@@ -1113,5 +1113,106 @@
     "references": [],
     "checkSuite": "designer.slot-contracts.frames",
     "specimenKind": "visual"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "frames.video",
+    "package": "designer",
+    "layer": "frames",
+    "purpose": "Video frame: one 16:9 stage (main region) that shows one scene at a time, each scene a section, over a named controls region built from the stock button and slider (play/pause, a scene scrubber and the scene count); it starts paused, so nothing moves until the viewer presses play (reduced motion).",
+    "inputs": [
+      {
+        "name": "controls.label",
+        "kind": "copy",
+        "required": true
+      },
+      {
+        "name": "controls.play",
+        "kind": "copy",
+        "required": true
+      },
+      {
+        "name": "controls.pause",
+        "kind": "copy",
+        "required": true
+      },
+      {
+        "name": "controls.scrubber",
+        "kind": "copy",
+        "required": true
+      },
+      {
+        "name": "stage",
+        "kind": "cell",
+        "required": true
+      },
+      {
+        "name": "controls",
+        "kind": "cell",
+        "required": true
+      },
+      {
+        "name": "themes.background",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.border",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.foreground",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.muted",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.primary",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.radius",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.ring",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.spacing",
+        "kind": "theme",
+        "required": true
+      }
+    ],
+    "limits": {
+      "controls.label.maxLength.en": 60,
+      "controls.pause.maxLength.en": 24,
+      "controls.play.maxLength.en": 24,
+      "controls.scrubber.maxLength.en": 60
+    },
+    "references": [
+      {
+        "registry": "shadcn-aria",
+        "item": "slider",
+        "version": "4.23.0",
+        "hash": "sha256:53d4b6ce82662fc0e9081b5a40d2eeb554796628188b0ea4e94d17a5f6fdb50b"
+      },
+      {
+        "registry": "shadcn-aria",
+        "item": "button",
+        "version": "4.23.0",
+        "hash": "sha256:d32a713d4769acb8f8ce4b9e26cc731c1034d8d57138864bf45155e14268dc74"
+      }
+    ],
+    "checkSuite": "designer.slot-contracts.frames",
+    "specimenKind": "visual"
   }
 ]

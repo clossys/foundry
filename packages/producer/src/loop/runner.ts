@@ -44,7 +44,8 @@ import { readSlotEntry } from "../records/slots.js";
 import { validateAgainst } from "../records/schema.js";
 import { recordSchema, writeSlot } from "../records/slot.js";
 import { SLOT_LOCK, withDirLock, writeCandidate, writeTargetConfirm, writeTargetDecision, type WriteGuard } from "../records/slot-write.js";
-import { CODE_ADOPT, CODE_ADOPT_CLI, CODE_ADOPT_RUNG, CODE_ADOPT_SKILL, REFERENCE_MANIFEST, isCraftedStockSlot, stockItemOf } from "../records/code-adopt.js";
+import { CODE_ADOPT, CODE_ADOPT_CLI, CODE_ADOPT_RUNG, CODE_ADOPT_SKILL, REFERENCE_MANIFEST, isCraftedStockSlot, stockFilesOf, stockItemOf } from "../records/code-adopt.js";
+import { isUndeclaredTokenFallback } from "@clossys/designer/ref-verbatim";
 import { adoptGate, declareStockDependencies, dependencyPlanText } from "../records/adopt-dependencies.js";
 import type { ShadcnRunner } from "@clossys/publisher/install";
 import type { SlotAgent } from "../records/slot-model/index.js";
@@ -741,7 +742,7 @@ async function advance(root: string, state: RunState, version: LoopVersion, hook
           recordStep(ctx, step, ledgerDecider, cli, 1, wrote, vars);
           return stop(ctx, `step ${step.id} raised ${raises.issues.join("; ")}; ${state.version.ref} refuses it`, 1);
         }
-        const judged = judgeSnapshot(root, before, treeSnapshot(root, state.runId), reported, step, agent, state.subject, current?.ok ? current.standard : undefined, state.runId, texts, new Set(raises?.keys ?? []));
+        const judged = judgeSnapshot(root, before, treeSnapshot(root, state.runId), reported, step, agent, state.subject, current?.ok ? current.standard : undefined, state.runId, texts, new Set(raises?.keys ?? []), state.loop);
         if (judged.issues.length) {
           delete state.waiting;
           recordStep(ctx, step, ledgerDecider, cli, 1, wrote, vars);
@@ -750,6 +751,9 @@ async function advance(root: string, state: RunState, version: LoopVersion, hook
         // The slot ledger is judged by its append rule above, never by the write allowlist.
         const appended = new Set(judged.appended);
         judgedWrote = wrote?.filter(file => !appended.has(snapshotKey(root, wroteFile(root, file))));
+        // CP1-CHECKS: a report the step filed from its own loop was judged by its own shape above, not by the allowlist.
+        const reports = new Set(judged.reports ?? []);
+        judgedWrote = judgedWrote?.filter(file => !reports.has(snapshotKey(root, wroteFile(root, file))));
         // The accepted raises leave the write allowlist; any other queue entry still goes to it and is refused.
         if (raises) {
           const keys = new Set(raises.keys);
@@ -1005,12 +1009,17 @@ async function settleAdopt(ctx: Context, subject: SlotSubject | undefined): Prom
  * settle says what changed or why nothing was added.
  */
 async function craftedStockDependencies(ctx: Context, slotId: string, gate: { readonly why: string; readonly cites: readonly string[] }): Promise<SettleVerdict> {
+  // The theme-pin probe: the stock files read through the consumer's pinned theme reader. An undeclared token is a
+  // theme-pin gap, reported separately; it does not block the install (the plan reads the imports without the reader).
+  let themeGap = "";
+  try { stockFilesOf(ctx.root, slotId); }
+  catch (error) { if (isUndeclaredTokenFallback(error)) themeGap = `; theme-pin gap, reported separately, does not block the install: ${error instanceof Error ? error.message : String(error)}`; }
   let deps: Awaited<ReturnType<typeof declareStockDependencies>>;
   try { deps = await declareStockDependencies(ctx.root, slotId, ctx.hooks.npm ? { npm: ctx.hooks.npm } : {}); }
-  catch (error) { return { settled: false, why: `${gate.why}; its stock item's dependencies could not be planned: ${error instanceof Error ? error.message : String(error)}`, cites: [...gate.cites, REFERENCE_MANIFEST] }; }
-  if (deps.exit !== 0) return { settled: false, why: `${gate.why}; no dependency was added: ${deps.refused}`, cites: [...gate.cites, REFERENCE_MANIFEST] };
-  if (!deps.plan) return { settled: false, why: gate.why, cites: gate.cites };
-  return { settled: false, why: `${gate.why} (dependencies: ${dependencyPlanText(deps.plan)})`, cites: [...gate.cites, REFERENCE_MANIFEST] };
+  catch (error) { return { settled: false, why: `${gate.why}; its stock item's dependencies could not be planned: ${error instanceof Error ? error.message : String(error)}${themeGap}`, cites: [...gate.cites, REFERENCE_MANIFEST] }; }
+  if (deps.exit !== 0) return { settled: false, why: `${gate.why}; no dependency was added: ${deps.refused}${themeGap}`, cites: [...gate.cites, REFERENCE_MANIFEST] };
+  if (!deps.plan) return { settled: false, why: `${gate.why}${themeGap}`, cites: gate.cites };
+  return { settled: false, why: `${gate.why} (dependencies: ${dependencyPlanText(deps.plan)})${themeGap}`, cites: [...gate.cites, REFERENCE_MANIFEST] };
 }
 
 const SETTLE_JUDGES: Record<SettleRule, (ctx: Context, subject: SlotSubject | undefined) => SettleVerdict | Promise<SettleVerdict>> = {
@@ -1714,11 +1723,16 @@ function stop(ctx: Context, why: string, exitCode: Exit): Promise<RunResult> {
 /**
  * CP1-REPORT: a step that could not run, or failed with no route on, leaves the run no next step. The run files a
  * report about the step's verb (records/report.ts fileStepReport, the same filing as `clossys request --kind report`;
- * an open one with the same about and what is reused) and stops, naming the report.
+ * an open one with the same about and what is reused, and the stop says it is already open, not filed) and stops,
+ * naming the report.
  */
 function deadEnd(ctx: Context, step: LoopStep, why: string, exitCode: Exit): Promise<RunResult> {
   let filed: string;
-  try { filed = `; filed ${fileStepReport(ctx.root, { loop: ctx.state.loop, runId: ctx.state.runId, step: step.id, cli: step.cli, why, at: iso(ctx.now()) })}`; }
+  try {
+    const report = fileStepReport(ctx.root, { loop: ctx.state.loop, runId: ctx.state.runId, step: step.id, cli: step.cli, why, at: iso(ctx.now()) });
+    // CP1-CHECKS (REPORT N1): "filed" only when this run filed it; a reused open report is named as left unchanged.
+    filed = report.created ? `; filed ${report.entry}` : `; ${report.entry} is already open (unchanged)`;
+  }
   catch (error) { if (!(error instanceof RequestError)) throw error; filed = `; no report filed: ${error.message}`; }
   return stop(ctx, `${why}${filed}`, exitCode);
 }
@@ -1849,7 +1863,7 @@ export function queuedRefs(root: string, state: Pick<RunState, "loop" | "runId">
 export function judgeFillQueued(root: string, state: Pick<RunState, "loop" | "runId">): { ok: true } | { ok: false; why: string } {
   const queued = new Set(queuedRefs(root, state));
   const unqueued = unpinnedLeaves(root).filter(ref => !queued.has(ref));
-  return unqueued.length ? { ok: false, why: `${FILL_QUEUED}: ${unqueued.length} unpinned leaves are not queued: ${unqueued.slice(0, 5).join(", ")}${unqueued.length > 5 ? ` (+${unqueued.length - 5} more)` : ""}` } : { ok: true };
+  return unqueued.length ? { ok: false, why: `${FILL_QUEUED}: ${unqueued.length} unpinned leaves are not queued: ${unqueued.join(", ")}` } : { ok: true };
 }
 
 /** Slot-integrity rules of `clossys check` that an unpinned leaf raises by being unpinned: its queue entry, not an init finding. */
@@ -1868,7 +1882,7 @@ function checkStepExit(ctx: Context, outcome: CodeOutcome): { exit: Exit; why?: 
   ctx.state.vars["check-exit"] = "1";
   ctx.state.vars["check-queued-findings"] = String(outcome.findings.length - other.length);
   if (!other.length) return { exit: 0 };
-  return { exit: 1, why: `clossys check: ${other.slice(0, 5).map(finding => `${finding.check} ${finding.subject} ${finding.detail}`).join("; ")}${other.length > 5 ? ` (+${other.length - 5} more)` : ""}` };
+  return { exit: 1, why: `clossys check: ${other.map(finding => `${finding.check} ${finding.subject} ${finding.detail}`).join("; ")}` };
 }
 
 /** The check name loop/cli.ts gives a `clossys check` slot-integrity finding (check/slot-resolve.ts). */
@@ -1883,7 +1897,7 @@ function preludeCheck(ctx: Context, name: string): { ok: true } | { ok: false; w
   if (name === FILL_QUEUED) return judgeFillQueued(ctx.root, ctx.state);
   const tree = name === IA_ORPHANS ? runIaOrphans(ctx.root) : name === RECORDS_COMPUTED_MATCH ? runRecordsComputedMatch(ctx.root) : undefined;
   if (!tree) return verifyCheck(ctx, name);
-  return tree.status === "fail" ? { ok: false, why: `${name}: ${tree.findings.slice(0, 3).map(row => `${row.subject} ${row.detail}`).join("; ")}${tree.findings.length > 3 ? ` (+${tree.findings.length - 3} more)` : ""}` } : { ok: true };
+  return tree.status === "fail" ? { ok: false, why: `${name}: ${tree.findings.map(row => `${row.subject} ${row.detail}`).join("; ")}` } : { ok: true };
 }
 
 /**

@@ -44,9 +44,11 @@ import { sha256Hex } from "../records/hash.js";
 import { LEDGER_FILE, LEDGER_SCHEMA, eventIssues } from "../records/ledger.js";
 import { jsonBytes } from "../records/slot-model/layout.js";
 import { requestActor, requestIssues, type SlotRequest } from "../records/request.js";
+import { reportIssues } from "../records/report-shape.js";
+import { agentReportDraft, agentReportIssues, type ReportEntry } from "../records/report.js";
 import type { DeciderVerb, LoopStep, LoopVersion } from "../records/types.js";
 import { isStandardAgentStep } from "./agent-loops.js";
-import { isLoopAgent } from "./agent-loops-ia.js";
+import { isAgentLoop, isLoopAgent } from "./agent-loops-ia.js";
 import { RUN_CLI } from "./route.js";
 
 /** Root-relative posix path of every file under `clossys/` (its state folder included) → what it is (`file:<sha256>:<links>`, `link:<target>`, `other:<mode>`). */
@@ -132,6 +134,8 @@ export function keptTexts(saved: unknown, files: TreeFiles): TreeTexts | undefin
 
 /** A queue entry as a snapshot key (`clossys/agents/producer/queue.<queue>/entries/<id>.json`). */
 const QUEUE_ENTRY_KEY = /^clossys\/agents\/producer\/queue\.[a-z]+\/entries\/[^/*]+\.json$/;
+/** A report entry as a snapshot key (`clossys/agents/producer/queue.report/entries/<id>.json`). */
+const REPORT_ENTRY_KEY = /^clossys\/agents\/producer\/queue\.report\/entries\/[^/*]+\.json$/;
 
 /**
  * The bytes before the step of each queue entry in `keys` (the step's exact `writes`, as snapshot keys) that the
@@ -327,7 +331,7 @@ type ShaOf = (path: string) => string | null | undefined;
  * An event naming a file the step left as it was, an owner's or other actor's event, a kind the verb does not make, or
  * an input hash that is not the file's bytes is a claim no write of this step backs, and is refused.
  */
-export function engineLogIssue(root: string, beforeMark: string | undefined, afterMark: string | undefined, changed: ReadonlySet<string>, step: Pick<LoopStep, "id" | "decider">, agent: string, after: TreeFiles, runId?: string, texts: Readonly<TreeTexts> = {}, raised: ReadonlySet<string> = new Set()): string | undefined {
+export function engineLogIssue(root: string, beforeMark: string | undefined, afterMark: string | undefined, changed: ReadonlySet<string>, step: Pick<LoopStep, "id" | "decider">, agent: string, after: TreeFiles, runId?: string, texts: Readonly<TreeTexts> = {}, raised: ReadonlySet<string> = new Set(), ownReport?: OwnLoopReport): string | undefined {
   const shown = EVENTS_FILE;
   const stepId = step.id;
   if (!/^file:[0-9a-f]{64}:1$/.test(afterMark ?? "")) return `${shown}: is not a regular file with one link`;
@@ -373,6 +377,11 @@ export function engineLogIssue(root: string, beforeMark: string | undefined, aft
       if (lastNaming.get(own) === index && event.inputs[0]!.sha256 !== stateSha()) return `${at}: its sha256 of ${own} is not the state file's bytes`;
       continue;
     }
+    if (ownReport && event.kind === "request.create" && event.inputs.length === 1 && REPORT_ENTRY_KEY.test(event.inputs[0]!.path)) {
+      const why = reportWriteIssue(root, event, lastNaming.get(event.inputs[0]!.path) === index, afterSha, ownReport);
+      if (why !== undefined) return `${at}: ${why}`;
+      continue;
+    }
     const allowed = Object.hasOwn(events, event.kind) ? events[event.kind] : undefined;
     if (!agentEventActor(event.actor, agent, allowed ?? "seat")) return `${at}: is by ${event.actor}, not the step's agent agent:${agent}${allowed === "verb" ? " or the Producer code its verb runs" : ""}`;
     if (allowed === undefined) return `${at}: kind ${event.kind} is not one step ${stepId} (${verb ?? step.decider.by}) produces (${kinds.join(", ") || "none"})`;
@@ -398,6 +407,47 @@ export function engineLogIssue(root: string, beforeMark: string | undefined, aft
 
 /** The id of a queue entry from its snapshot key; undefined for any other file. */
 export const queueEntryId = (key: string): string | undefined => QUEUE_ENTRY_KEY.test(key) ? /\/entries\/([^/]+)\.json$/.exec(key)![1] : undefined;
+
+/**
+ * The report an agent step of an agent loop may file (CP1-CHECKS, CP1-REPORT review N4): the skills' report rule says a
+ * verb that refuses with no next step is reported (`clossys request --kind report`) and the step stops. `from` is the
+ * step's own loop (`<agent>/<loop>`), `added` the report entries the step added, `accepted` collects the ones judged
+ * here, which leave the write allowlist (loop/runner.ts).
+ */
+export interface OwnLoopReport { readonly agent: string; readonly from: string; readonly added: ReadonlySet<string>; readonly accepted: Set<string> }
+
+/**
+ * Why a request.create over a report entry is not the report writer's own filing of the step's loop report; undefined
+ * when it is: the event names that one entry, under subject `request:<id>`, as the last event naming it, with its bytes
+ * after the step; the step added the entry; it is a valid report by its own shape (records/report-shape.ts
+ * reportIssues, not requestIssues); it is from the step's own loop; it is exactly the report the writer files for the
+ * step's agent (records/report.ts agentReportIssues: the writer's own draft rebuilt with `--by <agent>`, source cli,
+ * createRequest's -2..-9 suffix allowed; fix round 1, review-cp1checks-blindA P1-1); and its actor is the one the writer
+ * names for that draft (Producer's routed event), never the one the doc claims.
+ */
+function reportWriteIssue(root: string, event: { kind: string; actor: string; subject: string; inputs: readonly { path: string; sha256: string | null }[] }, final: boolean, afterSha: ShaOf, report: OwnLoopReport): string | undefined {
+  const key = event.inputs[0]!.path, id = queueEntryId(key)!;
+  if (event.subject !== `request:${id}`) return `names subject ${event.subject}, not request:${id}, the report it files`;
+  if (!report.added.has(key)) return `names ${key}, which the step did not add: a report is written once, when it is filed`;
+  const nowSha = afterSha(key);
+  if (!final || nowSha == null || event.inputs[0]!.sha256 !== nowSha) return `its sha256 of ${key} is not the report's bytes after the step`;
+  let doc: unknown;
+  try {
+    const text = readFileSync(join(root, ...key.split("/")), "utf8");
+    if (sha256Hex(text) !== nowSha) return `${key} changed while it was judged`;
+    doc = JSON.parse(text);
+  } catch { return `${key} is not a readable JSON report`; }
+  const invalid = reportIssues(doc);
+  if (invalid.length) return `names a report the report writer never writes (${invalid[0]})`;
+  const from = (doc as { from?: unknown }).from;
+  if (from !== report.from) return `files a report from ${String(from)}, not from the step's own loop ${report.from}`;
+  const forged = agentReportIssues(join(root, "clossys"), doc as ReportEntry, report.agent);
+  if (forged.length) return forged.join("; ");
+  const actor = requestActor(agentReportDraft(doc as ReportEntry, report.agent) as unknown as SlotRequest);
+  if (event.actor !== actor) return `is by ${event.actor}, but the report writer names ${actor} for ${key}`;
+  report.accepted.add(key);
+  return undefined;
+}
 
 /** What the events of a step so far bound each queue entry to: the last earlier state named (`entryStepStates`), and the raises logged. */
 interface EntryWrites { readonly states: Map<string, { cut: number; mask: number }>; readonly created: Set<string> }
@@ -505,6 +555,8 @@ export interface SnapshotJudgement {
   readonly issues: string[];
   /** Snapshot keys of the run slot's ledger when its change was accepted as a pure append (judged here, not by the allowlist). */
   readonly appended: string[];
+  /** Snapshot keys of the reports the step filed from its own loop (`OwnLoopReport`): judged here, not by the allowlist. Absent when none. */
+  readonly reports?: string[];
 }
 
 /**
@@ -515,9 +567,14 @@ export interface SnapshotJudgement {
  * `runId` names the run whose own state file its run events may name; `texts` are the kept before bytes of the queue
  * entries the step names exactly (`stepEntryTexts`); `raised` the snapshot keys of the entries the runner accepted as
  * the step's raises (loop/runner.ts stepRaises), each of which the request verb's one request.create must name.
+ * `loop` is the agent loop the step runs in: a report the step files from it (`<agent>/<loop>`) is judged by
+ * `reportWriteIssue` (CP1-CHECKS).
  */
-export function judgeSnapshot(root: string, before: TreeFiles, after: TreeFiles, reported: ReadonlySet<string>, step: Pick<LoopStep, "id" | "decider" | "cli">, agent: string, subject: { agent: string; slotId: string } | undefined, standard?: LoopVersion, runId?: string, texts: Readonly<TreeTexts> = {}, raised: ReadonlySet<string> = new Set()): SnapshotJudgement {
+export function judgeSnapshot(root: string, before: TreeFiles, after: TreeFiles, reported: ReadonlySet<string>, step: Pick<LoopStep, "id" | "decider" | "cli">, agent: string, subject: { agent: string; slotId: string } | undefined, standard?: LoopVersion, runId?: string, texts: Readonly<TreeTexts> = {}, raised: ReadonlySet<string> = new Set(), loop?: string): SnapshotJudgement {
   const issues: string[] = [], appended: string[] = [];
+  const report: OwnLoopReport | undefined = loop !== undefined && isAgentLoop(loop)
+    ? { agent, from: `${agent}/${loop}`, added: new Set(Object.keys(after).filter(key => REPORT_ENTRY_KEY.test(key) && before[key] === undefined)), accepted: new Set() }
+    : undefined;
   const ledger = subject && subject.agent === agent ? ownLedgerKey(subject) : undefined;
   const cascade = subject && subject.agent === agent ? ownCascadeKey(subject) : undefined;
   const keys = [...new Set([...Object.keys(before), ...Object.keys(after)])].sort();
@@ -532,7 +589,7 @@ export function judgeSnapshot(root: string, before: TreeFiles, after: TreeFiles,
     }
     if (!now.startsWith("file:")) { issues.push(`${was === undefined ? "added" : "changed"} ${shown}, which is ${now.startsWith("link:") ? "a symlink" : "not a regular file"}`); continue; }
     if (key === EVENTS_FILE) {
-      const why = engineLogIssue(root, was, now, changed, step, agent, after, runId, texts, raised);
+      const why = engineLogIssue(root, was, now, changed, step, agent, after, runId, texts, raised, report);
       if (why !== undefined) issues.push(`changed ${why}`);
       continue;
     }
@@ -549,5 +606,5 @@ export function judgeSnapshot(root: string, before: TreeFiles, after: TreeFiles,
     if (!reported.has(key)) issues.push(`${was === undefined ? "added" : "changed"} ${shown} without reporting it (--wrote)`);
   }
   if (raised.size && before[EVENTS_FILE] === after[EVENTS_FILE]) issues.push(`raised ${[...raised].sort().map(displayPath).join(", ")} with no request.create event of the request verb (${EVENTS_FILE} unchanged)`);
-  return { issues, appended };
+  return report?.accepted.size ? { issues, appended, reports: [...report.accepted] } : { issues, appended };
 }

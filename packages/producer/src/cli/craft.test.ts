@@ -107,7 +107,7 @@ describe("next --stage", () => {
     expect((await stage("diverge", [{ id: "d1" }, ...directions(2)])).message).toMatch(/direction 1 carries no axes/);
     // R15.7 at write time: identical axis values are cosmetic variants, and every direction names every axis.
     const same = directions(3).map(direction => ({ ...direction, axes: { ...direction.axes, tone: "quiet" } }));
-    expect((await stage("diverge", same)).message).toMatch(/directions 1 and 2 share tone "quiet"; fix: .*cosmetic variant \(R15\.7\)/);
+    expect((await stage("diverge", same)).message).toMatch(/directions 1 and 2 share tone "quiet"; fix: .*cosmetic variant \((the recipe's|the directions') axes: [^)]*\) \(R15\.7\)/);
     expect((await stage("diverge", directions(3).map(direction => ({ ...direction, axes: { ...direction.axes, length: 1 } })))).message).toMatch(/directions 1 and 2 share length 1;/);
     const partial = directions(3).map((direction, index) => index === 1 ? { ...direction, axes: { density: direction.axes.density, length: direction.axes.length, structure: direction.axes.structure } } : direction);
     expect((await stage("diverge", partial)).message).toMatch(/direction 2 has no value on axis tone; fix: .*\(R15\.7\)/);
