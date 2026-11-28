@@ -61,11 +61,11 @@ describe("heal", () => {
     let remedied = 0;
     const counting: Record<string, Remedy> = Object.fromEntries(Object.entries(REMEDIES).map(([name, remedy]) => [name, async (record, env) => { remedied++; return remedy(record, env); }]));
     const { env, calls } = fakeEnv();
-    const record = incidentRecord({ stage: "build", command: "npm run build -w @clossys/writer", exit: 2, output: "error TS2307: Cannot find module '@clossys/kit' at /tmp/x/src/a.ts:12:3", at: "2026-11-28T04:00:00Z" });
+    const record = incidentRecord({ stage: "build", command: "npm run build -w @clossys/writer", exit: 2, output: "error TS2307: Cannot find module 'missing-module' at /tmp/x/src/a.ts:12:3", at: "2026-11-28T04:00:00Z" });
     const result = await heal(record, { causes, env, remedies: counting, now: NOW });
     expect(result.outcome).toBe("new-cause");
     expect(result.exit).toBe(1);
-    expect(result.lines).toEqual(["NEW-CAUSE error TS2307: Cannot find module '@clossys/kit' at <path>"]);
+    expect(result.lines).toEqual(["NEW-CAUSE error TS2307: Cannot find module 'missing-module' at <path>"]);
     expect(remedied).toBe(0);
     expect(calls).toEqual([]);
     expect(result.record).toMatchObject({ cause: null, outcome: "new-cause", remedy: null, rerun_exit: null });

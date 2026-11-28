@@ -33,7 +33,7 @@ export interface KnownCause {
   readonly remedy: string;
   /** What blocks the step when there is no remedy, or when the remedy did not heal it. */
   readonly blocker: string;
-  /** A rule id in scripts/rules/registry.json; check:heal refuses a cause without one. */
+  /** A rule id in the repository's rule registry (scripts/rules/registry.json, in the repository; it does not ship); check:heal refuses a cause without one. */
   readonly guard?: string;
   /** When the guard landed (ISO 8601). A record after it is a repeat. */
   readonly guard_landed?: string;
