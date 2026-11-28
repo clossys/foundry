@@ -34,7 +34,9 @@ nothing, or could not run a tool, is never a PASS (an empty diff with no packet 
 A red covering test is listed by test: `file :: full test name` for each vitest `FAIL` line of its run, else the
 file. Each is run again with its file alone at the merge base, in a temporary tree with the head tree's installed
 dependencies linked in: a test that fails there too is base-red (a `tests.base-red` note, listed in `baseRed`),
-every other is new red (a `tests` FAIL, listed in `newRed`). With `--fast <fast.json>`, a `clossys check --fast`
+every other is new red (a `tests` FAIL, listed in `newRed`). A file that fails at the merge base without naming any
+test (it failed to load or set up) lends its head failures base-red only when the test file is byte-identical at the
+merge base and head, as `clossys check --fast` judges a file red alone at base. With `--fast <fast.json>`, a `clossys check --fast`
 record taken at this head over this merge base, the tests it lists base-red need no re-run; any other record is
 `fast.record`.
 

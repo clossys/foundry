@@ -128,7 +128,7 @@ export function runReview(options: ReviewOptions): ReviewReport {
       types(at, packages, config, step, fail);
       const covering = coveringTests(at, changes, file => packageOf(at, file));
       const baseRun = baseRunner(repo, mergeBase, at, trees, config.timeoutMs);
-      const tested = tests(at, covering.all, covering.uncovered, step, fail, findings, baseRun, fastBaseRed, config.timeoutMs);
+      const tested = tests(at, mergeBase, covering.all, covering.uncovered, step, fail, findings, baseRun, fastBaseRed, config.timeoutMs);
       red.newRed.push(...tested.newRed);
       red.baseRed.push(...tested.baseRed);
       if (counting && built) countDeltas(repo, mergeBase, at, baseAt, config, counts, step, fail);
@@ -255,18 +255,26 @@ export function failingTests(file: string, pkg: string, output: string): string[
 }
 
 /** One red test file: its failing tests at head, and with the file run alone at the merge base (null: no such file there). */
-export interface RedObservation { readonly file: string; readonly head: readonly string[]; readonly base: readonly string[] | null }
+export interface RedObservation {
+  readonly file: string;
+  readonly head: readonly string[];
+  readonly base: readonly string[] | null;
+  /** The test file's bytes are the same at the merge base and at head. */
+  readonly unchanged?: boolean;
+}
 
 /**
  * New red and base-red, from what ran: a failing test at head is base-red when the same id (`file :: name`, or the
  * file) also failed at the merge base, or when a --fast record at this head lists it base-red; every other is new red.
- * A file that fails at base for another reason (a different test, or failing to load) lends its head failures nothing.
+ * A file that fails at base without naming any test (it failed to load or set up, so `base` is just the file) lends
+ * its head failures base-red only when the test file is unchanged between the merge base and head, as check --fast
+ * judges a file red alone at base; a changed test file, or one failing a different test at base, lends nothing.
  */
 export function splitRed(observed: readonly RedObservation[], listed?: Set<string>): { newRed: { id: string; file: string }[]; baseRed: { id: string; file: string; by: "base" | "fast" }[] } {
   const newRed: { id: string; file: string }[] = [], baseRed: { id: string; file: string; by: "base" | "fast" }[] = [];
   for (const item of observed) for (const id of item.head) {
     if (listed && listedBaseRed(listed, id)) baseRed.push({ id, file: item.file, by: "fast" });
-    else if (item.base?.includes(id)) baseRed.push({ id, file: item.file, by: "base" });
+    else if (item.base?.includes(id) || (item.unchanged === true && item.base?.length === 1 && item.base[0] === item.file)) baseRed.push({ id, file: item.file, by: "base" });
     else newRed.push({ id, file: item.file });
   }
   return { newRed: newRed.sort((a, b) => a.id.localeCompare(b.id)), baseRed: baseRed.sort((a, b) => a.id.localeCompare(b.id)) };
@@ -292,6 +300,13 @@ export function mechanicalVerdict(observation: MechanicalObservation): { verdict
   const closed = failClosed({ commands: observation.ran, missing: [...(observation.missing ?? []), ...observation.commands.filter(command => command.exit === 127).map(command => command.run)] });
   const verdict = split.newRed.length || commandReds.length || closed.length ? "FAIL" : "PASS";
   return { verdict, newRed: split.newRed.map(item => item.id), baseRed: split.baseRed.map(item => item.id), commandReds };
+}
+
+/** Whether file's blob is the same at the merge base and at the tree's HEAD. */
+function unchangedAt(at: string, mergeBase: string, file: string): boolean {
+  const blob = (rev: string) => { const result = run(["git", "rev-parse", "--verify", "--quiet", `${rev}:${file}`], at); return result.exit ? "" : result.stdout.trim(); };
+  const before = blob(mergeBase);
+  return before !== "" && before === blob("HEAD");
 }
 
 /** Runs one test file alone at the merge base: its failing tests, or null when the merge base has no such file. */
@@ -328,7 +343,7 @@ function baseRunner(repo: string, mergeBase: string, at: string, trees: Worktree
  * tests are each new red (a tests FAIL) unless the same test also fails with the file run alone at the merge base, or
  * the --fast record lists it base-red: then it is base-red, a note. Returns the red files and both lists.
  */
-function tests(at: string, files: readonly string[], uncovered: readonly string[], step: StepFn, fail: FailFn, findings: Finding[], baseRun: BaseRun, fastBaseRed: Set<string> | undefined, timeoutMs: number): { red: Set<string>; newRed: string[]; baseRed: string[] } {
+function tests(at: string, mergeBase: string, files: readonly string[], uncovered: readonly string[], step: StepFn, fail: FailFn, findings: Finding[], baseRun: BaseRun, fastBaseRed: Set<string> | undefined, timeoutMs: number): { red: Set<string>; newRed: string[]; baseRed: string[] } {
   const red = new Set<string>(), observed: RedObservation[] = [], results = new Map<string, RunResult>();
   let ms = 0;
   for (const file of files) {
@@ -341,7 +356,7 @@ function tests(at: string, files: readonly string[], uncovered: readonly string[
     const head = failingTests(file, pkg, result.output);
     // The merge base runs only when a failing test is not already listed base-red by the --fast record.
     const base = fastBaseRed && head.every(id => listedBaseRed(fastBaseRed, id)) ? [] : baseRun(file);
-    observed.push({ file, head, base: base === null ? null : [...base] });
+    observed.push({ file, head, base: base === null ? null : [...base], unchanged: unchangedAt(at, mergeBase, file) });
   }
   const split = splitRed(observed, fastBaseRed);
   for (const item of split.baseRed) findings.push({ id: "tests.base-red", level: "note", subject: item.id, detail: item.by === "fast" ? "listed base-red by the --fast record at this head" : "also fails run alone at the merge base" });

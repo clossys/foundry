@@ -6,7 +6,7 @@ import type { ReviewConfig } from "./config.js";
 import { jsonOf } from "./config.js";
 import { scratch } from "./exec.js";
 import { readReceipt, receiptDir, takeReceipt } from "./receipt.js";
-import { failingTests, formatReview, ReviewArgumentError, runReview, type ReviewOptions } from "./review.js";
+import { failingTests, formatReview, ReviewArgumentError, runReview, splitRed, type ReviewOptions } from "./review.js";
 
 const roots: string[] = [];
 afterAll(() => { for (const root of roots) rmSync(root, { recursive: true, force: true }); });
@@ -451,6 +451,15 @@ describe("clossys review: fail closed", () => {
     expect(fails(only)).toEqual([]);
     expect(only.verdict).toBe("PASS");
   }, 90_000);
+
+  it("lends base-red from a file that fails to load at base only when the test file is unchanged", () => {
+    const file = "p/a.test.ts", id = `${file} :: group > one`;
+    expect(splitRed([{ file, head: [id], base: [file], unchanged: true }]).baseRed.map(item => item.id)).toEqual([id]);
+    expect(splitRed([{ file, head: [id], base: [file], unchanged: false }]).newRed.map(item => item.id)).toEqual([id]);
+    expect(splitRed([{ file, head: [id], base: [`${file} :: group > two`], unchanged: true }]).newRed.map(item => item.id)).toEqual([id]);
+    expect(splitRed([{ file, head: [id], base: null, unchanged: false }]).newRed.map(item => item.id)).toEqual([id]);
+    expect(splitRed([{ file, head: [id], base: [], unchanged: true }]).newRed.map(item => item.id)).toEqual([id]);
+  });
 
   it("names vitest failures by test, and holds a --fast record to the head and merge base", () => {
     const output = "\u001b[31m FAIL \u001b[39m src/a.test.ts > group > keeps one\n FAIL  src/a.test.ts > group > keeps two 12ms\n FAIL  src/other.test.ts > x\n";
