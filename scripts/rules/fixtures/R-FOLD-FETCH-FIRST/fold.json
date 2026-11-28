@@ -1,0 +1,7 @@
+{
+  "about": "Violation fixture for R-FOLD-FETCH-FIRST: the fold compares a unit branch it never fetched, so a stale local ref decides it.",
+  "steps": [
+    "git fetch origin claude/r2f-int2",
+    "git merge-tree --write-tree origin/claude/r2f-int2 claude/r2f-0048-cp1-agentdef"
+  ]
+}

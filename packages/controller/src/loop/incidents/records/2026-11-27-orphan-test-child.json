@@ -1,0 +1,8 @@
+{
+  "schema": "foundry.incident/1",
+  "stage": "build",
+  "command": "npm run build -w @clossys/producer",
+  "exit": 1,
+  "signature": "build slot is held by process # (started <time>)\nthe holder is an orphaned test child: node <path> run\nwaited <duration>; refusing to start a second build",
+  "at": "2026-11-27T21:14:00Z"
+}

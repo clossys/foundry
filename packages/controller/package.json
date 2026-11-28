@@ -151,7 +151,8 @@
     "build": "tsc -p tsconfig.json",
     "prepublishOnly": "node ../../scripts/check-name-collision.mjs . && npm run build",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "test": "vitest run"
+    "test": "vitest run",
+    "generate:incident-records": "node scripts/generate-incident-records.mjs"
   },
   "devDependencies": {
     "@clossys/advisor": "^0.7.0",

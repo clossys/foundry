@@ -62,6 +62,42 @@ export type { LoopStateFinding } from "./loop/state.js";
 export { renderStatusDocument, renderLoopStatus } from "./loop/status.js";
 export type { StatusSections } from "./loop/status.js";
 export { bindPlan, decidePlanExecution, PLAN_EXECUTION_OUTCOMES } from "./loop/plan-binding.js";
+// The incident loop (CP1-HEAL): a failure is matched to a known cause in code and healed with no
+// model; a guarded cause that comes back is a REPEAT. Root-exported for the same canary-matrix
+// reason as the loop engine above. `clossys heal` (@clossys/producer) runs healMain.
+export {
+  healMain,
+  heal,
+  healReport,
+  incidentRecord,
+  normalizeSignature,
+  causeFindings,
+  matchCause,
+  REMEDIES,
+  packetFindings,
+  redFindings,
+  classifyRed,
+  foldPlanFindings,
+  probeSpawner,
+  spawnFixture,
+  runInGroup,
+} from "./loop/incidents/index.js";
+export type {
+  IncidentRecord,
+  KnownCause,
+  CausesDocument,
+  HealOutcome,
+  HealOutcomeRecord,
+  HealResult,
+  HealReport,
+  HealEnv,
+  Remedy,
+  RemedyResult,
+  GuardFinding,
+  RedEntry,
+  SpawnedFixture,
+  CliOutcome as HealCliOutcome,
+} from "./loop/incidents/index.js";
 export type { PlanBinding, PlanExecutionDecision, PlanExecutionOutcome } from "./loop/plan-binding.js";
 export type {
   DeclaredRule,

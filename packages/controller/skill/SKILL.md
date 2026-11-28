@@ -45,6 +45,27 @@ Invoke me with `loop`: `/clossys-controller loop` in Claude Code,
 inside `judge` -- it never continues past that gate on its own, and never on
 a bare mention with no `loop` keyword.
 
+## The incident loop
+
+Every failure goes through the incident loop before any model runs. You own the loop and its code
+(`src/loop/incidents/`); Reviewer owns each guard check; Planner owns the rule and this text.
+
+1. **Detect.** A failing verb or check writes one incident record: stage, command, exit code and a
+   normalized signature (paths, shas, times and numbers removed). `clossys heal run --stage <stage> -- <command>`
+   writes it for any command.
+2. **Match.** `clossys heal <record>` matches the record against the known causes in `causes.json`.
+3. **Heal.** A known cause with a remedy runs that remedy in code, re-runs the failed step once and records
+   healed or still failing. A known cause with no remedy prints its owner and blocker.
+   An unknown signature prints `NEW-CAUSE <signature>`: that is the only case a model is used for.
+4. **Guard.** A new cause closes only when `causes.json` has an entry for it whose guard is a rule in the
+   rule registry with a check that fails on the cause's violation fixture.
+5. **Report.** `clossys heal --report` counts records per cause. A guarded cause that comes back after its
+   guard landed prints `REPEAT <cause> guard=<rule>` and exits 1; the root check runs it on the recorded fixtures.
+
+The rule: **no cause is closed without a guard** (R-HEAL-CAUSE-GUARDED). `check:heal` refuses a cause
+with no guard, a guard that is not an enforced rule, or a remedy that is not a function in code or `none`.
+A remedy never deletes work, edits a test or relaxes a check.
+
 ## Who picks and pins
 
 This rule is the same in every Clossys skill. A pin chooses one candidate for a slot. The CLI accepts

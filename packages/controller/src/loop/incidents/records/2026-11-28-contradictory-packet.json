@@ -1,0 +1,8 @@
+{
+  "schema": "foundry.incident/1",
+  "stage": "validate",
+  "command": "npm run test -w @clossys/designer",
+  "exit": 1,
+  "signature": "packet lint: `npm run test -w @clossys/designer` has two expectations (exit # and same exit as base)",
+  "at": "2026-11-28T03:45:00Z"
+}

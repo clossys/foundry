@@ -1,0 +1,13 @@
+{
+  "schema": "foundry.incident-causes/1",
+  "about": "Violation fixture for R-HEAL-CAUSE-GUARDED: a known cause with a remedy and an owner but no guard. check:heal refuses it: no cause is closed without a guard.",
+  "causes": [
+    {
+      "id": "unguarded-cause",
+      "match": "^build\\n[\\s\\S]*cannot find module",
+      "owner": "developer",
+      "remedy": "none",
+      "blocker": "a build could not resolve a module"
+    }
+  ]
+}

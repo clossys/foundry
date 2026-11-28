@@ -1,0 +1,56 @@
+{
+  "schema": "foundry.incident-causes/1",
+  "about": "Known causes of failing verbs and checks. clossys heal matches an incident record's `<stage>\\n<signature>` against `match` (first match wins), runs the named remedy (remedies.ts) and re-runs the step once. Every cause has a guard: a rule in scripts/rules/registry.json whose check fails on the cause's violation fixture; check:heal refuses a cause without one. A record after guard_landed is a REPEAT.",
+  "causes": [
+    {
+      "id": "orphan-test-child",
+      "match": "orphan(?:ed)? (?:test )?(?:child|process)|survived teardown|held by (?:a )?(?:stale |dead |orphan(?:ed)? )?(?:test )?process|build slot (?:is )?(?:held|busy)",
+      "owner": "developer",
+      "remedy": "kill-orphan-groups",
+      "blocker": "a test-fixture child outlived its killed run; spawn fixtures through spawnFixture so teardown ends the whole process group",
+      "guard": "R-FIXTURE-NO-ORPHAN",
+      "guard_landed": "2026-11-28T06:00:00Z",
+      "note": "A test-fixture child process outlived a killed test run and held a build slot for two hours."
+    },
+    {
+      "id": "fixed-exit-root-check",
+      "match": "^(?:accept|validate|mechanical)[^\\n]*\\n[\\s\\S]*(?:npm run check|root check)[^\\n]*(?:want|wants|expected|required) (?:exit )?#",
+      "owner": "planner",
+      "remedy": "compare-with-base",
+      "blocker": "the root check was held to a fixed exit 0; it is judged as same exit as base, measured in the same environment",
+      "guard": "R-ROOT-CHECK-BASE-RELATIVE",
+      "guard_landed": "2026-11-28T06:00:00Z",
+      "note": "A root check that is already red on the base was required to exit 0, so the mechanical run refused a unit that added no red."
+    },
+    {
+      "id": "load-noise-timeout",
+      "match": "^(?:test|check)[^\\n]*\\n[\\s\\S]*(?:timed out|Timeout of|ETIMEDOUT)",
+      "owner": "reviewer",
+      "remedy": "rerun-alone-then-base",
+      "blocker": "a timeout under load is noise until it fails alone and passes on the base",
+      "guard": "R-NEW-RED-CONFIRMED",
+      "guard_landed": "2026-11-28T06:00:00Z",
+      "note": "Load-noise timeouts were read as new reds."
+    },
+    {
+      "id": "stale-branch-ref",
+      "match": "^fold[^\\n]*\\n[\\s\\S]*(?:stale|non-fast-forward|not a fast-forward|behind origin|does not match origin|refusing to fold)",
+      "owner": "planner",
+      "remedy": "fetch-then-compare",
+      "blocker": "the fold compared a stale local ref; fetch the branch, then compare",
+      "guard": "R-FOLD-FETCH-FIRST",
+      "guard_landed": "2026-11-28T06:00:00Z",
+      "note": "A stale local branch ref made the fold refuse."
+    },
+    {
+      "id": "contradictory-packet",
+      "match": "^(?:packet|lint|accept|validate)[^\\n]*\\n[\\s\\S]*(?:two expectations|contradictory expectation|both exit # and same exit as base)",
+      "owner": "planner",
+      "remedy": "none",
+      "blocker": "the packet states two expectations for one validation command; the planner rewrites it with exactly one (packet lint refuses it until then)",
+      "guard": "R-PACKET-ONE-EXPECTATION",
+      "guard_landed": "2026-11-28T06:00:00Z",
+      "note": "A packet both required exit 0 and allowed same exit as base for one command. No remedy: choosing either expectation by code would either relax a check or refuse a sound unit."
+    }
+  ]
+}

@@ -1,0 +1,6 @@
+{
+  "about": "Violation fixture for R-NEW-RED-CONFIRMED: a timeout from a loaded full run reported as a new red with no re-run alone and no base run.",
+  "reds": [
+    { "test": "src/cli/craft.test.ts > craft runs the page brief", "head": "timeout", "verdict": "new" }
+  ]
+}

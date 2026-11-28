@@ -1,0 +1,8 @@
+{
+  "schema": "foundry.incident/1",
+  "stage": "fold",
+  "command": "git merge-tree --write-tree claude/r2f-int2 claude/r2f-0048-cp1-agentdef",
+  "exit": 1,
+  "signature": "refusing to fold: local claude/r2f-#-cp1-agentdef <sha> does not match origin <sha>\nthe local ref is stale",
+  "at": "2026-11-28T03:10:00Z"
+}

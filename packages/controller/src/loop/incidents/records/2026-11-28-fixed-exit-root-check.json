@@ -1,0 +1,8 @@
+{
+  "schema": "foundry.incident/1",
+  "stage": "accept",
+  "command": "npm run check",
+  "exit": 1,
+  "signature": "FAIL npm run check: head exit # (required exit #)\nthe base <sha> exits # on the same check\n# steps failed: check:rules, check:dependency-audit, test",
+  "at": "2026-11-28T01:40:00Z"
+}

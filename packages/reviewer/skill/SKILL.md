@@ -56,6 +56,11 @@ when this list and the registry differ.
 <!-- owned-rules:start: the rules in the repository's rule registry whose owner_agent is this package; check:rules fails on drift -->
 - R-CHECKS-WIRED
 - R-REVIEW-MECHANICAL
+- R-FIXTURE-NO-ORPHAN
+- R-ROOT-CHECK-BASE-RELATIVE
+- R-PACKET-ONE-EXPECTATION
+- R-NEW-RED-CONFIRMED
+- R-FOLD-FETCH-FIRST
 <!-- owned-rules:end -->
 
 ## When this package is installed

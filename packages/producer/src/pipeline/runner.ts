@@ -164,6 +164,8 @@ async function run(argv: readonly string[], cwd: string, steps: readonly Step[],
     // The mechanical review and the executor's receipt (docs/review.md (not shipped)): every re-runnable review step, from code.
     if (head === "review") return await (await import("../cli/review.js")).runReviewCli(argv.slice(1), cwd);
     if (head === "receipt") return await (await import("../cli/review.js")).runReceiptCli(argv.slice(1), cwd);
+    // The incident loop (CP1-HEAL): match a failure to a known cause and heal it in code; @clossys/controller owns it.
+    if (head === "heal") return await (await import("../cli/heal.js")).runHealCli(argv.slice(1), cwd);
     // An agent's own loops (foundry-build-0048 U9a): adopt, pin through the pin gate, and judge one against its standard.
     if (head === "loop") return await (await import("../cli/loop.js")).runLoopCli(argv.slice(1), cwd);
     // SLOT-CREATE (foundry-build-0048 U5): a slotless need is a clossys.queue-entry/2 kind slot entry, closed with a link.

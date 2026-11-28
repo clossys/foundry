@@ -1110,6 +1110,160 @@
         }
       ],
       "note": "A consumer built only from tarballs and public verbs renders its pinned page: clossys check --e2e packs the cohort, installs it into an empty directory, drives the shipped scenario with the installed bin and asserts the built HTML, whose files hold no absolute path of the consumer and build to the same digest from another directory. Causes: e2e.usage (the check could not start: a bad flag, or no cohort package beside this Producer); e2e.pack (npm pack of a cohort package failed, or --from lacks one of its tarballs); e2e.install (npm install of the tarballs into the empty directory failed); e2e.one-copy (the install holds other than one copy of a first-party package, or one not resolved from its tarball); e2e.bin (node_modules/.bin/clossys is missing or is not the installed @clossys/producer); e2e.scenario (the scenario is missing, malformed, or names a step or file it does not hold); e2e.step (a scenario verb exited other than the scenario expects); e2e.render (the latest build lacks a route's index.html, or the HTML lacks a pinned string or marker); e2e.repeat (a second build of the same pins named another digest); e2e.portable (a build file holds an absolute path of the consumer or of the machine (its home or temp folder), or the consumer moved to another directory built the same pins to another digest)."
+    },
+    {
+      "id": "R-HEAL-CAUSE-GUARDED",
+      "owner_words": {
+        "quote": "dont let any issues repeat; we have way too many repeated mistakes",
+        "date": "2026-11-28"
+      },
+      "owner_agent": "planner",
+      "status": "enforced",
+      "checks": [
+        ".#check:heal"
+      ],
+      "fixture": "scripts/rules/fixtures/R-HEAL-CAUSE-GUARDED",
+      "fixture_runs": [
+        {
+          "check": ".#check:heal",
+          "cwd": ".",
+          "run": "node packages/controller/dist/loop/incidents/bin.js check --causes {fixture}/causes.json",
+          "expect": "^\\s+cause unguarded-cause has no guard: no cause is closed without a guard"
+        }
+      ],
+      "note": "No cause is closed without a guard: every known cause in packages/controller/src/loop/incidents/causes.json names a guard, a rule in this registry that is enforced by a check with a violation fixture, and a remedy that is a function in code (remedies.ts) or none. check:heal refuses any other cause. The fixture is a causes file whose one cause has no guard."
+    },
+    {
+      "id": "R-HEAL-NO-REPEAT",
+      "owner_words": {
+        "quote": "dont let any issues repeat; we have way too many repeated mistakes",
+        "date": "2026-11-28"
+      },
+      "owner_agent": "controller",
+      "status": "enforced",
+      "checks": [
+        ".#check:heal"
+      ],
+      "fixture": "scripts/rules/fixtures/R-HEAL-NO-REPEAT",
+      "fixture_runs": [
+        {
+          "check": ".#check:heal",
+          "cwd": ".",
+          "run": "node packages/controller/dist/loop/incidents/bin.js check --records {fixture}/records",
+          "expect": "^\\s+REPEAT orphan-test-child guard=R-FIXTURE-NO-ORPHAN"
+        }
+      ],
+      "note": "A fixed cause that comes back fails a check: clossys heal --report counts incident records per known cause and prints REPEAT <cause> guard=<rule> (exit 1) for a record of a guarded cause after its guard_landed time; check:heal runs it over the recorded fixtures in packages/controller/src/loop/incidents/records. The fixture is a record of orphan-test-child dated after its guard landed."
+    },
+    {
+      "id": "R-FIXTURE-NO-ORPHAN",
+      "owner_words": {
+        "quote": "these are issues we should try to solve for with zero token, in programmatic approach",
+        "date": "2026-11-28"
+      },
+      "owner_agent": "reviewer",
+      "status": "enforced",
+      "checks": [
+        ".#check:heal"
+      ],
+      "fixture": "scripts/rules/fixtures/R-FIXTURE-NO-ORPHAN",
+      "fixture_runs": [
+        {
+          "check": ".#check:heal",
+          "cwd": ".",
+          "run": "node packages/controller/dist/loop/incidents/bin.js check --spawner {fixture}/bad-spawner.mjs",
+          "expect": "a child of the fixture survived teardown"
+        }
+      ],
+      "note": "A test-fixture spawner kills its whole process group at teardown, so no child outlives a killed test run (cause orphan-test-child). check:heal spawns a parent that starts a child, tears the parent down through the spawner and fails when the child survives; it probes packages/controller's spawnFixture. The fixture is a spawner that kills only the parent."
+    },
+    {
+      "id": "R-ROOT-CHECK-BASE-RELATIVE",
+      "owner_words": {
+        "quote": "these are issues we should try to solve for with zero token, in programmatic approach",
+        "date": "2026-11-28"
+      },
+      "owner_agent": "reviewer",
+      "status": "enforced",
+      "checks": [
+        ".#check:heal"
+      ],
+      "fixture": "scripts/rules/fixtures/R-ROOT-CHECK-BASE-RELATIVE",
+      "fixture_runs": [
+        {
+          "check": ".#check:heal",
+          "cwd": ".",
+          "run": "node packages/controller/dist/loop/incidents/bin.js check --packet {fixture}/packet.md",
+          "expect": "R-ROOT-CHECK-BASE-RELATIVE\\s+root check `npm run check` is held to a fixed exit"
+        }
+      ],
+      "note": "The root check is judged base-relative: the mechanical runner compares base and head in the same environment (same exit as base), never a fixed exit 0 (cause fixed-exit-root-check; remedy compare-with-base). Packet lint in check:heal refuses a packet that holds the root check to a fixed exit. The fixture is a packet requiring npm run check to exit 0."
+    },
+    {
+      "id": "R-PACKET-ONE-EXPECTATION",
+      "owner_words": {
+        "quote": "these are issues we should try to solve for with zero token, in programmatic approach",
+        "date": "2026-11-28"
+      },
+      "owner_agent": "reviewer",
+      "status": "enforced",
+      "checks": [
+        ".#check:heal"
+      ],
+      "fixture": "scripts/rules/fixtures/R-PACKET-ONE-EXPECTATION",
+      "fixture_runs": [
+        {
+          "check": ".#check:heal",
+          "cwd": ".",
+          "run": "node packages/controller/dist/loop/incidents/bin.js check --packet {fixture}/packet.md",
+          "expect": "R-PACKET-ONE-EXPECTATION\\s+`npm run test -w @clossys/designer` has two expectations"
+        }
+      ],
+      "note": "One validation command, one expectation: packet lint in check:heal refuses a packet that both requires an exit code and allows same exit as base for one command (cause contradictory-packet). The fixture is a packet naming one test command with both."
+    },
+    {
+      "id": "R-NEW-RED-CONFIRMED",
+      "owner_words": {
+        "quote": "these are issues we should try to solve for with zero token, in programmatic approach",
+        "date": "2026-11-28"
+      },
+      "owner_agent": "reviewer",
+      "status": "enforced",
+      "checks": [
+        ".#check:heal"
+      ],
+      "fixture": "scripts/rules/fixtures/R-NEW-RED-CONFIRMED",
+      "fixture_runs": [
+        {
+          "check": ".#check:heal",
+          "cwd": ".",
+          "run": "node packages/controller/dist/loop/incidents/bin.js check --reds {fixture}/reds.json",
+          "expect": "new red .* is reported without a re-run alone"
+        }
+      ],
+      "note": "A red is new only after it failed re-run alone and passed on the base in the same environment (cause load-noise-timeout; remedy rerun-alone-then-base). check:heal refuses a reds report whose new red lacks either run. The fixture reports a load timeout as a new red with neither."
+    },
+    {
+      "id": "R-FOLD-FETCH-FIRST",
+      "owner_words": {
+        "quote": "these are issues we should try to solve for with zero token, in programmatic approach",
+        "date": "2026-11-28"
+      },
+      "owner_agent": "reviewer",
+      "status": "enforced",
+      "checks": [
+        ".#check:heal"
+      ],
+      "fixture": "scripts/rules/fixtures/R-FOLD-FETCH-FIRST",
+      "fixture_runs": [
+        {
+          "check": ".#check:heal",
+          "cwd": ".",
+          "run": "node packages/controller/dist/loop/incidents/bin.js check --fold {fixture}/fold.json",
+          "expect": "claude/r2f-0048-cp1-agentdef is compared before it was fetched"
+        }
+      ],
+      "note": "A fold fetches every branch it compares before comparing it, so a stale local ref never decides a fold (cause stale-branch-ref; remedy fetch-then-compare). check:heal refuses a fold plan with a compare step on an unfetched branch. The fixture compares a unit branch it never fetched."
     }
   ],
   "exemptions": [

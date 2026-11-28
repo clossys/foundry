@@ -1,0 +1,8 @@
+{
+  "schema": "foundry.incident/1",
+  "stage": "test",
+  "command": "npm run test -w @clossys/producer",
+  "exit": 1,
+  "signature": "FAIL <path> > craft runs the page brief\nError: Test timed out in <duration>.\nTest Files # failed | # passed (#)",
+  "at": "2026-11-28T02:05:00Z"
+}

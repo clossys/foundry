@@ -54,7 +54,7 @@ The rules in the repository's rule registry whose `owner_agent` is `planner`. `c
 when this list and the registry differ.
 
 <!-- owned-rules:start: the rules in the repository's rule registry whose owner_agent is this package; check:rules fails on drift -->
-
+- R-HEAL-CAUSE-GUARDED
 <!-- owned-rules:end -->
 
 ## When this package is installed

@@ -1,0 +1,7 @@
+{
+  "reds": [
+    { "test": "src/loop/incidents/heal.test.ts > a known signature runs its remedy and re-runs the step", "head": "timeout", "alone": "pass", "verdict": "noise" },
+    { "test": "src/cli/check.test.ts > a red the base shares", "head": "fail", "alone": "fail", "base": "fail", "verdict": "pre-existing" },
+    { "test": "src/cli/check.test.ts > a red the head adds", "head": "fail", "alone": "fail", "base": "pass", "verdict": "new" }
+  ]
+}
