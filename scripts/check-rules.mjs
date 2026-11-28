@@ -50,6 +50,7 @@ import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { reachable, repositoryFiles, workspaces } from "./check-orphan-checks.mjs";
+import { agentList } from "./lib/agent-lists.mjs";
 
 const here = dirname(fileURLToPath(import.meta.url));
 export const REGISTRY = "scripts/rules/registry.json";
@@ -102,11 +103,12 @@ export const RULE_FLOOR = Object.freeze({
 /** Root scripts that must exist: the two entries every reachability trace starts from, and the meta-checks. */
 export const ROOT_SCRIPT_FLOOR = Object.freeze(["check", "test", ...META_CHECKS]);
 /**
- * The factory homes: the agent packages that own the rules about the build process itself.
+ * The factory homes: the agent packages that own the rules about the build process itself, read from
+ * agents.json's `rule-homes` list.
  * Each one's skill/SKILL.md carries an owned-rules block (OWNED_RULES_START .. OWNED_RULES_END) that
  * must list exactly the registry rules whose owner_agent it is, so the skill and the registry cannot drift.
  */
-export const FACTORY_HOMES = Object.freeze(["planner", "developer", "reviewer", "controller"]);
+export const FACTORY_HOMES = agentList("rule-homes");
 export const DEFAULT_FLOOR = Object.freeze({ rules: RULE_FLOOR, scripts: ROOT_SCRIPT_FLOOR, homes: FACTORY_HOMES });
 export const OWNED_RULES_START = "<!-- owned-rules:start: the rules in the repository's rule registry whose owner_agent is this package; check:rules fails on drift -->";
 export const OWNED_RULES_END = "<!-- owned-rules:end -->";

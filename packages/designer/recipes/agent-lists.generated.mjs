@@ -68,6 +68,8 @@ export const AGENT_LISTS = Object.freeze({
   "coverage-externals": Object.freeze(["writer", "publisher"]),
   /** The packages whose sources, tests and scripts the DOM provenance attribute codemods rewrite and check. */
   "provenance-stamped": Object.freeze(["designer", "publisher", "producer", "writer"]),
+  /** The agents that own the rules about the build process itself: the factory agents, then Controller. Each one's skill carries an owned-rules block that check:rules holds to exactly the registry rules it owns. */
+  "rule-homes": Object.freeze(["planner", "developer", "reviewer", "controller"]),
 });
 
 /** The chain handoffs (flows.md N3): Director feeds Designer and Writer, and Designer and Writer feed Publisher. Each pair is upstream, then downstream. */

@@ -60,7 +60,8 @@
     "release-order": { "description": "Every published package in release order; Producer is not published.", "members": ["advisor", "starter", "controller", "launcher", "director", "writer", "designer", "customer", "architect", "bouncer", "butler", "giver", "influencer", "integrator", "keeper", "locksmith", "messenger", "observer", "builder", "inspector", "publisher"] },
     "release-receivers": { "description": "The agents a Publisher release hands over to, one per destination kind: what a release target, handover and receipt may name.", "members": ["builder", "messenger", "influencer"] },
     "coverage-externals": { "description": "The packages whose catalogs Designer's IA coverage reads as external nodes: Writer's passages and copy records, Publisher's admin routes and compositions.", "members": ["writer", "publisher"] },
-    "provenance-stamped": { "description": "The packages whose sources, tests and scripts the DOM provenance attribute codemods rewrite and check.", "members": ["designer", "publisher", "producer", "writer"] }
+    "provenance-stamped": { "description": "The packages whose sources, tests and scripts the DOM provenance attribute codemods rewrite and check.", "members": ["designer", "publisher", "producer", "writer"] },
+    "rule-homes": { "description": "The agents that own the rules about the build process itself: the factory agents, then Controller. Each one's skill carries an owned-rules block that check:rules holds to exactly the registry rules it owns.", "members": ["planner", "developer", "reviewer", "controller"] }
   },
   "handoffs": {
     "description": "The chain handoffs (flows.md N3): Director feeds Designer and Writer, and Designer and Writer feed Publisher. Each pair is upstream, then downstream.",
