@@ -376,6 +376,66 @@ describe("a create step raises the upstream change its skill tells it to (consum
     expect(readRunState(w.root, runId)).toMatchObject({ status: "waiting", waiting: { step: "create", on: "entry", entry: `queue.slot#${id}`, then: "retry" } });
   });
 
+  // CP1-CHECKS (CP1-REPORT review N4): an agent step of an agent loop that obeys the report rule (a verb refused with no
+  // next step: file `clossys request --kind report` and stop) is judged by the report's own shape, not refused for it.
+  it("an agent loop step may file its own loop's report", async () => {
+    const report = async (w: World, from: string, by = "designer") => {
+      const filed = await w.cli("request", "--kind", "report", "--about", "verb/next", "--what", "gap", "--why", "clossys next refused with no next step", "--from", from, "--by", by);
+      expect(filed.exitCode, filed.message).toBe(0);
+      return `producer/queue.report/entries/${(filed.output as { id: string }).id}.json`;
+    };
+    const { w, runId } = await createWaiting();
+    const entry = await report(w, "designer/loop.create");
+    const stopped = await w.run("loop.create", "--resume", "--run", runId, "--step-exit", "2", "--model", MODEL, "--wrote", entry);
+    expect(stopped.exitCode, stopped.message).toBe(2);
+    expect(stopped.message).not.toMatch(/refuses it|does not declare it writes/);
+    expect(stopped.message).toMatch(/step create could not run \(exit 2\)/);
+    expect(w.read(entry)).toMatchObject({ kind: "report", status: "open", from: "designer/loop.create", about: "verb/next" });
+    // Only the report of the step's own loop: one from another loop is still a write the step does not declare.
+    const other = await createWaiting();
+    const foreign = await report(other.w, "designer/loop.refine");
+    const refused = await other.w.run("loop.create", "--resume", "--run", other.runId, "--step-exit", "2", "--model", MODEL, "--wrote", foreign);
+    expect(refused.exitCode, refused.message).toBe(1);
+    expect(refused.message).toMatch(/refuses it|does not declare it writes/);
+    // Fix round 1 (review-cp1checks-blindA P1-1): only the report the writer files for the step's agent. Another seat's
+    // filing (`--by owner`), a forged chain with an owner-actor log event, and a second open report the writer would
+    // have deduped are each refused.
+    const REFUSED = /not the report clossys request files for designer \([^)]+\): events differ/;
+    const seat = await createWaiting();
+    const owners = await report(seat.w, "designer/loop.create", "owner");
+    const bySeat = await seat.w.run("loop.create", "--resume", "--run", seat.runId, "--step-exit", "2", "--model", MODEL, "--wrote", owners);
+    expect(bySeat.exitCode, bySeat.message).toBe(1);
+    expect(bySeat.message).toMatch(REFUSED);
+    expect(readRunState(seat.w.root, seat.runId)!.status).toBe("stopped");
+    const { recordEvent } = await import("../engine/log.js");
+    const forge = await createWaiting();
+    const dry = await forge.w.cli("request", "--kind", "report", "--about", "verb/next", "--what", "gap", "--why", "clossys next refused with no next step", "--from", "designer/loop.create", "--by", "designer", "--dry");
+    expect(dry.exitCode, dry.message).toBe(0);
+    const doc = dry.output as { id: string; events: Array<Record<string, unknown>> };
+    doc.events[0]!.by = "owner";
+    doc.events.push({ id: `${doc.id}#3`, at: doc.events[0]!.at, op: "checked", by: "owner", detail: "the owner checked it" });
+    const forged = `producer/queue.report/entries/${doc.id}.json`;
+    mkdirSync(forge.w.file("producer/queue.report/entries"), { recursive: true });
+    writeFileSync(forge.w.file(forged), `${JSON.stringify(doc, null, 2)}\n`);
+    recordEvent([forge.w.file(forged)], { actor: "owner", kind: "request.create", subject: `request:${doc.id}` });
+    const byForge = await forge.w.run("loop.create", "--resume", "--run", forge.runId, "--step-exit", "2", "--model", MODEL, "--wrote", forged);
+    expect(byForge.exitCode, byForge.message).toBe(1);
+    expect(byForge.message).toMatch(REFUSED);
+    expect(readRunState(forge.w.root, forge.runId)!.status).toBe("stopped");
+    const twice = await createWaiting();
+    const first = await report(twice.w, "designer/loop.create");
+    // The writer's own bytes under createRequest's -2 suffix: an exact draft, but the writer dedupes and never writes it.
+    const copy = twice.w.read(first) as { id: string; opened: string; events: Array<{ id: string }> };
+    const id2 = `${copy.id}-2`;
+    const relabelled = { ...copy, id: id2, opened: `${id2}#1`, events: copy.events.map((event, index) => ({ ...event, id: `${id2}#${index + 1}` })) };
+    const second = `producer/queue.report/entries/${id2}.json`;
+    writeFileSync(twice.w.file(second), `${JSON.stringify(relabelled, null, 2)}\n`);
+    recordEvent([twice.w.file(second)], { actor: "producer", kind: "request.create", subject: `request:${id2}` });
+    const byTwice = await twice.w.run("loop.create", "--resume", "--run", twice.runId, "--step-exit", "2", "--model", MODEL, "--wrote", first, "--wrote", second);
+    expect(byTwice.exitCode, byTwice.message).toBe(1);
+    expect(byTwice.message).toMatch(/queue\.report#\S+ is already open for verb\/next gap: the writer files no second one/);
+  });
+
   it("refuses an unreported raise, and a raise from another slot than the run's", async () => {
     const { w, runId } = await createWaiting();
     const id = await raise(w);

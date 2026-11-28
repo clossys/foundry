@@ -6,7 +6,7 @@
 import { cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
 import { runCli } from "../cli/main.js";
 import { runReleaseCli } from "../cli/release.js";
 import { PRODUCER_ROOT } from "../package-path.js";
@@ -23,8 +23,6 @@ import type { AgentId } from "../records/types.js";
 import { runSlotResolve } from "./slot-resolve.js";
 
 const AT = "2026-11-15T10:00:00Z";
-let root: string | undefined;
-afterEach(() => { if (root) rmSync(root, { recursive: true, force: true }); root = undefined; });
 
 const LEGACY_TREE = join(PRODUCER_ROOT, "test-fixtures", "consumer-legacy-tree", "clossys");
 const PROMISE = join("agents", "director", "advantage.proposition.promise", "slot.json");
@@ -32,20 +30,27 @@ const PROMISE = join("agents", "director", "advantage.proposition.promise", "slo
 const STORES = [["recut in tmp from the old-tree fixture", "legacy-tree"], ["the committed current fixture", "current"]] as const;
 type Store = (typeof STORES)[number][1];
 
-function recut(store: Store = "legacy-tree") {
-  root = mkdtempSync(join(tmpdir(), "check-current-"));
-  const consumer = join(root, "clossys");
+/** One recut consumer in a fresh tmp folder; the caller removes `dir`. */
+function prepare(store: Store) {
+  const dir = mkdtempSync(join(tmpdir(), "check-current-"));
+  const consumer = join(dir, "clossys");
   cpSync(store === "current" ? join(PRODUCER_ROOT, "test-fixtures", "consumer", "clossys") : LEGACY_TREE, consumer, { recursive: true });
   const slot = join(consumer, PROMISE);
   // The old-format bytes of one slot: the old-tree fixture's, which the recut replaced.
   const before = readFileSync(join(LEGACY_TREE, PROMISE), "utf8");
-  if (store === "legacy-tree") applyRecut(planRecut(root, { at: AT }));
-  return { consumer, slot, before };
+  if (store === "legacy-tree") applyRecut(planRecut(dir, { at: AT }));
+  return { dir, consumer, slot, before };
 }
 
 describe.each(STORES)("clossys check on a recut consumer (current slot format): %s", (_name, store) => {
+  // CP1-CHECKS: both cases judge one copy made once for their store (the copy of the 1,800-file fixture, and the
+  // recut, were most of each case's time). The old-format case puts its one slot.json back when it ends.
+  let judged: ReturnType<typeof prepare> | undefined;
+  beforeAll(() => { judged = prepare(store); });
+  afterAll(() => { if (judged) rmSync(judged.dir, { recursive: true, force: true }); judged = undefined; });
+
   it("judges it: no schema-version rows, no unreadable inputs, no missing slot.json", async () => {
-    const w = recut(store);
+    const w = judged!;
     expect(JSON.parse(readFileSync(w.slot, "utf8")).schema).toBe("clossys.slot/2");
     const result = await runSlotResolve(w.consumer);
     const messages = result.findings.map(row => row.message);
@@ -57,12 +62,15 @@ describe.each(STORES)("clossys check on a recut consumer (current slot format): 
   });
 
   it("names an old-format slot.json once, pointing at clossys migrate recut", async () => {
-    const w = recut(store);
+    const w = judged!;
+    const current = readFileSync(w.slot, "utf8");
     writeFileSync(w.slot, w.before);
-    const result = await runSlotResolve(w.consumer);
-    const old = result.findings.filter(row => row.message === OLD_SLOT_FORMAT);
-    expect(old).toHaveLength(1);
-    expect(result.findings.filter(row => /advantage\.proposition\.promise/.test(row.path ?? "") && /schema must be/.test(row.message))).toEqual([]);
+    try {
+      const result = await runSlotResolve(w.consumer);
+      const old = result.findings.filter(row => row.message === OLD_SLOT_FORMAT);
+      expect(old).toHaveLength(1);
+      expect(result.findings.filter(row => /advantage\.proposition\.promise/.test(row.path ?? "") && /schema must be/.test(row.message))).toEqual([]);
+    } finally { writeFileSync(w.slot, current); }
   });
 });
 
@@ -80,6 +88,11 @@ describe.each(STORES)("a current-format candidate keeps every rule of its kind: 
   };
   const brief = "## Direction\n- who: Owners\n\n## Because\n- why: Time\n\n## Watch\n- risk: Scope\n";
   const item = { name: "badge", type: "registry:ui", files: [{ path: "badge.tsx", type: "registry:ui", content: "export const Badge = () => null\n" }] };
+  // CP1-CHECKS: every case here writes one candidate, judges only that file's findings and removes it, so the cases
+  // share one recut copy of the fixture per store instead of copying the 1,800-file fixture per case.
+  let shared: ReturnType<typeof prepare> | undefined;
+  beforeAll(() => { shared = prepare(store); });
+  afterAll(() => { if (shared) rmSync(shared.dir, { recursive: true, force: true }); shared = undefined; });
   /** Writes one int2 candidate the way recut does; returns its path and the check's findings for that file only. */
   function judge(consumer: string, family: keyof typeof slots, name: string, int2: string, edit: (bytes: string) => string = bytes => bytes) {
     const [agent, slotId] = slots[family];
@@ -95,7 +108,7 @@ describe.each(STORES)("a current-format candidate keeps every rule of its kind: 
   }
 
   it("passes a well-formed brief, element and Writer file, and reads each through its view", () => {
-    const w = recut(store);
+    const w = shared!;
     const ok = judge(w.consumer, "brief", "clean-v1.md", serializeFrontmatter({ slot: slots.brief[1], source: original, feeds: [], functions: ["gtm"], note: "kept" }, brief));
     expect(ok.found).toEqual([]);
     expect(ok.bytes.match(/^---$/gm)).toHaveLength(2);
@@ -105,25 +118,25 @@ describe.each(STORES)("a current-format candidate keeps every rule of its kind: 
   });
 
   it("a brief with no sections is a finding", () => {
-    const w = recut(store);
+    const w = shared!;
     expect(judge(w.consumer, "brief", "bare-v1.md", serializeFrontmatter({ slot: slots.brief[1], source: original, feeds: [], functions: [] }, "Just prose.\n")).found)
       .toContain("candidate-invalid: body must be ## Direction, ## Because, ## Watch");
   });
 
   it("a brief saved as .json is a finding", () => {
-    const w = recut(store);
+    const w = shared!;
     expect(judge(w.consumer, "brief", "brief-v1.json", JSON.stringify({ text: brief, meta: { source: original } })).found).toContain("candidate-name: brief candidates are .md");
   });
 
   it("an element that is no registry item, with a registry source and no ref, is a finding for each", () => {
-    const w = recut(store);
+    const w = shared!;
     const found = judge(w.consumer, "element", "nope-v1.json", JSON.stringify({ nope: true, meta: { source: { kind: "registry", ref: [] } } })).found;
     expect(found).toContain("candidate-invalid: registry-item name is required");
     expect(found).toContain("candidate-source: source.kind registry needs at least one ref");
   });
 
   it("pin state at the top level of a candidate is a finding (JSON beside the header, Markdown front matter)", () => {
-    const w = recut(store);
+    const w = shared!;
     const json = judge(w.consumer, "element", "state-v1.json", JSON.stringify({ ...item, meta: { source: original } }), bytes => JSON.stringify({ ...JSON.parse(bytes), status: "active", pinned: true })).found;
     expect(json).toContain("candidate-status: status is pin state; pinning lives only in pin.json");
     expect(json).toContain("candidate-status: pinned is pin state; pinning lives only in pin.json");
@@ -132,7 +145,7 @@ describe.each(STORES)("a current-format candidate keeps every rule of its kind: 
   });
 
   it("a Writer record carrying leaf, a bad vary and a second source beside the header are findings", () => {
-    const w = recut(store);
+    const w = shared!;
     expect(judge(w.consumer, "strings", "leaf-v1.md", serializeFrontmatter({ slot: slots.strings[1], locales: ["en"], source: original }, '## en\n### avoid.one\n<!-- {"id":"avoid-one","bindings":[],"leaf":"lexicon.avoid-terms"} -->\nNever.\n')).found)
       .toContain("candidate-invalid: record avoid.one carries leaf; the slot is the leaf");
     expect(judge(w.consumer, "element", "vary-v1.json", JSON.stringify({ ...item, meta: { source: original, vary: { tone: "loud", size: "big" } } })).found)

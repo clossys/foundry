@@ -26,6 +26,7 @@ import { appendSlotDocEvent, writeCandidate } from "../records/slot-write.js";
 import { skillPath } from "../records/ledger.js";
 import type { AgentId, LedgerEntry, QueueEntry, Slot, SlotRequest } from "../records/types.js";
 import { decideRequest, exactReuseOf, readRequest, requestLockPath } from "../records/request.js";
+import { listReports } from "../records/report.js";
 import { readPackageLoop } from "./files.js";
 import { raiseEntry } from "./route.js";
 import { checkVerbFindings, cliHooks } from "./cli.js";
@@ -1628,5 +1629,44 @@ describe("GF2 fix round 1: subject-less runs route every failed step into a queu
     expect(second.state!.status).toBe("done");
     expect(second.state!.raised).toEqual([]);
     expect(ledgers().map(entry => entry.outcome)).toEqual([`raised ${first.state!.raised.join(", ")}`, "no new entry"]);
+  });
+});
+
+/**
+ * CP1-CHECKS (CP1-REPORT review N1, N2): a fill run whose check step could not run dead-ends (runner deadEnd) and files
+ * one step report through fileStepReport; a second run that dead-ends the same way reuses the open report, and its stop
+ * says the report is already open instead of "filed".
+ */
+describe("a dead-ended fill step files its step report (deadEnd -> fileStepReport)", () => {
+  const deadEndFill = (w: ReturnType<typeof world>, now: () => Date) =>
+    startRun(w.root, { loop: "loop.fill", slot: "designer/components.button" }, stub(w.root, { checkExits: [2] }), { now });
+  const reports = (w: ReturnType<typeof world>) => listReports(join(w.root, "clossys")).map(read => read.report!);
+
+  it("runner fill path files one step report", async () => {
+    const w = world(["designer/components.button"]);
+    const run = await deadEndFill(w, clock());
+    expect(run.exitCode).toBe(2);
+    const filed = reports(w);
+    expect(filed).toHaveLength(1);
+    expect(filed[0]).toMatchObject({ kind: "report", status: "open", about: "verb/check", what: "bug", from: "producer/loop.fill", assignee: "producer" });
+    expect(filed[0]!.why).toMatch(new RegExp(`^loop\\.fill run ${run.state!.runId}: step check could not run \\(exit 2\\)$`));
+    expect(w.ledger("loop.fill")[0]).toMatchObject({ status: "stopped", outcome: `step check could not run (exit 2); filed queue.report#${filed[0]!.id}` });
+  });
+
+  it("deadEnd says filed only when a report was filed", async () => {
+    const w = world(["designer/components.button"]);
+    const now = clock();
+    await deadEndFill(w, now);
+    const [report] = reports(w);
+    const bytes = readFileSync(join(w.root, "clossys", "agents", "producer", "queue.report", "entries", `${report!.id}.json`), "utf8");
+    const again = await deadEndFill(w, now);
+    expect(again.exitCode).toBe(2);
+    expect(reports(w)).toHaveLength(1);
+    expect(readFileSync(join(w.root, "clossys", "agents", "producer", "queue.report", "entries", `${report!.id}.json`), "utf8")).toBe(bytes);
+    const outcomes = w.ledger("loop.fill").map(entry => entry.outcome);
+    expect(outcomes).toEqual([
+      `step check could not run (exit 2); filed queue.report#${report!.id}`,
+      `step check could not run (exit 2); queue.report#${report!.id} is already open (unchanged)`,
+    ]);
   });
 });
