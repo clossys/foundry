@@ -4,6 +4,8 @@
  * executor picks it up without a hand-written brief. Launches are recorded in the planner's loop state
  * (@clossys/controller/loop), where a launch with no pushed progress after 90 minutes is flagged stale.
  * Nothing here starts a session: `run` writes the prompt and prints the command.
+ * `clossys unit new|lint|brief` (CP1-UNITPACKET) write, lint and brief packets from one schema (./unit-packet.ts,
+ * owner rule R-UNIT-PACKET); brief reads its role templates from the Planner skill and its rules from the registry.
  */
 import { spawnSync } from "node:child_process";
 import { existsSync, mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
@@ -18,12 +20,19 @@ import {
   cloudCommand, cloudPrompt, decideEnv, decideTier, localLaunch, readPacket, readTierTable, UnitReadError, UnitRefusal,
   type EnvDecision, type EnvFacts, type PacketBase, type TierDecision, type TierRow, type UnitPacket,
 } from "./unit-rules.js";
+import {
+  BRIEF_ROLES, lintPacket, packetBrief, packetSkeleton, PACKET_RULE, readRoleTemplates, readRuleRows,
+  type BriefRole, type LintResult,
+} from "./unit-packet.js";
 
 export const UNIT_USAGE = [
   "Usage: clossys unit env <packet.md> [--root <repo>] [--state <loop.json>] [--json]",
   "       clossys unit tier <packet.md> [--skill <SKILL.md>] [--root <repo>] [--json]",
   "       clossys unit run <packet.md> [--dry-run] [--out <dir>] [--mark-failed <reason>] [--skill <SKILL.md>] [--root <repo>] [--state <loop.json>] [--json]",
   "       clossys unit check <packet.md|dir> [--skill <SKILL.md>] [--root <repo>] [--state <loop.json>]",
+  "       clossys unit new <ID> [--out <dir>] [--json]",
+  "       clossys unit lint <packet.md|dir> [--json]",
+  `       clossys unit brief <packet.md> --role ${BRIEF_ROLES.join("|")} [--skill <SKILL.md>] [--registry <registry.json>] [--root <repo>] [--json]`,
   "  env    prints the unit's env and its reason (R-UNIT-ENV): cloud by default; local only when the write set names",
   "         a path outside the repository, the packet says Step: fold (the fold gate), the base commit is not on the",
   "         remote as last fetched, or the launch log shows two failed cloud launches. Env: local with no need is refused.",
@@ -35,9 +44,18 @@ export const UNIT_USAGE = [
   "         90 minutes as stale. --dry-run prints only: no file, no record. --mark-failed records the unit's latest",
   "         launch as failed instead of launching. Nothing starts a session.",
   "  check  runs env and tier over one packet or every *.md packet in a directory; exit 1 when any is refused.",
+  "  new    writes the packet skeleton <out>/<ID>.md (default: the working directory): every section and field of the",
+  "         schema, each value a <<fill: ...>> placeholder that lint refuses until it is filled. Never overwrites.",
+  "  lint   refuses (R-UNIT-PACKET) a packet whose H1 lacks its tier and gate class, or that misses a section (Why,",
+  "         Repository and base, Objective, Validation, Forbidden, Stop rule, Output, After the fold), a field (Branch,",
+  "         Depends on, Env, Tier) or its Write set, or whose Branch line is not one backticked claude/<name> ref; each",
+  "         finding names what is missing. One packet or every *.md packet in a directory.",
+  "  brief  lints the packet, then prints the role's template (the Planner skill's role table), every registry rule",
+  "         whose scope names the role, and the packet with local paths withheld. A packet that does not lint is refused.",
   "  --root   the repository (default: the git checkout around the working directory)",
   "  --state  the planner's loop state (default: <root>/clossys/.state/planner/loop.json)",
-  "  --skill  the Planner skill holding the tier table (default: <root>/packages/planner/skill/SKILL.md)",
+  "  --skill  the Planner skill holding the tier and role tables (default: <root>/packages/planner/skill/SKILL.md)",
+  "  --registry  the rule registry brief reads (default: <root>/scripts/rules/registry.json)",
   "Exit 0 accepted, 1 refused (the rule is named), 2 on a usage or read error.",
 ].join("\n");
 
@@ -68,7 +86,7 @@ export const GIT_DEPS: UnitDeps = {
 
 interface Options { positional: string[]; set: Set<string>; given: Map<string, string> }
 function options(argv: readonly string[]): Options {
-  const flags = ["--json", "--dry-run"], values = ["--root", "--state", "--skill", "--out", "--mark-failed"];
+  const flags = ["--json", "--dry-run"], values = ["--root", "--state", "--skill", "--out", "--mark-failed", "--role", "--registry"];
   const positional: string[] = [], set = new Set<string>(), given = new Map<string, string>();
   for (let index = 0; index < argv.length; index++) {
     const arg = argv[index]!;
@@ -88,6 +106,7 @@ function options(argv: readonly string[]): Options {
 const repoRoot = (cwd: string) => { const top = gitOut(cwd, ["rev-parse", "--show-toplevel"]); return top.ok && top.out ? top.out : cwd; };
 export const STATE_PATH = "clossys/.state/planner/loop.json";
 export const SKILL_PATH = "packages/planner/skill/SKILL.md";
+export const REGISTRY_PATH = "scripts/rules/registry.json";
 
 function readText(path: string, what: string): string {
   try { return readFileSync(path, "utf8"); } catch (error) { throw new UnitReadError(`cannot read the ${what} at ${path}: ${(error as Error).message}`); }
@@ -107,7 +126,7 @@ function saveState(path: string, state: LoopState): void {
   writeFileSync(path, `${JSON.stringify(state, null, 2)}\n`);
 }
 
-interface Context { root: string; statePath: string; skillPath: string; deps: UnitDeps }
+interface Context { root: string; statePath: string; skillPath: string; registryPath: string; deps: UnitDeps }
 
 const envFacts = (context: Context, state: LoopState): EnvFacts => ({
   baseOnRemote: base => context.deps.baseOnRemote(context.root, base),
@@ -198,20 +217,57 @@ function checkVerb(target: string, context: Context): CliResult {
   return { exitCode: refused ? 1 : 0, message: lines.join("\n"), output: { packets: results, refused } };
 }
 
+function newVerb(id: string, opts: Options, cwd: string): CliResult {
+  const markdown = packetSkeleton(id);
+  const path = resolve(cwd, opts.given.get("--out") ?? ".", `${id}.md`);
+  if (existsSync(path)) throw new UnitReadError(`${path} already exists; unit new never overwrites a packet`);
+  mkdirSync(dirname(path), { recursive: true });
+  writeFileSync(path, markdown);
+  return { exitCode: 0, message: `unit new: wrote ${path}; fill every <<fill: ...>> placeholder, then run clossys unit lint ${path}`, output: { unit: id, path } };
+}
+
+const lintLine = (result: LintResult) => result.findings.length
+  ? `refused ${basename(result.path)}  ${PACKET_RULE}  ${result.findings.join("; ")}`
+  : `ok      ${basename(result.path)}`;
+
+function lintVerb(target: string): CliResult {
+  const results = packetsIn(target).map(path => lintPacket(readText(path, "packet"), path));
+  const refused = results.filter(result => result.findings.length).length;
+  const lines = [...results.map(lintLine), `unit lint: ${results.length} packet(s), ${refused} refused`];
+  return { exitCode: refused ? 1 : 0, message: lines.join("\n"), output: { rule: PACKET_RULE, packets: results, refused } };
+}
+
+function briefVerb(packetPath: string, opts: Options, context: Context): CliResult {
+  const role = opts.given.get("--role");
+  if (!role || !(BRIEF_ROLES as readonly string[]).includes(role)) throw new CliUsageError(`unit brief needs --role ${BRIEF_ROLES.join("|")}\n${UNIT_USAGE}`);
+  const markdown = readText(packetPath, "packet");
+  const lint = lintPacket(markdown, packetPath);
+  if (lint.findings.length) throw new UnitRefusal(PACKET_RULE, `${PACKET_RULE}: ${packetPath} does not lint, so it is not briefed:${lint.findings.join("; ")}`);
+  const templates = readRoleTemplates(readText(context.skillPath, "Planner skill"), context.skillPath);
+  const rules = readRuleRows(readText(context.registryPath, "rule registry"), context.registryPath);
+  const brief = packetBrief({ role: role as BriefRole, template: templates.get(role as BriefRole)!, markdown, rules });
+  const scoped = rules.filter(rule => rule.scope.includes(role as BriefRole)).map(rule => rule.id);
+  return { exitCode: 0, message: brief, output: { unit: lint.id, role, rules: scoped, brief } };
+}
+
 export async function runUnitCli(argv: readonly string[], cwd: string, deps: UnitDeps = GIT_DEPS): Promise<CliResult> {
   if (argv.length === 0 || argv.includes("--help") || argv.includes("-h")) return { exitCode: argv.length === 0 ? 2 : 0, message: UNIT_USAGE };
   const [verb, ...rest] = argv as [string, ...string[]];
-  if (!["env", "tier", "run", "check"].includes(verb)) throw new CliUsageError(`unit: unknown verb ${JSON.stringify(verb)}\n${UNIT_USAGE}`);
+  if (!["env", "tier", "run", "check", "new", "lint", "brief"].includes(verb)) throw new CliUsageError(`unit: unknown verb ${JSON.stringify(verb)}\n${UNIT_USAGE}`);
   const opts = options(rest);
-  if (opts.positional.length !== 1) throw new CliUsageError(`unit ${verb} needs exactly one ${verb === "check" ? "packet or directory" : "packet"}\n${UNIT_USAGE}`);
+  if (opts.positional.length !== 1) throw new CliUsageError(`unit ${verb} needs exactly one ${verb === "new" ? "unit id" : verb === "check" || verb === "lint" ? "packet or directory" : "packet"}\n${UNIT_USAGE}`);
   const root = opts.given.has("--root") ? resolve(cwd, opts.given.get("--root")!) : repoRoot(cwd);
   const context: Context = {
     root, deps,
     statePath: resolve(cwd, opts.given.get("--state") ?? join(root, STATE_PATH)),
     skillPath: resolve(cwd, opts.given.get("--skill") ?? join(root, SKILL_PATH)),
+    registryPath: resolve(cwd, opts.given.get("--registry") ?? join(root, REGISTRY_PATH)),
   };
   const target = resolve(cwd, opts.positional[0]!);
   try {
+    if (verb === "new") return newVerb(opts.positional[0]!, opts, cwd);
+    if (verb === "lint") return lintVerb(target);
+    if (verb === "brief") return briefVerb(target, opts, context);
     if (verb === "check") return checkVerb(target, context);
     if (verb === "run") return runVerb(target, opts, context);
     const packet = packetAt(target);

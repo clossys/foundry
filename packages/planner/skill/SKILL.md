@@ -73,6 +73,34 @@ data; change the rule here, not in code.
 | mid | every other packet | |
 <!-- unit-tiers:end -->
 
+## Write a unit packet
+
+Every unit packet follows one schema (R-UNIT-PACKET). Never write one by hand from memory:
+`clossys unit new <ID>` writes the skeleton, `clossys unit lint <packet|dir>` refuses a packet that
+breaks the schema and names what is missing, and `clossys unit brief <packet> --role <role>` prints
+the role's template, every registry rule scoped to that role, and the packet. A packet that does
+not lint is never briefed.
+
+**Schema (R-UNIT-PACKET).** The H1 is `# <ID>: <title> (<tier>, gate: yes|no)`. The sections follow
+in this order, each present once and not empty: Why, Repository and base, Objective, Validation,
+Forbidden, Stop rule, Output, After the fold. Repository and base carries `Branch:` (one backticked
+`claude/<name>` ref and nothing else), `Depends on:`, `Env:`, `Tier:` (the H1's tier) and
+`Write set:` (the backticked paths or globs the unit may write). No `<<fill: ...>>` placeholder of
+the skeleton is left.
+
+**Roles.** `brief` reads the template for its role from this table and the rules from the
+registry: a rule applies to a role when its registry row's `scope` names the role.
+
+<!-- unit-roles:start: the role templates clossys unit brief reads -->
+| role | template |
+| --- | --- |
+| exec | You are the executor for this unit. Implement the packet on its unit branch, writing only inside its Write set, run every Validation command and record each with its exit code in the report. |
+| fix | You are the fixer for this unit. Address the review findings on the unit branch, writing only inside its Write set, re-run the Validation and record what each finding needed. |
+| blind | You are a blind reviewer for this unit. Review the unit branch against the packet alone, without the executor's report, and name every finding with its file and line. |
+| final | You are the final reviewer for this unit. Confirm the Validation passes on the unit branch head and every earlier finding is closed before the unit folds. |
+| delta | You are the delta reviewer for this unit. Review only the commits since the last reviewed head against the packet and the earlier findings. |
+<!-- unit-roles:end -->
+
 ## Rules you own
 
 The rules in the repository's rule registry whose `owner_agent` is `planner`. `check:rules` fails
@@ -81,6 +109,7 @@ when this list and the registry differ.
 <!-- owned-rules:start: the rules in the repository's rule registry whose owner_agent is this package; check:rules fails on drift -->
 - R-UNIT-ENV
 - R-UNIT-TIER
+- R-UNIT-PACKET
 <!-- owned-rules:end -->
 
 ## When this package is installed

@@ -108,6 +108,8 @@ export const FACTORY_HOMES = Object.freeze(["planner", "developer", "reviewer"])
 export const DEFAULT_FLOOR = Object.freeze({ rules: RULE_FLOOR, scripts: ROOT_SCRIPT_FLOOR, homes: FACTORY_HOMES });
 export const OWNED_RULES_START = "<!-- owned-rules:start: the rules in the repository's rule registry whose owner_agent is this package; check:rules fails on drift -->";
 export const OWNED_RULES_END = "<!-- owned-rules:end -->";
+/** The unit roles a rule's scope may name: the roles clossys unit brief writes for. */
+export const BRIEF_ROLES = Object.freeze(["exec", "fix", "blind", "final", "delta"]);
 /** An owner_agent is a directory name under packages/. */
 const AGENT = /^[a-z][a-z0-9-]*$/;
 /** The repository the floor belongs to (its root package name). */
@@ -139,6 +141,7 @@ export function shapeFindings(doc) {
     if (!oneLine(row?.owner_words?.quote) || row.owner_words.quote.length > 200) bad(id, "owner_words.quote must be one short line");
     if (!DATE.test(row?.owner_words?.date ?? "")) bad(id, "owner_words.date must be YYYY-MM-DD");
     if (typeof row?.owner_agent !== "string" || !AGENT.test(row.owner_agent)) bad(id, "owner_agent must name the package under packages/ that owns this rule");
+    if (row?.scope !== undefined && (!Array.isArray(row.scope) || row.scope.some(role => !BRIEF_ROLES.includes(role)) || new Set(row.scope).size !== row.scope.length)) bad(id, `scope must be a list of distinct roles from ${BRIEF_ROLES.join(", ")}`);
     if (!["enforced", "unenforced", "pending-wire"].includes(row?.status)) bad(id, 'status must be "enforced", "unenforced" or "pending-wire"');
     if (row?.status === "pending-wire" && (!oneLine(row?.pending_wire?.check) || !oneLine(row?.pending_wire?.branch))) bad(id, "a pending-wire rule needs pending_wire { check, branch }");
     for (const key of ["checks", "related"]) if (row?.[key] !== undefined && (!Array.isArray(row[key]) || row[key].some(ref => typeof ref !== "string"))) bad(id, `${key} must be a list of check references`);

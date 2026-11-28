@@ -293,6 +293,8 @@ export function decideTier(packet: UnitPacket, table: readonly TierRow[]): TierD
 /** Local path shapes withheld from a cloud prompt: a cloud executor cannot reach them, and the repository is public. */
 const LOCAL_PATH = /(?:~|\$HOME)\/[^\s`'")\]]*|\/(?:home|Users|root|private\/var|var\/folders)\/[^\s`'")\]]*|[A-Za-z]:\\[^\s`'")\]]*/g;
 export const WITHHELD = "<local path withheld>";
+/** `text` with every local path shape replaced by WITHHELD. */
+export const withholdLocalPaths = (text: string) => text.replace(LOCAL_PATH, WITHHELD);
 export const PREFLIGHT_HEADING = "PREFLIGHT (first, before any work; any failure -> push nothing, final `BLOCKED: preflight <step> <error>`):";
 
 export interface CloudLaunch {
@@ -307,7 +309,7 @@ export interface CloudLaunch {
 export function cloudPrompt({ packet, env, tier, repository, branch }: CloudLaunch): string {
   const base = packet.base?.sha ?? packet.base?.branch ?? null;
   const report = `${branch}-report`;
-  const body = packet.markdown.replace(LOCAL_PATH, WITHHELD).trimEnd();
+  const body = withholdLocalPaths(packet.markdown).trimEnd();
   return [
     `You are a cloud executor for one unit, ${packet.id}, in ${repository} (public repository: nothing private in anything you commit).`,
     `Tier: ${tier.tier}. Env: cloud (${env.reason}).`,

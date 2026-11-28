@@ -526,6 +526,11 @@
         "date": "2026-11-03"
       },
       "owner_agent": "reviewer",
+      "scope": [
+        "blind",
+        "final",
+        "delta"
+      ],
       "status": "enforced",
       "checks": [
         ".#check:orphan-checks",
@@ -558,6 +563,10 @@
         "date": "2026-10-23"
       },
       "owner_agent": "developer",
+      "scope": [
+        "exec",
+        "fix"
+      ],
       "status": "enforced",
       "related": [
         "check:studio#producer scripts/preview-studio-config.test.mjs",
@@ -1021,6 +1030,11 @@
         "date": "2026-11-20"
       },
       "owner_agent": "reviewer",
+      "scope": [
+        "blind",
+        "final",
+        "delta"
+      ],
       "status": "enforced",
       "checks": [
         ".#check:review-doc"
@@ -1160,6 +1174,31 @@
         }
       ],
       "note": "clossys unit tier applies the tier table in packages/planner/skill/SKILL.md as data: a gate-class term or Gate: YES is high; one behaviour, at most three files and a named failing test is low; otherwise mid. That tier is the floor; clossys unit check refuses a packet whose Tier: is below it. The fixture is a gate-class packet that says low."
+    },
+    {
+      "id": "R-UNIT-PACKET",
+      "owner_words": {
+        "quote": "dont wait for cp2 to migrate everything we already do to the new agents; let cp2 work on the new requests/requirements but any existing processes should migrate immediately",
+        "date": "2026-11-28"
+      },
+      "owner_agent": "planner",
+      "status": "enforced",
+      "checks": [
+        ".#check:unit-packet-schema"
+      ],
+      "related": [
+        "packages/producer#test"
+      ],
+      "fixture": "scripts/rules/fixtures/R-UNIT-PACKET",
+      "fixture_runs": [
+        {
+          "check": ".#check:unit-packet-schema",
+          "cwd": ".",
+          "run": "node packages/producer/dist/cli/index.js unit lint {fixture}",
+          "expect": "^refused no-write-set\\.md\\s+R-UNIT-PACKET\\s.*missing write set"
+        }
+      ],
+      "note": "Every unit packet follows one schema: an H1 with tier and gate class; Why, Repository and base, Objective, Validation, Forbidden, Stop rule, Output and After the fold in order; Branch (one backticked claude/<name> ref), Depends on, Env, Tier and a Write set. clossys unit lint refuses a packet that breaks it and names what is missing, and clossys unit brief refuses to brief one. The fixture is a packet with no Write set."
     }
   ],
   "exemptions": [
