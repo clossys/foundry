@@ -1,6 +1,7 @@
-import { mkdtempSync, writeFileSync } from "node:fs";
+import { mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { dirname, join, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { readHistoricalRoleLoopContracts } from "./canonical.js";
 import { main } from "./cli.js";
@@ -101,6 +102,25 @@ describe("foundry-position-check CLI (#1394)", () => {
     stageBindings.learn = stageBindings.learnOrEscalate!;
     delete stageBindings.learnOrEscalate;
     const path = write("ledger.json", migrated);
+    const log = vi.spyOn(console, "log").mockImplementation(() => {});
+    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    expect(main([path])).toBe(0);
+    expect(log.mock.calls).toEqual([["INSTALLED POSITION LEDGER OK — 1 open role(s), 1 complete position(s). No adoption, grounding, or closure is inferred."]]);
+    expect(errorSpy.mock.calls).toEqual([]);
+    log.mockRestore();
+    errorSpy.mockRestore();
+  });
+
+  it("ledger without factory dispositions passes silently", () => {
+    // The current fixture with every `class: "factory"` row of
+    // docs/contracts/agents.json left out: one OK line, nothing on stderr.
+    const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), "../../../..");
+    const agents = JSON.parse(readFileSync(join(repoRoot, "docs/contracts/agents.json"), "utf8")) as { agents: Array<{ package: string; class: string }> };
+    const factory = new Set(agents.agents.filter((row) => row.class === "factory").map((row) => row.package));
+    expect(factory.size).toBeGreaterThan(0);
+    const ledger = JSON.parse(readFileSync(join(repoRoot, "docs/contracts/installed-position-ledger.fixture.json"), "utf8")) as { dispositions: Array<{ package: string }> };
+    ledger.dispositions = ledger.dispositions.filter((item) => !factory.has(item.package));
+    const path = write("ledger.json", ledger);
     const log = vi.spyOn(console, "log").mockImplementation(() => {});
     const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
     expect(main([path])).toBe(0);
