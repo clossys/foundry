@@ -4,6 +4,7 @@
  * differs (rule R-REVIEW-MECHANICAL); `clossys review --write-doc` rewrites it.
  */
 import { FORBIDDEN_RULES } from "./changes.js";
+import { BATCH_SCHEMA, GATE_FILES, GATE_SCHEMA, IMPORT_REFUSALS, IMPORT_SCHEMA } from "./cloud.js";
 import { FOUNDRY_CONFIG, type ReviewConfig } from "./config.js";
 import { MIRRORED_REFS, NORMALIZED, TAIL_LINES } from "./exec.js";
 import { MUTANT_CAP, OPERATORS } from "./mutate.js";
@@ -188,6 +189,36 @@ export function reviewDoc(config: ReviewConfig = FOUNDRY_CONFIG): string {
     "| Finding | Fails when |",
     "|---|---|",
     ...RECEIPT_FINDINGS.map(item => `| ${code(item.id)} | ${cell(item.fails)} |`),
+    "",
+    "## Cloud gate results",
+    "",
+    "A cloud unit's own gate result is the mechanical proof of its head, so this machine re-runs only the merged batch tip.",
+    "",
+    "`clossys review --publish <base> <head> --packet <unit.md> [--receipt <receipt.json>] [--unit <branch>] [--push <remote>]`",
+    "runs the review above at head with the packet and its receipt (taken at head with `clossys receipt`), and commits",
+    `only ${GATE_FILES.map(code).join(" and ")} to \`<unit branch>-gate\` with git plumbing. The unit branch, the index and`,
+    "the working tree never change; publish fails if any of them moved. `--push` pushes that gate branch, and only it.",
+    `\`gate.json\` is a \`${GATE_SCHEMA}\` document: \`unit\`, \`base\`, \`mergeBase\`, \`head\`, \`tree\`, the packet's file name,`,
+    "sha256 and parsed commands, the receipt, the full review record, `verdict` and `line` (`GATE: PASS|FAIL <head> <tree>`);",
+    "this machine's paths in it are replaced by `<local>`.",
+    "",
+    "`clossys review --import <gate ref> --head <sha> --base <ref> --packet <unit.md> [--record <review.json>]` re-runs",
+    "nothing. It parses the packet here, resolves the head, its tree and the merge base of `--base` and the head here, and",
+    "refuses the result on any of these:",
+    "",
+    "| Refusal | When |",
+    "|---|---|",
+    ...IMPORT_REFUSALS.map(item => `| ${code(item.id)} | ${cell(item.fails)} |`),
+    "",
+    `It prints a \`${IMPORT_SCHEMA}\` result ending \`IMPORT: PASS|FAIL|REFUSED <head>\`. A PASS writes, with \`--record\`, the`,
+    `same \`${REVIEW_SCHEMA}\` record a local run writes, with an \`imported\` field naming the gate ref and commit. A cloud FAIL`,
+    "is never overridden: it imports as FAIL, writes the FAIL record, and names a local run as the next step. A refusal",
+    "writes no record and names the same local run. Exit 0 only on PASS.",
+    "",
+    "`clossys review --batch <tip> --base <ref> --imported <review.json>...` takes imported PASS records whose heads are",
+    `merged into the batch tip and prints a \`${BATCH_SCHEMA}\` result ending \`BATCH: RERUN|REFUSED <tip>\`: the tip is the one`,
+    "local re-run of the batch (`clossys review <base> <tip>`), and the commits no imported head reaches are listed as made",
+    "on this machine. An imported FAIL, a record not written by `--import`, or a head not merged into the tip refuses it.",
     "",
   ].join("\n");
 }

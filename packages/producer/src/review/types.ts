@@ -41,4 +41,9 @@ export interface ReviewReport {
   readonly verdict: "PASS" | "FAIL";
   /** The last printed line: `MECHANICAL: <verdict> <head-sha> <tree-sha>`. */
   readonly line: string;
+  /** Set only on a record `clossys review --import` wrote: the cloud gate result it came from (review/cloud.ts). */
+  readonly imported?: {
+    readonly ref: string; readonly commit: string | null; readonly unit: string; readonly gateVerdict: "PASS" | "FAIL";
+    readonly head: string; readonly tree: string; readonly base: string; readonly mergeBase: string;
+  };
 }

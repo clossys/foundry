@@ -1237,6 +1237,46 @@
         }
       ],
       "note": "Mechanical runs wait in one run queue (packages/producer/src/review/queue.ts): installs for active executors first, then reviews, then re-runs, the longer critical path first; a wait looks again until it is admitted or cancelled and never gives up; enqueuing a newer head cancels the unit's runs at the older head. check:review-fail-closed fails when the Reviewer skill no longer states the rule, and, given --queue and --capacity, on live runs of one unit at two heads, more heavy runs than slots, or a give-up state. The fixtures are a skill without the rule, a queue with a superseded head still live, and a queue with a run that gave up."
+    },
+    {
+      "id": "R-REVIEW-CLOUD-PROOF",
+      "owner_words": {
+        "quote": "dont wait for cp2 to migrate everything we already do to the new agents; let cp2 work on the new requests/requirements but any existing processes should migrate immediately",
+        "date": "2026-11-28"
+      },
+      "owner_agent": "reviewer",
+      "status": "enforced",
+      "checks": [
+        ".#check:cloud-proof"
+      ],
+      "related": [
+        ".#check:gates"
+      ],
+      "fixture": "scripts/rules/fixtures/R-REVIEW-CLOUD-PROOF",
+      "fixture_runs": [
+        {
+          "check": ".#check:cloud-proof",
+          "cwd": ".",
+          "fixture": "scripts/rules/fixtures/R-REVIEW-CLOUD-PROOF/skill",
+          "run": "node scripts/check-cloud-proof.mjs --root {fixture}",
+          "expect": "^missing-rule\\s+packages/reviewer/skill/SKILL\\.md"
+        },
+        {
+          "check": ".#check:cloud-proof",
+          "cwd": ".",
+          "fixture": "scripts/rules/fixtures/R-REVIEW-CLOUD-PROOF/record",
+          "run": "node scripts/check-cloud-proof.mjs --root {fixture} --record {fixture}/import-fail-overridden.json",
+          "expect": "^cloud-fail-overridden\\s"
+        },
+        {
+          "check": ".#check:cloud-proof",
+          "cwd": ".",
+          "fixture": "scripts/rules/fixtures/R-REVIEW-CLOUD-PROOF/record",
+          "run": "node scripts/check-cloud-proof.mjs --root {fixture} --record {fixture}/import-head-mismatch.json",
+          "expect": "^cloud-head-mismatch\\s"
+        }
+      ],
+      "note": "A cloud unit finishes with clossys review --publish <base> <head> --packet <unit.md>, which runs the mechanical review at head in the cloud clone and commits only gate.json and receipt.json to <unit branch>-gate; the unit branch never moves. clossys review --import <gate ref> --head <sha> --base <ref> --packet <unit.md> (packages/producer/src/review/cloud.ts) re-runs nothing and refuses unless the result's head and tree are the unit head's, its base and merge base are the recorded base's, its receipt is clean and every packet command ran; it writes the same clossys.review/1 record a local run writes, with an imported field. A cloud FAIL imports as FAIL and the next step is a local run; clossys review --batch names the merged batch tip, the one local re-run per batch. check:cloud-proof fails when the Reviewer skill no longer states the rule and, given --record, on an imported record for another head or tree than it records, or one that turns a cloud FAIL into a PASS. The fixtures are a skill without the rule, an imported record that overrides a cloud FAIL, and an imported record at another head."
     }
   ],
   "exemptions": [

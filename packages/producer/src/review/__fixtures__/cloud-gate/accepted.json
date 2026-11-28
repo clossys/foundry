@@ -1,0 +1,191 @@
+{
+  "id": "accepted",
+  "provenance": "constructed, scrubbed: the launch prompt named three recorded cloud-gate.py results but attached none, so this record is built to the packet's description of that case (synthetic shas, no private path or name); replace it with the recorded result when it is supplied",
+  "recorded": {
+    "status": "PASS",
+    "refusals": [],
+    "fallback": "none",
+    "note": "cloud gate PASS at the unit head over the recorded base; imported as the fold proof"
+  },
+  "facts": {
+    "head": "f9728dd5a4214c648e568a2ed1e9cf3b8fd1f89f",
+    "tree": "c866d21c1531ee448236a0e3916b17ae8e3508ff",
+    "base": "aca3c6b0d2dde22fbbdc41d41f1fd7fe96340a60",
+    "mergeBase": "aca3c6b0d2dde22fbbdc41d41f1fd7fe96340a60",
+    "commands": [
+      {
+        "run": "npm run typecheck -w @clossys/producer",
+        "expect": 0
+      },
+      {
+        "run": "npm run typecheck -w @clossys/reviewer",
+        "expect": 0
+      }
+    ]
+  },
+  "gate": {
+    "schema": "clossys.cloud-gate/1",
+    "unit": "claude/example-unit-a",
+    "base": "aca3c6b0d2dde22fbbdc41d41f1fd7fe96340a60",
+    "mergeBase": "aca3c6b0d2dde22fbbdc41d41f1fd7fe96340a60",
+    "head": "f9728dd5a4214c648e568a2ed1e9cf3b8fd1f89f",
+    "tree": "c866d21c1531ee448236a0e3916b17ae8e3508ff",
+    "packet": {
+      "name": "UNIT.md",
+      "sha256": "a1d8c5aadbaff79e8a5543e0c90b1c1a078f2f53516b9783fca517eecbd1d064",
+      "commands": [
+        {
+          "id": "c1",
+          "run": "npm run typecheck -w @clossys/producer",
+          "from": "npm run typecheck -w @clossys/producer",
+          "expect": 0
+        },
+        {
+          "id": "c2",
+          "run": "npm run typecheck -w @clossys/reviewer",
+          "from": "npm run typecheck -w @clossys/reviewer",
+          "expect": 0
+        }
+      ]
+    },
+    "receipt": {
+      "schema": "clossys.receipt/1",
+      "packet": "UNIT.md",
+      "head": "f9728dd5a4214c648e568a2ed1e9cf3b8fd1f89f",
+      "tree": "c866d21c1531ee448236a0e3916b17ae8e3508ff",
+      "dirty": false,
+      "at": "2026-11-27T12:00:00.000Z",
+      "commands": [
+        {
+          "id": "c1",
+          "run": "npm run typecheck -w @clossys/producer",
+          "expect": 0,
+          "exit": 0,
+          "ms": 9000,
+          "tailSha256": "8fc3c421c5a302f8391a8c0be0c92c3fd85edbe211f6ad8ec52a2984abaafd7c"
+        },
+        {
+          "id": "c2",
+          "run": "npm run typecheck -w @clossys/reviewer",
+          "expect": 0,
+          "exit": 0,
+          "ms": 9000,
+          "tailSha256": "642b6f105085e3342aa8f97b2f99b9e1add1c88611f6ad8ec52a2984abaafd7c"
+        }
+      ],
+      "skipped": [],
+      "verdict": "PASS",
+      "line": "RECEIPT: PASS f9728dd5a4214c648e568a2ed1e9cf3b8fd1f89f"
+    },
+    "review": {
+      "schema": "clossys.review/1",
+      "base": "aca3c6b0d2dde22fbbdc41d41f1fd7fe96340a60",
+      "head": "f9728dd5a4214c648e568a2ed1e9cf3b8fd1f89f",
+      "tree": "c866d21c1531ee448236a0e3916b17ae8e3508ff",
+      "changed": {
+        "files": [
+          "packages/producer/src/review/example.ts"
+        ],
+        "packages": [
+          "packages/producer"
+        ]
+      },
+      "steps": [
+        {
+          "step": "changed",
+          "status": "pass",
+          "detail": "",
+          "ms": 0
+        },
+        {
+          "step": "forbidden",
+          "status": "pass",
+          "detail": "",
+          "ms": 0
+        },
+        {
+          "step": "leak-scan",
+          "status": "pass",
+          "detail": "",
+          "ms": 0
+        },
+        {
+          "step": "install",
+          "status": "pass",
+          "detail": "",
+          "ms": 0
+        },
+        {
+          "step": "build",
+          "status": "pass",
+          "detail": "",
+          "ms": 0
+        },
+        {
+          "step": "types",
+          "status": "pass",
+          "detail": "",
+          "ms": 0
+        },
+        {
+          "step": "tests",
+          "status": "pass",
+          "detail": "",
+          "ms": 0
+        },
+        {
+          "step": "counts",
+          "status": "skip",
+          "detail": "",
+          "ms": 0
+        },
+        {
+          "step": "fixtures",
+          "status": "skip",
+          "detail": "",
+          "ms": 0
+        },
+        {
+          "step": "e2e",
+          "status": "skip",
+          "detail": "",
+          "ms": 0
+        },
+        {
+          "step": "receipt",
+          "status": "pass",
+          "detail": "",
+          "ms": 0
+        },
+        {
+          "step": "mutation",
+          "status": "pass",
+          "detail": "",
+          "ms": 0
+        }
+      ],
+      "counts": {},
+      "mutants": [],
+      "findings": [
+        {
+          "id": "tests.base-red",
+          "level": "note",
+          "subject": "packages/producer/src/example.test.ts :: a base-red test",
+          "detail": "also fails run alone at the merge base"
+        }
+      ],
+      "ran": {
+        "commands": 31,
+        "missing": []
+      },
+      "newRed": [],
+      "baseRed": [
+        "packages/producer/src/example.test.ts :: a base-red test"
+      ],
+      "verdict": "PASS",
+      "line": "MECHANICAL: PASS f9728dd5a4214c648e568a2ed1e9cf3b8fd1f89f c866d21c1531ee448236a0e3916b17ae8e3508ff"
+    },
+    "verdict": "PASS",
+    "line": "GATE: PASS f9728dd5a4214c648e568a2ed1e9cf3b8fd1f89f c866d21c1531ee448236a0e3916b17ae8e3508ff"
+  }
+}

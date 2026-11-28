@@ -1,0 +1,191 @@
+{
+  "id": "cloud-fail-local-run",
+  "provenance": "constructed, scrubbed: the launch prompt named three recorded cloud-gate.py results but attached none, so this record is built to the packet's description of that case (synthetic shas, no private path or name); replace it with the recorded result when it is supplied",
+  "recorded": {
+    "status": "FAIL",
+    "refusals": [],
+    "fallback": "local-run",
+    "note": "the cloud gate failed on a new red test; imported as FAIL, never overridden, and the next step was a local run"
+  },
+  "facts": {
+    "head": "5401816b14219e7372cc4a1024c69eedef0c5eac",
+    "tree": "036b140fd3d2cc6a294631104a7115dbe6e8a144",
+    "base": "aca3c6b0d2dde22fbbdc41d41f1fd7fe96340a60",
+    "mergeBase": "aca3c6b0d2dde22fbbdc41d41f1fd7fe96340a60",
+    "commands": [
+      {
+        "run": "npm run typecheck -w @clossys/producer",
+        "expect": 0
+      },
+      {
+        "run": "npm run typecheck -w @clossys/reviewer",
+        "expect": 0
+      }
+    ]
+  },
+  "gate": {
+    "schema": "clossys.cloud-gate/1",
+    "unit": "claude/example-unit-c",
+    "base": "aca3c6b0d2dde22fbbdc41d41f1fd7fe96340a60",
+    "mergeBase": "aca3c6b0d2dde22fbbdc41d41f1fd7fe96340a60",
+    "head": "5401816b14219e7372cc4a1024c69eedef0c5eac",
+    "tree": "036b140fd3d2cc6a294631104a7115dbe6e8a144",
+    "packet": {
+      "name": "UNIT.md",
+      "sha256": "7f091d52f2be1494fb80a15d9af2cd5cb97047ff516b9783fca517eecbd1d064",
+      "commands": [
+        {
+          "id": "c1",
+          "run": "npm run typecheck -w @clossys/producer",
+          "from": "npm run typecheck -w @clossys/producer",
+          "expect": 0
+        },
+        {
+          "id": "c2",
+          "run": "npm run typecheck -w @clossys/reviewer",
+          "from": "npm run typecheck -w @clossys/reviewer",
+          "expect": 0
+        }
+      ]
+    },
+    "receipt": {
+      "schema": "clossys.receipt/1",
+      "packet": "UNIT.md",
+      "head": "5401816b14219e7372cc4a1024c69eedef0c5eac",
+      "tree": "036b140fd3d2cc6a294631104a7115dbe6e8a144",
+      "dirty": false,
+      "at": "2026-11-27T12:00:00.000Z",
+      "commands": [
+        {
+          "id": "c1",
+          "run": "npm run typecheck -w @clossys/producer",
+          "expect": 0,
+          "exit": 0,
+          "ms": 9000,
+          "tailSha256": "139432ef9419f1987627b449c6df7be8ca1b529311f6ad8ec52a2984abaafd7c"
+        },
+        {
+          "id": "c2",
+          "run": "npm run typecheck -w @clossys/reviewer",
+          "expect": 0,
+          "exit": 0,
+          "ms": 9000,
+          "tailSha256": "3cef2b529b3f4adb563c3a8d7892188e7097dfef11f6ad8ec52a2984abaafd7c"
+        }
+      ],
+      "skipped": [],
+      "verdict": "PASS",
+      "line": "RECEIPT: PASS 5401816b14219e7372cc4a1024c69eedef0c5eac"
+    },
+    "review": {
+      "schema": "clossys.review/1",
+      "base": "aca3c6b0d2dde22fbbdc41d41f1fd7fe96340a60",
+      "head": "5401816b14219e7372cc4a1024c69eedef0c5eac",
+      "tree": "036b140fd3d2cc6a294631104a7115dbe6e8a144",
+      "changed": {
+        "files": [
+          "packages/producer/src/review/example.ts"
+        ],
+        "packages": [
+          "packages/producer"
+        ]
+      },
+      "steps": [
+        {
+          "step": "changed",
+          "status": "pass",
+          "detail": "",
+          "ms": 0
+        },
+        {
+          "step": "forbidden",
+          "status": "pass",
+          "detail": "",
+          "ms": 0
+        },
+        {
+          "step": "leak-scan",
+          "status": "pass",
+          "detail": "",
+          "ms": 0
+        },
+        {
+          "step": "install",
+          "status": "pass",
+          "detail": "",
+          "ms": 0
+        },
+        {
+          "step": "build",
+          "status": "pass",
+          "detail": "",
+          "ms": 0
+        },
+        {
+          "step": "types",
+          "status": "pass",
+          "detail": "",
+          "ms": 0
+        },
+        {
+          "step": "tests",
+          "status": "fail",
+          "detail": "",
+          "ms": 0
+        },
+        {
+          "step": "counts",
+          "status": "skip",
+          "detail": "",
+          "ms": 0
+        },
+        {
+          "step": "fixtures",
+          "status": "skip",
+          "detail": "",
+          "ms": 0
+        },
+        {
+          "step": "e2e",
+          "status": "skip",
+          "detail": "",
+          "ms": 0
+        },
+        {
+          "step": "receipt",
+          "status": "pass",
+          "detail": "",
+          "ms": 0
+        },
+        {
+          "step": "mutation",
+          "status": "pass",
+          "detail": "",
+          "ms": 0
+        }
+      ],
+      "counts": {},
+      "mutants": [],
+      "findings": [
+        {
+          "id": "tests",
+          "level": "fail",
+          "subject": "packages/producer/src/review/example.test.ts :: a new red test",
+          "detail": "exit 1: AssertionError"
+        }
+      ],
+      "ran": {
+        "commands": 31,
+        "missing": []
+      },
+      "newRed": [
+        "packages/producer/src/review/example.test.ts :: a new red test"
+      ],
+      "baseRed": [],
+      "verdict": "FAIL",
+      "line": "MECHANICAL: FAIL 5401816b14219e7372cc4a1024c69eedef0c5eac 036b140fd3d2cc6a294631104a7115dbe6e8a144"
+    },
+    "verdict": "FAIL",
+    "line": "GATE: FAIL 5401816b14219e7372cc4a1024c69eedef0c5eac 036b140fd3d2cc6a294631104a7115dbe6e8a144"
+  }
+}

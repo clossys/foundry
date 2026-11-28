@@ -1,0 +1,40 @@
+{
+  "schema": "clossys.review/1",
+  "base": "3333333333333333333333333333333333333333",
+  "head": "1111111111111111111111111111111111111111",
+  "tree": "2222222222222222222222222222222222222222",
+  "steps": [
+    {
+      "step": "receipt",
+      "status": "pass",
+      "detail": "",
+      "ms": 0
+    }
+  ],
+  "findings": [
+    {
+      "id": "tests",
+      "level": "fail",
+      "subject": "src/example.test.ts :: a new red test",
+      "detail": "exit 1"
+    }
+  ],
+  "ran": {
+    "commands": 12,
+    "missing": []
+  },
+  "newRed": [],
+  "baseRed": [],
+  "verdict": "PASS",
+  "line": "MECHANICAL: PASS 1111111111111111111111111111111111111111 2222222222222222222222222222222222222222",
+  "imported": {
+    "ref": "origin/example-unit-gate",
+    "commit": "4444444444444444444444444444444444444444",
+    "unit": "example-unit",
+    "gateVerdict": "FAIL",
+    "head": "1111111111111111111111111111111111111111",
+    "tree": "2222222222222222222222222222222222222222",
+    "base": "3333333333333333333333333333333333333333",
+    "mergeBase": "3333333333333333333333333333333333333333"
+  }
+}

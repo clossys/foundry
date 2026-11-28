@@ -206,3 +206,41 @@ and then each of these replaced by its marker. Other numbers, such as counts of 
 | `receipt.command-extra` | receipt.json holds a command the packet does not give |
 | `receipt.exit` | a recorded exit code is not the one the packet expects (0 unless the item says `exits N`) |
 | `receipt.mismatch` | a re-run at the head differs from the recorded exit code or output tail |
+
+## Cloud gate results
+
+A cloud unit's own gate result is the mechanical proof of its head, so this machine re-runs only the merged batch tip.
+
+`clossys review --publish <base> <head> --packet <unit.md> [--receipt <receipt.json>] [--unit <branch>] [--push <remote>]`
+runs the review above at head with the packet and its receipt (taken at head with `clossys receipt`), and commits
+only `gate.json` and `receipt.json` to `<unit branch>-gate` with git plumbing. The unit branch, the index and
+the working tree never change; publish fails if any of them moved. `--push` pushes that gate branch, and only it.
+`gate.json` is a `clossys.cloud-gate/1` document: `unit`, `base`, `mergeBase`, `head`, `tree`, the packet's file name,
+sha256 and parsed commands, the receipt, the full review record, `verdict` and `line` (`GATE: PASS|FAIL <head> <tree>`);
+this machine's paths in it are replaced by `<local>`.
+
+`clossys review --import <gate ref> --head <sha> --base <ref> --packet <unit.md> [--record <review.json>]` re-runs
+nothing. It parses the packet here, resolves the head, its tree and the merge base of `--base` and the head here, and
+refuses the result on any of these:
+
+| Refusal | When |
+|---|---|
+| `import.malformed` | the gate ref has no gate.json, or it is not a clossys.cloud-gate/1 document with a review and a receipt |
+| `import.head` | the result's head (or its review's or receipt's head) is not the unit head given with --head |
+| `import.tree` | the result's tree (or its review's tree) is not the unit head's tree |
+| `import.base` | the result's base is not the recorded base given with --base, or its merge base is not the merge base of that base and the head |
+| `import.dirty` | the receipt was taken on uncommitted changes |
+| `import.no-commands` | the packet's Validation list, parsed here, gives no command |
+| `import.command-missing` | a command the packet gives is not in the result's receipt: every packet command must have run |
+| `import.receipt-skipped` | the review ran without the packet, so its receipt step never held the receipt to it |
+| `import.inconsistent` | the result's verdict disagrees with its own findings, its fail-closed counts or its verdict line |
+
+It prints a `clossys.cloud-import/1` result ending `IMPORT: PASS|FAIL|REFUSED <head>`. A PASS writes, with `--record`, the
+same `clossys.review/1` record a local run writes, with an `imported` field naming the gate ref and commit. A cloud FAIL
+is never overridden: it imports as FAIL, writes the FAIL record, and names a local run as the next step. A refusal
+writes no record and names the same local run. Exit 0 only on PASS.
+
+`clossys review --batch <tip> --base <ref> --imported <review.json>...` takes imported PASS records whose heads are
+merged into the batch tip and prints a `clossys.cloud-batch/1` result ending `BATCH: RERUN|REFUSED <tip>`: the tip is the one
+local re-run of the batch (`clossys review <base> <tip>`), and the commits no imported head reaches are listed as made
+on this machine. An imported FAIL, a record not written by `--import`, or a head not merged into the tip refuses it.

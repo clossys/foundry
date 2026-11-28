@@ -38,6 +38,16 @@ Every mechanical run waits in the one run queue, installs for active executors f
 - The queue (`packages/producer/src/review/queue.ts`) admits a run only when a heavy slot is free and no run ahead of it waits for one; installs for active executors, then reviews, then re-runs, the longer critical path first.
 - `node scripts/check-review-fail-closed.mjs --queue <queue.json> --capacity <slots>` exits 1 on live runs of one unit at two heads, more running than the slots, or a run in a give-up state.
 
+## Cloud gate results are the proof
+
+A cloud unit's own gate result, imported at the exact unit head and tree over the recorded base with every packet command run, is its mechanical proof; a cloud FAIL is never overridden, and this machine re-runs only the merged batch tip.
+
+- A cloud unit finishes with `clossys review --publish <base> <head> --packet <unit.md>`: the mechanical review runs at head in the cloud clone and only `gate.json` and `receipt.json` are committed to `<unit branch>-gate`; the unit branch never moves.
+- `clossys review --import <gate ref> --head <sha> --base <ref> --packet <unit.md> --record <review.json>` re-runs nothing. It refuses a result at another head or tree, over another base or merge base, with a dirty receipt, or missing any packet command, and then a local run is the next step.
+- A cloud FAIL imports as FAIL, writes the FAIL record and names the local run; it is never relabelled PASS.
+- `clossys review --batch <tip> --base <ref> --imported <review.json>...` names the merged batch tip, the one local re-run per batch, and the commits in it made on this machine.
+- Before trusting an imported record, `node scripts/check-cloud-proof.mjs --record <review.json>` exits 1 on one imported for another head or tree, or one that turns a cloud FAIL into a PASS.
+
 ## Run the feedback loop
 
 Invoke with `/clossys-reviewer loop` (Claude Code) or `@clossys-reviewer loop` (Cursor). One invocation runs one iteration and stops at the approval gate inside judge, as Foundry's loop contract defines.
@@ -83,6 +93,7 @@ when this list and the registry differ.
 - R-FAST-BEFORE-REVIEW
 - R-REVIEW-FAIL-CLOSED
 - R-REVIEW-RUN-QUEUE
+- R-REVIEW-CLOUD-PROOF
 <!-- owned-rules:end -->
 
 ## When this package is installed

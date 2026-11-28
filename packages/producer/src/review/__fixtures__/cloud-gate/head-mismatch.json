@@ -1,0 +1,185 @@
+{
+  "id": "head-mismatch",
+  "provenance": "constructed, scrubbed: the launch prompt named three recorded cloud-gate.py results but attached none, so this record is built to the packet's description of that case (synthetic shas, no private path or name); replace it with the recorded result when it is supplied",
+  "recorded": {
+    "status": "REFUSED",
+    "refusals": [
+      "import.head",
+      "import.tree"
+    ],
+    "fallback": "local-run",
+    "note": "the gate ran at an older head than the unit head recorded for review; refused, and the unit head ran locally"
+  },
+  "facts": {
+    "head": "ef08e9fa74c0f2c2c2138c51f39c7ad70c2e9dea",
+    "tree": "1d0ca8cd90c9769ddaa622b8f106b09c8376bb19",
+    "base": "aca3c6b0d2dde22fbbdc41d41f1fd7fe96340a60",
+    "mergeBase": "aca3c6b0d2dde22fbbdc41d41f1fd7fe96340a60",
+    "commands": [
+      {
+        "run": "npm run typecheck -w @clossys/producer",
+        "expect": 0
+      },
+      {
+        "run": "npm run typecheck -w @clossys/reviewer",
+        "expect": 0
+      }
+    ]
+  },
+  "gate": {
+    "schema": "clossys.cloud-gate/1",
+    "unit": "claude/example-unit-b",
+    "base": "aca3c6b0d2dde22fbbdc41d41f1fd7fe96340a60",
+    "mergeBase": "aca3c6b0d2dde22fbbdc41d41f1fd7fe96340a60",
+    "head": "bf892a9feca3265959deac0e73766a47fecef0e6",
+    "tree": "083b67897a7aad9b6373c48f5f2f2113d7458822",
+    "packet": {
+      "name": "UNIT.md",
+      "sha256": "5f42694ec8e9280b855f362efd46a116524314a9516b9783fca517eecbd1d064",
+      "commands": [
+        {
+          "id": "c1",
+          "run": "npm run typecheck -w @clossys/producer",
+          "from": "npm run typecheck -w @clossys/producer",
+          "expect": 0
+        },
+        {
+          "id": "c2",
+          "run": "npm run typecheck -w @clossys/reviewer",
+          "from": "npm run typecheck -w @clossys/reviewer",
+          "expect": 0
+        }
+      ]
+    },
+    "receipt": {
+      "schema": "clossys.receipt/1",
+      "packet": "UNIT.md",
+      "head": "bf892a9feca3265959deac0e73766a47fecef0e6",
+      "tree": "083b67897a7aad9b6373c48f5f2f2113d7458822",
+      "dirty": false,
+      "at": "2026-11-27T12:00:00.000Z",
+      "commands": [
+        {
+          "id": "c1",
+          "run": "npm run typecheck -w @clossys/producer",
+          "expect": 0,
+          "exit": 0,
+          "ms": 9000,
+          "tailSha256": "df9cbe61ba521fc9c3102abf20f62a65dc57c13b11f6ad8ec52a2984abaafd7c"
+        },
+        {
+          "id": "c2",
+          "run": "npm run typecheck -w @clossys/reviewer",
+          "expect": 0,
+          "exit": 0,
+          "ms": 9000,
+          "tailSha256": "ffaac4ac1a4ccfb8373c46b95c502a746151fae411f6ad8ec52a2984abaafd7c"
+        }
+      ],
+      "skipped": [],
+      "verdict": "PASS",
+      "line": "RECEIPT: PASS bf892a9feca3265959deac0e73766a47fecef0e6"
+    },
+    "review": {
+      "schema": "clossys.review/1",
+      "base": "aca3c6b0d2dde22fbbdc41d41f1fd7fe96340a60",
+      "head": "bf892a9feca3265959deac0e73766a47fecef0e6",
+      "tree": "083b67897a7aad9b6373c48f5f2f2113d7458822",
+      "changed": {
+        "files": [
+          "packages/producer/src/review/example.ts"
+        ],
+        "packages": [
+          "packages/producer"
+        ]
+      },
+      "steps": [
+        {
+          "step": "changed",
+          "status": "pass",
+          "detail": "",
+          "ms": 0
+        },
+        {
+          "step": "forbidden",
+          "status": "pass",
+          "detail": "",
+          "ms": 0
+        },
+        {
+          "step": "leak-scan",
+          "status": "pass",
+          "detail": "",
+          "ms": 0
+        },
+        {
+          "step": "install",
+          "status": "pass",
+          "detail": "",
+          "ms": 0
+        },
+        {
+          "step": "build",
+          "status": "pass",
+          "detail": "",
+          "ms": 0
+        },
+        {
+          "step": "types",
+          "status": "pass",
+          "detail": "",
+          "ms": 0
+        },
+        {
+          "step": "tests",
+          "status": "pass",
+          "detail": "",
+          "ms": 0
+        },
+        {
+          "step": "counts",
+          "status": "skip",
+          "detail": "",
+          "ms": 0
+        },
+        {
+          "step": "fixtures",
+          "status": "skip",
+          "detail": "",
+          "ms": 0
+        },
+        {
+          "step": "e2e",
+          "status": "skip",
+          "detail": "",
+          "ms": 0
+        },
+        {
+          "step": "receipt",
+          "status": "pass",
+          "detail": "",
+          "ms": 0
+        },
+        {
+          "step": "mutation",
+          "status": "pass",
+          "detail": "",
+          "ms": 0
+        }
+      ],
+      "counts": {},
+      "mutants": [],
+      "findings": [],
+      "ran": {
+        "commands": 31,
+        "missing": []
+      },
+      "newRed": [],
+      "baseRed": [],
+      "verdict": "PASS",
+      "line": "MECHANICAL: PASS bf892a9feca3265959deac0e73766a47fecef0e6 083b67897a7aad9b6373c48f5f2f2113d7458822"
+    },
+    "verdict": "PASS",
+    "line": "GATE: PASS bf892a9feca3265959deac0e73766a47fecef0e6 083b67897a7aad9b6373c48f5f2f2113d7458822"
+  }
+}
