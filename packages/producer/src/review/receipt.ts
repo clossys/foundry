@@ -24,7 +24,32 @@ export const SELF_VERBS = ["review", "receipt"] as const;
 export interface Command { readonly id: string; readonly run: string; readonly from: string; readonly expect: number }
 export interface CommandsFile { readonly schema: typeof COMMANDS_SCHEMA; readonly packet: string; readonly commands: readonly Command[]; readonly skipped: readonly { readonly text: string; readonly reason: string }[] }
 export interface ReceiptEntry { readonly id: string; readonly run: string; readonly expect: number; readonly exit: number; readonly ms: number; readonly tailSha256: string }
-export interface Receipt { readonly schema: typeof RECEIPT_SCHEMA; readonly packet: string; readonly head: string; readonly tree: string; readonly dirty: boolean; readonly at: string; readonly commands: readonly ReceiptEntry[]; readonly skipped: CommandsFile["skipped"] }
+export interface Receipt {
+  readonly schema: typeof RECEIPT_SCHEMA; readonly packet: string; readonly head: string; readonly tree: string; readonly dirty: boolean; readonly at: string;
+  readonly commands: readonly ReceiptEntry[]; readonly skipped: CommandsFile["skipped"];
+  /** RECEIPT_VERDICT over the commands: fail closed. */
+  readonly verdict?: "PASS" | "FAIL";
+  /** The last printed line: `RECEIPT: <verdict> <head>`. */
+  readonly line?: string;
+}
+
+/** When a receipt is FAIL (fail closed): each rule with its id, as the receipt CLI reports it. */
+export const RECEIPT_VERDICT: readonly { readonly id: string; readonly fails: string }[] = [
+  { id: "receipt.no-commands", fails: "the packet's Validation list gives no command to run: a receipt that ran nothing is never a PASS" },
+  { id: "receipt.missing-install", fails: "a command exited 127 (not installed or not found), whatever exit the packet expects" },
+  { id: "receipt.exit", fails: "a command's exit code is not the one the packet expects" },
+];
+
+/** The fail-closed verdict of a receipt's commands, with the reason for each failure. */
+export function receiptVerdict(commands: readonly Pick<ReceiptEntry, "id" | "run" | "exit" | "expect">[]): { verdict: "PASS" | "FAIL"; reasons: string[] } {
+  const reasons: string[] = [];
+  if (!commands.length) reasons.push("receipt.no-commands: the packet gives no command; nothing ran");
+  for (const entry of commands) {
+    if (entry.exit === 127) reasons.push(`receipt.missing-install: ${entry.id} exited 127 (not installed or not found): ${entry.run}`);
+    else if (entry.exit !== entry.expect) reasons.push(`receipt.exit: ${entry.id} exited ${entry.exit}, the packet expects ${entry.expect}: ${entry.run}`);
+  }
+  return { verdict: reasons.length ? "FAIL" : "PASS", reasons };
+}
 
 /** The Validation section's list items: from a `Validation` heading to the next heading of the same or a higher level. */
 export function validationItems(markdown: string): string[] {
@@ -104,9 +129,12 @@ export function takeReceipt(packetPath: string, root: string, out = receiptDir(p
   const packet = resolve(packetPath);
   const commands = parsePacket(readFileSync(packet, "utf8"), packet);
   const dirty = git(root, ["status", "--porcelain"]).trim().length > 0;
+  const head = git(root, ["rev-parse", "HEAD"]);
+  const ran = commands.commands.map(command => runCommand(command, root, timeoutMs));
+  const { verdict } = receiptVerdict(ran);
   const receipt: Receipt = {
-    schema: RECEIPT_SCHEMA, packet, head: git(root, ["rev-parse", "HEAD"]), tree: git(root, ["rev-parse", "HEAD^{tree}"]), dirty,
-    at: new Date().toISOString(), commands: commands.commands.map(command => runCommand(command, root, timeoutMs)), skipped: commands.skipped,
+    schema: RECEIPT_SCHEMA, packet, head, tree: git(root, ["rev-parse", "HEAD^{tree}"]), dirty,
+    at: new Date().toISOString(), commands: ran, skipped: commands.skipped, verdict, line: `RECEIPT: ${verdict} ${head}`,
   };
   mkdirSync(out, { recursive: true });
   writeFileSync(join(out, "commands.json"), `${JSON.stringify(commands, null, 2)}\n`);
@@ -126,6 +154,7 @@ const samePath = (a: string, b: string) => { const real = (path: string) => { tr
 /** The receipt findings, by id and when each fails (docs/review.md (not shipped)). */
 export const RECEIPT_FINDINGS: readonly { readonly id: string; readonly fails: string }[] = [
   { id: "receipt.missing", fails: "there is no receipt.json for the packet" },
+  { id: "receipt.no-commands", fails: "the packet's Validation list, parsed again at review time, gives no command: a receipt of nothing is never a PASS" },
   { id: "receipt.packet", fails: "receipt.json names another packet file than --packet" },
   { id: "receipt.head", fails: "receipt.json was taken at another head" },
   { id: "receipt.dirty", fails: "receipt.json was taken on uncommitted changes" },
@@ -142,6 +171,7 @@ export const RECEIPT_FINDINGS: readonly { readonly id: string; readonly fails: s
 export function compareReceipt(receipt: Receipt, expected: CommandsFile, head: string, tree: string, timeoutMs?: number): Finding[] {
   const findings: Finding[] = [];
   const fail = (id: string, subject: string, detail: string) => findings.push({ id, level: "fail", subject, detail });
+  if (!expected.commands.length) fail("receipt.no-commands", expected.packet, "the packet's Validation list gives no command to hold the receipt to");
   if (typeof receipt.packet !== "string" || !samePath(receipt.packet, expected.packet)) fail("receipt.packet", "receipt.json", `taken for ${String(receipt.packet)}, reviewing ${expected.packet}`);
   if (receipt.head !== head) fail("receipt.head", "receipt.json", `taken at ${receipt.head}, reviewing ${head}`);
   if (receipt.dirty !== false) fail("receipt.dirty", "receipt.json", "taken on uncommitted changes");

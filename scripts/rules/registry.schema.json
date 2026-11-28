@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "foundry.rule-registry/1",
   "title": "Foundry owner rule registry",
-  "description": "Owner rules as code. scripts/check-rules.mjs (check:rules) validates this shape by hand and fails on unenforced rules, unreachable checks, checks that pass their violation fixture, and check scripts that map to no rule.",
+  "description": "Owner rules as code. scripts/check-rules.mjs (check:rules) validates this shape by hand and fails on unenforced rules, rules with no owning package, unreachable checks, checks that pass their violation fixture, and check scripts that map to no rule.",
   "type": "object",
   "required": [
     "schema",
@@ -43,6 +43,7 @@
       "required": [
         "id",
         "owner_words",
+        "owner_agent",
         "status"
       ],
       "properties": {
@@ -73,6 +74,11 @@
             }
           },
           "additionalProperties": false
+        },
+        "owner_agent": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9-]*$",
+          "description": "The package under packages/ (its directory name) whose verbs or checks enforce the rule; check:rules fails when packages/<owner_agent>/package.json does not exist."
         },
         "status": {
           "enum": [

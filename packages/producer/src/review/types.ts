@@ -32,5 +32,13 @@ export interface ReviewReport {
   readonly counts: Readonly<Record<string, { readonly base: number | null; readonly head: number | null }>>;
   readonly mutants: readonly MutantResult[];
   readonly findings: readonly Finding[];
+  /** Every command the review ran (git plumbing aside), and those that exited 127 (not installed, not found). */
+  readonly ran: { readonly commands: number; readonly missing: readonly string[] };
+  /** Red tests (`file` or `file :: full test name`) that do not also fail alone at the merge base: these fail. */
+  readonly newRed: readonly string[];
+  /** Red tests that also fail alone at the merge base (or that the --fast record lists base-red): reported only. */
+  readonly baseRed: readonly string[];
   readonly verdict: "PASS" | "FAIL";
+  /** The last printed line: `MECHANICAL: <verdict> <head-sha> <tree-sha>`. */
+  readonly line: string;
 }

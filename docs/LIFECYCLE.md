@@ -381,6 +381,9 @@ fails when the committed copy drifts from the derived one — #493.
 | `@clossys/starter` | implemented | not yet | N/A — executable tooling | N/A — executable tooling | N/A — executable tooling |
 | `@clossys/director` | staged | yes | not yet | unknown — #484 | not yet |
 | `@clossys/writer` | staged | yes | not yet | unknown — #484 | not yet |
+| `@clossys/planner` | designed | not yet | not yet | unknown — #484 | not yet |
+| `@clossys/developer` | designed | not yet | not yet | unknown — #484 | not yet |
+| `@clossys/reviewer` | designed | not yet | not yet | unknown — #484 | not yet |
 | `@vespeneventures/advisor` | published | yes | not yet | unknown — #484 | not yet |
 | `@vespeneventures/architect` | published | yes | not yet | unknown — #484 | not yet |
 | `@vespeneventures/bouncer` | published | yes | not yet | unknown — #484 | not yet |

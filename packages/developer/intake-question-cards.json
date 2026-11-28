@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 1,
+  "role": "@clossys/developer",
+  "cards": [
+    {
+      "id": "primary-goal",
+      "prompt": "What should @clossys/developer optimize for first?",
+      "choices": [
+        {
+          "id": "recommended",
+          "label": "Whatever the team recommends"
+        },
+        {
+          "id": "custom",
+          "label": "Something else"
+        }
+      ],
+      "recommendedChoiceId": "recommended",
+      "somethingElseFollowUp": "What would you like this role to optimize for instead?"
+    }
+  ]
+}

@@ -1,0 +1,11 @@
+{
+  "schema": "clossys.review/1",
+  "head": "1111111111111111111111111111111111111111",
+  "steps": [{ "step": "changed", "status": "pass", "detail": "no changes", "ms": 0 }],
+  "findings": [],
+  "ran": { "commands": 0, "missing": [] },
+  "newRed": [],
+  "baseRed": [],
+  "verdict": "PASS",
+  "line": "MECHANICAL: PASS 1111111111111111111111111111111111111111 2222222222222222222222222222222222222222"
+}

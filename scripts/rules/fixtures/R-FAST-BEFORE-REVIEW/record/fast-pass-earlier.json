@@ -1,0 +1,8 @@
+{
+  "schema": "clossys.fast-check/1",
+  "owner_agent": "reviewer",
+  "verdict": "FAST PASS",
+  "head": "0000000000000000000000000000000000000000",
+  "commands": [{ "step": "related", "run": "vitest run src/sum.test.ts", "cwd": "packages/demo", "exit": 0, "seconds": 0.4 }],
+  "line": "FAST PASS 0000000000000000000000000000000000000000"
+}
