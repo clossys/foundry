@@ -1,0 +1,23 @@
+{
+  "name": "image",
+  "type": "registry:file",
+  "files": [
+    {
+      "path": "clossys/assets.image.json",
+      "type": "registry:file",
+      "content": "{\n  \"kind\": \"illustration\",\n  \"src\": \"data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxNjAgOTAiIHdpZHRoPSIxNjAiIGhlaWdodD0iOTAiPjxyZWN0IHdpZHRoPSIxNjAiIGhlaWdodD0iOTAiIGZpbGw9IiNmNGY0ZjUiLz48Y2lyY2xlIGN4PSI0OCIgY3k9IjQ1IiByPSIyMiIgZmlsbD0iIzE4MTgxYiIvPjxwYXRoIGQ9Ik04NCA2NiBMMTEyIDI2IEwxNDAgNjYgWiIgZmlsbD0iIzcxNzE3YSIvPjwvc3ZnPg==\",\n  \"width\": 160,\n  \"height\": 90,\n  \"alt\": \"A dark circle beside a grey triangle on a light ground.\"\n}\n"
+    }
+  ],
+  "meta": {
+    "slot": "assets.image",
+    "source": {
+      "kind": "original",
+      "ref": [],
+      "license": "CC0-1.0"
+    },
+    "element": {
+      "slot": "assets.image",
+      "reason": "Realises director:identity.visual.imagery: a crafted, plain SVG illustration in the imagery's quiet, geometric register."
+    }
+  }
+}

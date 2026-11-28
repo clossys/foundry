@@ -16,7 +16,10 @@ import { discoverRoot } from "./root.js";
 
 export const GAPS_USAGE = "Usage: clossys gaps [--agent producer|director|designer|writer|publisher] [--json] [--root <dir>]\n"
   + "  lists each agent's gaps: coverage (open decisions, missing seat policy, failing checks), wiring (no seat, stale\n"
-  + "  citations, chain drift) and requests (a downstream need addressed to the upstream agent). Read-only.";
+  + "  citations, chain drift) and requests (a downstream need addressed to the upstream agent). Read-only.\n"
+  + "  \"unclear\" on a Director cell (director.check, request.input-unclear) means the pinned cell still has TODO-OWNER\n"
+  + "  lines or blocking findings, so the Director should re-draft it. It is information for the Director's round: it blocks\n"
+  + "  no pin, and slots that cite the cell, pinned or not, keep their pins and can still be pinned.";
 
 export async function runGapsCli(argv: readonly string[], cwd: string, steps: readonly Step[] = STEPS, packageRoot = PACKAGE_ROOT): Promise<CliResult> {
   let agent: string | undefined, root: string | undefined;

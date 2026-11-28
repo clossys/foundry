@@ -87,7 +87,7 @@ const referencesDirOf = (root: string): string => dirname(packagePath(root, REFE
  */
 export const AGENT_CREATES = "the agent creates it: an L4 create after a verdict that says create, built from the slot contract and the pinned slots it reads";
 /** {@link AGENT_CREATES} for one slot, with the verbs that read the contract and record the verdict. */
-export const agentCreatesText = (at: string): string => `${AGENT_CREATES} (clossys slot ${at} --full; clossys verdict ${at} --record <file>)`;
+export const agentCreatesText = (at: string): string => `${AGENT_CREATES} (clossys slot ${at} --full; clossys verdict ${at} --record <file> --model <id> --tier <tier> --by agent:<seat>)`;
 
 /**
  * CP1-PKGS: whether `<agent>/<slotId>` is a crafted stock slot, a Designer frames or sections slot: code adopts nothing
@@ -166,7 +166,7 @@ export function stockItemOf(root: string, slotId: string): { readonly stock: Sto
       source: { kind: "registry", ref: [ref], hash: row.hash, license: row.license },
       refVerbatim: {
         files: Object.fromEntries(files.map(each => [each.path, each.path])),
-        reader: reader.source,
+        reader: reader!.source, // stockFilesOf reads with the pinned theme reader (only stockImportFilesOf skips it)
         outputSha256: Object.fromEntries(files.map(each => [each.path, sha256(each.content)])),
       },
       element: { slot: slotId, reason: reasonOf(root, doc, `stock ${ref}, adopted unmodified by code`) },
@@ -191,7 +191,9 @@ export function lockedPackages(root: string): Record<string, string> {
 
 export interface StockFiles {
   readonly row: ManifestRow; readonly ref: string; readonly doc: ReturnType<typeof readSlot>; readonly manifest: { items: ManifestRow[] };
-  readonly files: readonly { path: string; type: string; content: string }[]; readonly reader: DeclaredFallbackReader;
+  readonly files: readonly { path: string; type: string; content: string }[];
+  /** The pinned theme reader the files were aligned through; undefined when read by stockImportFilesOf. */
+  readonly reader: DeclaredFallbackReader | undefined;
 }
 
 /**
@@ -210,11 +212,24 @@ export function stockFilesOf(root: string, slotId: string): StockFiles | { reado
   const consumer = join(root, "clossys");
   // Every fallback the written file carries is the consumer's pinned value, or Foundry's declared value for a
   // brand-optional id no pin emits (marked in the file); any other undeclared name throws (refused).
-  const reader = pinnedThemeReader(consumer);
+  // stockImportFilesOf (a crafted stock slot's dependency plan) reads the imports only: a theme-pin gap there does
+  // not block the install step, and the caller reports it separately.
+  const reader = importsOnly ? undefined : pinnedThemeReader(consumer);
   const files = row.files.filter(each => each.path.endsWith(".tsx")).map(each => ({
-    path: each.path, type: row.type, content: normalizedSeedFile(consumer, ref, each.path, { manifest, referencesDir: referencesDirOf(root), reader }),
+    path: each.path, type: row.type, content: normalizedSeedFile(consumer, ref, each.path, { manifest, referencesDir: referencesDirOf(root), ...(reader ? { reader } : {}) }),
   }));
   return { row, ref, doc, manifest, files, reader };
+}
+
+/** True only while stockImportFilesOf reads: stockFilesOf then skips the pinned theme reader. */
+let importsOnly = false;
+/**
+ * CP1-PKGS (b): stockFilesOf without the pinned theme reader, for a crafted stock slot's (frames, sections) dependency
+ * plan: the plan needs the imports only, so a theme-pin gap is no install gap (the runner reports it separately).
+ */
+export function stockImportFilesOf(root: string, slotId: string): StockFiles | { readonly none: string } {
+  importsOnly = true;
+  try { return stockFilesOf(root, slotId); } finally { importsOnly = false; }
 }
 
 /**
@@ -321,7 +336,8 @@ export function npmNameIssue(name: string): string | undefined {
  * item, so nothing to install for.
  */
 export function stockDependencyPlan(root: string, slotId: string): { readonly plan: DependencyPlan } | { readonly refused: string } | { readonly none: string } {
-  const found = stockFilesOf(root, slotId);
+  // A crafted stock slot (frames, sections) plans its imports without the theme reader: a theme-pin gap is no install gap.
+  const found = isCraftedStockSlot("designer", slotId) ? stockImportFilesOf(root, slotId) : stockFilesOf(root, slotId);
   if ("none" in found) return found;
   const { row, ref, manifest, files } = found;
   const styles = manifest.items.filter(each => each.registry === row.registry && each.version === row.version && each.type === "registry:style" && each !== row);
