@@ -168,6 +168,15 @@
       ]
     },
     {
+      "id": "developer",
+      "package": "@clossys/developer",
+      "rung": "conforming",
+      "next": "qualified",
+      "missing": [
+        "no retained release-qualification record for @clossys/developer@0.1.0 (governance/release-qualifications/clossys-developer-0.1.0.json)"
+      ]
+    },
+    {
       "id": "director",
       "package": "@clossys/strategist",
       "rung": "declared",
@@ -358,6 +367,15 @@
       ]
     },
     {
+      "id": "planner",
+      "package": "@clossys/planner",
+      "rung": "conforming",
+      "next": "qualified",
+      "missing": [
+        "no retained release-qualification record for @clossys/planner@0.1.0 (governance/release-qualifications/clossys-planner-0.1.0.json)"
+      ]
+    },
+    {
       "id": "producer",
       "package": "@clossys/producer",
       "rung": "conforming",
@@ -377,6 +395,15 @@
         "loopSection absent",
         "required-intake-absent",
         "required-status-absent"
+      ]
+    },
+    {
+      "id": "reviewer",
+      "package": "@clossys/reviewer",
+      "rung": "conforming",
+      "next": "qualified",
+      "missing": [
+        "no retained release-qualification record for @clossys/reviewer@0.1.0 (governance/release-qualifications/clossys-reviewer-0.1.0.json)"
       ]
     },
     {
