@@ -1110,6 +1110,56 @@
         }
       ],
       "note": "A consumer built only from tarballs and public verbs renders its pinned page: clossys check --e2e packs the cohort, installs it into an empty directory, drives the shipped scenario with the installed bin and asserts the built HTML, whose files hold no absolute path of the consumer and build to the same digest from another directory. Causes: e2e.usage (the check could not start: a bad flag, or no cohort package beside this Producer); e2e.pack (npm pack of a cohort package failed, or --from lacks one of its tarballs); e2e.install (npm install of the tarballs into the empty directory failed); e2e.one-copy (the install holds other than one copy of a first-party package, or one not resolved from its tarball); e2e.bin (node_modules/.bin/clossys is missing or is not the installed @clossys/producer); e2e.scenario (the scenario is missing, malformed, or names a step or file it does not hold); e2e.step (a scenario verb exited other than the scenario expects); e2e.render (the latest build lacks a route's index.html, or the HTML lacks a pinned string or marker); e2e.repeat (a second build of the same pins named another digest); e2e.portable (a build file holds an absolute path of the consumer or of the machine (its home or temp folder), or the consumer moved to another directory built the same pins to another digest)."
+    },
+    {
+      "id": "R-UNIT-ENV",
+      "owner_words": {
+        "quote": "i thought the planner agent has the logic to allocate/assign tickets, and can set the tier and env etc so that the right execution agent picks it up??",
+        "date": "2026-11-28"
+      },
+      "owner_agent": "planner",
+      "status": "enforced",
+      "checks": [
+        ".#check:unit-packets"
+      ],
+      "related": [
+        "packages/producer#test"
+      ],
+      "fixture": "scripts/rules/fixtures/R-UNIT-ENV",
+      "fixture_runs": [
+        {
+          "check": ".#check:unit-packets",
+          "cwd": ".",
+          "run": "node packages/producer/dist/cli/index.js unit check {fixture}",
+          "expect": "^refused local-without-need\\.md\\s+R-UNIT-ENV\\s.*no local need is detected"
+        }
+      ],
+      "note": "A unit runs in the cloud unless code detects a named local need: the write set names a path outside the repository, Step: fold (the fold gate), a base commit not on the remote, or two failed cloud launches in the planner's loop state. clossys unit env prints the env and its reason; clossys unit check refuses a packet that says Env: local with no detected need. The fixture is such a packet."
+    },
+    {
+      "id": "R-UNIT-TIER",
+      "owner_words": {
+        "quote": "i thought the planner agent has the logic to allocate/assign tickets, and can set the tier and env etc so that the right execution agent picks it up??",
+        "date": "2026-11-28"
+      },
+      "owner_agent": "planner",
+      "status": "enforced",
+      "checks": [
+        ".#check:unit-packets"
+      ],
+      "related": [
+        "packages/producer#test"
+      ],
+      "fixture": "scripts/rules/fixtures/R-UNIT-TIER",
+      "fixture_runs": [
+        {
+          "check": ".#check:unit-packets",
+          "cwd": ".",
+          "run": "node packages/producer/dist/cli/index.js unit check {fixture}",
+          "expect": "^refused below-floor\\.md\\s+R-UNIT-TIER\\s.*Tier: low is below the computed floor high"
+        }
+      ],
+      "note": "clossys unit tier applies the tier table in packages/planner/skill/SKILL.md as data: a gate-class term or Gate: YES is high; one behaviour, at most three files and a named failing test is low; otherwise mid. That tier is the floor; clossys unit check refuses a packet whose Tier: is below it. The fixture is a gate-class packet that says low."
     }
   ],
   "exemptions": [

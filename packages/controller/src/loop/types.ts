@@ -97,9 +97,43 @@ export interface LoopCapabilityState {
   readonly decisions: readonly Decision[];
 }
 
+/** Where a unit runs (CP1-PLANNERRUN): a cloud session, or a local checkout. */
+export const UNIT_ENVS = Object.freeze(["cloud", "local"] as const);
+export type UnitEnv = (typeof UNIT_ENVS)[number];
+
+/** The model tier a unit runs at, lowest first. */
+export const UNIT_TIERS = Object.freeze(["low", "mid", "high"] as const);
+export type UnitTier = (typeof UNIT_TIERS)[number];
+
+/**
+ * A launch's position: `launched` until the unit branch moves (`progressed`), `stale` once the
+ * staleness window passed with no pushed progress (see `./staleness.js`), `failed` when the
+ * planner records the launch as failed.
+ */
+export const UNIT_RUN_STATUSES = Object.freeze(["launched", "progressed", "stale", "failed"] as const);
+export type UnitRunStatus = (typeof UNIT_RUN_STATUSES)[number];
+
+/** One recorded launch of a unit: which unit, where, at which tier, and when. */
+export interface UnitRun {
+  readonly unit: string;
+  readonly env: UnitEnv;
+  readonly tier: UnitTier;
+  /** ISO 8601 datetime of the launch. */
+  readonly at: string;
+  /** The branch the unit pushes its progress to. */
+  readonly branch: string;
+  /** That branch's head on the remote when the unit launched; `null` when the branch did not exist yet. */
+  readonly headAtLaunch: string | null;
+  readonly status: UnitRunStatus;
+  /** Why the launch failed; present only on a `failed` run. */
+  readonly reason?: string;
+}
+
 /** The complete per-role machine state, `clossys/<role>/loop.json`. */
 export interface LoopState {
   readonly schemaVersion: 1;
   readonly role: string;
   readonly capabilities: Readonly<Record<string, LoopCapabilityState>>;
+  /** The planner's launch log (CP1-PLANNERRUN): every launch of each unit, oldest first. Absent for a role that launches nothing. */
+  readonly units?: Readonly<Record<string, readonly UnitRun[]>>;
 }

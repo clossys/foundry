@@ -164,6 +164,8 @@ async function run(argv: readonly string[], cwd: string, steps: readonly Step[],
     // The mechanical review and the executor's receipt (docs/review.md (not shipped)): every re-runnable review step, from code.
     if (head === "review") return await (await import("../cli/review.js")).runReviewCli(argv.slice(1), cwd);
     if (head === "receipt") return await (await import("../cli/review.js")).runReceiptCli(argv.slice(1), cwd);
+    // The Planner's unit launch (CP1-PLANNERRUN): env and tier by rule, then the launch and its record in the loop state.
+    if (head === "unit") return await (await import("../cli/unit.js")).runUnitCli(argv.slice(1), cwd);
     // An agent's own loops (foundry-build-0048 U9a): adopt, pin through the pin gate, and judge one against its standard.
     if (head === "loop") return await (await import("../cli/loop.js")).runLoopCli(argv.slice(1), cwd);
     // SLOT-CREATE (foundry-build-0048 U5): a slotless need is a clossys.queue-entry/2 kind slot entry, closed with a link.

@@ -48,13 +48,39 @@ Retry, compensate, adjust, or escalate when the outcome misses its setpoint.
 
 - **confirm-scaffold-conformance**: n/a — scaffolded starting point (issue #1203) -- this capability's real stage content is authored in Stage C, not invented by the scaffold
 
+## Launch a unit
+
+A unit packet carries `Tier: low|mid|high` and `Env: cloud|local (<reason>)`. Never pick either by hand:
+`clossys unit env <packet>` and `clossys unit tier <packet>` compute them from the packet, and
+`clossys unit run <packet> [--dry-run]` launches the unit where they say, records the launch in this
+role's loop state, and flags a launch with no pushed progress after 90 minutes as `stale`.
+`clossys unit check <packet|dir>` refuses every packet that breaks either rule.
+
+**Env (R-UNIT-ENV).** Cloud by default. Local only when code detects a named need: the write set
+names a path outside the repository, the step is the fold gate (`Step: fold`), the base commit is
+not on the remote, or the unit's launch log shows two failed cloud launches. A packet that says
+`Env: local` with no detected need is refused.
+
+**Tier (R-UNIT-TIER).** The first row whose condition holds is the computed tier, and that tier is
+the floor: a packet whose `Tier:` is below it is refused. `clossys unit tier` reads this table as
+data; change the rule here, not in code.
+
+<!-- unit-tiers:start: the tier table clossys unit tier reads, first matching row wins -->
+| tier | when | terms |
+| --- | --- | --- |
+| high | the title, the Objective, the Write set or a `Gate: YES` line is gate class | gate, gates, pass/fail, refuse, refuses, refused, refusal, scanner, allowlist, baseline, gap list, security, credential |
+| low | one behaviour, at most three files, and a named failing test | behaviours<=1, files<=3, failing-test |
+| mid | every other packet | |
+<!-- unit-tiers:end -->
+
 ## Rules you own
 
 The rules in the repository's rule registry whose `owner_agent` is `planner`. `check:rules` fails
 when this list and the registry differ.
 
 <!-- owned-rules:start: the rules in the repository's rule registry whose owner_agent is this package; check:rules fails on drift -->
-
+- R-UNIT-ENV
+- R-UNIT-TIER
 <!-- owned-rules:end -->
 
 ## When this package is installed
