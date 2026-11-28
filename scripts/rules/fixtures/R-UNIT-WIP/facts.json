@@ -1,0 +1,47 @@
+{
+  "cp9-wip-1": {
+    "head": "1111111111111111111111111111111111111111",
+    "tip": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "tipInHead": true,
+    "headInTip": false,
+    "installed": true,
+    "carryPending": false,
+    "launched": true
+  },
+  "cp9-wip-2": {
+    "head": "2222222222222222222222222222222222222222",
+    "tip": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "tipInHead": true,
+    "headInTip": false,
+    "installed": true,
+    "carryPending": false,
+    "launched": true
+  },
+  "cp9-wip-3": {
+    "head": "3333333333333333333333333333333333333333",
+    "tip": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "tipInHead": true,
+    "headInTip": false,
+    "installed": true,
+    "carryPending": false,
+    "launched": true
+  },
+  "cp9-wip-4": {
+    "head": "4444444444444444444444444444444444444444",
+    "tip": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "tipInHead": true,
+    "headInTip": false,
+    "installed": true,
+    "carryPending": false,
+    "launched": true
+  },
+  "cp9-new": {
+    "head": null,
+    "tip": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "tipInHead": false,
+    "headInTip": false,
+    "installed": true,
+    "carryPending": false,
+    "launched": false
+  }
+}

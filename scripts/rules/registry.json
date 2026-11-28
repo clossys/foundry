@@ -1162,6 +1162,58 @@
       "note": "clossys unit tier applies the tier table in packages/planner/skill/SKILL.md as data: a gate-class term or Gate: YES is high; one behaviour, at most three files and a named failing test is low; otherwise mid. That tier is the floor; clossys unit check refuses a packet whose Tier: is below it. The fixture is a gate-class packet that says low."
     },
     {
+      "id": "R-UNIT-STEP-ORDER",
+      "owner_words": {
+        "quote": "dont wait for cp2 to migrate everything we already do to the new agents; let cp2 work on the new requests/requirements but any existing processes should migrate immediately",
+        "date": "2026-11-28"
+      },
+      "owner_agent": "planner",
+      "status": "enforced",
+      "checks": [
+        ".#check:unit-next"
+      ],
+      "related": [
+        "packages/producer#test",
+        "packages/controller#test"
+      ],
+      "fixture": "scripts/rules/fixtures/R-UNIT-STEP-ORDER",
+      "fixture_runs": [
+        {
+          "check": ".#check:unit-next",
+          "cwd": ".",
+          "run": "node packages/producer/dist/cli/index.js unit next cp9-stale-base --records {fixture} --facts {fixture}/facts.json --step mech --dry-run",
+          "expect": "^refused base-not-tip\\s+R-UNIT-STEP-ORDER\\s.*never runs on a stale base"
+        }
+      ],
+      "note": "A unit runs only its next legal step, in order: exec, rebase onto the integration tip, check --fast, mech, review, fold. clossys unit next reads the unit's receipts and verdict records and refuses, by name, any other step: one past exec on an uninstalled tree (installed), with a carry pending (carry-pending), on a head not rebased onto the current tip (base-not-tip), on a head moved since the last verdict (head-changed), or out of order (out-of-order). A verdict or a queued or running check at another head is superseded and never counted; a record with no fixed-form verdict line counts as a failed step. The fixture is a unit whose fast check passed on the old tip after the tip moved, asked to run mech."
+    },
+    {
+      "id": "R-UNIT-WIP",
+      "owner_words": {
+        "quote": "dont wait for cp2 to migrate everything we already do to the new agents; let cp2 work on the new requests/requirements but any existing processes should migrate immediately",
+        "date": "2026-11-28"
+      },
+      "owner_agent": "planner",
+      "status": "enforced",
+      "checks": [
+        ".#check:unit-next"
+      ],
+      "related": [
+        "packages/producer#test",
+        "packages/controller#test"
+      ],
+      "fixture": "scripts/rules/fixtures/R-UNIT-WIP",
+      "fixture_runs": [
+        {
+          "check": ".#check:unit-next",
+          "cwd": ".",
+          "run": "node packages/producer/dist/cli/index.js unit next cp9-new --records {fixture} --facts {fixture}/facts.json --step exec --dry-run",
+          "expect": "^refused wip-cap\\s+R-UNIT-WIP\\s.*at the WIP cap of 4"
+        }
+      ],
+      "note": "At most the WIP cap (a config value, wipCap in the unit records' config.json, default 4) of units are past exec and not folded at once; clossys unit next refuses to pull a new unit (its exec step) until a fold frees a place. The fixture is four units past exec and a fifth, new unit asked to run exec."
+    },
+    {
       "id": "R-FAST-BEFORE-REVIEW",
       "owner_words": {
         "quote": "why we are catching so many issues so late ... deterministic runs need to be quick, and we need to sequence our testing progressively",

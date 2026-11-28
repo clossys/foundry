@@ -1,0 +1,11 @@
+{
+  "cp9-ready": {
+    "head": "cccccccccccccccccccccccccccccccccccccccc",
+    "tip": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "tipInHead": true,
+    "headInTip": false,
+    "installed": true,
+    "carryPending": false,
+    "launched": true
+  }
+}

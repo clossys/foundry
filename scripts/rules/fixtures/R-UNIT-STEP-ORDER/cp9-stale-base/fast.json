@@ -1,0 +1,6 @@
+{
+  "schema": "clossys.fast-check/1",
+  "verdict": "FAST PASS",
+  "head": "cccccccccccccccccccccccccccccccccccccccc",
+  "base": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+}

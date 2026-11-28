@@ -1,5 +1,5 @@
 /**
- * `clossys unit env|tier|run|check` (CP1-PLANNERRUN): the Planner picks a unit's env and tier from its
+ * `clossys unit env|tier|run|check` (CP1-PLANNERRUN), and `unit next` (CP1-UNITNEXT, ./unit-next.ts): the Planner picks a unit's env and tier from its
  * packet by rule (./unit-rules.ts, owner rules R-UNIT-ENV and R-UNIT-TIER) and launches it, so the right
  * executor picks it up without a hand-written brief. Launches are recorded in the planner's loop state
  * (@clossys/controller/loop), where a launch with no pushed progress after 90 minutes is flagged stale.
@@ -12,6 +12,7 @@ import {
   emptyLoopState, failedCloudLaunches, markLatestLaunchFailed, recordUnitLaunch, refreshUnitRuns, validateLoopState,
   type LoopState, type UnitRun,
 } from "@clossys/controller/loop";
+import { runNextVerb, NEXT_USAGE_LINES, type NextGit } from "./unit-next.js";
 import { CliUsageError } from "./args.js";
 import type { CliResult } from "./main.js";
 import {
@@ -24,6 +25,7 @@ export const UNIT_USAGE = [
   "       clossys unit tier <packet.md> [--skill <SKILL.md>] [--root <repo>] [--json]",
   "       clossys unit run <packet.md> [--dry-run] [--out <dir>] [--mark-failed <reason>] [--skill <SKILL.md>] [--root <repo>] [--state <loop.json>] [--json]",
   "       clossys unit check <packet.md|dir> [--skill <SKILL.md>] [--root <repo>] [--state <loop.json>]",
+  ...NEXT_USAGE_LINES,
   "  env    prints the unit's env and its reason (R-UNIT-ENV): cloud by default; local only when the write set names",
   "         a path outside the repository, the packet says Step: fold (the fold gate), the base commit is not on the",
   "         remote as last fetched, or the launch log shows two failed cloud launches. Env: local with no need is refused.",
@@ -198,9 +200,10 @@ function checkVerb(target: string, context: Context): CliResult {
   return { exitCode: refused ? 1 : 0, message: lines.join("\n"), output: { packets: results, refused } };
 }
 
-export async function runUnitCli(argv: readonly string[], cwd: string, deps: UnitDeps = GIT_DEPS): Promise<CliResult> {
+export async function runUnitCli(argv: readonly string[], cwd: string, deps: UnitDeps = GIT_DEPS, nextGit?: NextGit): Promise<CliResult> {
   if (argv.length === 0 || argv.includes("--help") || argv.includes("-h")) return { exitCode: argv.length === 0 ? 2 : 0, message: UNIT_USAGE };
   const [verb, ...rest] = argv as [string, ...string[]];
+  if (verb === "next") return runNextVerb(rest, cwd, repoRoot, UNIT_USAGE, nextGit);
   if (!["env", "tier", "run", "check"].includes(verb)) throw new CliUsageError(`unit: unknown verb ${JSON.stringify(verb)}\n${UNIT_USAGE}`);
   const opts = options(rest);
   if (opts.positional.length !== 1) throw new CliUsageError(`unit ${verb} needs exactly one ${verb === "check" ? "packet or directory" : "packet"}\n${UNIT_USAGE}`);

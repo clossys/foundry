@@ -73,6 +73,24 @@ data; change the rule here, not in code.
 | mid | every other packet | |
 <!-- unit-tiers:end -->
 
+## Sequence a unit
+
+Never order a unit's steps by hand. `clossys unit next <unit> [--step <step>] [--dry-run]` reads the
+unit's receipts and verdict records (exec receipt, `check --fast`, mech, review) and git (rebase, fold),
+and prints the unit's state, the one next legal step and a closing `NEXT:` verdict line. Run only that
+step; `--step` asks whether a step may run now and is refused, by name, when it may not.
+
+**Step order (R-UNIT-STEP-ORDER).** Exec, then rebase onto the integration tip, then `check --fast`,
+then mech, then review, then fold. A step past exec runs only on an installed tree, with no carry
+pending, on a head rebased onto the current tip, and on the head the earlier verdicts were given at;
+mech never runs on a stale base. When a unit's head changes, its queued and running checks are marked
+superseded and are not counted. Every step's record ends with one fixed-form verdict line
+(`DONE: <sha>`, `FAST PASS <sha>`, a `clossys.review/1` record, `REVIEW: PASS <sha>`); a record without
+one counts as a failed step.
+
+**WIP cap (R-UNIT-WIP).** At most `wipCap` units (the unit records' `config.json`, default 4) are past
+exec and not folded at once. A new unit is pulled only after a fold.
+
 ## Rules you own
 
 The rules in the repository's rule registry whose `owner_agent` is `planner`. `check:rules` fails
@@ -81,6 +99,8 @@ when this list and the registry differ.
 <!-- owned-rules:start: the rules in the repository's rule registry whose owner_agent is this package; check:rules fails on drift -->
 - R-UNIT-ENV
 - R-UNIT-TIER
+- R-UNIT-STEP-ORDER
+- R-UNIT-WIP
 <!-- owned-rules:end -->
 
 ## When this package is installed

@@ -1,0 +1,11 @@
+{
+  "cp9-stale-base": {
+    "head": "cccccccccccccccccccccccccccccccccccccccc",
+    "tip": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "tipInHead": false,
+    "headInTip": false,
+    "installed": true,
+    "carryPending": false,
+    "launched": true
+  }
+}
