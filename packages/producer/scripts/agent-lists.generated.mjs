@@ -11,6 +11,7 @@ export const AGENT_ROWS = Object.freeze([
   Object.freeze({ id: "controller", package: "@clossys/controller", class: "other" }),
   Object.freeze({ id: "customer", package: "@clossys/customer", class: "other" }),
   Object.freeze({ id: "designer", package: "@clossys/designer", class: "content" }),
+  Object.freeze({ id: "developer", package: "@clossys/developer", class: "factory" }),
   Object.freeze({ id: "director", package: "@clossys/director", class: "content" }),
   Object.freeze({ id: "giver", package: "@clossys/giver", class: "other" }),
   Object.freeze({ id: "influencer", package: "@clossys/influencer", class: "other" }),
@@ -21,8 +22,10 @@ export const AGENT_ROWS = Object.freeze([
   Object.freeze({ id: "locksmith", package: "@clossys/locksmith", class: "other" }),
   Object.freeze({ id: "messenger", package: "@clossys/messenger", class: "other" }),
   Object.freeze({ id: "observer", package: "@clossys/observer", class: "other" }),
+  Object.freeze({ id: "planner", package: "@clossys/planner", class: "factory" }),
   Object.freeze({ id: "producer", package: "@clossys/producer", class: "tooling" }),
   Object.freeze({ id: "publisher", package: "@clossys/publisher", class: "content" }),
+  Object.freeze({ id: "reviewer", package: "@clossys/reviewer", class: "factory" }),
   Object.freeze({ id: "starter", package: "@clossys/starter", class: "tooling" }),
   Object.freeze({ id: "writer", package: "@clossys/writer", class: "content" }),
 ]);
