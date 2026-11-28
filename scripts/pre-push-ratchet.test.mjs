@@ -34,7 +34,7 @@ for (const line of lines) console.log("VIOLATION " + line);
 console.log(lines.length + " violation(s) in 12ms");
 process.exit(lines.length ? 1 : 0);
 `;
-const enforced = { id: "R-PROBE", owner_words: words, status: "enforced", checks: ["check:studio#fixture probe"], fixture: "scripts/rules/fixtures/R-PROBE",
+const enforced = { id: "R-PROBE", owner_agent: "producer", owner_words: words, status: "enforced", checks: ["check:studio#fixture probe"], fixture: "scripts/rules/fixtures/R-PROBE",
   fixture_runs: [{ check: "check:studio#fixture probe", cwd: "packages/producer", run: "node scripts/probe.mjs --root {fixture}", expect: "^VIOLATION planted" }] };
 const exemptions = [{ check: ".#check:rules", reason: "the meta-check itself" }];
 const registry = (rules, more = []) => ({ schema: "foundry.rule-registry/1", rules, exemptions: [...exemptions, ...more] });
@@ -98,7 +98,7 @@ test("a new violation blocks, inside existing debt or on a green check, and the 
 
 test("a new failing rule or unmapped sub-check blocks; a weakened check blocks even though the base reads the same", async () => {
   const { root, base } = repository();
-  const open = commit(root, { "scripts/rules/registry.json": registry([enforced, { id: "R-OPEN", owner_words: words, status: "unenforced", note: "no check yet" }]) }, "new unenforced rule");
+  const open = commit(root, { "scripts/rules/registry.json": registry([enforced, { id: "R-OPEN", owner_agent: "producer", owner_words: words, status: "unenforced", note: "no check yet" }]) }, "new unenforced rule");
   const rule = await run(root, base, open);
   assert.equal(rule.delta.block, true);
   assert.deepEqual(rule.delta.rules.new.map(finding => `${finding.rule} ${finding.id}`), ["unenforced R-OPEN"]);
@@ -245,7 +245,7 @@ test("G4: an entry the head adds to a register the sub-check reads blocks as loo
 
 test("G4: removing an unenforced rule from the registry blocks as loosened, not as fixed", async () => {
   const { root } = repository();
-  const base = commit(root, { "scripts/rules/registry.json": registry([enforced, { id: "R-OPEN", owner_words: words, status: "unenforced", note: "no check yet" }]) }, "an open rule");
+  const base = commit(root, { "scripts/rules/registry.json": registry([enforced, { id: "R-OPEN", owner_agent: "producer", owner_words: words, status: "unenforced", note: "no check yet" }]) }, "an open rule");
   const gone = commit(root, { "scripts/rules/registry.json": registry([enforced]) }, "delete the open rule");
   const result = await run(root, base, gone);
   assert.equal(result.delta.block, true, report(result));
@@ -415,7 +415,7 @@ test("PREPUSH-BASE (a): a base without the package or check:rules measures the h
   assert.deepEqual(result.uncarried, ["packages/producer#probe"]);
   assert.match(report(result), /^absent-red\s+fixture probe: base absent \(the base has no packages\/producer\/package\.json\), head exit 1, measured absolutely$[\s\S]*NEW VIOLATION old one[\s\S]*BLOCKED/m);
   // A check:rules finding on the head is new when the base defines no check:rules.
-  const open = commit(root, { "packages/producer/data/violations.txt": null, "scripts/rules/registry.json": registry([enforced, { id: "R-OPEN", owner_words: words, status: "unenforced", note: "no check yet" }]) }, "clean debt, open rule");
+  const open = commit(root, { "packages/producer/data/violations.txt": null, "scripts/rules/registry.json": registry([enforced, { id: "R-OPEN", owner_agent: "producer", owner_words: words, status: "unenforced", note: "no check yet" }]) }, "clean debt, open rule");
   const rule = await run(root, base, open);
   assert.equal(rule.delta.block, true, report(rule));
   assert.deepEqual(rule.delta.rules.new.map(finding => `${finding.rule} ${finding.id}`), ["unenforced R-OPEN"]);

@@ -6,6 +6,7 @@
 import { LIFECYCLE_CONDITIONS, LIFECYCLE_STATES } from "./lifecycle.js";
 import { BLOCKER_KINDS, BLOCKER_OWNERS, LOOP_STAGES } from "./types.js";
 import type { BlockerKind, LoopCapabilityState, LoopState } from "./types.js";
+import { validateUnitRuns } from "./units.js";
 
 export interface LoopStateFinding {
   readonly rule: string;
@@ -102,6 +103,7 @@ export function validateLoopState(value: unknown): readonly LoopStateFinding[] {
   } else {
     for (const [id, capability] of Object.entries(value.capabilities)) findings.push(...findingsForCapability(capability, id));
   }
+  findings.push(...validateUnitRuns(value.units));
   return Object.freeze(findings);
 }
 

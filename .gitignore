@@ -73,3 +73,6 @@ packages/writer/reports/mechanical-audit.json
 # Pipeline run records (packages/producer/src/pipeline/trace.ts): one store per step, appended by every run;
 # the pipeline page and `clossys pipeline status` derive state from them. Local evidence, never source.
 /clossys/.state/runs/
+
+# The planner's loop state (clossys unit run, @clossys/controller/loop): launch records; local evidence, never source.
+/clossys/.state/planner/

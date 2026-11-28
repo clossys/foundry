@@ -1,0 +1,89 @@
+{
+  "schemaVersion": 1,
+  "package": "@clossys/reviewer",
+  "archetype": "current-direct",
+  "bins": {
+    "reviewer-check": 0
+  },
+  "fixtures": [
+    "registry.json",
+    "registry-malformed.json",
+    "skill-match.md",
+    "skill-missing.md",
+    "skill-extra.md"
+  ],
+  "cases": [
+    {
+      "id": "owned-rules-match",
+      "bin": "reviewer-check",
+      "args": [
+        {
+          "fixture": "registry.json"
+        },
+        {
+          "literal": "--skill"
+        },
+        {
+          "fixture": "skill-match.md"
+        }
+      ],
+      "exitCode": 0,
+      "group": "owned-rules"
+    },
+    {
+      "id": "owned-rules-missing",
+      "bin": "reviewer-check",
+      "args": [
+        {
+          "fixture": "registry.json"
+        },
+        {
+          "literal": "--skill"
+        },
+        {
+          "fixture": "skill-missing.md"
+        }
+      ],
+      "exitCode": 1,
+      "group": "owned-rules"
+    },
+    {
+      "id": "owned-rules-extra",
+      "bin": "reviewer-check",
+      "args": [
+        {
+          "fixture": "registry.json"
+        },
+        {
+          "literal": "--skill"
+        },
+        {
+          "fixture": "skill-extra.md"
+        }
+      ],
+      "exitCode": 1,
+      "group": "owned-rules"
+    },
+    {
+      "id": "owned-rules-unreadable",
+      "bin": "reviewer-check",
+      "args": [
+        {
+          "fixture": "registry-malformed.json"
+        },
+        {
+          "literal": "--skill"
+        },
+        {
+          "fixture": "skill-match.md"
+        }
+      ],
+      "exitCode": 2,
+      "group": "owned-rules"
+    }
+  ],
+  "dimensionEvidence": {
+    "rollback": "restoration",
+    "duplicate": "owned-rules"
+  }
+}
