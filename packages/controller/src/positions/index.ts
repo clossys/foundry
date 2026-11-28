@@ -35,6 +35,13 @@ const legacyStages = ["sense", "judge", "act", "verify", "learnOrEscalate"];
 const rolesAddedAfterBaseline: Readonly<Record<string, string>> = Object.freeze({
   "@clossys/customer": "0.9.11",
 });
+// Factory-class roles: the agents that plan, build and review Foundry's own
+// work, exactly the `class: "factory"` rows of docs/contracts/agents.json
+// (index.test.ts pins this set to that file). A ledger may omit them with no
+// finding and no advisory; a ledger that names one validates its
+// disposition and positions like any other role. Every other role stays
+// required.
+const optionalFactoryRoles: ReadonlySet<string> = new Set(["@clossys/developer", "@clossys/planner", "@clossys/reviewer"]);
 const metricDirections = ["increase", "decrease", "maintain", "target-range"];
 const dispositionFields = ["package", "disposition", "reason", "positionIds"];
 const firstDayFields = ["gaps", "target", "openQuestions", "criticalPath", "deferredWork", "recommendation", "evidenceRefs"];
@@ -184,7 +191,7 @@ export function validateInstalledPositionLedger(ledger: unknown, roleContract: u
   const isLegacyFormatLedger = !positionRecords.some((position) => record(position) && record(position.stageBindings) && Object.hasOwn(position.stageBindings, "learn"))
     && (positionRecords.length === 0 || positionRecords.some((position) => record(position) && record(position.stageBindings) && Object.hasOwn(position.stageBindings, "learnOrEscalate")));
   for (const name of roles) {
-    if (dispositions.has(name)) continue;
+    if (dispositions.has(name) || optionalFactoryRoles.has(name)) continue;
     const introducedIn = rolesAddedAfterBaseline[name];
     if (introducedIn && isLegacyFormatLedger) advise(advisories, "missing-disposition-for-new-role", name, `${name} was added in ${introducedIn}, after this ledger's 0.9.10 baseline; add an explicit disposition before the next minor.`);
     else fail(findings, "missing-role-disposition", name, "every active role must be explicitly open or not-applicable");
