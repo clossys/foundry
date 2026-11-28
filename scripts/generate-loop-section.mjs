@@ -97,7 +97,7 @@ export function generateLoopSection(role, matrixDoc, stageActivities) {
   const parts = [
     HEADING,
     "",
-    `Invoke with \`/clossys-${shortName} loop\` (Claude Code) or \`@clossys-${shortName} loop\` (Cursor). One invocation runs one iteration and stops at the approval gate inside judge (docs/contracts/loop.json).`,
+    `Invoke with \`/clossys-${shortName} loop\` (Claude Code) or \`@clossys-${shortName} loop\` (Cursor). One invocation runs one iteration and stops at the approval gate inside judge, as Foundry's loop contract defines.`,
     "",
   ];
   for (const stage of ["sense", "judge", "act", "verify", "learn"]) {

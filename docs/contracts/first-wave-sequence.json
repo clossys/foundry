@@ -90,6 +90,16 @@
       ]
     },
     {
+      "id": "factory",
+      "kind": "operational-integrity",
+      "job": "Productize the factory roles that plan, implement and review how Foundry itself is built, ahead of expression work.",
+      "packages": [
+        "planner",
+        "developer",
+        "reviewer"
+      ]
+    },
+    {
       "id": "strategy-and-expression",
       "kind": "frontend-expression",
       "job": "Productize strategy, copy, design, first-person keep judgment and on-demand audience testimony, verified publication, then audience-response learning. Designer and publisher are last among expression because they are frontend surfaces; customer inhabits and keeps before seal and can speak on lived feedback, alternatives, referral, churn, adopt, and worth as that person; publisher still waits for writer and designer at runtime.",

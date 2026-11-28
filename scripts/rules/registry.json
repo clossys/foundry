@@ -10,6 +10,7 @@
         "quote": "every page = frame + sections; Publisher never writes or designs",
         "date": "2026-10-30"
       },
+      "owner_agent": "controller",
       "status": "enforced",
       "checks": [
         "packages/producer#check:assemble-only",
@@ -49,6 +50,7 @@
         "quote": "all views use Designer's shadcn components only",
         "date": "2026-10-31"
       },
+      "owner_agent": "producer",
       "status": "enforced",
       "checks": [
         "packages/producer#test",
@@ -92,6 +94,7 @@
         "quote": "stock shadcn unmodified, tokens to shadcn vars",
         "date": "2026-10-30"
       },
+      "owner_agent": "designer",
       "status": "enforced",
       "checks": [
         "packages/designer#check:ref-verbatim"
@@ -144,6 +147,7 @@
         "quote": "DS exclusively shadcn plus trusted free registries",
         "date": "2026-10-30"
       },
+      "owner_agent": "designer",
       "status": "enforced",
       "checks": [
         "packages/designer#check:provenance"
@@ -182,6 +186,7 @@
         "quote": "visual to Designer, copy to Writer, assembly only to Publisher",
         "date": "2026-10-31"
       },
+      "owner_agent": "controller",
       "status": "enforced",
       "checks": [
         "packages/producer#check:copy-source",
@@ -270,6 +275,7 @@
         "quote": "consumer owns nav and routing data per publication",
         "date": "2026-10-28"
       },
+      "owner_agent": "producer",
       "status": "enforced",
       "checks": [
         "packages/producer#check:studio-map"
@@ -302,6 +308,7 @@
         "quote": "agents/<agent>/<slot-id>/ flat; grouping only in ia.json data",
         "date": "2026-11-02"
       },
+      "owner_agent": "controller",
       "status": "enforced",
       "note": "check:flat-slots runs from root check and fails when a legacy store is kept, read or shipped: clossys/{library,cells,tree.json} or an agent folder holding library, cells or tree.json; an agent folder entry other than ia.json and slot folders, or a slot folder nesting a directory other than candidates/; a code file naming a legacy store path or joining cells, tree.json or library onto a root; a package manifest or the pipeline graph declaring one. clossys/library was retired (git rm) after Designer ref-verbatim --pinned gave identical output with and without it. Red on the real tree until the Director, Designer library-cli, Publisher content-map and Writer cells stores move to flat slot folders (engine gap). The fixture keeps clossys/library, a grouping folder and a tree.json reader.",
       "related": [
@@ -333,6 +340,7 @@
         "quote": "every L3 is a slot, candidates are files, one pinned",
         "date": "2026-10-31"
       },
+      "owner_agent": "producer",
       "status": "enforced",
       "related": [
         "packages/designer#check:slot-contracts"
@@ -364,6 +372,7 @@
         "quote": "Studio previews the consumer workspace in the consumer brand; never greyscale",
         "date": "2026-10-29"
       },
+      "owner_agent": "producer",
       "status": "enforced",
       "related": [
         "check:studio#producer check-theme-parity (live)",
@@ -396,6 +405,7 @@
         "quote": "read-only Studio; the card shows active state and links to the L3 route",
         "date": "2026-10-31"
       },
+      "owner_agent": "producer",
       "status": "enforced",
       "checks": [
         "packages/producer#check:studio-template"
@@ -421,6 +431,7 @@
         "quote": "Studio previews what cells produce, not file text",
         "date": "2026-10-29"
       },
+      "owner_agent": "producer",
       "status": "enforced",
       "related": [
         "check:studio#producer publisher-preview (live)",
@@ -453,6 +464,7 @@
         "quote": "all layers link uses and used-by; DOM provenance",
         "date": "2026-10-26"
       },
+      "owner_agent": "producer",
       "status": "enforced",
       "related": [
         "check:studio#designer check (usage-graph)",
@@ -486,6 +498,7 @@
         "quote": "clossys verbs = brief, check, compile only",
         "date": "2026-10-29"
       },
+      "owner_agent": "producer",
       "status": "enforced",
       "note": "check:cli-verbs runs every read-only clossys verb (direct, design and write --brief and --check, publish, decisions, options --classes --check) twice on the real store from root check through check:studio: each exits 0 with byte-identical output, and clossys check exits 0 only (a finding, exit 1, is a red verb) and repeats byte for byte. The fixture is a consumer store holding only a Director IA.",
       "checks": [
@@ -512,6 +525,7 @@
         "quote": "rules must become code, not prose",
         "date": "2026-11-03"
       },
+      "owner_agent": "reviewer",
       "status": "enforced",
       "checks": [
         ".#check:orphan-checks",
@@ -543,6 +557,7 @@
         "quote": "no temp solutions; delete shims, never extend",
         "date": "2026-10-23"
       },
+      "owner_agent": "developer",
       "status": "enforced",
       "related": [
         "check:studio#producer scripts/preview-studio-config.test.mjs",
@@ -570,6 +585,7 @@
         "quote": "shadcn item, else a composition of pinned parts, else mark unneeded",
         "date": "2026-11-03"
       },
+      "owner_agent": "producer",
       "status": "enforced",
       "note": "Every Director, Designer and Writer slot is pinned or marked not-needed (records/slots rejectedSlots), checked by check:slot-state from root check through check:studio. The fixture is a Director slot holding one candidate and no pin.",
       "checks": [
@@ -591,6 +607,7 @@
         "quote": "the rendering itself is just the same deterministic plumbing that works everytime without llm token spend",
         "date": "2026-11-03"
       },
+      "owner_agent": "producer",
       "status": "enforced",
       "checks": [
         ".#check:compile-pure"
@@ -612,6 +629,7 @@
         "quote": "process driven by code and identifiers so that we decide which candidate goes in which slot",
         "date": "2026-11-03"
       },
+      "owner_agent": "producer",
       "status": "enforced",
       "checks": [
         ".#check:decisions"
@@ -636,6 +654,7 @@
         "quote": "ok clean up and harden",
         "date": "2026-11-03"
       },
+      "owner_agent": "controller",
       "status": "enforced",
       "checks": [
         ".#check:git-cms"
@@ -675,6 +694,7 @@
         "quote": "add some variety to the candidate generation so end user have a choice",
         "date": "2026-11-03"
       },
+      "owner_agent": "producer",
       "status": "enforced",
       "checks": [
         ".#check:slot-options"
@@ -700,6 +720,7 @@
         "quote": "anything that is deterministic need to be process driven by code and identifiers",
         "date": "2026-11-03"
       },
+      "owner_agent": "producer",
       "status": "enforced",
       "checks": [
         ".#check:pipeline"
@@ -763,6 +784,7 @@
         "quote": "anything that is deterministic need to be process driven by code and identifiers",
         "date": "2026-11-03"
       },
+      "owner_agent": "producer",
       "status": "enforced",
       "checks": [
         ".#check:pipeline-canvas"
@@ -847,6 +869,7 @@
         "quote": "make sure all pages/routes are built via publisher itself officially",
         "date": "2026-11-04"
       },
+      "owner_agent": "producer",
       "status": "enforced",
       "checks": [
         "packages/producer#check:routes-published",
@@ -946,6 +969,7 @@
         "quote": "i want a super tight/connect system, so that we have all the plumbing/wiring locked",
         "date": "2026-11-03"
       },
+      "owner_agent": "controller",
       "status": "enforced",
       "checks": [
         ".#check:single-reader"
@@ -971,6 +995,7 @@
         "quote": "get us a world class producer, no more talking, just do it, completely",
         "date": "2026-11-20"
       },
+      "owner_agent": "producer",
       "status": "enforced",
       "checks": [
         ".#check:engine-side-door"
@@ -995,6 +1020,7 @@
         "quote": "why are we working in such ineffective inefficient ways to just burn tokens for vibes? what else need to be mechanical that isn't already in code?",
         "date": "2026-11-20"
       },
+      "owner_agent": "reviewer",
       "status": "enforced",
       "checks": [
         ".#check:review-doc"
@@ -1016,6 +1042,7 @@
         "quote": "i want a super tight/connect system, so that we have all the plumbing/wiring locked",
         "date": "2026-11-03"
       },
+      "owner_agent": "producer",
       "status": "enforced",
       "checks": [
         ".#check:pin-propagation"
@@ -1040,6 +1067,7 @@
         "quote": "i want a super tight/connect system, so that we have all the plumbing/wiring locked",
         "date": "2026-11-03"
       },
+      "owner_agent": "producer",
       "status": "enforced",
       "checks": [
         ".#check:every-candidate-previewable"
@@ -1064,6 +1092,7 @@
         "quote": "producer owns processes, no fakes",
         "date": "2026-11-20"
       },
+      "owner_agent": "producer",
       "status": "enforced",
       "checks": [
         "packages/producer#check:e2e"
@@ -1081,6 +1110,133 @@
         }
       ],
       "note": "A consumer built only from tarballs and public verbs renders its pinned page: clossys check --e2e packs the cohort, installs it into an empty directory, drives the shipped scenario with the installed bin and asserts the built HTML, whose files hold no absolute path of the consumer and build to the same digest from another directory. Causes: e2e.usage (the check could not start: a bad flag, or no cohort package beside this Producer); e2e.pack (npm pack of a cohort package failed, or --from lacks one of its tarballs); e2e.install (npm install of the tarballs into the empty directory failed); e2e.one-copy (the install holds other than one copy of a first-party package, or one not resolved from its tarball); e2e.bin (node_modules/.bin/clossys is missing or is not the installed @clossys/producer); e2e.scenario (the scenario is missing, malformed, or names a step or file it does not hold); e2e.step (a scenario verb exited other than the scenario expects); e2e.render (the latest build lacks a route's index.html, or the HTML lacks a pinned string or marker); e2e.repeat (a second build of the same pins named another digest); e2e.portable (a build file holds an absolute path of the consumer or of the machine (its home or temp folder), or the consumer moved to another directory built the same pins to another digest)."
+    },
+    {
+      "id": "R-FAST-BEFORE-REVIEW",
+      "owner_words": {
+        "quote": "why we are catching so many issues so late ... deterministic runs need to be quick, and we need to sequence our testing progressively",
+        "date": "2026-11-27"
+      },
+      "owner_agent": "reviewer",
+      "status": "enforced",
+      "checks": [
+        ".#check:fast-before-review"
+      ],
+      "related": [
+        ".#check:gates"
+      ],
+      "fixture": "scripts/rules/fixtures/R-FAST-BEFORE-REVIEW",
+      "fixture_runs": [
+        {
+          "check": ".#check:fast-before-review",
+          "cwd": ".",
+          "fixture": "scripts/rules/fixtures/R-FAST-BEFORE-REVIEW/skill",
+          "run": "node scripts/check-fast-before-review.mjs --root {fixture}",
+          "expect": "^missing-rule\\s+packages/reviewer/skill/SKILL\\.md"
+        },
+        {
+          "check": ".#check:fast-before-review",
+          "cwd": ".",
+          "fixture": "scripts/rules/fixtures/R-FAST-BEFORE-REVIEW/record",
+          "run": "node scripts/check-fast-before-review.mjs --root {fixture} --record {fixture}/fast-fail.json --head 1111111111111111111111111111111111111111",
+          "expect": "^not-fast-pass\\s"
+        },
+        {
+          "check": ".#check:fast-before-review",
+          "cwd": ".",
+          "fixture": "scripts/rules/fixtures/R-FAST-BEFORE-REVIEW/record",
+          "run": "node scripts/check-fast-before-review.mjs --root {fixture} --record {fixture}/fast-pass-earlier.json --head 1111111111111111111111111111111111111111",
+          "expect": "^wrong-head\\s"
+        }
+      ],
+      "note": "Every executor runs clossys check --fast (packages/producer/src/check/fast.ts) before DONE, and review starts only on a FAST PASS record at the exact head. check:fast-before-review fails when the Reviewer skill no longer states that rule, and, given --record and --head, when the record is not a FAST PASS that ran a command at exactly that head. The fixtures are a skill without the rule, a FAST FAIL record, and a FAST PASS record at an earlier head."
+    },
+    {
+      "id": "R-REVIEW-FAIL-CLOSED",
+      "owner_words": {
+        "quote": "dont wait for cp2 to migrate everything we already do to the new agents; let cp2 work on the new requests/requirements but any existing processes should migrate immediately",
+        "date": "2026-11-28"
+      },
+      "owner_agent": "reviewer",
+      "status": "enforced",
+      "checks": [
+        ".#check:review-fail-closed"
+      ],
+      "related": [
+        ".#check:gates"
+      ],
+      "fixture": "scripts/rules/fixtures/R-REVIEW-FAIL-CLOSED",
+      "fixture_runs": [
+        {
+          "check": ".#check:review-fail-closed",
+          "cwd": ".",
+          "fixture": "scripts/rules/fixtures/R-REVIEW-FAIL-CLOSED/skill",
+          "run": "node scripts/check-review-fail-closed.mjs --root {fixture}",
+          "expect": "^missing-rule\\s+packages/reviewer/skill/SKILL\\.md"
+        },
+        {
+          "check": ".#check:review-fail-closed",
+          "cwd": ".",
+          "fixture": "scripts/rules/fixtures/R-REVIEW-FAIL-CLOSED/record",
+          "run": "node scripts/check-review-fail-closed.mjs --root {fixture} --record {fixture}/review-pass-zero.json",
+          "expect": "^pass-on-nothing\\s"
+        },
+        {
+          "check": ".#check:review-fail-closed",
+          "cwd": ".",
+          "fixture": "scripts/rules/fixtures/R-REVIEW-FAIL-CLOSED/record",
+          "run": "node scripts/check-review-fail-closed.mjs --root {fixture} --record {fixture}/receipt-pass-127.json",
+          "expect": "^pass-on-missing\\s"
+        },
+        {
+          "check": ".#check:review-fail-closed",
+          "cwd": ".",
+          "fixture": "scripts/rules/fixtures/R-REVIEW-FAIL-CLOSED/record",
+          "run": "node scripts/check-review-fail-closed.mjs --root {fixture} --record {fixture}/review-no-verdict.json",
+          "expect": "^no-verdict\\s"
+        }
+      ],
+      "note": "clossys review, clossys receipt and clossys review --mutation (packages/producer/src/review) fail closed: zero commands run, any command exiting 127, or no verdict line is FAIL, never PASS, and a red test that also fails alone at the merge base is base-red, not new red. check:review-fail-closed fails when the Reviewer skill no longer states the rule, and, given --record, on a PASS record that ran nothing, met a 127, or has no verdict line agreeing with its verdict. The fixtures are a skill without the rule, a PASS review that ran no command, a PASS receipt with a 127, and a review record with no verdict."
+    },
+    {
+      "id": "R-REVIEW-RUN-QUEUE",
+      "owner_words": {
+        "quote": "dont wait for cp2 to migrate everything we already do to the new agents; let cp2 work on the new requests/requirements but any existing processes should migrate immediately",
+        "date": "2026-11-28"
+      },
+      "owner_agent": "reviewer",
+      "status": "enforced",
+      "checks": [
+        ".#check:review-fail-closed"
+      ],
+      "related": [
+        ".#check:gates"
+      ],
+      "fixture": "scripts/rules/fixtures/R-REVIEW-RUN-QUEUE",
+      "fixture_runs": [
+        {
+          "check": ".#check:review-fail-closed",
+          "cwd": ".",
+          "fixture": "scripts/rules/fixtures/R-REVIEW-RUN-QUEUE/skill",
+          "run": "node scripts/check-review-fail-closed.mjs --root {fixture}",
+          "expect": "^missing-rule\\s+packages/reviewer/skill/SKILL\\.md"
+        },
+        {
+          "check": ".#check:review-fail-closed",
+          "cwd": ".",
+          "fixture": "scripts/rules/fixtures/R-REVIEW-RUN-QUEUE/queue",
+          "run": "node scripts/check-review-fail-closed.mjs --root {fixture} --queue {fixture}/queue-superseded.json --capacity 3",
+          "expect": "^superseded-live\\s"
+        },
+        {
+          "check": ".#check:review-fail-closed",
+          "cwd": ".",
+          "fixture": "scripts/rules/fixtures/R-REVIEW-RUN-QUEUE/queue",
+          "run": "node scripts/check-review-fail-closed.mjs --root {fixture} --queue {fixture}/queue-gave-up.json --capacity 3",
+          "expect": "^gave-up\\s"
+        }
+      ],
+      "note": "Mechanical runs wait in one run queue (packages/producer/src/review/queue.ts): installs for active executors first, then reviews, then re-runs, the longer critical path first; a wait looks again until it is admitted or cancelled and never gives up; enqueuing a newer head cancels the unit's runs at the older head. check:review-fail-closed fails when the Reviewer skill no longer states the rule, and, given --queue and --capacity, on live runs of one unit at two heads, more heavy runs than slots, or a give-up state. The fixtures are a skill without the rule, a queue with a superseded head still live, and a queue with a run that gave up."
     }
   ],
   "exemptions": [

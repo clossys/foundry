@@ -1,0 +1,90 @@
+{
+  "name": "@clossys/planner",
+  "version": "0.1.0",
+  "private": false,
+  "license": "MIT",
+  "type": "module",
+  "bin": {
+    "planner-check": "dist/cli.js"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE",
+    "skill",
+    "intake-question-cards.json",
+    "fit-signal-declarations.json",
+    "loop-matrix.json",
+    "!dist/**/*.test.*"
+  ],
+  "sideEffects": false,
+  "foundry": {
+    "assessment": {
+      "bin": "planner-check",
+      "invocation": "single-json-input"
+    },
+    "intake": "intake-question-cards.json",
+    "outputs": [
+      "clossys/planner/status.json"
+    ],
+    "status": {
+      "bin": "planner-check",
+      "invocation": "single-json-input"
+    },
+    "fit": "fit-signal-declarations.json",
+    "solves": [],
+    "needs": [],
+    "feeds": [],
+    "capabilities": [
+      {
+        "id": "confirm-scaffold-conformance",
+        "subQuestion": "Does @clossys/planner's own scaffolded starting point already conform to the Stage A framework?",
+        "worldClass": "A newly scaffolded package reports zero gaps against every Stage A framework definition on day one (issue #1203).",
+        "inputs": [],
+        "outputs": [
+          "clossys/planner/status.json"
+        ],
+        "proofCase": null,
+        "maturity": "planned",
+        "v0": false,
+        "businessLifecycleStage": "build"
+      }
+    ]
+  },
+  "description": "The planner role, a factory agent for how Foundry itself is built: it takes in an owner ask, cuts it into one scoped unit with the checks that prove it, and watches each unit to done. Its stages are Intake, Plan and Watch; it ships its skill, the rules it owns, and a status probe (planner-check) that checks the skill lists exactly the rules it owns.",
+  "keywords": [
+    "planner",
+    "intake",
+    "plan",
+    "watch",
+    "factory"
+  ],
+  "author": "Clossys",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/clossys/foundry.git",
+    "directory": "packages/planner"
+  },
+  "bugs": {
+    "url": "https://github.com/clossys/foundry/issues"
+  },
+  "homepage": "https://github.com/clossys/foundry/tree/main/packages/planner#readme",
+  "devDependencies": {
+    "@types/node": "^26.6.3",
+    "typescript": "~6.0.0",
+    "vitest": "^5.0.1"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "prepublishOnly": "node ../../scripts/check-name-collision.mjs . && npm run build",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run"
+  },
+  "publishConfig": {
+    "registry": "https://registry.npmjs.org",
+    "access": "public"
+  }
+}
