@@ -322,10 +322,10 @@ class Runner {
   }
 
   /**
-   * One vitest process over files of one package in tree; alone runs one file at a time on one worker. onResult hears
-   * each file's result as soon as the reporter writes it, while the process still runs.
+   * One vitest process over files of one package in tree; alone runs one file at a time on one worker. The reporter
+   * writes each file's line as the file ends, so a stopped run still has the results of every file that finished.
    */
-  async vitest(step: FastCommand["step"], tree: string, pkg: string, units: readonly Unit[], alone: boolean, deadline?: number, onResult?: (result: UnitResult) => void): Promise<UnitResult[]> {
+  async vitest(step: FastCommand["step"], tree: string, pkg: string, units: readonly Unit[], alone: boolean, deadline?: number): Promise<UnitResult[]> {
     let bin: string;
     try { bin = join(dirname(createRequire(join(tree, pkg, "package.json")).resolve("vitest/package.json")), "vitest.mjs"); }
     catch (error) { return units.map(unit => ({ unit, status: "fail" as const, ms: 0, messages: [`vitest does not resolve from ${pkg}: ${error instanceof Error ? error.message.split("\n")[0] : String(error)}`] })); }
@@ -335,33 +335,16 @@ class Runner {
     const done = new Map<string, UnitResult>();
     // A line a stop cut short names no file: that file has no result, so it counts as unrun (stopped) or failed.
     const parseErrors: string[] = [];
-    let read = 0;
-    const drain = (final: boolean) => {
-      const text = readText(out) ?? "";
-      const end = final ? text.length : text.lastIndexOf("\n") + 1;
-      for (const line of text.slice(read, end).split("\n").filter(Boolean)) {
-        let row: { file: string; state: string; ms: number; messages: string[] };
-        try { row = JSON.parse(line) as typeof row; } catch (error) { parseErrors.push(String(error)); continue; }
-        const unit = byFile.get(relative(tree, row.file));
-        if (!unit || done.has(unit.file) || row.state === "queued" || row.state === "pending") continue;
-        const each: UnitResult = { unit, status: row.state === "failed" ? "fail" : "pass", ms: row.ms, messages: row.messages };
-        done.set(unit.file, each);
-        onResult?.(each);
-      }
-      read = Math.max(read, end);
-    };
-    const poll = onResult ? setInterval(() => drain(false), 250) : undefined;
     const result = await this.command(step, argv, tree, pkg, { CLOSSYS_FAST_RESULTS: out, CI: "1" }, deadline);
-    if (poll) clearInterval(poll);
-    drain(true);
-    return units.map(unit => {
-      const found = done.get(unit.file);
-      if (found) return found;
-      const each: UnitResult = result.stopped ? { unit, status: "unrun", ms: 0, messages: [] }
-        : { unit, status: "fail", ms: 0, messages: [`vitest exited ${result.exit} with no result for this file`, ...parseErrors.slice(0, 1), ...tail(result.output)] };
-      if (each.status !== "unrun") onResult?.(each);
-      return each;
-    });
+    for (const line of (readText(out) ?? "").split("\n").filter(Boolean)) {
+      let row: { file: string; state: string; ms: number; messages: string[] };
+      try { row = JSON.parse(line) as typeof row; } catch (error) { parseErrors.push(String(error)); continue; }
+      const unit = byFile.get(relative(tree, row.file));
+      if (!unit || done.has(unit.file) || row.state === "queued" || row.state === "pending") continue;
+      done.set(unit.file, { unit, status: row.state === "failed" ? "fail" : "pass", ms: row.ms, messages: row.messages });
+    }
+    return units.map(unit => done.get(unit.file) ?? (result.stopped ? { unit, status: "unrun" as const, ms: 0, messages: [] }
+      : { unit, status: "fail" as const, ms: 0, messages: [`vitest exited ${result.exit} with no result for this file`, ...parseErrors.slice(0, 1), ...tail(result.output)] }));
   }
 
   async node(step: FastCommand["step"], tree: string, unit: Unit, deadline?: number): Promise<UnitResult> {
@@ -394,17 +377,17 @@ class Runner {
 
   /**
    * Each unit alone, once, in tree: a package's vitest files one at a time on one worker, and beside that process the
-   * node units one after another (two single-file runners, never a batch). onResult hears each result as it lands.
+   * node units one after another (two single-file runners, never a batch).
    */
-  async alone(step: FastCommand["step"], tree: string, units: readonly Unit[], onResult?: (result: UnitResult) => void): Promise<UnitResult[]> {
+  async alone(step: FastCommand["step"], tree: string, units: readonly Unit[]): Promise<UnitResult[]> {
     const vitest = async () => {
       const out: UnitResult[] = [];
-      for (const [pkg, list] of byPackage(units)) out.push(...await this.vitest(step, tree, pkg, list, true, undefined, onResult));
+      for (const [pkg, list] of byPackage(units)) out.push(...await this.vitest(step, tree, pkg, list, true));
       return out;
     };
     const node = async () => {
       const out: UnitResult[] = [];
-      for (const unit of units.filter(item => item.kind === "node")) { const each = await this.node(step, tree, unit); onResult?.(each); out.push(each); }
+      for (const unit of units.filter(item => item.kind === "node")) out.push(await this.node(step, tree, unit));
       return out;
     };
     const [ran, nodes] = this.width > 1 ? await Promise.all([vitest(), node()]) : [await vitest(), await node()];
@@ -418,19 +401,6 @@ const byPackage = (units: readonly Unit[]): [string, Unit[]][] => {
   for (const unit of units.filter(item => item.kind === "vitest")) { const list = map.get(unit.pkg) ?? []; list.push(unit); map.set(unit.pkg, list); }
   return [...map].sort(([a], [b]) => a.localeCompare(b));
 };
-
-/** A queue a producer pushes to and one worker drains in batches; take() resolves undefined once closed and empty. */
-class Batches<T> {
-  private items: T[] = [];
-  private closed = false;
-  private wake: (() => void)[] = [];
-  push(item: T) { this.items.push(item); this.wake.splice(0).forEach(fn => fn()); }
-  close() { this.closed = true; this.wake.splice(0).forEach(fn => fn()); }
-  async take(): Promise<T[] | undefined> {
-    while (!this.items.length && !this.closed) await new Promise<void>(done => this.wake.push(done));
-    return this.items.length ? this.items.splice(0) : undefined;
-  }
-}
 
 /** A detached tree of the merge-base with the checkout's installed dependencies linked in (never installed). */
 function baseTree(repo: string, sha: string): Worktree {
@@ -482,20 +452,23 @@ export async function runFast(options: FastOptions): Promise<FastRecord> {
     steps, commands: runner.commands, red, baseRed, noise, unrun, slow, budgetSeconds: seconds(budgetMs), slowSeconds: seconds(slowMs),
     ...(reason ? { reason } : {}), line: `${verdict} ${head}`,
   });
+  /** A finished step: its line carries its wall time, so the record's line is the printed one. */
+  const done = (step: StepName, status: FastStep["status"], text: string) => { const took = seconds(Date.now() - started); steps.push({ step, status, seconds: took, line: `${text} [${took}s]` }); };
+  let started = Date.now();
   const skip = (...names: StepName[]) => { for (const step of names) steps.push({ step, status: "skipped", seconds: 0, line: `${step}: skipped` }); };
   if (!changes.length) { skip("typecheck", "related", "alone"); return finish("FAST FAIL", `empty diff ${ref}...HEAD: nothing to check`); }
 
   // 1. typecheck every touched package that declares one; a red stops the run before any test.
-  let started = Date.now();
+  started = Date.now();
   const typed = packages.filter(dir => typeof listWorkspaces(repo).find(workspace => workspace.dir === dir)?.manifest.scripts?.typecheck === "string");
   const checks = await pool(typed, Math.max(1, Math.floor(availableParallelism() / 2)), async dir => ({ dir, result: await runner.typecheck(dir) }));
   const typeRed = checks.filter(check => check.result.exit !== 0);
   if (typeRed.length) {
-    steps.push({ step: "typecheck", status: "fail", seconds: seconds(Date.now() - started), line: `typecheck: FAIL ${typeRed.map(check => `${check.dir} (exit ${check.result.exit}: ${tail(check.result.output, 1)[0] ?? "no output"})`).join("; ")}` });
+    done("typecheck", "fail", `typecheck: FAIL ${typeRed.map(check => `${check.dir} (exit ${check.result.exit}: ${tail(check.result.output, 1)[0] ?? "no output"})`).join("; ")}`);
     skip("related", "alone");
     return finish("FAST FAIL", "typecheck");
   }
-  steps.push({ step: "typecheck", status: "pass", seconds: seconds(Date.now() - started), line: typed.length ? `typecheck: pass (${typed.length} package(s): ${list(typed)})` : "typecheck: no touched package declares a typecheck script" });
+  done("typecheck", "pass", typed.length ? `typecheck: pass (${typed.length} package(s): ${list(typed)})` : "typecheck: no touched package declares a typecheck script");
 
   // 2. related tests, within the budget.
   started = Date.now();
@@ -504,20 +477,17 @@ export async function runFast(options: FastOptions): Promise<FastRecord> {
   const failed = related.filter(result => result.status === "fail");
   const ran = related.length - unrun.length;
   if (unrun.length) {
-    steps.push({ step: "related", status: "incomplete", seconds: seconds(Date.now() - started), line: `related: INCOMPLETE after the ${seconds(budgetMs)}s budget: ${unrun.length} of ${related.length} test unit(s) left unrun (${list(unrun)})${failed.length ? `; ${failed.length} failed so far (${list(failed.map(result => result.unit.id))})` : ""}` });
+    done("related", "incomplete", `related: INCOMPLETE after the ${seconds(budgetMs)}s budget: ${unrun.length} of ${related.length} test unit(s) left unrun (${list(unrun)})${failed.length ? `; ${failed.length} failed so far (${list(failed.map(result => result.unit.id))})` : ""}`);
     skip("alone");
     return finish("FAST INCOMPLETE", "related step budget");
   }
-  steps.push({
-    step: "related", status: failed.length ? "fail" : "pass", seconds: seconds(Date.now() - started),
-    line: !related.length ? "related: no test reaches the changed files"
-      : failed.length ? `related: ${failed.length} of ${ran} test unit(s) failed, re-run alone: ${list(failed.map(result => result.unit.id))}`
-      : `related: pass (${ran} test unit(s))`,
-  });
+  done("related", failed.length ? "fail" : "pass", !related.length ? "related: no test reaches the changed files"
+    : failed.length ? `related: ${failed.length} of ${ran} test unit(s) failed, re-run alone: ${list(failed.map(result => result.unit.id))}`
+    : `related: pass (${ran} test unit(s))`);
 
-  // 3. alone: the failures (and the borderline slow candidates) once each by themselves. Each file that fails alone
-  // goes, as soon as its result lands, to the merge-base tree, where it runs alone again beside the head runs (another
-  // tree, so no build race); only files that fail alone at head ever run at base.
+  // 3. alone: the failures (and the borderline slow candidates) once each by themselves at head, and beside that run
+  // (another tree, so no shared build) the same failures alone at the merge-base: only files that failed at head ever
+  // run at base, never a whole package. A failure is base-red only when it fails alone at head and alone at base.
   started = Date.now();
   const failedIds = new Set(failed.map(result => result.unit.id));
   const passing = related.filter(result => result.status === "pass" && result.ms > slowMs);
@@ -525,26 +495,19 @@ export async function runFast(options: FastOptions): Promise<FastRecord> {
   // time by far less): it is listed from that measurement and not re-run. Borderline files are re-run alone.
   for (const result of passing.filter(item => item.ms > SURE_SLOW * slowMs)) slow.push({ id: result.unit.id, pkg: result.unit.pkg, seconds: seconds(result.ms), measured: "related", ...ownerOf(repo, result.unit.pkg) });
   const again = [...failed.map(result => result.unit), ...passing.filter(item => item.ms <= SURE_SLOW * slowMs).map(result => result.unit)];
-  const toBase = new Batches<Unit>();
   const atBase = new Map<string, UnitResult>();
   let tree: Worktree | undefined;
   let baseError: string | undefined;
-  const baseWorker = (async () => {
-    for (let batch = await toBase.take(); batch; batch = await toBase.take()) {
-      if (!tree && baseError === undefined) {
-        try { tree = baseTree(repo, base); } catch (error) { baseError = error instanceof Error ? error.message.split("\n")[0]! : String(error); }
-      }
-      if (!tree) continue;
-      const present = batch.filter(unit => existsSync(join(tree!.dir, unit.file)));
-      for (const result of present.length ? await runner.alone("base", tree.dir, present) : []) atBase.set(result.unit.id, result);
-    }
-  })();
+  const baseRun = async () => {
+    if (!failed.length) return;
+    try { tree = baseTree(repo, base); } catch (error) { baseError = error instanceof Error ? error.message.split("\n")[0]! : String(error); return; }
+    const present = failed.map(result => result.unit).filter(unit => existsSync(join(tree!.dir, unit.file)));
+    for (const result of present.length ? await runner.alone("base", tree.dir, present) : []) atBase.set(result.unit.id, result);
+  };
   let alone: UnitResult[];
   try {
-    alone = again.length ? await runner.alone("alone", repo, again, result => { if (failedIds.has(result.unit.id) && result.status !== "pass") toBase.push(result.unit); }) : [];
+    [alone] = await Promise.all([again.length ? runner.alone("alone", repo, again) : Promise.resolve([]), baseRun()]);
   } finally {
-    toBase.close();
-    await baseWorker;
     tree?.remove();
   }
   for (const result of alone) if (result.ms > slowMs) slow.push({ id: result.unit.id, pkg: result.unit.pkg, seconds: seconds(result.ms), measured: "alone", ...ownerOf(repo, result.unit.pkg) });
@@ -561,7 +524,7 @@ export async function runFast(options: FastOptions): Promise<FastRecord> {
     ...(baseRed.length ? [`${baseRed.length} base-red (${list(baseRed.map(item => item.id))})`] : []),
     ...(noise.length ? [`${noise.length} load noise (${list(noise.map(item => item.id))})`] : []),
   ];
-  steps.push({ step: "alone", status: red.length ? "fail" : "pass", seconds: seconds(Date.now() - started), line: again.length ? `alone: ${parts.join(", ")}` : "alone: nothing to re-run" });
+  done("alone", red.length ? "fail" : "pass", again.length ? `alone: ${parts.join(", ")}` : "alone: nothing to re-run");
   if (red.length) return finish("FAST FAIL", "red");
   if (!runner.commands.length) return finish("FAST FAIL", "the diff changed files but no command ran: nothing checked is never a pass");
   return finish("FAST PASS");
