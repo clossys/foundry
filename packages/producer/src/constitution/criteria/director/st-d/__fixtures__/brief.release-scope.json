@@ -1,0 +1,346 @@
+{
+  "pass": [
+    {
+      "subject": {
+        "kind": "brief",
+        "text": "\n## Direction\n- Release: claim export for the six insurers\n- Stage: launch\n- Target date: 2026-12-15\n- Scope: site (home, pricing, contact): launch site that shows founders the claim export; docs (quickstart): launch guide so founders set up exports alone\n- Not in scope: slides, video, customer stories\n\n## Because\n- Founders lose a week a month to manual claims (context.customer.need)\n- Founders arrive from search (focus.reach.channel)\n\n## Watch\n- If signups < 20 by 2027-01-15, then review the launch site with the owner.\n",
+        "json": {
+          "slot": "execution.roadmap.release",
+          "source": "{\"kind\": \"derived\", \"ref\": [\"context.customer.need\", \"focus.reach.channel\"]}"
+        }
+      },
+      "params": {
+        "kinds": [
+          "site",
+          "docs",
+          "slides",
+          "video",
+          "image set"
+        ],
+        "stages": [
+          "launch",
+          "mvp",
+          "growth",
+          "mature"
+        ],
+        "capStages": [
+          "launch",
+          "mvp"
+        ],
+        "pageCap": 8
+      }
+    },
+    {
+      "subject": {
+        "kind": "brief",
+        "text": "\n## Direction\n- Release: claim export for the six insurers\n- Stage: growth\n- Target date: 2026-12-15\n- Scope: site (home, about, pricing, contact, site-page, terms, privacy): growth site that shows founders the claim export; docs (quickstart, setup): growth guide so founders set up exports alone\n- Not in scope: slides, video, customer stories\n\n## Because\n- Founders lose a week a month to manual claims (context.customer.need)\n- Founders arrive from search (focus.reach.channel)\n\n## Watch\n- If signups < 20 by 2027-01-15, then review the launch site with the owner.\n",
+        "json": {
+          "slot": "execution.roadmap.release",
+          "source": "{\"kind\": \"derived\", \"ref\": [\"context.customer.need\", \"focus.reach.channel\"]}"
+        }
+      },
+      "params": {
+        "kinds": [
+          "site",
+          "docs",
+          "slides",
+          "video",
+          "image set"
+        ],
+        "stages": [
+          "launch",
+          "mvp",
+          "growth",
+          "mature"
+        ],
+        "capStages": [
+          "launch",
+          "mvp"
+        ],
+        "pageCap": 8
+      },
+      "note": "a growth release is not capped"
+    },
+    {
+      "subject": {
+        "kind": "brief",
+        "text": "\n## Direction\n- Release: claim export for the six insurers\n- Stage: launch\n- Target date: 2026-12-15\n- Scope: site (home, pricing, contact): launch site that shows founders the claim export; docs (quickstart): launch guide so founders set up exports alone\n- Not in scope: slides, video, customer stories\n\n## Because\n- Founders lose a week a month to manual claims (context.customer.need)\n- Founders arrive from search (focus.reach.channel)\n\n## Watch\n- If signups < 20 by 2027-01-15, then review the launch site with the owner.\n",
+        "json": {
+          "slot": "execution.roadmap.release",
+          "source": "{\"kind\": \"derived\", \"ref\": [\"director:context.customer.need\", \"focus.reach.channel\"]}"
+        }
+      },
+      "params": {
+        "kinds": [
+          "site",
+          "docs",
+          "slides",
+          "video",
+          "image set"
+        ],
+        "stages": [
+          "launch",
+          "mvp",
+          "growth",
+          "mature"
+        ],
+        "capStages": [
+          "launch",
+          "mvp"
+        ],
+        "pageCap": 8
+      },
+      "note": "director: prefix"
+    }
+  ],
+  "fail": [
+    {
+      "subject": {
+        "kind": "brief",
+        "text": "\n## Direction\n- Release: claim export for the six insurers\n- Stage: launch\n- Target date: 2026-12-15\n- Scope: site (home, pricing, contact)\n- Not in scope: slides, video, customer stories\n\n## Because\n- Founders lose a week a month to manual claims (context.customer.need)\n- Founders arrive from search (focus.reach.channel)\n\n## Watch\n- If signups < 20 by 2027-01-15, then review the launch site with the owner.\n",
+        "json": {
+          "slot": "execution.roadmap.release",
+          "source": "{\"kind\": \"derived\", \"ref\": [\"context.customer.need\", \"focus.reach.channel\"]}"
+        }
+      },
+      "params": {
+        "kinds": [
+          "site",
+          "docs",
+          "slides",
+          "video",
+          "image set"
+        ],
+        "stages": [
+          "launch",
+          "mvp",
+          "growth",
+          "mature"
+        ],
+        "capStages": [
+          "launch",
+          "mvp"
+        ],
+        "pageCap": 8
+      },
+      "note": "row with no use case"
+    },
+    {
+      "subject": {
+        "kind": "brief",
+        "text": "\n## Direction\n- Release: claim export for the six insurers\n- Stage: launch\n- Target date: 2026-12-15\n- Scope: site (home, about, pricing, contact, site-page, terms, privacy): launch site that shows founders the claim export; docs (quickstart, setup): launch guide so founders set up exports alone\n- Not in scope: slides, video, customer stories\n\n## Because\n- Founders lose a week a month to manual claims (context.customer.need)\n- Founders arrive from search (focus.reach.channel)\n\n## Watch\n- If signups < 20 by 2027-01-15, then review the launch site with the owner.\n",
+        "json": {
+          "slot": "execution.roadmap.release",
+          "source": "{\"kind\": \"derived\", \"ref\": [\"context.customer.need\", \"focus.reach.channel\"]}"
+        }
+      },
+      "params": {
+        "kinds": [
+          "site",
+          "docs",
+          "slides",
+          "video",
+          "image set"
+        ],
+        "stages": [
+          "launch",
+          "mvp",
+          "growth",
+          "mature"
+        ],
+        "capStages": [
+          "launch",
+          "mvp"
+        ],
+        "pageCap": 8
+      },
+      "note": "launch over the page cap"
+    },
+    {
+      "subject": {
+        "kind": "brief",
+        "text": "\n## Direction\n- Release: claim export for the six insurers\n- Stage: launch\n- Target date: 2026-12-15\n- Scope: site (home): a site that shows founders the claim export\n- Not in scope: slides, video, customer stories\n\n## Because\n- Founders lose a week a month to manual claims (context.customer.need)\n- Founders arrive from search (focus.reach.channel)\n\n## Watch\n- If signups < 20 by 2027-01-15, then review the launch site with the owner.\n",
+        "json": {
+          "slot": "execution.roadmap.release",
+          "source": "{\"kind\": \"derived\", \"ref\": [\"context.customer.need\", \"focus.reach.channel\"]}"
+        }
+      },
+      "params": {
+        "kinds": [
+          "site",
+          "docs",
+          "slides",
+          "video",
+          "image set"
+        ],
+        "stages": [
+          "launch",
+          "mvp",
+          "growth",
+          "mature"
+        ],
+        "capStages": [
+          "launch",
+          "mvp"
+        ],
+        "pageCap": 8
+      },
+      "note": "use case does not name the stage"
+    },
+    {
+      "subject": {
+        "kind": "brief",
+        "text": "\n## Direction\n- Release: claim export for the six insurers\n- Stage: launch\n- Target date: 2026-12-15\n- Scope: podcast (episode-one): launch show that tells founders the claim export story\n- Not in scope: slides, video, customer stories\n\n## Because\n- Founders lose a week a month to manual claims (context.customer.need)\n- Founders arrive from search (focus.reach.channel)\n\n## Watch\n- If signups < 20 by 2027-01-15, then review the launch site with the owner.\n",
+        "json": {
+          "slot": "execution.roadmap.release",
+          "source": "{\"kind\": \"derived\", \"ref\": [\"context.customer.need\", \"focus.reach.channel\"]}"
+        }
+      },
+      "params": {
+        "kinds": [
+          "site",
+          "docs",
+          "slides",
+          "video",
+          "image set"
+        ],
+        "stages": [
+          "launch",
+          "mvp",
+          "growth",
+          "mature"
+        ],
+        "capStages": [
+          "launch",
+          "mvp"
+        ],
+        "pageCap": 8
+      },
+      "note": "unknown kind"
+    },
+    {
+      "subject": {
+        "kind": "brief",
+        "text": "\n## Direction\n- Release: claim export for the six insurers\n- Stage: someday\n- Target date: 2026-12-15\n- Scope: site (home, pricing, contact): launch site that shows founders the claim export; docs (quickstart): launch guide so founders set up exports alone\n- Not in scope: slides, video, customer stories\n\n## Because\n- Founders lose a week a month to manual claims (context.customer.need)\n- Founders arrive from search (focus.reach.channel)\n\n## Watch\n- If signups < 20 by 2027-01-15, then review the launch site with the owner.\n",
+        "json": {
+          "slot": "execution.roadmap.release",
+          "source": "{\"kind\": \"derived\", \"ref\": [\"context.customer.need\", \"focus.reach.channel\"]}"
+        }
+      },
+      "params": {
+        "kinds": [
+          "site",
+          "docs",
+          "slides",
+          "video",
+          "image set"
+        ],
+        "stages": [
+          "launch",
+          "mvp",
+          "growth",
+          "mature"
+        ],
+        "capStages": [
+          "launch",
+          "mvp"
+        ],
+        "pageCap": 8
+      },
+      "note": "unknown stage"
+    },
+    {
+      "subject": {
+        "kind": "brief",
+        "text": "\n## Direction\n- Release: claim export for the six insurers\n- Stage: launch\n- Target date: 2026-12-15\n- Scope: site (home, pricing, contact): launch site that shows founders the claim export; docs (quickstart): launch guide so founders set up exports alone\n- Not in scope: none\n\n## Because\n- Founders lose a week a month to manual claims (context.customer.need)\n- Founders arrive from search (focus.reach.channel)\n\n## Watch\n- If signups < 20 by 2027-01-15, then review the launch site with the owner.\n",
+        "json": {
+          "slot": "execution.roadmap.release",
+          "source": "{\"kind\": \"derived\", \"ref\": [\"context.customer.need\", \"focus.reach.channel\"]}"
+        }
+      },
+      "params": {
+        "kinds": [
+          "site",
+          "docs",
+          "slides",
+          "video",
+          "image set"
+        ],
+        "stages": [
+          "launch",
+          "mvp",
+          "growth",
+          "mature"
+        ],
+        "capStages": [
+          "launch",
+          "mvp"
+        ],
+        "pageCap": 8
+      },
+      "note": "no Not-in-scope list"
+    },
+    {
+      "subject": {
+        "kind": "brief",
+        "text": "\n## Direction\n- Release: claim export for the six insurers\n- Stage: launch\n- Target date: 2026-12-15\n- Scope: site (home, pricing, contact): launch site that shows founders the claim export; docs (quickstart): launch guide so founders set up exports alone\n- Not in scope: slides, video, customer stories\n\n## Because\n- Founders lose a week a month to manual claims (context.customer.need)\n- Founders arrive from search (focus.reach.channel)\n\n## Watch\n- If signups < 20 by 2027-01-15, then review the launch site with the owner.\n",
+        "json": {
+          "slot": "execution.roadmap.release",
+          "source": "{\"kind\": \"derived\", \"ref\": [\"focus.reach.channel\"]}"
+        }
+      },
+      "params": {
+        "kinds": [
+          "site",
+          "docs",
+          "slides",
+          "video",
+          "image set"
+        ],
+        "stages": [
+          "launch",
+          "mvp",
+          "growth",
+          "mature"
+        ],
+        "capStages": [
+          "launch",
+          "mvp"
+        ],
+        "pageCap": 8
+      },
+      "note": "does not derive from the customer need"
+    },
+    {
+      "subject": {
+        "kind": "brief",
+        "text": "\n## Direction\n- Release: claim export for the six insurers\n- Stage: launch\n- Target date: 2026-12-15\n- Scope: site (): launch site that shows founders the claim export\n- Not in scope: slides, video, customer stories\n\n## Because\n- Founders lose a week a month to manual claims (context.customer.need)\n- Founders arrive from search (focus.reach.channel)\n\n## Watch\n- If signups < 20 by 2027-01-15, then review the launch site with the owner.\n",
+        "json": {
+          "slot": "execution.roadmap.release",
+          "source": "{\"kind\": \"derived\", \"ref\": [\"context.customer.need\", \"focus.reach.channel\"]}"
+        }
+      },
+      "params": {
+        "kinds": [
+          "site",
+          "docs",
+          "slides",
+          "video",
+          "image set"
+        ],
+        "stages": [
+          "launch",
+          "mvp",
+          "growth",
+          "mature"
+        ],
+        "capStages": [
+          "launch",
+          "mvp"
+        ],
+        "pageCap": 8
+      },
+      "note": "no pages"
+    }
+  ]
+}

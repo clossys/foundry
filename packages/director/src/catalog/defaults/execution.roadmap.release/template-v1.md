@@ -15,6 +15,7 @@ clossys:
 
 ## Direction
 - Release:
+- Stage:
 - Target date:
 - Scope:
 - Not in scope:

@@ -15,9 +15,11 @@
  * through records/slot-write.ts only.
  */
 import { refuseLegacyState, statePath } from "../engine/state-dir.js";
-import { closeSync, existsSync, linkSync, mkdirSync, openSync, readdirSync, readFileSync, renameSync, rmSync, unlinkSync, writeFileSync, writeSync } from "node:fs";
+import { closeSync, existsSync, linkSync, mkdirSync, mkdtempSync, openSync, readdirSync, readFileSync, renameSync, rmSync, unlinkSync, writeFileSync, writeSync } from "node:fs";
 import { createHash } from "node:crypto";
+import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
+import { isDeepStrictEqual } from "node:util";
 import { loadSchema, validateValue } from "../pipeline/schema.js";
 import { queueEntryChangeIssues } from "../queue/append-only.js";
 import { findQueueEntry, readQueueEntry } from "../queue/entry.js";
@@ -35,7 +37,7 @@ import { slotDir, slotFile } from "./slot-model/layout.js";
 import { AGENT_KIND } from "./slot-model/types.js";
 import { listSlots, modelExists, readModelText, readSlot, readSlotEntry } from "./slots.js";
 import { appendSlotDocEvent, replaceModelFile } from "./slot-write.js";
-import type { Actor, EntryRoute, OptionStep, Overlap, OwnerOption, PinRecord, Proposal, Ref, RequestEvent, RequestOp, Slot, SlotRequest } from "./types.js";
+import type { Actor, EntryRoute, OptionStep, Overlap, OwnerOption, PinRecord, Proposal, ProposedSteps, Ref, RequestEvent, RequestOp, Slot, SlotRequest } from "./types.js";
 import { REPORT_KIND, reportIssues, type ReportEntry } from "./report-shape.js";
 
 export const REQUEST_SCHEMA = "clossys.queue-entry/2";
@@ -52,7 +54,7 @@ export const REQUEST_ID = /^[0-9]{8}T[0-9]{4}Z-[a-z0-9][a-z0-9-]*$/;
 const NEED_ID = /^[a-z][a-z0-9-]*(\.[a-z0-9][a-z0-9-]*){1,3}$/;
 const SLOT_TARGET = /^(director|designer|writer|publisher)\/([a-z][a-z0-9-]*(?:\.[a-z0-9][a-z0-9-]*){1,3})$/;
 
-export type { OptionStep, Overlap, OwnerOption, Proposal, RequestEvent, RequestOp, SlotRequest } from "./types.js";
+export type { OptionStep, Overlap, OwnerOption, Proposal, ProposedStep, ProposedSteps, RequestEvent, RequestOp, SlotRequest } from "./types.js";
 
 /** The agent a request asks and the slot id it names (kind slot, slot-ref target). */
 export function targetOf(request: Pick<SlotRequest, "target">): { agent: ContentAgent; need: string } | undefined {
@@ -103,8 +105,15 @@ export function awaitsOwner(request: Pick<SlotRequest, "status" | "assignee" | "
   return request.assignee === "owner" || lastIndexOf(request.events, "asked") > lastIndexOf(request.events, "answered");
 }
 
-/** The outcome an option's step closes with: `close <outcome>`, and `pin` closes a change changed. */
-const stepOutcome = (step: OptionStep): string | undefined => step.verb === "close" ? step.args[0] : step.verb === "pin" ? "changed" : undefined;
+/** The outcome an option's step closes with: `close <outcome>`, and `pin` or `approve` closes a change changed. */
+const stepOutcome = (step: OptionStep): string | undefined => step.verb === "close" ? step.args[0] : step.verb === "pin" || step.verb === "approve" ? "changed" : undefined;
+
+/** The steps an entry proposes now: its latest raised event's (a later raise of the same work refreshes them). */
+export const currentProposed = (request: Pick<SlotRequest, "events">): ProposedSteps | undefined =>
+  request.events.filter(event => event.op === "raised").at(-1)?.proposed;
+/** The clossys verb that filed an entry (its code actor's cli), run --dry to re-derive the entry's proposal; else undefined. */
+export const proposerOf = (request: Pick<SlotRequest, "createdBy">): string | undefined =>
+  request.createdBy?.actor === "code" && /^clossys [a-z][a-z-]*$/.test(request.createdBy.cli ?? "") ? request.createdBy.cli!.slice("clossys ".length) : undefined;
 
 /**
  * Why `by` may not close the change or fix entry `request` with `outcome` (empty when it may): the one closure rule
@@ -256,6 +265,11 @@ function stepIssues(request: SlotRequest, option: OwnerOption): string[] {
   }
   if (verb === "close") return request.kind !== "slot" && args.length === 1 && (outcomesFor(request.kind) as readonly string[]).includes(args[0]!) ? [] : [`${at}: close takes one outcome of a ${request.kind} entry (${outcomesFor(request.kind).join(", ") || "none: a slot closes by its decision"})`];
   if (verb === "handoff") return args.length === 1 && target !== undefined && args[0] === target.agent ? [] : [`${at}: handoff takes [<the target's agent>]`];
+  if (verb === "approve") {
+    if (args.length || request.kind !== "change") return [`${at}: approve takes no args, on a change entry`];
+    if (!currentProposed(request)) return [`${at}: approve runs proposed steps, and the entry's latest raised event proposes none`];
+    return proposerOf(request) ? [] : [`${at}: approve needs the verb that filed the entry (a code createdBy with its cli) to re-derive the proposal`];
+  }
   return args.length === 0 ? [] : [`${at}: reject takes no args`];
 }
 
@@ -418,7 +432,7 @@ export function withRequestLock<T>(consumer: string, key: string, body: () => T)
 }
 const raiseLock = (target: string) => `raise-${target.replace(/\//g, "-")}`;
 
-const withEvent = (request: SlotRequest, op: RequestOp, at: string, by?: string, detail?: string, extra: Pick<RequestEvent, "option" | "via" | "quote"> = {}): { request: SlotRequest; id: string } => {
+const withEvent = (request: SlotRequest, op: RequestOp, at: string, by?: string, detail?: string, extra: Pick<RequestEvent, "option" | "via" | "quote" | "proposed"> = {}): { request: SlotRequest; id: string } => {
   const id = `${request.id}#${request.events.length + 1}`;
   return { id, request: { ...request, events: [...request.events, { id, at, op, ...(by ? { by } : {}), ...(detail !== undefined ? { detail } : {}), ...extra }] } };
 };
@@ -551,11 +565,17 @@ const optionId = (verb: string, name: string) => `${verb}-${name.toLowerCase().r
  *   (`pin <target>[#<record>] <candidate> --confirm`, then closes changed).
  * - `handoff` when the table, the owner reservation set aside, routes the entry to an agent (`handoff <agent>`).
  * - A change or fix: `decline` (`close declined`).
+ * - A change whose raise proposes steps: `approve` first, and no handoff.
  * None is a raise refused: an owner entry is never a free-text question.
  */
-function ownerOptions(consumer: string, entry: { readonly kind: WorkKind; readonly target: string; readonly want?: SlotRequest["want"] }, facts?: RoutingFacts): OwnerOption[] {
+function ownerOptions(consumer: string, entry: { readonly kind: WorkKind; readonly target: string; readonly want?: SlotRequest["want"]; readonly proposed?: ProposedSteps }, facts?: RoutingFacts): OwnerOption[] {
   const target = targetOf(entry)!;
   const out: OwnerOption[] = [];
+  // A proposal is the owner's to approve or decline (CP1-PLAN): approve runs its steps, so it is never handed off.
+  if (entry.kind === "change" && entry.proposed?.steps.length) {
+    const count = entry.proposed.steps.length;
+    out.push({ id: "approve", label: `Approve: run the ${count} proposed step${count === 1 ? "" : "s"}, then close it changed`, then: { verb: "approve", args: [] } });
+  }
   if (entry.kind === "change" && entry.want === "repin" && !isRecordSlot(dirname(consumer), target.agent, target.need)) {
     const slot = readSlotEntry(consumer, target.agent, target.need);
     for (const name of slot?.candidates ?? []) {
@@ -567,7 +587,7 @@ function ownerOptions(consumer: string, entry: { readonly kind: WorkKind; readon
   try { handoff = routeEntry(facts ?? consumerFacts(consumer), { kind: entry.kind, target: entry.target, assignee: target.agent }, { delegated: true }); } catch (error) {
     if (!(error instanceof RoutingError)) throw error;
   }
-  if (handoff && handoff.assignee !== "owner") out.push({ id: "handoff", label: `Hand it to ${handoff.assignee} to answer by its skill`, then: { verb: "handoff", args: [target.agent] } });
+  if (handoff && handoff.assignee !== "owner" && !out.some(option => option.then.verb === "approve")) out.push({ id: "handoff", label: `Hand it to ${handoff.assignee} to answer by its skill`, then: { verb: "handoff", args: [target.agent] } });
   if (entry.kind !== "slot") out.push({ id: "decline", label: `Decline: close it declined`, then: { verb: "close", args: ["declined"] } });
   if (!out.length) throw new RequestError(`the owner would have no option on ${entry.kind} ${entry.target} (no candidate to pin, no agent to hand it to): nothing was written`);
   return out;
@@ -630,6 +650,8 @@ export interface RaiseWorkInput {
   readonly detail?: string;
   /** Entries the raise cites (rel cites): a fix raised on a failed owner answer cites the answered entry. */
   readonly cites?: readonly Ref[];
+  /** The steps the raise proposes (on its raised event): the owner's approve option runs them. */
+  readonly proposed?: ProposedSteps;
 }
 /**
  * `ownerWords` (the owner's own feedback): an open entry the raise dedupes onto is returned only when it is the owner's
@@ -672,7 +694,7 @@ function workRequestDraft(consumer: string, input: RaiseWorkInput, facts?: Routi
     const target = targetOf(input)!;
     const id = `${stampOf(input.at)}-${input.kind}-${target.need.replace(/\./g, "-")}`.slice(0, 80).replace(/-+$/, "");
     const route = routeOf(consumer, { kind: input.kind, target: input.target, assignee: target.agent }, facts);
-    const choices = route.assignee === "owner" ? ownerOptions(consumer, { kind: input.kind, target: input.target, ...(input.want !== undefined ? { want: input.want } : {}) }, facts) : undefined;
+    const choices = route.assignee === "owner" ? ownerOptions(consumer, { kind: input.kind, target: input.target, ...(input.want !== undefined ? { want: input.want } : {}), ...(input.proposed ? { proposed: input.proposed } : {}) }, facts) : undefined;
     // The owner's own repin change on a slot routed to its agent, where the slot holds an unconfirmed agent pick: the
     // confirmation is the owner's alone, so Producer asks it at once (U13 r3, N3): the confirm options and keep-open
     // (the agent works the change), an asked event; the entry stays the agent's.
@@ -687,7 +709,7 @@ function workRequestDraft(consumer: string, input: RaiseWorkInput, facts?: Routi
       ...(input.want !== undefined ? { want: input.want } : {}),
       ...(input.check !== undefined ? { check: input.check } : {}), ...(input.findings !== undefined ? { findings: [...input.findings] } : {}), ...(input.cause !== undefined ? { cause: input.cause } : {}),
       events: [
-        { id: `${id}#1`, at: input.at, op: "raised", by: input.by, via: input.via ?? "cli", ...(input.quote !== undefined ? { quote: input.quote } : {}), detail: input.detail ?? input.why },
+        { id: `${id}#1`, at: input.at, op: "raised", by: input.by, via: input.via ?? "cli", ...(input.quote !== undefined ? { quote: input.quote } : {}), detail: input.detail ?? input.why, ...(input.proposed ? { proposed: input.proposed } : {}) },
         routedEvent(id, 2, input.at, route),
         ...(asking ? [{ id: `${id}#3`, at: input.at, op: "asked" as const, by: "producer", detail: `${input.target} holds an unconfirmed agent pick: the owner confirms it (${confirms.map(option => option.id).join(", ")}) or keeps it open with ${route.assignee}` }] : []),
       ],
@@ -838,6 +860,9 @@ export interface AnswerResult { readonly request: SlotRequest; readonly option: 
  *   answer), then closeWork changed with the target as result.
  * - `handoff <agent>`: the entry is re-routed with the owner reservation set aside (route.delegated) to that agent.
  * - `reject`: a `rejected` event; the entry stays open with its assignee.
+ * - `approve`: first (before the answered event) the verb that filed the entry, run --dry, must re-derive its current
+ *   proposed steps, else the answer is refused with the refresh command; then each step runs through the pipeline
+ *   runner in order (a contract written to a scratch file for --contract), then closeWork changed.
  * The whole answer, step included, holds the entry's answer lock, and every step re-checks under the entry lock that
  * the answer is still its last event before it writes (U7 r5). A step that fails, for any reason, leaves the entry open
  * with a `rejected` event naming the check that refused it and, for a change, raises a kind fix on its target (routed
@@ -869,6 +894,9 @@ async function withAnswerLock<T>(consumer: string, id: string, body: () => Promi
 }
 
 async function runAnswer(consumer: string, id: string, input: AnswerInput): Promise<AnswerResult> {
+  // An approve re-derives its proposal before anything is written (CP1-PLAN): a stale one is refused with the refresh.
+  const asked = readRequest(consumer, id);
+  if (asked.status === "open" && asked.options?.find(item => item.id === input.option)?.then.verb === "approve") await refuseStaleProposal(consumer, asked);
   const answered = withRequestLock(consumer, id, () => {
     const request = readRequest(consumer, id);
     if (request.status !== "open") throw new RequestError(`request ${id} is closed; nothing was written`);
@@ -933,6 +961,40 @@ async function runAnswer(consumer: string, id: string, input: AnswerInput): Prom
       const closed = closeWork(consumer, id, { by: self, at: input.at, outcome: "changed", result: step.args[0]!.split("#")[0]!, answered: event, note: applied });
       return { request: closed, option, ok: true, message: `${step.args[0]}: ${confirm ? "confirmed" : "pinned"} ${step.args[1]}; request ${id} closed changed, notified ${closed.from}` };
     }
+    if (step.verb === "approve") {
+      // As a pin: the fix a refused step would raise must route before any proposed step runs.
+      try { fixFor(consumer, answered.request, option, new StepFailure("requester.check", []), input.at, { dry: true }); } catch (error) {
+        throw new StepFailure("route", [`no fix on ${answered.request.target} would route, so no proposed step runs: ${error instanceof Error ? error.message : String(error)}`]);
+      }
+      const proposed = withRequestLock(consumer, id, () => {
+        const request = readRequest(consumer, id);
+        stillAnswered(request, "run");
+        return currentProposed(request)!;
+      });
+      // Each step runs through the pipeline runner, in order; a contract is data, written to a scratch file for --contract.
+      const { runStep } = await import("../pipeline/runner.js");
+      const root = dirname(consumer), dir = mkdtempSync(join(tmpdir(), "clossys-approve-")), ran: string[] = [];
+      try {
+        for (const [index, item] of proposed.steps.entries()) {
+          const argv = [...item.args];
+          if (item.contract) {
+            const file = join(dir, `step-${index + 1}.json`);
+            writeFileSync(file, `${JSON.stringify(item.contract, null, 2)}\n`);
+            argv.push("--contract", file);
+          }
+          const line = `step ${index + 1} (clossys ${item.args.join(" ")})`;
+          let result: Awaited<ReturnType<typeof runStep>>;
+          try { result = await runStep([...argv, "--root", root], root); } catch (error) {
+            throw new StepFailure("approve", [...ran, `${line} failed: ${error instanceof Error ? error.message : String(error)}`]);
+          }
+          if (result.exitCode !== 0) throw new StepFailure("approve", [...ran, `${line} refused: ${(result.message ?? "no message").split("\n")[0]}`]);
+          ran.push(`${line} ran`);
+        }
+      } finally { rmSync(dir, { recursive: true, force: true }); }
+      applied = `the ${ran.length} proposed step${ran.length === 1 ? "" : "s"} ran`;
+      const closed = closeWork(consumer, id, { by: self, at: input.at, outcome: "changed", result: `${workQueue(answered.request.kind as WorkKind)}#${id}`, answered: event, note: applied });
+      return { request: closed, option, ok: true, message: `request ${id}: ${applied}; closed changed, notified ${closed.from}` };
+    }
     const outcome = step.args[0] as NonNullable<SlotRequest["outcome"]>;
     const closed = closeWork(consumer, id, { by: self, at: input.at, outcome, result: outcome === "fixed" ? answered.request.target : `${workQueue(answered.request.kind as WorkKind)}#${id}`, answered: event });
     return { request: closed, option, ok: true, message: `request ${id} closed ${outcome}, notified ${closed.from}` };
@@ -943,6 +1005,26 @@ async function runAnswer(consumer: string, id: string, input: AnswerInput): Prom
       : new StepFailure(error instanceof RoutingError ? "route" : "closure", [error instanceof Error ? error.message : String(error)]);
     return failedStep(consumer, id, option, applied ? new StepFailure(failure.check, [applied, ...failure.findings]) : failure, input.at);
   }
+}
+
+/**
+ * Refuses an approve answer, nothing written (RequestError), when the verb that filed the entry (proposerOf), run
+ * --dry, no longer derives the steps it holds (its `output.proposed`): the reason, and the command that refreshes it.
+ */
+async function refuseStaleProposal(consumer: string, request: SlotRequest): Promise<void> {
+  const verb = proposerOf(request), stored = currentProposed(request);
+  if (!verb || !stored) return; // optionIssues refuses such an approve option on read
+  const root = dirname(consumer);
+  const next = `Next: clossys ${verb} (it refreshes request ${request.id}), then clossys request ${request.id} --answer approve`;
+  const { runStep } = await import("../pipeline/runner.js");
+  let result: Awaited<ReturnType<typeof runStep>>;
+  try { result = await runStep([verb, "--dry", "--root", root], root); } catch (error) {
+    throw new RequestError(`request ${request.id}: clossys ${verb} --dry does not re-derive its proposal (${error instanceof Error ? error.message : String(error)}); nothing was written. ${next}`);
+  }
+  const now = (result.output as { proposed?: ProposedSteps } | undefined)?.proposed;
+  if (result.exitCode === 0 && JSON.stringify(now) === JSON.stringify(stored)) return;
+  const why = result.exitCode !== 0 ? `refuses (${(result.message ?? "").split("\n")[0]})` : now ? `proposes ${now.steps.length} step${now.steps.length === 1 ? "" : "s"} that differ from the ${stored.steps.length} it holds` : "proposes nothing";
+  throw new RequestError(`request ${request.id}'s proposal changed since it was filed: clossys ${verb} --dry now ${why}; nothing was written. ${next}`);
 }
 
 /**
@@ -1051,10 +1133,12 @@ export interface MergedRaise {
   readonly by: string;
   readonly detail: string;
   readonly via?: RequestEvent["via"];
+  /** The steps this raise proposes: they become the entry's current proposal (currentProposed). */
+  readonly proposed?: ProposedSteps;
 }
 /** The entry with one more `raised` event carrying `raise` (pure; appendRaise writes it). */
 export const withMergedRaise = (request: SlotRequest, raise: MergedRaise): SlotRequest =>
-  withEvent(request, "raised", raise.at, raise.by, raise.detail, { via: raise.via ?? "cli" }).request;
+  withEvent(request, "raised", raise.at, raise.by, raise.detail, { via: raise.via ?? "cli", ...(raise.proposed ? { proposed: raise.proposed } : {}) }).request;
 /**
  * Carries a raise that dedupes onto an open entry (same kind, target and requester) into that entry, so its content is
  * never lost: one `raised` event appended under the entry's lock, through the append-only rule (queueEntryChangeIssues:
@@ -1068,9 +1152,10 @@ export function appendRaise(consumer: string, id: string, raise: MergedRaise, op
     const before = readRequest(consumer, id);
     if (before.status !== "open") throw new RequestError(`${workQueue(before.kind as WorkKind)}#${id} is ${before.status}: a raise merges only into an open entry`);
     if (before.events.some(event => event.op === "raised" && event.detail === raise.detail)) return { request: before, appended: false };
-    const after = withMergedRaise(before, raise);
-    const drift = queueEntryChangeIssues(before, after);
+    const merged = withMergedRaise(before, raise);
+    const drift = queueEntryChangeIssues(before, merged);
     if (drift.length) throw new RequestError(`merging a raise into ${id} would rewrite it: ${drift.join("; ")}`);
+    const after = reasked(consumer, before, merged, raise.at);
     const issues = requestIssues(after, dirname(consumer));
     if (issues.length) throw new RequestError(`request ${id} would be invalid: ${issues.slice(0, 5).join("; ")}`);
     if (options.dry) return { request: after, appended: true };
@@ -1078,6 +1163,19 @@ export function appendRaise(consumer: string, id: string, raise: MergedRaise, op
     return { request: readRequest(consumer, id), appended: true };
   };
   return options.dry ? body() : withRequestLock(consumer, id, body);
+}
+
+/**
+ * The owner's options re-derived when a merged raise changes the proposal of an owner change (CP1-PLAN fix r3): the
+ * options follow the current proposal under ownerOptions' one rule (steps: approve and decline; none: handoff and
+ * decline), never the first filing's. A changed set is Producer's asked event, as on an agent's claim; else `merged`.
+ */
+function reasked(consumer: string, before: SlotRequest, merged: SlotRequest, at: string): SlotRequest {
+  const proposed = currentProposed(merged);
+  if (before.kind !== "change" || before.assignee !== "owner" || (!currentProposed(before) && !proposed)) return merged;
+  const options = ownerOptions(consumer, { kind: "change", target: merged.target, ...(merged.want !== undefined ? { want: merged.want } : {}), ...(proposed ? { proposed } : {}) });
+  if (isDeepStrictEqual(options, before.options)) return merged;
+  return withEvent({ ...merged, options }, "asked", at, "producer", `the proposal changed: the owner answers ${options.map(option => option.id).join(", ")}`).request;
 }
 
 /** What a slot raise checks before it writes (raiseRequest): the target, the requester, its issuing edge and its cite. */

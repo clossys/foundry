@@ -1,0 +1,306 @@
+import { createHash } from "node:crypto";
+import { cpSync, existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, realpathSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join, sep } from "node:path";
+import { fileURLToPath } from "node:url";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import { runCli } from "./main.js";
+import { ASSERTIONS } from "../conform/assertions.js";
+import { readConformModel } from "../conform/model.js";
+import { currentProposed, type SlotRequest } from "../records/request.js";
+import { contentPlan, currentProposal, PLAN_USAGE, PlanError, planDetail, RELEASE_REF, RELEASE_SLOT } from "./plan.js";
+import { starterPlan } from "./starter-plan.js";
+
+// The plan runs the real ia, request and pinned readers on a scratch copy of the fixture consumer.
+vi.setConfig({ testTimeout: 120_000 });
+
+const FIXTURE = fileURLToPath(new URL("../../test-fixtures/consumer/", import.meta.url));
+const REPO = fileURLToPath(new URL("../../../../", import.meta.url));
+const AT = "2026-11-26T10:00:00Z";
+const roots: string[] = [];
+afterEach(() => { for (const root of roots.splice(0)) rmSync(root, { recursive: true, force: true }); });
+
+/** The release's own requirement, as the Director catalog's release cell states it (strategy.json). */
+const SCOPE_CHECK = { check: "brief.release-scope", params: { kinds: ["site", "docs", "slides", "video", "image set"], stages: ["launch", "mvp", "growth", "mature"], capStages: ["launch", "mvp"], pageCap: 8, need: "context.customer.need" } };
+const SCOPE = "site (home, pricing, contact, faq, not-found): launch site that shows founders the claim export; docs (quickstart): launch guide so founders set up exports alone";
+const body = (scope: string) => [
+  "## Direction", "- Release: claim export for the six insurers", "- Stage: launch", "- Target date: 2026-12-15", `- Scope: ${scope}`, "- Not in scope: slides, video, customer stories",
+  "", "## Because", "- Founders lose a week a month to manual claims (director:context.customer.need).", "- Founders arrive from search (director:focus.reach.channel).",
+  "", "## Watch", "- If signups fall below 20 by 2027-01-15, then review the launch site with the owner.", "",
+].join("\n");
+
+/** Every file under a folder, as bytes. */
+function bytes(dir: string, base = dir, out: Record<string, string> = {}): Record<string, string> {
+  if (!existsSync(dir)) return out;
+  for (const entry of readdirSync(dir, { withFileTypes: true })) {
+    const path = join(dir, entry.name);
+    if (entry.isDirectory()) bytes(path, base, out); else out[path.slice(base.length + 1).split(sep).join("/")] = readFileSync(path, "latin1");
+  }
+  return out;
+}
+
+/** The agent author a fixture Director candidate records (its skill and that skill's sha256), reused for the release. */
+function fixtureAuthor(consumer: string): unknown {
+  const text = readFileSync(join(consumer, "agents/director/focus.lifecycle.acquisition/candidates/acquisition-v1.md"), "utf8");
+  return (JSON.parse(/^clossys: (.*)$/m.exec(text)![1]!) as { createdBy: unknown }).createdBy;
+}
+
+/**
+ * A scratch consumer whose Director release is pinned: its contract gains the release requirement through `clossys ia`,
+ * then a release candidate and its pin are laid down the way the fixture world's pins are (planner basis). Without
+ * `publisher`, the copy holds no Publisher slot, so every proposal is a new placement.
+ */
+async function world(options: { publisher?: boolean; scope?: string; requirement?: boolean } = {}): Promise<{ root: string; consumer: string }> {
+  const root = realpathSync(mkdtempSync(join(tmpdir(), "clossys-plan-")));
+  roots.push(root);
+  const publisher = `${sep}clossys${sep}agents${sep}publisher`;
+  cpSync(FIXTURE, root, { recursive: true, filter: source => options.publisher !== false || !source.includes(publisher) });
+  const consumer = join(root, "clossys");
+  // Every init starts the Publisher IA; a copy with no Publisher slot is a freshly initialised consumer.
+  if (options.publisher === false) expect((await runCli(["ia", "publisher", "--start", "--root", root], root)).exitCode).toBe(0);
+  const dir = join(consumer, "agents/director", RELEASE_SLOT);
+  const slot = JSON.parse(readFileSync(join(dir, "slot.json"), "utf8")) as { contract: Record<string, unknown> };
+  {
+    // The fixture release carries the package contract, requirement included; `requirement: false` takes it out.
+    const kept = (slot.contract.requirements as { check?: string }[]).filter(requirement => requirement.check !== SCOPE_CHECK.check);
+    const contract = { ...slot.contract, requirements: options.requirement === false ? kept : [...kept, SCOPE_CHECK] };
+    const file = join(root, "release-contract.json");
+    writeFileSync(file, `${JSON.stringify(contract, null, 2)}\n`);
+    // The inputs the Director's release contract names (contracts.json), so the release's citations clear its requester check.
+    const placed = await runCli(["ia", RELEASE_REF, "--contract", file, "--standard", "brief.list", "--inputs", "focus.lifecycle.acquisition,context.customer.need,focus.reach.channel", "--root", root], root);
+    expect(placed.exitCode, placed.message).toBe(0);
+    rmSync(file);
+  }
+  pinRelease(consumer, "release-v1.md", options.scope ?? SCOPE);
+  return { root, consumer };
+}
+
+/** Lays down release candidate `name` stating `scope` and pins it (planner basis), the way the fixture world's pins are. */
+function pinRelease(consumer: string, name: string, scope: string): void {
+  const dir = join(consumer, "agents/director", RELEASE_SLOT);
+  const header = { schema: "clossys.candidate/1", id: `${RELEASE_REF}/${name}`, agent: "director", kind: "candidate", status: "submitted", slot: RELEASE_REF,
+    createdBy: fixtureAuthor(consumer), createdAt: AT, refs: [],
+    source: { kind: "derived", ref: ["director:context.customer.need", "director:focus.reach.channel"] }, rationale: [] };
+  const text = `---\nclossys: ${JSON.stringify(header)}\nslot: "${RELEASE_SLOT}"\nfeeds: []\nfunctions: []\n---\n${body(scope)}`;
+  mkdirSync(join(dir, "candidates"), { recursive: true });
+  writeFileSync(join(dir, "candidates", name), text);
+  const pin = { schema: "clossys.pin/2", id: `${RELEASE_REF}/pin`, agent: "director", kind: "pin", status: "confirm", createdBy: { actor: "code", cli: "clossys pin", version: "0.1.0" }, createdAt: AT, updatedAt: AT,
+    refs: [{ to: "producer/checks.scorecard", rel: "cites", record: RELEASE_REF, sha256: "0".repeat(64) }], candidate: name, sha256: createHash("sha256").update(text).digest("hex"), decidedBy: "planner:fixture-world", basis: "planner", at: AT };
+  writeFileSync(join(dir, "pin.json"), `${JSON.stringify(pin, null, 2)}\n`);
+}
+
+describe("clossys plan (CP1-PLAN)", () => {
+  it("plan proposes only menu-served placements with director input refs", async () => {
+    const site = starterPlan(FIXTURE, "site");
+    const menu = new Set([...site.pages.map(page => page.id), site.publication]);
+    // A consumer that places no Publisher slot: every served page and its publication is a new placement.
+    const fresh = await world({ publisher: false });
+    const plan = contentPlan(fresh.root);
+    expect(plan.stage).toBe("launch");
+    expect(plan.placements.map(item => item.slot)).toEqual(["page.home", "page.pricing", "page.contact", "publication.site"]);
+    for (const item of plan.placements) {
+      expect(menu.has(item.slot), item.slot).toBe(true);
+      expect(item.inputs[0], item.slot).toBe(RELEASE_SLOT);
+      expect(item.command, item.slot).toMatch(new RegExp(`^clossys ia publisher/${item.slot.replace(".", "\\.")} --contract <dir>/${item.slot.replace(".", "\\.")}\\.json --standard ${item.kind} --under site/\\S+ --kind ${item.kind} --inputs ${RELEASE_SLOT}[,\\s]`));
+      expect(item.contract, item.slot).toBeDefined();
+    }
+    // The publication lists only the pages the release asks for.
+    expect(plan.placements.at(-1)!.contract).toMatchObject({ kind: "publication", pages: ["page.home", "page.pricing", "page.contact"] });
+    // What the menu cannot serve is reported, never invented: a page with no archetype, a held status page, a kind with no starter.
+    expect(plan.unserved.map(item => [item.page ?? item.row.split(" ")[0], item.reason.split(":")[0]])).toEqual([["faq", "the site starter has no page.faq archetype (it has home, about, pricing, contact, site-page, terms, privacy)"], ["not-found", "held"], ["docs", "no seatable docs starter"]]);
+    expect(plan.notInScope).toEqual(["slides", "video", "customer stories"]);
+
+    // Applied after approval, the lines are real ia placements: each placed slot reads the release.
+    const dir = mkdtempSync(join(fresh.root, "plan-contracts-"));
+    for (const item of plan.placements) {
+      writeFileSync(join(dir, `${item.slot}.json`), `${JSON.stringify(item.contract, null, 2)}\n`);
+      const argv = item.command.replace(/^clossys /, "").replace("<dir>", dir).split(" ");
+      const applied = await runCli([...argv, "--root", fresh.root], fresh.root);
+      expect(applied.exitCode, `${item.command}: ${applied.message}`).toBe(0);
+      const doc = JSON.parse(readFileSync(join(fresh.consumer, "agents/publisher", item.slot, "slot.json"), "utf8")) as { refs: { to: string; rel: string }[] };
+      expect(doc.refs, item.slot).toContainEqual({ to: RELEASE_REF, rel: "input" });
+    }
+    // Planned: a second plan proposes nothing more for those rows.
+    expect(contentPlan(fresh.root).placements).toEqual([]);
+
+    // A consumer that already places the site pages: each line adds the release input to the placed slot, keeping its own.
+    const placed = await world();
+    const rewired = contentPlan(placed.root);
+    // The fixture places the site pages but no publication slot, so the publication is still a new placement.
+    expect(rewired.placements.map(item => [item.slot, item.placed])).toEqual([["page.home", true], ["page.pricing", true], ["page.contact", true], ["publication.site", false]]);
+    expect(rewired.placements.at(-1)!.inputs[0]).toBe(RELEASE_SLOT);
+    for (const item of rewired.placements.filter(entry => entry.placed)) {
+      expect(item.inputs.at(-1), item.slot).toBe(RELEASE_SLOT);
+      expect(item.command, item.slot).toMatch(new RegExp(`^clossys ia publisher/${item.slot.replace(".", "\\.")} --standard \\S+ --inputs \\S*${RELEASE_SLOT.replace(/\./g, "\\.")}`));
+    }
+  });
+
+  it("plan files one owner request and writes nothing else", async () => {
+    const { root, consumer } = await world();
+    const before = bytes(root);
+    const dry = await runCli(["plan", "--dry", "--at", AT, "--root", root], root);
+    expect(dry.exitCode, dry.message).toBe(0);
+    expect(dry.message).toMatch(/^plan: would file /);
+    expect(bytes(root)).toEqual(before);
+
+    const filed = await runCli(["plan", "--at", AT, "--root", root], root);
+    expect(filed.exitCode, filed.message).toBe(0);
+    const after = bytes(root);
+    const touched = Object.keys(after).filter(path => after[path] !== before[path]);
+    expect(Object.keys(before).filter(path => !(path in after))).toEqual([]);
+    // One record: the request entry. The engine logs that write in its own chain and derived index (clossys/.state/).
+    expect(touched.filter(path => path.startsWith("clossys/.state/")).sort()).toEqual(["clossys/.state/events.jsonl", "clossys/.state/index.json"]);
+    const changed = touched.filter(path => !path.startsWith("clossys/.state/"));
+    expect(changed, JSON.stringify(changed)).toHaveLength(1);
+    const entry = JSON.parse(after[changed[0]!]!) as Record<string, any>;
+    expect(changed[0]).toMatch(/^clossys\/agents\/producer\/queue\.[a-z]+\/entries\/[^/]+\.json$/);
+    expect(entry).toMatchObject({ kind: "change", target: RELEASE_REF, from: "owner", status: "open" });
+    expect(entry.assignee).toBe("owner");
+    // The proposal rides on the raised event: every ia line, each new slot's contract, and the unserved rows.
+    const raised = (entry.events as { op: string; detail?: string }[]).find(event => event.op === "raised")!;
+    expect(raised.detail).toContain(`clossys ia publisher/page.home --standard page --inputs`);
+    expect(raised.detail).toContain("contract publication.site: ");
+    expect(raised.detail).toContain("unserved");
+    // Nothing is placed: the Publisher's slots are byte for byte what they were.
+    expect(Object.keys(after).filter(path => path.startsWith("clossys/agents/publisher/") && after[path] !== before[path])).toEqual([]);
+    expect(consumer).toBe(join(root, "clossys"));
+  });
+
+  it("the plan request offers an approve answer routed to publisher", async () => {
+    const { root, consumer } = await world({ publisher: false });
+    const filed = await runCli(["plan", "--at", AT, "--root", root], root);
+    expect(filed.exitCode, filed.message).toBe(0);
+    const id = (filed.output as { request: string }).request;
+    const entryOf = () => JSON.parse(readFileSync(join(consumer, "agents/producer/queue.change/entries", `${id}.json`), "utf8")) as SlotRequest;
+    // The owner approves or declines the proposal; nothing hands it to the Director.
+    expect(entryOf().options!.map(option => [option.id, option.then.verb])).toEqual([["approve", "approve"], ["decline", "close"]]);
+    // Every proposed step is a Publisher ia line; a new slot's contract rides as data.
+    const steps = currentProposed(entryOf())!.steps;
+    expect(steps.map(step => step.args.slice(0, 2).join(" "))).toEqual(["ia publisher/page.home", "ia publisher/page.pricing", "ia publisher/page.contact", "ia publisher/publication.site"]);
+    for (const step of steps) expect(step.contract, step.args[1]).toBeDefined();
+    expect(existsSync(join(consumer, "agents/publisher/page.home"))).toBe(false);
+    const approved = await runCli(["request", id, "--answer", "approve", "--via", "cli", "--quote", "approve the launch content map", "--at", "2026-11-26T10:30:00Z", "--root", root], root);
+    expect(approved.exitCode, approved.message).toBe(0);
+    expect(entryOf()).toMatchObject({ status: "closed", outcome: "changed" });
+    // The lines placed the Publisher's slots, each reading the release, and M1 passes on them.
+    for (const step of steps) {
+      const doc = JSON.parse(readFileSync(join(consumer, "agents", step.args[1]!, "slot.json"), "utf8")) as { refs: { to: string; rel: string }[] };
+      expect(doc.refs, step.args[1]).toContainEqual({ to: RELEASE_REF, rel: "input" });
+    }
+    const model = readConformModel(REPO, consumer);
+    const publisher = model.agents.find(agent => agent.agent === "publisher")!;
+    expect(publisher.live.filter(slot => slot.source === "placed").map(slot => slot.id).sort()).toEqual(["page.contact", "page.home", "page.pricing", "publication.site"]);
+    expect(ASSERTIONS.M1!(publisher, model, {} as never).rows).toEqual([]);
+  });
+
+  it("approve refuses when the plan changed since it was filed", async () => {
+    const { root, consumer } = await world({ publisher: false });
+    const id = ((await runCli(["plan", "--at", AT, "--root", root], root)).output as { request: string }).request;
+    const file = join(consumer, "agents/producer/queue.change/entries", `${id}.json`);
+    const held = readFileSync(file, "utf8");
+    // The release is re-pinned after the plan was filed: the stored lines are no longer what the plan derives.
+    pinRelease(consumer, "release-v2.md", "site (home, contact): launch site that shows founders the claim export");
+    const refused = await runCli(["request", id, "--answer", "approve", "--via", "cli", "--quote", "approve it", "--at", "2026-11-26T10:30:00Z", "--root", root], root);
+    expect(refused.exitCode).toBe(1);
+    expect(refused.message).toMatch(new RegExp(`request ${id}'s proposal changed since it was filed: clossys plan --dry now proposes 3 steps that differ from the 4 it holds; nothing was written\\. Next: clossys plan \\(it refreshes request ${id}\\), then clossys request ${id} --answer approve`));
+    expect(readFileSync(file, "utf8")).toBe(held);
+    expect(existsSync(join(consumer, "agents/publisher/page.home"))).toBe(false);
+    // The refresh it names, then approve, places the new plan.
+    expect((await runCli(["plan", "--at", "2026-11-26T10:31:00Z", "--root", root], root)).message).toMatch(new RegExp(`^plan: updated ${id} `));
+    const approved = await runCli(["request", id, "--answer", "approve", "--via", "cli", "--quote", "approve it", "--at", "2026-11-26T10:32:00Z", "--root", root], root);
+    expect(approved.exitCode, approved.message).toBe(0);
+    expect(existsSync(join(consumer, "agents/publisher/page.contact/slot.json"))).toBe(true);
+    expect(existsSync(join(consumer, "agents/publisher/page.pricing"))).toBe(false);
+  });
+
+  it("re-plan after a re-pin refreshes the open request's proposal", async () => {
+    const { root, consumer } = await world();
+    const entryOf = (id: string) => JSON.parse(readFileSync(join(consumer, "agents/producer/queue.change/entries", `${id}.json`), "utf8")) as SlotRequest;
+    const plan = (at: string, ...more: string[]) => runCli(["plan", "--at", at, "--root", root, ...more], root);
+    const first = await plan(AT);
+    expect(first.exitCode, first.message).toBe(0);
+    const id = (first.output as { request: string }).request;
+    expect(first.message).toMatch(new RegExp(`^plan: filed ${id} `));
+    const v1 = planDetail(contentPlan(root));
+    expect(currentProposal(entryOf(id))).toBe(v1);
+    // The same plan again: nothing to refresh, nothing written, and it says so.
+    const before = bytes(root);
+    const again = await plan("2026-11-26T10:05:00Z");
+    expect(again.message).toMatch(new RegExp(`^plan: unchanged ${id} `));
+    expect(bytes(root)).toEqual(before);
+    // Re-pin a release with a smaller scope: the open request's proposal becomes the new plan, and the run says updated.
+    pinRelease(consumer, "release-v2.md", "site (home, contact): launch site that shows founders the claim export");
+    const v2 = planDetail(contentPlan(root));
+    expect(v2).not.toBe(v1);
+    expect(v2).toContain("(release-v2.md)");
+    expect((await plan("2026-11-26T10:10:00Z", "--dry")).message).toMatch(new RegExp(`^plan: would update ${id} `));
+    expect(currentProposal(entryOf(id))).toBe(v1);
+    const updated = await plan("2026-11-26T10:10:00Z");
+    expect(updated.exitCode, updated.message).toBe(0);
+    expect(updated.message).toMatch(new RegExp(`^plan: updated ${id} `));
+    expect(updated.output).toMatchObject({ request: id, outcome: "updated" });
+    expect(currentProposal(entryOf(id))).toBe(v2);
+    expect(entryOf(id)).toMatchObject({ status: "open", assignee: "owner" });
+    expect((await plan("2026-11-26T10:15:00Z")).message).toMatch(new RegExp(`^plan: unchanged ${id} `));
+    // Back to the first release: an earlier event already holds that proposal, yet the latest is v2, so it refreshes.
+    pinRelease(consumer, "release-v1.md", SCOPE);
+    expect((await plan("2026-11-26T10:20:00Z")).message).toMatch(new RegExp(`^plan: updated ${id} `));
+    expect(currentProposal(entryOf(id))).toBe(v1);
+    // An open owner change on the release that clossys plan did not file never takes the plan.
+    const other = await world();
+    const foreign = await runCli(["request", "--kind", "change", "--subject", RELEASE_REF, "--from", "owner", "--want", "contract", "--why", "tighten the release scope", "--by", "owner", "--at", AT, "--root", other.root], other.root);
+    expect(foreign.exitCode, foreign.message).toBe(0);
+    const held = bytes(other.root);
+    const refused = await runCli(["plan", "--at", "2026-11-26T10:05:00Z", "--root", other.root], other.root);
+    expect(refused.exitCode).toBe(1);
+    expect(refused.message).toMatch(/^plan refused: \S+ is an open owner change on director\/execution\.roadmap\.release that clossys plan did not file/);
+    expect(bytes(other.root)).toEqual(held);
+  });
+
+  it("re-plan from 0 steps to N steps offers approve", async () => {
+    // The Director releases a row the menu cannot serve first: the plan has 0 lines, so the owner hands it off or declines.
+    const { root, consumer } = await world({ publisher: false, scope: "docs (quickstart): launch guide so founders set up exports alone" });
+    const entryOf = (id: string) => JSON.parse(readFileSync(join(consumer, "agents/producer/queue.change/entries", `${id}.json`), "utf8")) as SlotRequest;
+    const filed = await runCli(["plan", "--at", AT, "--root", root], root);
+    expect(filed.exitCode, filed.message).toBe(0);
+    const id = (filed.output as { request: string }).request;
+    expect(currentProposed(entryOf(id))).toBeUndefined();
+    expect(entryOf(id).options!.map(option => option.id)).toEqual(["handoff", "decline"]);
+    // A re-pin with servable rows, then a re-plan: the options follow the refreshed steps (approve and decline, no handoff).
+    pinRelease(consumer, "release-v2.md", "site (home, contact): launch site that shows founders the claim export");
+    const updated = await runCli(["plan", "--at", "2026-11-26T10:10:00Z", "--root", root], root);
+    expect(updated.exitCode, updated.message).toBe(0);
+    expect(updated.message).toMatch(new RegExp(`^plan: updated ${id} `));
+    expect(currentProposed(entryOf(id))!.steps).toHaveLength(3);
+    expect(entryOf(id).options!.map(option => [option.id, option.then.verb])).toEqual([["approve", "approve"], ["decline", "close"]]);
+    expect(entryOf(id).events.at(-1)).toMatchObject({ op: "asked", by: "producer" });
+    const approved = await runCli(["request", id, "--answer", "approve", "--via", "cli", "--quote", "approve the launch content map", "--at", "2026-11-26T10:30:00Z", "--root", root], root);
+    expect(approved.exitCode, approved.message).toBe(0);
+    expect(entryOf(id)).toMatchObject({ status: "closed", outcome: "changed" });
+    for (const slot of ["page.home", "page.contact", "publication.site"]) expect(existsSync(join(consumer, "agents/publisher", slot, "slot.json")), slot).toBe(true);
+  });
+
+  it("refuses with no fallback: no pinned release, or a release contract with no brief.release-scope", async () => {
+    const bare = await world({ requirement: false });
+    expect(() => contentPlan(bare.root)).toThrow(PlanError);
+    expect(() => contentPlan(bare.root)).toThrow(/states no brief\.release-scope requirement/);
+    const refused = await runCli(["plan", "--at", AT, "--root", bare.root], bare.root);
+    expect(refused.exitCode).toBe(1);
+    expect(refused.message).toMatch(/^plan refused: /);
+    const unpinned = realpathSync(mkdtempSync(join(tmpdir(), "clossys-plan-")));
+    roots.push(unpinned);
+    cpSync(FIXTURE, unpinned, { recursive: true });
+    expect(() => contentPlan(unpinned)).toThrow(/is not pinned/);
+    // A release with no row places nothing: the scope it states must be plannable first.
+    const empty = await world({ scope: "none" });
+    expect(() => contentPlan(empty.root)).toThrow(/does not state a plannable scope/);
+  });
+
+  it("clossys plan --help names the loop order and the menu", async () => {
+    const help = await runCli(["plan", "--help"], FIXTURE);
+    expect(help.exitCode).toBe(0);
+    expect(help.message).toBe(PLAN_USAGE);
+    expect(PLAN_USAGE).toContain("Loop order: Director release, then clossys plan, then the owner approves, then clossys ia.");
+    expect(PLAN_USAGE).toContain("(site)");
+  });
+});

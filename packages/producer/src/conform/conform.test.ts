@@ -149,6 +149,8 @@ const MUTATIONS: Record<string, Mutation> = {
   Q11: (_agent, machinery) => { machinery.requests.releaseGates = ["slots.needs-refresh"]; },
   // Director's own create drops Producer's required certify step.
   W2: agent => { const create = agent.loops.find((loop: any) => loop.loop === "loop.create").package.content; create.steps = create.steps.filter((step: any) => step.id !== "certify"); },
+  // CP1-PLAN: a placed page slot that reads no Director release.
+  M1: agent => { agent.live[1] = slot("a.y", ["b.other"], { kind: "page" }); },
 };
 
 describe("own loops (W2, foundry-build-0048 U9a)", () => {
@@ -187,9 +189,38 @@ describe("own loops (W2, foundry-build-0048 U9a)", () => {
   });
 });
 
+describe("content map planned (M1, CP1-PLAN)", () => {
+  const RELEASE = "director/execution.roadmap.release";
+  const m1 = (mutate: Mutation) => { const built = world(mutate); return { red: red("M1", built), ...ASSERTIONS.M1!(built.agent, built.model, built.facts) }; };
+  const page = (id: string, inputs: string[], kind = "page") => slot(id, inputs, { kind, owner: "publisher" });
+  it("conform fails a site page slot with no director input ref", () => {
+    const missing = m1(agent => { agent.live.push(page("page.pricing", ["designer/sections.pricing"]), page("publication.site", ["page.pricing"], "publication")); });
+    expect(missing.red).toBe(true);
+    expect(missing.rows).toEqual([
+      `page.pricing: a page slot with no ${RELEASE} input: run clossys plan, then apply its ia lines once the owner approves`,
+      `publication.site: a publication slot with no ${RELEASE} input: run clossys plan, then apply its ia lines once the owner approves`,
+    ]);
+    // Planned: the release ref in either agent-qualified form; a package-tree leaf the consumer has not placed is not judged.
+    expect(m1(agent => { agent.live.push(page("page.pricing", ["designer/sections.pricing", RELEASE]), page("publication.site", ["page.pricing", "director:execution.roadmap.release"], "publication")); })).toMatchObject({ red: false, rows: [] });
+    expect(m1(agent => { agent.live.push({ ...page("page.pricing", []), source: "package" }); })).toMatchObject({ red: false, rows: [] });
+    // Another Director cell is not the release.
+    expect(m1(agent => { agent.live.push(page("page.pricing", ["director/focus.reach.channel"])); }).rows).toEqual([expect.stringMatching(/^page\.pricing: a page slot with no director\/execution\.roadmap\.release input/)]);
+  });
+  it("admin publication exempt", () => {
+    // The exemption is the rule's own: the slots clossys init hard-wires, read from the Publisher package's admin starter.
+    const admin = readConformModel(REPO, FIXTURE).machinery.adminSlots!;
+    const starter = JSON.parse(readFileSync(join(REPO, "packages/publisher/starters/admin/publication.json"), "utf8")) as { pages: string[] };
+    expect([...admin].sort()).toEqual([...starter.pages, "publication.admin"].sort());
+    const seated = (agent: Record<string, any>) => { agent.live.push(page("publication.admin", []), ...starter.pages.map(id => page(id, [])), page("page.home", [])); };
+    expect(m1((agent, machinery) => { machinery.adminSlots = admin; seated(agent); }).rows).toEqual([expect.stringMatching(/^page\.home: /)]);
+    // No admin starter read: nothing is exempt, so the admin slots are judged like any other.
+    expect(m1(seated).rows).toHaveLength(starter.pages.length + 2);
+  });
+});
+
 describe("conformance registry", () => {
   const registry = readRegistry();
-  it("declares the 36 assertions of the standard, each with a function and a mutation proof", () => {
+  it("declares the 37 assertions of the standard, each with a function and a mutation proof", () => {
     expect(registry.assertions.map(entry => entry.id)).toEqual(Object.keys(MUTATIONS));
     expect(Object.keys(ASSERTIONS).sort()).toEqual(registry.assertions.map(entry => entry.id).sort());
     // Report-only: nothing is enforced yet.
@@ -297,7 +328,7 @@ describe("conformance runner", () => {
     const built = world(agent => { delete agent.adapter; agent.adapterIssues = ["packages/director/conform.json is missing or not JSON"]; });
     const report = conform(built.model, readRegistry(), GOOD_FACTS);
     const director = report.agents.find(agent => agent.agent === "director")!;
-    expect(director.red).toBe(36);
+    expect(director.red).toBe(37);
     expect(director.cells[0]!.rows[0]).toMatch(/^uncovered: /);
     expect(report.ok).toBe(false);
   });
@@ -510,7 +541,7 @@ describe("conformance over the repo and its fixture", () => {
     const accepted = (agent: string) => [{ target: `${agent}/conform.contract-probe`, contract: "{}", accepted: true, message: "ia --dry" }];
     const report = conform(model, readRegistry(), { emptyL2Detected: Object.fromEntries(CONFORM_AGENTS.map(agent => [agent, false])), requestVerb: false, critiqueMonorepoPath: true, iaContract: Object.fromEntries(CONFORM_AGENTS.map(agent => [agent, accepted(agent)])) });
     for (const agent of report.agents) {
-      expect(agent.cells).toHaveLength(36);
+      expect(agent.cells).toHaveLength(37);
       expect(agent.dogfood).toHaveLength(5);
       // Today: every placed Director, Designer and Writer slot records its placement decision (clossys migrate
       // placement), and every Publisher leaf the fixture placed with clossys ia (R6) records its create decision with
@@ -539,6 +570,13 @@ describe("conformance over the repo and its fixture", () => {
     const c1 = (agent: string) => report.agents.find(item => item.agent === agent)!.cells.find(cell => cell.id === "C1")!;
     for (const agent of ["director", "designer", "writer", "publisher"]) expect(c1(agent).red, agent).toBe(false);
     expect(c1("publisher").evidence).toBe(60);
+    // M1 (CP1-PLAN): the fixture's Publisher placed its starter pages and publications before the content map was planned,
+    // so every non-admin page and publication slot is red until clossys plan places the release ref; the admin slots are not.
+    const m1 = report.agents.find(item => item.agent === "publisher")!.cells.find(cell => cell.id === "M1")!;
+    expect(m1.red).toBe(true);
+    expect(m1.rows).toContain("page.home: a page slot with no director/execution.roadmap.release input: run clossys plan, then apply its ia lines once the owner approves");
+    expect(m1.rows.filter(row => /^(page\.admin-|publication\.admin:)/.test(row))).toEqual([]);
+    for (const agent of ["director", "designer", "writer"]) expect(report.agents.find(item => item.agent === agent)!.cells.find(cell => cell.id === "M1")!.red, agent).toBe(false);
     // S6 (U9): every Director, Designer and Writer L3 is placed once, its record names its agent and folder, and it
     // declares an inputs list; so does every placed Publisher slot, its inputs the slots its package record cites (R6).
     const s6 = (agent: string) => report.agents.find(item => item.agent === agent)!.cells.find(cell => cell.id === "S6")!;

@@ -1336,16 +1336,46 @@
         "hint": "a short name"
       },
       {
+        "key": "Stage",
+        "hint": "launch, mvp, growth or mature"
+      },
+      {
         "key": "Target date",
         "hint": "ISO date"
       },
       {
         "key": "Scope",
-        "hint": "publications and pages"
+        "hint": "kind (pages): use case naming the stage, one row per publication, rows split by semicolons"
       },
       {
         "key": "Not in scope",
         "hint": "what waits for a later release"
+      }
+    ],
+    "requirements": [
+      {
+        "check": "brief.release-scope",
+        "params": {
+          "kinds": [
+            "site",
+            "docs",
+            "slides",
+            "video",
+            "image set"
+          ],
+          "stages": [
+            "launch",
+            "mvp",
+            "growth",
+            "mature"
+          ],
+          "capStages": [
+            "launch",
+            "mvp"
+          ],
+          "pageCap": 8,
+          "need": "context.customer.need"
+        }
       }
     ],
     "functions": [
@@ -1356,6 +1386,18 @@
       {
         "cites": "focus.lifecycle.acquisition",
         "label": "Acquisition-Release"
+      },
+      {
+        "cites": "context.customer.need",
+        "label": "Need-Release"
+      },
+      {
+        "cites": "focus.reach.channel",
+        "label": "Channel-Release"
+      },
+      {
+        "cites": "focus.offer.included",
+        "label": "Included-Release"
       }
     ]
   },

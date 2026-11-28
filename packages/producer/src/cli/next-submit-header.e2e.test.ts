@@ -11,8 +11,9 @@
  * held. The fixture is the seeded pinned world (scripts/seed-pinned-world.mjs, made through the verbs and kept
  * byte-current by records/pinned-world.test.ts): it pins Director identity.brand.essence and identity.verbal.voice, and
  * the shared world places writer/page.u37c.meta with `clossys ia`, reading only those two. The Director case is
- * execution.roadmap.release, which the seeded world leaves unpinned and which reads the pinned
- * focus.lifecycle.acquisition. Each slot is first shown to hold no finding of a submit-guarded check, so a refusal here is
+ * execution.roadmap.release, which the seeded world leaves unpinned; the shared world re-places it (`clossys ia`) on its
+ * pinned inputs (focus.lifecycle.acquisition, context.customer.need, focus.reach.channel), as the seeded world pins no
+ * focus.offer.included, and its brief states a launch Scope (brief.release-scope). Each slot is first shown to hold no finding of a submit-guarded check, so a refusal here is
  * about the submitted file. The guard reads the candidate through the one candidate reader (records/slot-current.ts
  * readCandidateText): a source.ref the header carries is judged (R07.1, R06.4) as an int2 file's is, and an adopt is
  * verbatim when its content digest (the view and the header without its per-file provenance) equals the seed's, a
@@ -87,9 +88,9 @@ ${keys.map(([key, value]) => `- ${key}: ${value}`).join("\n")}
 - ${watch}
 `;
 
-const RELEASE = brief("execution.roadmap.release", "director:focus.lifecycle.acquisition",
-  [["Release", "DRAFT fixture release, the first public site"], ["Target date", "DRAFT fixture date, 2026-12-01"], ["Scope", "DRAFT fixture scope, the home page and the contact page"], ["Not in scope", "DRAFT fixture boundary, the pricing page waits"]],
-  "The acquisition brief starts with referrals, so the first release ships the pages a referral lands on", "If fixture referral visits fall below 20 in any month, then revisit this release brief.");
+const RELEASE = brief("execution.roadmap.release", "director:context.customer.need",
+  [["Release", "DRAFT fixture release, the first public site"], ["Stage", "launch"], ["Target date", "DRAFT fixture date, 2026-12-01"], ["Scope", "site (home, contact): DRAFT fixture launch site for the pages a referral lands on"], ["Not in scope", "DRAFT fixture boundary, the pricing page waits"]],
+  "The customer need brief names referrals, so the first release ships the pages a referral lands on", "If fixture referral visits fall below 20 in any month, then revisit this release brief.");
 
 /** The Writer slot the shared world places (`clossys ia`): it reads only the two Director slots the world pins. */
 const META = "page.u37c.meta";
@@ -142,7 +143,7 @@ const pinTarget = (c: Case) => `${c.agent}/${c.slot}${c.pin ?? ""}`;
 const CASES: readonly Case[] = [
   {
     agent: "director", slot: "execution.roadmap.release", bytes: RELEASE, gap: "brief.keys", standard: "brief.list", taste: "decisive", name: "release-v1.md",
-    source: { kind: "derived", ref: ["director:focus.lifecycle.acquisition"] },
+    source: { kind: "derived", ref: ["director:context.customer.need"] },
   },
   { agent: "writer", slot: META, bytes: COPY, gap: "copy.entries", standard: "string", taste: "voice-fit", name: "meta-v1.md", source: COPY_SOURCE, pin: "#meta" },
 ];
@@ -221,6 +222,10 @@ beforeAll(async () => {
   // The seeded world pins the two Director slots the Writer slot reads, and leaves the Director case unpinned.
   for (const slot of ["identity.brand.essence", "identity.verbal.voice"]) expect(existsSync(join(base, "clossys/agents/director", slot, "pin.json")), `the seeded fixture pins director/${slot}`).toBe(true);
   expect(existsSync(join(base, "clossys/agents/director", CASES[0]!.slot, "pin.json")), `the seeded fixture leaves director/${CASES[0]!.slot} unpinned`).toBe(false);
+  // The release reads only inputs the seeded world pins (it pins no focus.offer.included), so its brief can be crafted (R20).
+  const release = JSON.parse(readFileSync(join(base, "clossys/agents/director", CASES[0]!.slot, "slot.json"), "utf8")) as { contract: Record<string, unknown> };
+  await verb(base, "ia", `director/${CASES[0]!.slot}`, "--contract", json(base, "release-contract.json", release.contract), "--standard", "brief.list",
+    "--inputs", "focus.lifecycle.acquisition,context.customer.need,focus.reach.channel", "--at", AT);
   const deck = JSON.parse(readFileSync(join(base, "clossys/agents/writer/page.deck.meta/slot.json"), "utf8")) as { contract: Record<string, unknown> };
   const { unit: _unit, records: _records, ...contract } = deck.contract;
   await verb(base, "ia", `writer/${META}`, "--under", "copy.page-metadata/slides", "--kind", "strings", "--standard", "string",

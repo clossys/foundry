@@ -150,6 +150,10 @@ export function familyIssue(family: unknown): string | undefined {
   return values.length === options ? undefined : `a ${options}-option family lists ${values.length} values`;
 }
 
+/** M1: the Publisher kinds that make up a content map, and the Director cell they plan from (`clossys plan`). */
+const CONTENT_MAP_KINDS = new Set(["page", "publication"]);
+export const PLAN_RELEASE_REF = "director/execution.roadmap.release";
+
 export const ASSERTIONS: Readonly<Record<string, Assertion>> = {
   S1: (agent, model) => {
     // The agent's declared loop slots are Producer-standard leaves in its loops L1, not package-tree leaves (W2 judges them).
@@ -415,6 +419,18 @@ export const ASSERTIONS: Readonly<Record<string, Assertion>> = {
       else if (!skill.registered) rows.push(`${skill.loop}: ${skill.path} is not hash-registered`);
     }
     return { rows, evidence: 5 + agent.skills.length };
+  },
+  // CP1-PLAN: the content map is the agents' decision. Every placed page or publication slot (Publisher's content kinds)
+  // reads the Director's next release, which `clossys plan` proposes from; the admin publication and pages are exempt by
+  // this rule because `clossys init` hard-wires them in every consumer (admin-plan.ts), read from the admin starter.
+  M1: (agent, model) => {
+    const admin = model.machinery.adminSlots ?? new Set<string>();
+    const judged = agent.live.filter(slot => slot.source === "placed" && CONTENT_MAP_KINDS.has(slot.kind ?? "") && !admin.has(slot.id));
+    return {
+      rows: judged.filter(slot => !slot.inputs.some(ref => qualifiedRef(agent, model, ref) === PLAN_RELEASE_REF))
+        .map(slot => `${slot.id}: a ${slot.kind} slot with no ${PLAN_RELEASE_REF} input: run clossys plan, then apply its ia lines once the owner approves`),
+      evidence: agent.live.length,
+    };
   },
   ...REQUEST_ASSERTIONS,
   // foundry-build-0048 U9a: the agent owns its five loops, each extending Producer's standard loop of the same name.
